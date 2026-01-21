@@ -574,6 +574,11 @@
         // Mobile menu handled by script.js
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof feather !== 'undefined') feather.replace();
+            
+            // Phase 1: Onboarding Wizard auto-trigger
+            if (window.ATHOnboarding && window.ATHOnboarding.shouldShow()) {
+                setTimeout(() => window.ATHOnboarding.show(), 800);
+            }
         });
     </script>
 </body>
