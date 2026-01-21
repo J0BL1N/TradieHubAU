@@ -214,182 +214,173 @@
   <script>
     const STORAGE_KEY = 'athPostedJobs';
 
-    function readJobs() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    }
+    <script type="module">
+      import { supabase, getCurrentUser } from './supabase-client.js';
 
-    function writeJobs(jobs) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
-    }
+      // Mobile menu handled by script.js (loaded separately)
 
-    function slugify(s) {
-      return String(s || '')
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        .slice(0, 60);
-    }
-
-    // Mobile menu handled by script.js
-
-    document.getElementById('cancelBtn')?.addEventListener('click', function () {
-      window.location.href = 'jobs.html';
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-      if (typeof feather !== 'undefined') feather.replace();
-
-      // Batch L: trade/category multi-picker (canonical list from data.js)
-      const hiddenCats = document.getElementById('athJobCategories');
-      const toggleBtn = document.getElementById('athTradePickerToggle');
-      const panel = document.getElementById('athTradePickerPanel');
-      const searchInput = document.getElementById('athTradePickerSearch');
-      const optionsEl = document.getElementById('athTradePickerOptions');
-      const selectedEl = document.getElementById('athTradePickerSelected');
-      const countEl = document.getElementById('athTradePickerCount');
-
-      const catalog = Array.isArray(window.TRADE_CATEGORIES) ? window.TRADE_CATEGORIES : [];
-      const selected = new Set((hiddenCats?.value || '').split(',').map(s => s.trim()).filter(Boolean));
-
-      function tradeLabel(id) {
-        if (typeof window.tradeLabel === 'function') return window.tradeLabel(id);
-        const found = catalog.find(t => String(t.id) === String(id));
-        return found ? found.label : String(id || 'Other');
-      }
-
-      function setSelected(next) {
-        // next: iterable of ids
-        // IMPORTANT: callers often pass the same Set reference (`selected`).
-        // If we clear `selected` before reading `next`, we wipe out the incoming values.
-        // Snapshot first, then rebuild.
-        const snapshot = Array.from(next || []).map(s => String(s).trim()).filter(Boolean);
-        selected.clear();
-        snapshot.forEach(id => selected.add(id));
-        if (hiddenCats) hiddenCats.value = Array.from(selected).join(',');
-        if (countEl) countEl.textContent = `${selected.size} selected`;
-
-        if (selectedEl) {
-          selectedEl.innerHTML = Array.from(selected).map((id) => (
-            `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">
-              ${tradeLabel(id)}
-              <button type="button" data-remove-trade="${id}" class="text-teal-700 hover:text-teal-900">Ã—</button>
-            </span>`
-          )).join('');
-          selectedEl.querySelectorAll('[data-remove-trade]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-              selected.delete(btn.getAttribute('data-remove-trade'));
-              setSelected(selected);
-              renderOptions();
-            });
-          });
-        }
-      }
-
-      function renderOptions() {
-        if (!optionsEl) return;
-        const q = (searchInput?.value || '').toString().trim().toLowerCase();
-        const rows = catalog
-          .filter(t => !q || String(t.label).toLowerCase().includes(q) || String(t.id).toLowerCase().includes(q))
-          .map(t => {
-            // Always compare ids as strings (Set stores strings)
-            const idStr = String(t.id);
-            const checked = selected.has(idStr) ? 'checked' : '';
-            return `<label class="flex items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" data-trade-id="${idStr}" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" ${checked} />
-              <span>${t.label}</span>
-            </label>`;
-          });
-        optionsEl.innerHTML = rows.join('') || `<p class="text-sm text-gray-500">No trades found.</p>`;
-      }
-
-      // Event delegation (more reliable than rebinding listeners on every render)
-      if (optionsEl && !optionsEl.dataset.athBound) {
-        optionsEl.dataset.athBound = '1';
-        optionsEl.addEventListener('change', (e) => {
-          const target = e.target;
-          if (!target || target.tagName !== 'INPUT') return;
-          const input = target;
-          if (input.type !== 'checkbox') return;
-          if (!input.matches('input[data-trade-id]')) return;
-          const id = String(input.getAttribute('data-trade-id') || '').trim();
-          if (!id) return;
-          if (input.checked) selected.add(id);
-          else selected.delete(id);
-          setSelected(selected);
-          // v0.024: Do NOT re-render the options list on every click.
-          // Re-rendering here rebuilds the checkbox DOM and can make selections feel like they don't persist.
-        });
-      }
-
-      toggleBtn?.addEventListener('click', () => {
-        panel?.classList.toggle('hidden');
-        renderOptions();
+      document.getElementById('cancelBtn')?.addEventListener('click', function () {
+        window.location.href = 'jobs.html';
       });
-      searchInput?.addEventListener('input', renderOptions);
 
-      setSelected(selected);
-      renderOptions();
+      document.addEventListener('DOMContentLoaded', async function () {
+        if (typeof feather !== 'undefined') feather.replace();
 
-      const form = document.getElementById('postJobForm');
-      const errorEl = document.getElementById('formError');
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const fd = new FormData(form);
-        const title = (fd.get('title') || '').toString().trim();
-        const categoriesRaw = (fd.get('categories') || '').toString().trim();
-        const categories = (categoriesRaw || (hiddenCats?.value || '')).split(',').map(s => s.trim()).filter(Boolean);
-        const state = (fd.get('state') || '').toString().trim();
-        const budget = (fd.get('budget') || '').toString().trim();
-        const date = (fd.get('date') || '').toString().trim();
-        const description = (fd.get('description') || '').toString().trim();
-
-        if (!title || !state || !description || categories.length === 0) {
-          errorEl.textContent = 'Please fill in the required fields (title, at least 1 trade/category, state, and description).';
-          errorEl.classList.remove('hidden');
+        // 1. Check Authentication
+        const { user, error } = await getCurrentUser();
+        if (!user) {
+          alert('You must be logged in to post a job.');
+          window.location.href = 'index.html?action=login';
           return;
         }
 
-        const jobs = readJobs();
-        const id = slugify(title) + '-' + Date.now();
+        // Batch L: trade/category multi-picker
+        // We'll stick with window.TRADE_CATEGORIES from data.js for the UI for now
+        // to minimize UI breakage, but we could fetch from Supabase 'trades' table later.
+        const hiddenCats = document.getElementById('athJobCategories');
+        const toggleBtn = document.getElementById('athTradePickerToggle');
+        const panel = document.getElementById('athTradePickerPanel');
+        const searchInput = document.getElementById('athTradePickerSearch');
+        const optionsEl = document.getElementById('athTradePickerOptions');
+        const selectedEl = document.getElementById('athTradePickerSelected');
+        const countEl = document.getElementById('athTradePickerCount');
 
-        // Associate posted jobs with the current customer profile.
-        // Current user is stored in localStorage under `athCurrentUser`.
-        let customerId = 'me';
-        try {
-          const rawUser = localStorage.getItem('athCurrentUser');
-          const u = rawUser ? JSON.parse(rawUser) : null;
-          if (u && u.id) customerId = String(u.id);
-        } catch { /* ignore */ }
+        const catalog = Array.isArray(window.TRADE_CATEGORIES) ? window.TRADE_CATEGORIES : [];
+        const selected = new Set((hiddenCats?.value || '').split(',').map(s => s.trim()).filter(Boolean));
 
-        jobs.unshift({
-          id,
-          title,
-          categories,
-          // Back-compat: keep a single human label for older code paths
-          category: categories[0] ? (typeof window.tradeLabel === 'function' ? window.tradeLabel(categories[0]) : categories[0]) : 'Other',
-          state,
-          budget: budget ? Number(budget) : null,
-          date: date || null,
-          description,
-          customerId,
-          createdAt: new Date().toISOString()
+        function tradeLabel(id) {
+          if (typeof window.tradeLabel === 'function') return window.tradeLabel(id);
+          const found = catalog.find(t => String(t.id) === String(id));
+          return found ? found.label : String(id || 'Other');
+        }
+
+        function setSelected(next) {
+          const snapshot = Array.from(next || []).map(s => String(s).trim()).filter(Boolean);
+          selected.clear();
+          snapshot.forEach(id => selected.add(id));
+          if (hiddenCats) hiddenCats.value = Array.from(selected).join(',');
+          if (countEl) countEl.textContent = `${selected.size} selected`;
+
+          if (selectedEl) {
+            selectedEl.innerHTML = Array.from(selected).map((id) => (
+              `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">
+                ${tradeLabel(id)}
+                <button type="button" data-remove-trade="${id}" class="text-teal-700 hover:text-teal-900">Ã—</button>
+              </span>`
+            )).join('');
+            selectedEl.querySelectorAll('[data-remove-trade]').forEach((btn) => {
+              btn.addEventListener('click', () => {
+                selected.delete(btn.getAttribute('data-remove-trade'));
+                setSelected(selected);
+                renderOptions();
+              });
+            });
+          }
+        }
+
+        function renderOptions() {
+          if (!optionsEl) return;
+          const q = (searchInput?.value || '').toString().trim().toLowerCase();
+          const rows = catalog
+            .filter(t => !q || String(t.label).toLowerCase().includes(q) || String(t.id).toLowerCase().includes(q))
+            .map(t => {
+              const idStr = String(t.id);
+              const checked = selected.has(idStr) ? 'checked' : '';
+              return `<label class="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" data-trade-id="${idStr}" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" ${checked} />
+                <span>${t.label}</span>
+              </label>`;
+            });
+          optionsEl.innerHTML = rows.join('') || `<p class="text-sm text-gray-500">No trades found.</p>`;
+        }
+
+        if (optionsEl && !optionsEl.dataset.athBound) {
+          optionsEl.dataset.athBound = '1';
+          optionsEl.addEventListener('change', (e) => {
+            const target = e.target;
+            if (!target || target.tagName !== 'INPUT') return;
+            const input = target;
+            if (input.type !== 'checkbox') return;
+            if (!input.matches('input[data-trade-id]')) return;
+            const id = String(input.getAttribute('data-trade-id') || '').trim();
+            if (!id) return;
+            if (input.checked) selected.add(id);
+            else selected.delete(id);
+            setSelected(selected);
+          });
+        }
+
+        toggleBtn?.addEventListener('click', () => {
+          panel?.classList.toggle('hidden');
+          renderOptions();
         });
+        searchInput?.addEventListener('input', renderOptions);
 
-        writeJobs(jobs);
-        window.location.href = 'jobs.html?posted=1';
+        setSelected(selected);
+        renderOptions();
+
+        // Form Submission
+        const form = document.getElementById('postJobForm');
+        const errorEl = document.getElementById('formError');
+
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          errorEl.classList.add('hidden'); // Reset error
+          
+          const submitBtn = form.querySelector('button[type="submit"]');
+          const originalBtnText = submitBtn.innerText;
+          submitBtn.disabled = true;
+          submitBtn.innerText = 'Posting...';
+
+          try {
+            const fd = new FormData(form);
+            const title = (fd.get('title') || '').toString().trim();
+            const categoriesRaw = (fd.get('categories') || '').toString().trim();
+            const categories = (categoriesRaw || (hiddenCats?.value || '')).split(',').map(s => s.trim()).filter(Boolean);
+            const state = (fd.get('state') || '').toString().trim();
+            const budget = (fd.get('budget') || '').toString().trim();
+            const date = (fd.get('date') || '').toString().trim();
+            const description = (fd.get('description') || '').toString().trim();
+
+            if (!title || !state || !description || categories.length === 0) {
+              throw new Error('Please fill in the required fields (title, at least 1 trade/category, state, and description).');
+            }
+
+            // Insert into Supabase
+            const { data, error } = await supabase
+              .from('jobs')
+              .insert([{
+                customer_id: user.id,
+                title: title,
+                categories: categories,
+                location: state, // Using state as location for now
+                state: state,
+                budget_max: budget ? parseInt(budget) : null,
+                timeline: date ? `Preferred date: ${date}` : 'Flexible',
+                description: description,
+                status: 'open',
+                type: 'one-off', // Default
+                urgency: 'flexible' // Default
+              }])
+              .select();
+
+            if (error) throw error;
+
+            // Success
+            window.location.href = 'jobs.html?posted=1';
+
+          } catch (err) {
+            console.error('Error posting job:', err);
+            errorEl.textContent = err.message || 'An error occurred while posting the job. Please try again.';
+            errorEl.classList.remove('hidden');
+            
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalBtnText;
+          }
+        });
       });
-    });
-  </script>
+    </script>
+
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
