@@ -5,19 +5,21 @@
  * for authentication, database queries, and storage.
  */
 
-import { createClient } from '@supabase/supabase-js';
+// Import Supabase client
+// Using CDN for browser compatibility without bundler
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// Load environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Safe environment variable access
+const getEnv = (key) => {
+  try {
+    return import.meta.env?.[key];
+  } catch (e) {
+    return undefined;
+  }
+};
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables!');
-  console.error('Make sure .env.local contains:');
-  console.error('  VITE_SUPABASE_URL');
-  console.error('  VITE_SUPABASE_ANON_KEY');
-}
+const supabaseUrl = getEnv('VITE_SUPABASE_URL') || 'https://sbnthkwhygrrjjdyylgd.supabase.co';
+const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNibnRoa3doeWdycmpqZHl5bGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDM5NDYsImV4cCI6MjA4NDU3OTk0Nn0.bNzKm4Npa9DL8kIxesqtcavB2Z0CNUJgY1aDbgKGSbY';
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
