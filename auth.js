@@ -148,7 +148,25 @@ function handleSignOut() {
  */
 function updateUIForAuthState(isSignedIn) {
   // Update nav buttons
-  const authNavBtn = document.getElementById('athAuthNavBtn');
+  let authNavBtn = document.getElementById('athAuthNavBtn');
+  
+  // Inject button if missing (Supabase Auth takes over UI creation)
+  if (!authNavBtn) {
+    const navEl = document.querySelector('nav');
+    // Find My Profile link to place 'Sign In' next to
+    const desktopProfileLink = navEl
+      ? Array.from(navEl.querySelectorAll('a[href^="my-profile.html"]')).find(a => !a.closest('#mobileMenu'))
+      : null;
+      
+    if (desktopProfileLink) {
+      authNavBtn = document.createElement('button');
+      authNavBtn.id = 'athAuthNavBtn';
+      authNavBtn.type = 'button';
+      authNavBtn.className = 'ml-3 px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 transition';
+      desktopProfileLink.insertAdjacentElement('afterend', authNavBtn);
+    }
+  }
+
   if (authNavBtn) {
     if (isSignedIn) {
       authNavBtn.textContent = `Logout (${currentUser?.email || ''})`;

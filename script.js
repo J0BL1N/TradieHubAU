@@ -1659,7 +1659,7 @@ function maskSensitiveKeepLast4(value) {
 // Global initialization
 document.addEventListener('DOMContentLoaded', () => {
   // Call other existing inits if they exist and aren't called elsewhere
-  if (typeof initAuthUI === 'function') initAuthUI();
+  // if (typeof initAuthUI === 'function') initAuthUI(); // Disabled: Supabase auth.js handles this now
   if (typeof initMessagesPage === 'function') initMessagesPage();
   if (typeof initProfilePage === 'function') initProfilePage();
 });
