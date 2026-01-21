@@ -182,6 +182,13 @@ function showSignInModal() {
   if (!signInModal) {
     createSignInModal();
   }
+  
+  // Clear form fields
+  const emailInput = document.getElementById('athSignInEmail');
+  const passwordInput = document.getElementById('athSignInPassword');
+  if (emailInput) emailInput.value = '';
+  if (passwordInput) passwordInput.value = '';
+  
   signInModal.style.display = 'flex';
 }
 
@@ -311,7 +318,7 @@ async function handleEmailSignIn(e) {
   
   console.log('🔐 Signing in with email:', email);
   
-  const { user, error } = await signInWithEmail(email, password);
+  const { user, session, error } = await signInWithEmail(email, password);
   
   if (error) {
     console.error('❌ Email sign-in failed:', error.message);
@@ -322,9 +329,17 @@ async function handleEmailSignIn(e) {
         duration: 4000
       });
     }
-  } else {
-    hideSignInModal();
+    // Don't close modal on error - let user try again
+    return;
   }
+  
+  // Success - modal will auto-hide when SIGNED_IN event fires
+  console.log('✅ Sign-in initiated, waiting for auth state change...');
+  
+  // Give Supabase a moment to fire the auth state change event
+  setTimeout(() => {
+    hideSignInModal();
+  }, 500);
 }
 
 /**
