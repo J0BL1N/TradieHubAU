@@ -361,15 +361,84 @@
     </div>
   </footer>
 
+  <!-- Supabase Client & Jobs API -->
+  <script type="module" src="supabase-client.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="jobs-api.js"></script>
+  
   <script src="data.js"></script>
   <script src="components/search-filter.js"></script>
   <script src="script.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      if (window.ATHSearchFilter && typeof window.ATHSearchFilter.initJobsBoard === 'function') {
-        window.ATHSearchFilter.initJobsBoard();
+  <script type="module">
+    import { getJobs, seedDemoJobs } from './jobs-api.js';
+    
+    document.addEventListener('DOMContentLoaded', async function () {
+      // Load jobs from Supabase
+      console.log('📋 Loading jobs from database...');
+      
+      const { jobs, error } = await getJobs({ status: 'open' });
+      
+      if (error) {
+        console.error('❌ Failed to load jobs:', error.message);
+        
+        // Check if database is empty
+        if (jobs.length === 0) {
+          console.log('💡 No jobs found. You can seed demo data by running: seedDemoJobs()');
+          
+          // Show message to user
+          const resultsContainer = document.getElementById('athJobResults');
+          if (resultsContainer) {
+            resultsContainer.innerHTML = `
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                <h3 class="font-bold text-blue-900 mb-2">No Jobs Yet</h3>
+                <p class="text-blue-700 mb-4">The database is empty. Would you like to add demo jobs?</p>
+                <button id="seedJobsBtn" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
+                  Add Demo Jobs
+                </button>
+              </div>
+            `;
+            
+            document.getElementById('seedJobsBtn').addEventListener('click', async () => {
+              console.log('🌱 Seeding demo jobs...');
+              const { jobs: seededJobs } = await seedDemoJobs();
+              if (seededJobs) {
+                window.location.reload(); // Reload to show new jobs
+              }
+            });
+          }
+        }
+      } else {
+        console.log(`✅ Loaded ${jobs.length} jobs from database`);
+        
+        // Store jobs globally for search-filter component
+        window.JOBS = jobs.map(job => ({
+          id: job.id,
+          title: job.title,
+          description: job.description,
+          categories: job.categories,
+          location: job.location,
+          state: job.state,
+          budgetMin: job.budget_min,
+          budgetMax: job.budget_max,
+          timeline: job.timeline,
+          urgency: job.urgency,
+          type: job.type,
+          quotes: job.quotes_count,
+          customerId: job.customer_id,
+          customerName: job.customer?.display_name || 'Customer',
+          postedAt: job.created_at,
+          status: job.status
+        }));
+        
+        // Initialize the jobs board filter
+        if (window.ATHSearchFilter && typeof window.ATHSearchFilter.initJobsBoard === 'function') {
+          window.ATHSearchFilter.initJobsBoard();
+        }
       }
     });
+    
+    // Export seedDemoJobs for console access
+    window.seedDemoJobs = seedDemoJobs;
   </script>
 
   <nav class="bottom-nav">
