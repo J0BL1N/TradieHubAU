@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,7 +8,7 @@
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -20,7 +20,7 @@
   <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
     <div class="container mx-auto px-4 py-3">
       <div class="flex justify-between items-center">
-        <a href="index.html" class="flex items-center space-x-2">
+        <a href="../index.html" class="flex items-center space-x-2">
           <div
             class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
             <i data-feather="tool" class="text-white w-6 h-6"></i>
@@ -29,7 +29,7 @@
         </a>
 
         <div class="hidden md:flex items-center space-x-1">
-          <a href="index.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Home</a>
+          <a href="../index.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Home</a>
           <a href="browse-trades.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Find Tradies</a>
           <a href="browse-customers.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Find
             Customers</a>
@@ -121,7 +121,7 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea name="description" required rows="6"
-              placeholder="Describe the job, access, materials, and anything importantâ€¦"
+              placeholder="Describe the job, access, materials, and anything important…"
               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></textarea>
           </div>
 
@@ -197,7 +197,7 @@
 
       <div class="border-t border-gray-800 pt-8">
         <div class="flex flex-col md:flex-row justify-between items-center">
-          <p class="text-gray-400 text-sm mb-4 md:mb-0">Â© 2024 AussieTradieHub. All rights reserved.</p>
+          <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2024 AussieTradieHub. All rights reserved.</p>
           <div class="flex space-x-6">
             <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
             <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
@@ -209,13 +209,13 @@
     </div>
   </footer>
 
-  <script src="data.js"></script>
-  <script src="script.js"></script>
+  <script src="../js/core/data.js"></script>
+  <script src="../js/core/script.js"></script>
   <script>
     const STORAGE_KEY = 'athPostedJobs';
 
     <script type="module">
-      import { supabase, getCurrentUser } from './supabase-client.js';
+      import { supabase, getCurrentUser } from \x27../js/core/supabase-client.js\x27;
 
       // Mobile menu handled by script.js (loaded separately)
 
@@ -265,7 +265,7 @@
             selectedEl.innerHTML = Array.from(selected).map((id) => (
               `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">
                 ${tradeLabel(id)}
-                <button type="button" data-remove-trade="${id}" class="text-teal-700 hover:text-teal-900">Ã—</button>
+                <button type="button" data-remove-trade="${id}" class="text-teal-700 hover:text-teal-900">×</button>
               </span>`
             )).join('');
             selectedEl.querySelectorAll('[data-remove-trade]').forEach((btn) => {
@@ -384,7 +384,7 @@
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item">
+    <a href="../index.html" class="bottom-nav-item">
       <i data-feather="home"></i>
       <span>Home</span>
     </a>

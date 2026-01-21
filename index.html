@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -9,7 +9,7 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/main/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -37,23 +37,23 @@
                     <a href="index.html" class="text-teal-600 font-semibold border-b-2 border-teal-600 pb-1">
                         <i data-feather="home" class="inline-block w-3 h-3 mr-1"></i>Home
                     </a>
-                    <a href="browse-trades.html" class="text-gray-700 hover:text-teal-600 transition">
+                    <a href="pages/browse-trades.html" class="text-gray-700 hover:text-teal-600 transition">
                         <i data-feather="users" class="inline-block w-3 h-3 mr-1"></i>Find Tradies
                     </a>
-                    <a href="browse-customers.html" class="text-gray-700 hover:text-teal-600 transition">
+                    <a href="pages/browse-customers.html" class="text-gray-700 hover:text-teal-600 transition">
                         <i data-feather="user-check" class="inline-block w-3 h-3 mr-1"></i>Find Customers
                     </a>
-                    <a href="jobs.html" class="text-gray-700 hover:text-teal-600 transition">
+                    <a href="pages/jobs.html" class="text-gray-700 hover:text-teal-600 transition">
                         <i data-feather="briefcase" class="inline-block w-3 h-3 mr-1"></i>Job Board
                     </a>
-                    <a href="messages.html" class="relative text-gray-700 hover:text-teal-600 transition">
+                    <a href="pages/messages.html" class="relative text-gray-700 hover:text-teal-600 transition">
                         <i data-feather="message-square" class="inline-block w-3 h-3 mr-1"></i>Messages
                     </a>
                 </div>
 
                 <!-- User Actions -->
                 <div class="flex items-center space-x-3">
-                    <a href="my-profile.html"
+                    <a href="pages/my-profile.html"
                         class="hidden md:inline-flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:opacity-90 transition text-sm">
                         <i data-feather="user" class="w-3 h-3"></i>
                         <span>My Profile</span>
@@ -93,7 +93,7 @@
                                     class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                             </div>
                         </div>
-                        <a href="browse-trades.html"
+                        <a href="pages/browse-trades.html"
                             class="bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold py-2 px-6 rounded-lg hover:opacity-90 transition flex items-center justify-center text-sm">
                             <i data-feather="search" class="w-4 h-4 mr-1"></i>
                             Search Now
@@ -112,7 +112,7 @@
                     <h2 class="text-xl font-bold text-gray-900 mb-1">Featured Tradesmen</h2>
                     <p class="text-sm text-gray-600">Verified professionals with excellent ratings</p>
                 </div>
-                <a href="browse-trades.html"
+                <a href="pages/browse-trades.html"
                     class="text-teal-600 font-semibold hover:text-teal-700 transition flex items-center text-sm">
                     View All <i data-feather="arrow-right" class="w-4 h-4 ml-1"></i>
                 </a>
@@ -129,7 +129,7 @@
                                     class="w-12 h-12 rounded-full object-cover border-2 border-teal-100">
                                 <div>
                                     <h3 class="font-bold text-base text-gray-900">Mark Johnson</h3>
-                                    <p class="text-xs text-gray-600">Plumber â€¢ Sydney</p>
+                                    <p class="text-xs text-gray-600">Plumber • Sydney</p>
                                 </div>
                             </div>
                             <span
@@ -182,7 +182,7 @@
                                     class="w-12 h-12 rounded-full object-cover border-2 border-teal-100">
                                 <div>
                                     <h3 class="font-bold text-base text-gray-900">Sarah Chen</h3>
-                                    <p class="text-xs text-gray-600">Electrician â€¢ Melbourne</p>
+                                    <p class="text-xs text-gray-600">Electrician • Melbourne</p>
                                 </div>
                             </div>
                             <span
@@ -234,7 +234,7 @@
                                     class="w-12 h-12 rounded-full object-cover border-2 border-teal-100">
                                 <div>
                                     <h3 class="font-bold text-base text-gray-900">David Wilson</h3>
-                                    <p class="text-xs text-gray-600">Carpenter â€¢ Brisbane</p>
+                                    <p class="text-xs text-gray-600">Carpenter • Brisbane</p>
                                 </div>
                             </div>
                             <span
@@ -286,7 +286,7 @@
                                     class="w-12 h-12 rounded-full object-cover border-2 border-teal-100">
                                 <div>
                                     <h3 class="font-bold text-base text-gray-900">Lisa Brown</h3>
-                                    <p class="text-xs text-gray-600">Painter â€¢ Perth</p>
+                                    <p class="text-xs text-gray-600">Painter • Perth</p>
                                 </div>
                             </div>
                             <span
@@ -485,11 +485,11 @@
                 <div>
                     <h3 class="font-bold text-lg mb-4">For Customers</h3>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
-                        <li><a href="jobs.html" class="hover:text-white transition">Post a Job</a></li>
-                        <li><a href="browse-customers.html" class="hover:text-white transition">Browse Customers</a>
+                        <li><a href="pages/browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+                        <li><a href="pages/jobs.html" class="hover:text-white transition">Post a Job</a></li>
+                        <li><a href="pages/browse-customers.html" class="hover:text-white transition">Browse Customers</a>
                         </li>
-                        <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+                        <li><a href="pages/how-it-works.html" class="hover:text-white transition">How It Works</a></li>
                     </ul>
                 </div>
 
@@ -498,9 +498,9 @@
                     <ul class="space-y-2 text-gray-400">
                         <li><a href="my-profile.html?type=tradesman" class="hover:text-white transition">Create
                                 Profile</a></li>
-                        <li><a href="jobs.html" class="hover:text-white transition">Find Jobs</a></li>
-                        <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
-                        <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+                        <li><a href="pages/jobs.html" class="hover:text-white transition">Find Jobs</a></li>
+                        <li><a href="pages/resources.html" class="hover:text-white transition">Resources</a></li>
+                        <li><a href="pages/trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
                     </ul>
                 </div>
 
@@ -525,14 +525,14 @@
 
             <div class="border-t border-gray-800 pt-8">
                 <div class="flex flex-col md:flex-row justify-between items-center">
-                    <p class="text-gray-400 text-sm mb-4 md-mb-0">Â© 2024 AussieTradieHub. All rights reserved.</p>
+                    <p class="text-gray-400 text-sm mb-4 md-mb-0">© 2024 AussieTradieHub. All rights reserved.</p>
                     <div class="flex space-x-6">
-                        <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
-                        <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of
+                        <a href="pages/about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+                        <a href="pages/terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of
                             Service</a>
-                        <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy
+                        <a href="pages/privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy
                             Policy</a>
-                        <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+                        <a href="pages/cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
                     </div>
                 </div>
             </div>
@@ -545,35 +545,35 @@
             <i data-feather="home"></i>
             <span>Home</span>
         </a>
-        <a href="browse-trades.html" class="bottom-nav-item">
+        <a href="pages/browse-trades.html" class="bottom-nav-item">
             <i data-feather="users"></i>
             <span>Tradies</span>
         </a>
-        <a href="browse-customers.html" class="bottom-nav-item">
+        <a href="pages/browse-customers.html" class="bottom-nav-item">
             <i data-feather="user-check"></i>
             <span>Customers</span>
         </a>
-        <a href="jobs.html" class="bottom-nav-item">
+        <a href="pages/jobs.html" class="bottom-nav-item">
             <i data-feather="briefcase"></i>
             <span>Jobs</span>
         </a>
-        <a href="messages.html" class="bottom-nav-item">
+        <a href="pages/messages.html" class="bottom-nav-item">
             <i data-feather="message-square"></i>
             <span>Messages</span>
         </a>
-        <a href="my-profile.html" class="bottom-nav-item">
+        <a href="pages/my-profile.html" class="bottom-nav-item">
             <i data-feather="user"></i>
             <span>Profile</span>
         </a>
     </nav>
 
     <!-- Components -->
-    <script src="components/search-filter.js"></script>
-    <script src="script.js"></script>
+    <script src="js/components/search-filter.js"></script>
+    <script src="js/core/script.js"></script>
     
     <!-- Supabase Client & Authentication -->
-    <script type="module" src="supabase-client.js"></script>
-    <script type="module" src="auth.js"></script>
+    <script type="module" src="js/core/supabase-client.js"></script>
+    <script type="module" src="js/core/auth.js"></script>
     
     <script>
         // Mobile menu handled by script.js

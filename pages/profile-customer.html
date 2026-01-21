@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,7 +8,7 @@
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -32,7 +32,7 @@
 
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
-          <a href="index.html" class="text-gray-700 hover:text-teal-600 transition">
+          <a href="../index.html" class="text-gray-700 hover:text-teal-600 transition">
             <i data-feather="home" class="inline-block w-3 h-3 mr-1"></i>Home
           </a>
           <a href="browse-trades.html" class="text-gray-700 hover:text-teal-600 transition">
@@ -89,7 +89,7 @@
 
           <div class="mt-4">
             <h1 id="customerName" class="text-2xl font-bold text-gray-900">Customer Name</h1>
-            <p id="customerMeta" class="text-gray-600 mt-1">Location â€¢ Tagline</p>
+            <p id="customerMeta" class="text-gray-600 mt-1">Location • Tagline</p>
 
             <div class="mt-3 flex flex-wrap gap-2">
               <span
@@ -129,7 +129,7 @@
           <div class="flex justify-end">
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 w-full md:w-auto">
               <p class="text-xs text-gray-500">Response expectations</p>
-              <p class="font-semibold text-gray-900 text-sm mt-1">Clear scope â€¢ Prompt replies</p>
+              <p class="font-semibold text-gray-900 text-sm mt-1">Clear scope • Prompt replies</p>
             </div>
           </div>
 
@@ -189,8 +189,8 @@
     </div>
   </main>
 
-  <script src="data.js"></script>
-  <script src="script.js"></script>
+  <script src="../js/core/data.js"></script>
+  <script src="../js/core/script.js"></script>
 
   <script>
     // Load customer by querystring: profile-customer.html?id=michael-roberts
@@ -211,7 +211,7 @@
               typeColor: 'bg-blue-500',
               location: (u.privacy && u.privacy.showLocation) ? `${u.location?.suburb || ''}${u.location?.state ? ', ' + u.location.state : ''}`.replace('undefined', '').replace(' ,', '').trim() : 'Hidden',
               tagline: 'Your public customer profile preview',
-              rating: 'â€”',
+              rating: '—',
               reviews: '',
               image: (u.avatarDataUrl || u.avatar) || 'https://static.photos/people/320x240/301',
               conversationId: 'me',
@@ -273,7 +273,7 @@
                     <div class="font-bold text-gray-900">${esc(job.title || 'Job')}</div>
                     <div class="mt-1 text-sm text-gray-600 flex items-center">
                       <i data-feather="map-pin" class="w-4 h-4 mr-1"></i>
-                      <span>${esc(job.location || 'â€”')}</span>
+                      <span>${esc(job.location || '—')}</span>
                     </div>
                   </div>
                   <span class="${statusPill(st)} text-xs font-semibold px-3 py-1 rounded-full">${esc(st.replace('_', ' '))}</span>
@@ -351,7 +351,7 @@
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item">
+    <a href="../index.html" class="bottom-nav-item">
       <i data-feather="home"></i>
       <span>Home</span>
     </a>
