@@ -371,28 +371,18 @@
             const filePath = `${fileName}`;
             
             // Import upload function dynamically if needed or assume it's available
-            const { uploadAvatar, getPublicUrl } = await import('./supabase-client.js');
+            const { uploadAvatar } = await import('./supabase-client.js');
             
-            const { data, error } = await uploadAvatar(file); // helper handles bucket logic
+            const { url, error } = await uploadAvatar(userId, file);
             
             if (error) throw error;
-            
-            // Get public URL
-            // const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.path);
-             /* The helper uploadAvatar returns the path or full object. 
-                Let's assume we need to construct the URL or the helper does it. 
-                Checking supabase-client.js... it returns {data, error}. 
-                We usually store the public URL. */
-            
-             // Construct public URL (assuming bucket is public)
-             const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.path);
              
              // Update profile immediately with new avatar URL
-             await updateUserProfile(userId, { avatar_url: publicUrl });
+             await updateUserProfile(userId, { avatar_url: url });
              
              // Update UI
-             document.getElementById('mpAvatar').src = publicUrl;
-             console.log('✅ Avatar uploaded:', publicUrl);
+             document.getElementById('mpAvatar').src = url;
+             console.log('✅ Avatar uploaded:', url);
              
           } catch (uploadError) {
             console.error('❌ Upload failed:', uploadError);
@@ -412,9 +402,30 @@
             display_name: document.getElementById('mpDisplayName').value,
             suburb: document.getElementById('mpSuburb').value,
             state: document.getElementById('mpState').value,
+            postcode: document.getElementById('mpPostcode').value,
             phone: document.getElementById('mpPhone').value,
+            abn: document.getElementById('mpAbn')?.value || null,
+            license: document.getElementById('mpLicense')?.value || null,
+            show_location: document.getElementById('mpShowLocation')?.checked || false,
+            address_reveal_rule: document.getElementById('mpAddressRule')?.value || 'afterAccepted',
             updated_at: new Date().toISOString()
           };
+          
+          // Get selected role from role buttons
+          const activeRoleBtn = document.querySelector('.mpRoleBtn.bg-teal-50');
+          if (activeRoleBtn) {
+            updates.role = activeRoleBtn.dataset.role;
+          }
+          
+          // Get selected trades (if applicable)
+          const tradesInput = document.getElementById('mpTrades');
+          if (tradesInput && tradesInput.value) {
+            try {
+              updates.trades = JSON.parse(tradesInput.value);
+            } catch (e) {
+              updates.trades = [];
+            }
+          }
           
           saveBtn.disabled = true;
           saveBtn.innerHTML = '<i class="animate-spin" data-feather="loader"></i> Saving...';
