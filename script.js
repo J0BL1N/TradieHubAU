@@ -2515,7 +2515,65 @@ function initMessagesPage() {
         `;
       }
       
+      
+      // v0.100: Photo Set Rendering
+      if (m.type === 'photoSet' && Array.isArray(m.photos)) {
+        const photosHtml = m.photos.map((p, idx) => {
+            // Determine grid size classes based on count
+            const isSingle = m.photos.length === 1;
+            const sizeClass = isSingle ? 'h-48 w-full' : 'h-24 w-full';
+            
+            return `
+              <div class="relative overflow-hidden rounded-lg bg-gray-100 cursor-pointer group border border-gray-200" onclick="window.openLightbox('${escapeHtml(p.src)}')">
+                <img src="${escapeHtml(p.src)}" class="${sizeClass} object-cover group-hover:scale-105 transition-transform duration-500" />
+                ${p.label ? `<span class="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/20 uppercase tracking-wide">${escapeHtml(p.label)}</span>` : ''}
+              </div>
+            `;
+        }).join('');
+        
+        const gridClass = m.photos.length === 1 ? 'grid-cols-1' : (m.photos.length === 2 ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3');
+
+        wrap.innerHTML = m.from === 'me'
+        ? `
+          <div class="flex flex-col items-end max-w-lg">
+            <div class="relative group">
+              <div class="bg-teal-600 p-3 rounded-xl text-white">
+                <div class="flex items-center gap-2 mb-2 border-b border-teal-500/50 pb-2">
+                    <i data-feather="layers" class="w-4 h-4 text-teal-200"></i>
+                    <span class="font-bold text-sm">${escapeHtml(m.caption || 'Photo Set')}</span>
+                </div>
+                <div class="grid ${gridClass} gap-2 mb-1">
+                    ${photosHtml}
+                </div>
+              </div>
+              ${timeHtml}
+            </div>
+          </div>
+        `
+        : `
+          <div class="flex flex-col items-start max-w-lg">
+             <div class="relative group">
+              <div class="bg-white border border-gray-200 p-3 rounded-xl">
+                <div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-2">
+                    <i data-feather="layers" class="w-4 h-4 text-teal-600"></i>
+                    <span class="font-bold text-sm text-gray-800">${escapeHtml(m.caption || 'Photo Set')}</span>
+                </div>
+                <div class="grid ${gridClass} gap-2 mb-1">
+                    ${photosHtml}
+                </div>
+              </div>
+              ${timeHtml}
+            </div>
+          </div>
+        `;
+        chat.appendChild(wrap);
+        // Ensure feather icons render inside the specific message
+        if (typeof feather !== 'undefined') setTimeout(() => feather.replace(), 0);
+        return; // Skip default rendering
+      }
+      
       // Convert URLs in text to clickable links
+
       let displayText = escapeHtml(messageText);
       if (urls) {
         urls.forEach(url => {
@@ -5605,4 +5663,165 @@ window.openGallery = function() {
 window.closeGallery = function() {
   const modal = document.getElementById('galleryModal');
   if (modal) modal.classList.add('hidden');
+};
+
+// ============================================================================
+// v0.100: Photo Documentation Sets
+// ============================================================================
+
+let currentPhotoSet = []; // { file, label, preview, id }
+
+window.openPhotoSetBuilder = function() {
+  currentPhotoSet = [];
+  renderPhotoSetBuilder();
+  const modal = document.getElementById('photoSetModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closePhotoSetBuilder = function() {
+  const modal = document.getElementById('photoSetModal');
+  if (modal) modal.classList.add('hidden');
+  currentPhotoSet = [];
+};
+
+window.handlePhotoSetFiles = async function(files) {
+  if (!files || files.length === 0) return;
+  
+  for (const file of files) {
+    // Basic validation
+    if (!file.type.startsWith('image/')) continue;
+    
+    // Process image (compress/resize)
+    // Reuse existing compression if available, or simple read
+    let preview = '';
+    if (window.ATHImages && window.ATHImages.processImageFile) {
+        const processed = await window.ATHImages.processImageFile(file, { maxDim: 1200, quality: 0.8 });
+        preview = processed.base64;
+    } else {
+         preview = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(file);
+         });
+    }
+
+    currentPhotoSet.push({
+      id: Date.now() + Math.random().toString(36).substr(2, 5),
+      file,
+      label: 'Before', // Default
+      preview
+    });
+  }
+  
+  renderPhotoSetBuilder();
+};
+
+function renderPhotoSetBuilder() {
+  const listEl = document.getElementById('photoSetList');
+  const countEl = document.getElementById('photoSetCount');
+  if (!listEl) return;
+  
+  if (countEl) countEl.textContent = `${currentPhotoSet.length} selected`;
+
+  if (currentPhotoSet.length === 0) {
+    listEl.innerHTML = `
+      <div class="text-center text-gray-400 py-8 border-2 border-dashed border-gray-200 rounded-lg">
+        No photos added yet.
+      </div>`;
+    return;
+  }
+
+  const LABELS = ['Before', 'During', 'After', 'Complete', 'Issue', 'Other'];
+
+  listEl.innerHTML = currentPhotoSet.map(item => `
+    <div class="flex items-center gap-4 bg-gray-50 p-2 rounded-lg border border-gray-200">
+      <img src="${item.preview}" class="w-16 h-16 object-cover rounded-md flex-shrink-0" />
+      <div class="flex-1 min-w-0">
+        <select onchange="window.updatePhotoLabel('${item.id}', this.value)" class="w-full text-sm border border-gray-300 rounded px-2 py-1 bg-white">
+          ${LABELS.map(l => `<option value="${l}" ${item.label === l ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <button onclick="window.removePhotoFromSet('${item.id}')" class="p-2 text-gray-400 hover:text-red-500">
+        <i data-feather="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+  `).join('');
+  
+  if (typeof feather !== 'undefined') feather.replace();
+}
+
+window.updatePhotoLabel = function(id, newVal) {
+  const item = currentPhotoSet.find(i => i.id === id);
+  if (item) item.label = newVal;
+};
+
+window.removePhotoFromSet = function(id) {
+  currentPhotoSet = currentPhotoSet.filter(i => i.id !== id);
+  renderPhotoSetBuilder();
+};
+
+window.sendPhotoSet = function() {
+  if (currentPhotoSet.length === 0) {
+    alert('Please add at least one photo.');
+    return;
+  }
+  
+  const caption = (document.getElementById('photoSetCaption')?.value || '').trim();
+  
+  const payload = {
+    type: 'photoSet',
+    setId: 'set_' + Date.now(),
+    caption,
+    photos: currentPhotoSet.map(p => ({
+      src: p.preview,
+      label: p.label
+    }))
+  };
+
+  // Use existing helper to send message
+  // We need to access logic inside script.js or trigger send
+  // Since we are appending, we can assume access to 'sendMessage' function if global? 
+  // checking... 'sendMessage' is internal to handling UI, but we have 'handleSend()'
+  // best way is to inject into sendMessage flow or manual construct.
+  // Actually, let's call existing logic.
+  
+  // Create message object manually and append
+  const user = getCurrentUser(); // Assume global or need to find
+  // Reuse existing logic from handleSend equivalent? 
+  // Let's modify handleSend or duplicate logic to ensure consistency.
+  // For safety, I'll access the current conversation ID and append directly via helper if possible.
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentConvoId = urlParams.get('conversation');
+  if (!currentConvoId) return;
+
+  const msg = {
+    id: Date.now(), // simple ID
+    from: 'me',
+    ...payload,
+    ts: Date.now()
+  };
+  
+  // Persist
+  // We need to call internal save logic. 
+  // BUT: script.js has 'DATA' var.
+  // I will use localStorage manipulation to be safe, then reload UI logic?
+  // Ideally, I should expose a 'sendExternalMessage' helper in script.js, but I'm appending.
+  
+  // Direct injection to localStorage for prototype
+  const DATA = window.ATHStore.get('athMessagesData', {});
+  if (DATA[currentConvoId]) {
+    DATA[currentConvoId].messages.push(msg);
+    // Update preview
+    DATA[currentConvoId].preview = `📷 Photo Set: ${caption || (currentPhotoSet.length + ' photos')}`;
+    DATA[currentConvoId].ts = msg.ts;
+    window.ATHStore.set('athMessagesData', DATA);
+    
+    // Refresh UI
+    if (typeof renderMessages === 'function') renderMessages();
+    if (typeof renderConversations === 'function') renderConversations();
+    if (typeof scrollToBottom === 'function') scrollToBottom();
+  }
+  
+  window.closePhotoSetBuilder();
 };

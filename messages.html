@@ -300,6 +300,10 @@
                 <button class="hidden sm:block p-2 hover:bg-gray-100 rounded-full text-gray-500" type="button" aria-label="Attach file" onclick="document.getElementById('imageInput').click()">
                   <i data-feather="paperclip" class="w-5 h-5"></i>
                 </button>
+                <!-- v0.100: Photo Set Button -->
+                <button class="hidden sm:block p-2 hover:bg-gray-100 rounded-full text-gray-500" type="button" aria-label="Create Photo Set" title="Create Photo Set (Before/After)" onclick="window.openPhotoSetBuilder()">
+                  <i data-feather="layers" class="w-5 h-5"></i>
+                </button>
                 
                 <div class="flex-1 relative flex items-center bg-gray-50 border border-gray-200 rounded-full px-1">
                   <!-- v0.070: Voice Message Button -->
@@ -469,6 +473,53 @@
       <div id="galleryEmpty" class="hidden flex flex-col items-center justify-center h-full text-gray-500 mt-20">
         <i data-feather="image" class="w-12 h-12 mb-3 opacity-50"></i>
         <p>No images shared yet.</p>
+      </div>
+    </div>
+  </div>
+
+    </div>
+  </div>
+
+  <!-- v0.100: Photo Set Builder Modal -->
+  <div id="photoSetModal" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center transition-opacity duration-200">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
+      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 class="font-bold text-gray-900">Create Photo Set</h3>
+        <button onclick="window.closePhotoSetBuilder()" class="text-gray-500 hover:text-gray-700">
+          <i data-feather="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <div class="p-4 flex-1 overflow-y-auto">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Add Photos</label>
+          <div class="flex gap-2">
+            <button onclick="document.getElementById('photoSetInput').click()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-2 transition">
+              <i data-feather="plus" class="w-4 h-4"></i> Add Images
+            </button>
+            <input type="file" id="photoSetInput" accept="image/*" multiple class="hidden" onchange="window.handlePhotoSetFiles(this.files)" />
+            <span id="photoSetCount" class="self-center text-sm text-gray-500">0 selected</span>
+          </div>
+        </div>
+
+        <div id="photoSetList" class="space-y-3 mb-4">
+          <!-- Rendered items: { thumb, labelDropdown, removeBtn } -->
+          <div class="text-center text-gray-400 py-8 border-2 border-dashed border-gray-200 rounded-lg">
+            No photos added yet.
+          </div>
+        </div>
+        
+        <div class="mb-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Set Caption</label>
+          <input type="text" id="photoSetCaption" placeholder="e.g. Bathroom Renovation Progress" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end gap-2">
+        <button onclick="window.closePhotoSetBuilder()" class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition">Cancel</button>
+        <button onclick="window.sendPhotoSet()" class="px-4 py-2 bg-teal-600 text-white font-medium hover:bg-teal-700 rounded-lg shadow-sm transition flex items-center">
+          <i data-feather="send" class="w-4 h-4 mr-2"></i> Send Set
+        </button>
       </div>
     </div>
   </div>
