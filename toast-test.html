@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d9488" />
+    <title>Toast Notification Test | AussieTradieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="font-inter bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">
+        Toast Notification Test
+      </h1>
+      <p class="text-gray-600 mb-8">
+        Test the Phase 1 toast notification system.
+      </p>
+
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4"
+      >
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Demo Triggers</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- New Application Toast -->
+          <button
+            onclick="showApplicationToast()"
+            class="bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-medium py-3 px-4 rounded-lg hover:opacity-90 transition"
+          >
+            <i data-feather="briefcase" class="inline-block w-4 h-4 mr-2"></i>
+            New Application
+          </button>
+
+          <!--  Message Received Toast -->
+          <button
+            onclick="showMessageToast()"
+            class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium py-3 px-4 rounded-lg hover:opacity-90 transition"
+          >
+            <i
+              data-feather="message-circle"
+              class="inline-block w-4 h-4 mr-2"
+            ></i>
+            Message Received
+          </button>
+
+          <!-- Generic Toast -->
+          <button
+            onclick="showGenericToast()"
+            class="bg-gray-100 text-gray-700 font-medium py-3 px-4 rounded-lg hover:bg-gray-200 transition"
+          >
+            <i data-feather="bell" class="inline-block w-4 h-4 mr-2"></i>
+            Generic Notification
+          </button>
+
+          <!-- Toast with Link -->
+          <button
+            onclick="showToastWithLink()"
+            class="bg-emerald-100 text-emerald-700 font-medium py-3 px-4 rounded-lg hover:bg-emerald-200 transition"
+          >
+            <i data-feather="link" class="inline-block w-4 h-4 mr-2"></i>
+            With Action Link
+          </button>
+
+          <!-- Multiple Toasts (Stack Test) -->
+          <button
+            onclick="showMultipleToasts()"
+            class="bg-purple-100 text-purple-700 font-medium py-3 px-4 rounded-lg hover:bg-purple-200 transition col-span-full"
+          >
+            <i data-feather="layers" class="inline-block w-4 h-4 mr-2"></i>
+            Test Multiple Toasts (Stack)
+          </button>
+        </div>
+
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 class="font-semibold text-blue-900 mb-2">
+            Accessibility Features
+          </h3>
+          <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>Auto-dismiss after 5 seconds</li>
+            <li>Respects <code>prefers-reduced-motion</code></li>
+            <li>ARIA live regions for screen readers</li>
+            <li>Keyboard accessible (close button)</li>
+            <li>Non-blocking UI (doesn't interrupt workflow)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div
+        class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+      >
+        <h2 class="text-xl font-bold text-gray-900 mb-4">
+          Integration Examples
+        </h2>
+        <div class="space-y-3">
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">
+              Job Application Event
+            </h3>
+            <pre
+              class="bg-gray-100 p-3 rounded-lg text-sm overflow-x-auto"
+            ><code>window.ATHToast.show({
+  message: 'New application received for Kitchen Renovation!',
+  icon: 'briefcase',
+  link: { href: 'jobs.html#job-123', label: 'View Job' }
+});</code></pre>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">
+              Message Received Event
+            </h3>
+            <pre
+              class="bg-gray-100 p-3 rounded-lg text-sm overflow-x-auto"
+            ><code>window.ATHToast.show({
+  message: 'New message from Sarah Johnson',
+  icon: 'message-circle',
+  link: { href: 'messages.html?conversation=conv-456', label: 'View' }
+});</code></pre>
+          </div>
+
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Custom Duration</h3>
+            <pre
+              class="bg-gray-100 p-3 rounded-lg text-sm overflow-x-auto"
+            ><code>window.ATHToast.show({
+  message: 'This stays for 10 seconds',
+  icon: 'clock',
+  duration: 10000
+});</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+    <script>
+      feather.replace();
+
+      // Demo toast functions
+      function showApplicationToast() {
+        window.ATHToast.show({
+          message: "New application received for Kitchen Renovation!",
+          icon: "briefcase",
+          link: { href: "jobs.html", label: "View Jobs" },
+        });
+      }
+
+      function showMessageToast() {
+        window.ATHToast.show({
+          message: "New message from Sarah Johnson",
+          icon: "message-circle",
+          link: { href: "messages.html", label: "View Message" },
+        });
+      }
+
+      function showGenericToast() {
+        window.ATHToast.show({
+          message: "This is a generic notification",
+          icon: "bell",
+        });
+      }
+
+      function showToastWithLink() {
+        window.ATHToast.show({
+          message: "Profile update successful",
+          icon: "check-circle",
+          link: { href: "my-profile.html", label: "View Profile" },
+        });
+      }
+
+      function showMultipleToasts() {
+        setTimeout(
+          () =>
+            window.ATHToast.show({
+              message: "First notification",
+              icon: "inbox",
+            }),
+          0,
+        );
+        setTimeout(
+          () =>
+            window.ATHToast.show({
+              message: "Second notification",
+              icon: "star",
+            }),
+          300,
+        );
+        setTimeout(
+          () =>
+            window.ATHToast.show({
+              message: "Third notification",
+              icon: "heart",
+            }),
+          600,
+        );
+      }
+    </script>
+  </body>
+</html>

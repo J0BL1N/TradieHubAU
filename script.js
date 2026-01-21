@@ -921,6 +921,133 @@ window.ATHAvailability = window.ATHAvailability || (function () {
 })();
 
 // ----------------------------
+// v0.0298: Toast Notifications (Phase 1)
+// ----------------------------
+// Reusable toast notification system for "New Application" and "Message Received" events.
+// Design:
+// - Auto-dismiss after configurable duration (default 5s)
+// - Respects prefers-reduced-motion
+// - Non-blocking (fixed position, doesn't interrupt workflow)
+// - Stack multiple toasts vertically
+// Usage:
+//   window.ATHToast.show({ message: 'New application received!', icon: 'briefcase' });
+window.ATHToast = window.ATHToast || (function () {
+  const CONTAINER_ID = 'athToastContainer';
+  let toastCounter = 0;
+
+  function ensureContainer() {
+    let container = document.getElementById(CONTAINER_ID);
+    if (container) return container;
+
+    container = document.createElement('div');
+    container.id = CONTAINER_ID;
+    container.className = 'fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none';
+    container.setAttribute('aria-live', 'polite');
+    container.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(container);
+    return container;
+  }
+
+  function show(opts) {
+    const o = opts || {};
+    const message = String(o.message || 'Notification');
+    const icon = String(o.icon || 'bell');
+    const duration = Number(o.duration || 5000);
+    const link = o.link || null; // Optional: { href: '...', label: 'View' }
+
+    const container = ensureContainer();
+    const toastId = `athToast-${++toastCounter}`;
+
+    // Check for reduced motion preference
+    const prefersReducedMotion = (() => {
+      try {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch {
+        return false;
+      }
+    })();
+
+    const animateIn = prefersReducedMotion ? '' : 'ath-toast-slide-in';
+    const animateOut = prefersReducedMotion ? '' : 'ath-toast-fade-out';
+
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `pointer-events-auto bg-white rounded-xl shadow-lg border border-gray-200 p-4 max-w-sm ${animateIn}`;
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+
+    const iconHtml = icon ? `<i data-feather="${icon}" class="w-5 h-5 text-teal-600"></i>` : '';
+    const linkHtml = link
+      ? `<a href="${link.href}" class="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 inline-block">${link.label || 'View'}</a>`
+      : '';
+
+    toast.innerHTML = `
+      <div class="flex items-start gap-3">
+        ${iconHtml ? `<div class="mt-0.5">${iconHtml}</div>` : ''}
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-900">${escapeHtml(message)}</p>
+          ${linkHtml}
+        </div>
+        <button type="button" class="p-1 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Dismiss" data-ath-toast-close>
+          <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Replace feather icons
+    if (typeof feather !== 'undefined') feather.replace();
+
+    // Wire close button
+    const closeBtn = toast.querySelector('[data-ath-toast-close]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => dismiss(toastId));
+    }
+
+    // Auto-dismiss
+    if (duration > 0) {
+      setTimeout(() => dismiss(toastId), duration);
+    }
+
+    return toastId;
+  }
+
+  function dismiss(toastId) {
+    const toast = document.getElementById(toastId);
+    if (!toast) return;
+
+    // Check for reduced motion
+    const prefersReducedMotion = (() => {
+      try {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (prefersReducedMotion) {
+      toast.remove();
+    } else {
+      toast.classList.add('ath-toast-fade-out');
+      setTimeout(() => toast.remove(), 300);
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  return { show, dismiss };
+})();
+
+
+// ----------------------------
 // v0.0297: Customer booked-jobs calendar (profile block)
 // ----------------------------
 // Calendar mental model: show commitments (accepted jobs), not all posted jobs.
