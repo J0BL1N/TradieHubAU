@@ -1,0 +1,438 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post a Job | AussieTradieHub</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body class="font-inter bg-gray-50">
+
+  <!-- Main Navigation -->
+  <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
+        <a href="index.html" class="flex items-center space-x-2">
+          <div
+            class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+            <i data-feather="tool" class="text-white w-6 h-6"></i>
+          </div>
+          <span class="text-xl font-bold text-gray-900">AussieTradieHub</span>
+        </a>
+
+        <div class="hidden md:flex items-center space-x-1">
+          <a href="index.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Home</a>
+          <a href="browse-trades.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Find Tradies</a>
+          <a href="browse-customers.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Find
+            Customers</a>
+          <a href="jobs.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Jobs</a>
+          <a href="messages.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Messages</a>
+          <a href="my-profile.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">My Profile</a>
+        </div>
+
+
+      </div>
+
+
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
+        <div class="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Post a Job</h1>
+            <p class="text-gray-600 mt-1">Create a job listing to get quotes from trusted tradies.</p>
+          </div>
+          <a href="jobs.html" class="text-teal-600 hover:text-teal-700 font-medium">Back to Jobs</a>
+        </div>
+
+        <form id="postJobForm" class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Job title</label>
+            <input name="title" required maxlength="80" placeholder="e.g., Replace downlights in living room"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Trades / Categories</label>
+              <p class="text-xs text-gray-500 mb-2">Select all that apply to this job (e.g., Electrician + Painter +
+                Plumber).</p>
+              <input type="hidden" name="categories" id="athJobCategories" value="">
+
+              <div class="border border-gray-300 rounded-xl bg-white">
+                <button type="button" id="athTradePickerToggle"
+                  class="w-full px-4 py-3 flex items-center justify-between text-left">
+                  <span class="text-sm text-gray-700 font-medium">Choose trades</span>
+                  <span class="text-xs text-gray-500" id="athTradePickerCount">0 selected</span>
+                </button>
+                <div id="athTradePickerPanel" class="hidden border-t border-gray-200">
+                  <div class="p-3">
+                    <input id="athTradePickerSearch" type="text" placeholder="Search trades..."
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                    <div id="athTradePickerOptions" class="mt-3 max-h-56 overflow-auto space-y-2"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3 flex flex-wrap gap-2" id="athTradePickerSelected"></div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+              <select name="state" required
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                <option value="">Select a state</option>
+                <option value="NSW">NSW</option>
+                <option value="VIC">VIC</option>
+                <option value="QLD">QLD</option>
+                <option value="WA">WA</option>
+                <option value="SA">SA</option>
+                <option value="TAS">TAS</option>
+                <option value="ACT">ACT</option>
+                <option value="NT">NT</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Budget (AUD)</label>
+              <input name="budget" type="number" min="0" step="10" placeholder="e.g., 450"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Preferred date</label>
+              <input name="date" type="date"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea name="description" required rows="6"
+              placeholder="Describe the job, access, materials, and anything importantâ€¦"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></textarea>
+          </div>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p class="text-sm text-gray-700 font-medium">Demo mode</p>
+            <p class="text-sm text-gray-600 mt-1">This is a static prototype. Submitting will save your job in <span
+                class="font-mono">localStorage</span> and show it on the Jobs page.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="submit"
+              class="flex-1 bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold py-3 px-4 rounded-xl hover:opacity-90 transition">
+              Post Job
+            </button>
+            <button type="button" id="cancelBtn"
+              class="flex-1 bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-xl hover:bg-gray-50 transition">
+              Cancel
+            </button>
+          </div>
+
+          <p id="formError" class="text-sm text-red-600 hidden"></p>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white pt-12 pb-8 mt-12">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center space-x-2 mb-4">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+              <i data-feather="tool" class="text-white w-6 h-6"></i>
+            </div>
+            <h2 class="text-xl font-bold">AussieTradieHub</h2>
+          </div>
+          <p class="text-gray-400">Connecting trusted tradies with customers across Australia with full transparency.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">For Customers</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+            <li><a href="jobs.html" class="hover:text-white transition">Browse Jobs</a></li>
+            <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">For Tradies</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="browse-customers.html" class="hover:text-white transition">Find Customers</a></li>
+            <li><a href="my-profile.html" class="hover:text-white transition">Create Profile</a></li>
+            <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
+            <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">Contact</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li class="flex items-center"><i data-feather="mail" class="w-4 h-4 mr-2"></i> support@aussietradiehub.com
+            </li>
+            <li class="flex items-center"><i data-feather="phone" class="w-4 h-4 mr-2"></i> 1300 TRADIE (1300 872 343)
+            </li>
+            <li class="flex items-center"><i data-feather="map-pin" class="w-4 h-4 mr-2"></i> Sydney, Australia</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 pt-8">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-gray-400 text-sm mb-4 md:mb-0">Â© 2024 AussieTradieHub. All rights reserved.</p>
+          <div class="flex space-x-6">
+            <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+            <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+            <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+            <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    const STORAGE_KEY = 'athPostedJobs';
+
+    function readJobs() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function writeJobs(jobs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+    }
+
+    function slugify(s) {
+      return String(s || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .slice(0, 60);
+    }
+
+    // Mobile menu handled by script.js
+
+    document.getElementById('cancelBtn')?.addEventListener('click', function () {
+      window.location.href = 'jobs.html';
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof feather !== 'undefined') feather.replace();
+
+      // Batch L: trade/category multi-picker (canonical list from data.js)
+      const hiddenCats = document.getElementById('athJobCategories');
+      const toggleBtn = document.getElementById('athTradePickerToggle');
+      const panel = document.getElementById('athTradePickerPanel');
+      const searchInput = document.getElementById('athTradePickerSearch');
+      const optionsEl = document.getElementById('athTradePickerOptions');
+      const selectedEl = document.getElementById('athTradePickerSelected');
+      const countEl = document.getElementById('athTradePickerCount');
+
+      const catalog = Array.isArray(window.TRADE_CATEGORIES) ? window.TRADE_CATEGORIES : [];
+      const selected = new Set((hiddenCats?.value || '').split(',').map(s => s.trim()).filter(Boolean));
+
+      function tradeLabel(id) {
+        if (typeof window.tradeLabel === 'function') return window.tradeLabel(id);
+        const found = catalog.find(t => String(t.id) === String(id));
+        return found ? found.label : String(id || 'Other');
+      }
+
+      function setSelected(next) {
+        // next: iterable of ids
+        // IMPORTANT: callers often pass the same Set reference (`selected`).
+        // If we clear `selected` before reading `next`, we wipe out the incoming values.
+        // Snapshot first, then rebuild.
+        const snapshot = Array.from(next || []).map(s => String(s).trim()).filter(Boolean);
+        selected.clear();
+        snapshot.forEach(id => selected.add(id));
+        if (hiddenCats) hiddenCats.value = Array.from(selected).join(',');
+        if (countEl) countEl.textContent = `${selected.size} selected`;
+
+        if (selectedEl) {
+          selectedEl.innerHTML = Array.from(selected).map((id) => (
+            `<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">
+              ${tradeLabel(id)}
+              <button type="button" data-remove-trade="${id}" class="text-teal-700 hover:text-teal-900">Ã—</button>
+            </span>`
+          )).join('');
+          selectedEl.querySelectorAll('[data-remove-trade]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              selected.delete(btn.getAttribute('data-remove-trade'));
+              setSelected(selected);
+              renderOptions();
+            });
+          });
+        }
+      }
+
+      function renderOptions() {
+        if (!optionsEl) return;
+        const q = (searchInput?.value || '').toString().trim().toLowerCase();
+        const rows = catalog
+          .filter(t => !q || String(t.label).toLowerCase().includes(q) || String(t.id).toLowerCase().includes(q))
+          .map(t => {
+            // Always compare ids as strings (Set stores strings)
+            const idStr = String(t.id);
+            const checked = selected.has(idStr) ? 'checked' : '';
+            return `<label class="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" data-trade-id="${idStr}" class="rounded border-gray-300 text-teal-600 focus:ring-teal-500" ${checked} />
+              <span>${t.label}</span>
+            </label>`;
+          });
+        optionsEl.innerHTML = rows.join('') || `<p class="text-sm text-gray-500">No trades found.</p>`;
+      }
+
+      // Event delegation (more reliable than rebinding listeners on every render)
+      if (optionsEl && !optionsEl.dataset.athBound) {
+        optionsEl.dataset.athBound = '1';
+        optionsEl.addEventListener('change', (e) => {
+          const target = e.target;
+          if (!target || target.tagName !== 'INPUT') return;
+          const input = target;
+          if (input.type !== 'checkbox') return;
+          if (!input.matches('input[data-trade-id]')) return;
+          const id = String(input.getAttribute('data-trade-id') || '').trim();
+          if (!id) return;
+          if (input.checked) selected.add(id);
+          else selected.delete(id);
+          setSelected(selected);
+          // v0.024: Do NOT re-render the options list on every click.
+          // Re-rendering here rebuilds the checkbox DOM and can make selections feel like they don't persist.
+        });
+      }
+
+      toggleBtn?.addEventListener('click', () => {
+        panel?.classList.toggle('hidden');
+        renderOptions();
+      });
+      searchInput?.addEventListener('input', renderOptions);
+
+      setSelected(selected);
+      renderOptions();
+
+      const form = document.getElementById('postJobForm');
+      const errorEl = document.getElementById('formError');
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const fd = new FormData(form);
+        const title = (fd.get('title') || '').toString().trim();
+        const categoriesRaw = (fd.get('categories') || '').toString().trim();
+        const categories = (categoriesRaw || (hiddenCats?.value || '')).split(',').map(s => s.trim()).filter(Boolean);
+        const state = (fd.get('state') || '').toString().trim();
+        const budget = (fd.get('budget') || '').toString().trim();
+        const date = (fd.get('date') || '').toString().trim();
+        const description = (fd.get('description') || '').toString().trim();
+
+        if (!title || !state || !description || categories.length === 0) {
+          errorEl.textContent = 'Please fill in the required fields (title, at least 1 trade/category, state, and description).';
+          errorEl.classList.remove('hidden');
+          return;
+        }
+
+        const jobs = readJobs();
+        const id = slugify(title) + '-' + Date.now();
+
+        // Associate posted jobs with the current customer profile.
+        // Current user is stored in localStorage under `athCurrentUser`.
+        let customerId = 'me';
+        try {
+          const rawUser = localStorage.getItem('athCurrentUser');
+          const u = rawUser ? JSON.parse(rawUser) : null;
+          if (u && u.id) customerId = String(u.id);
+        } catch { /* ignore */ }
+
+        jobs.unshift({
+          id,
+          title,
+          categories,
+          // Back-compat: keep a single human label for older code paths
+          category: categories[0] ? (typeof window.tradeLabel === 'function' ? window.tradeLabel(categories[0]) : categories[0]) : 'Other',
+          state,
+          budget: budget ? Number(budget) : null,
+          date: date || null,
+          description,
+          customerId,
+          createdAt: new Date().toISOString()
+        });
+
+        writeJobs(jobs);
+        window.location.href = 'jobs.html?posted=1';
+      });
+    });
+  </script>
+
+  <!-- Bottom Navigation (Mobile Only) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <i data-feather="home"></i>
+      <span>Home</span>
+    </a>
+    <a href="browse-trades.html" class="bottom-nav-item">
+      <i data-feather="users"></i>
+      <span>Tradies</span>
+    </a>
+    <a href="browse-customers.html" class="bottom-nav-item">
+      <i data-feather="user-check"></i>
+      <span>Customers</span>
+    </a>
+    <a href="jobs.html" class="bottom-nav-item">
+      <i data-feather="briefcase"></i>
+      <span>Jobs</span>
+    </a>
+    <a href="messages.html" class="bottom-nav-item">
+      <i data-feather="message-square"></i>
+      <span>Messages</span>
+    </a>
+    <a href="my-profile.html" class="bottom-nav-item">
+      <i data-feather="user"></i>
+      <span>Profile</span>
+    </a>
+  </nav>
+  <script>
+    (function () {
+      var path = window.location.pathname.split('/').pop() || 'index.html';
+      var items = document.querySelectorAll('.bottom-nav-item');
+      items.forEach(function (item) {
+        var href = item.getAttribute('href').split('?')[0];
+        if (href === path.split('?')[0]) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+      if (typeof feather !== 'undefined') feather.replace();
+    })();
+  </script>
+</body>
+
+</html>

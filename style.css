@@ -1,0 +1,866 @@
+/* Custom Styles for AussieTradieHub - Compact Design (FIXED for Tailwind CDN overrides) */
+
+/* Font Import */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* CSS Variables */
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  --ring: rgba(13, 148, 136, 0.5);
+}
+
+/* Base */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  text-align: left;
+}
+
+/* Layout helpers (avoid overriding Tailwind classnames)
+   Use these custom classes if you want consistent sizing/spacing site-wide. */
+.ath-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.ath-card {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+
+/* Headings */
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+/* IMPORTANT:
+   Do not redefine Tailwind utility classes like .bg-white, .p-8, .gap-6, etc.
+   If you need "compact" variants, create custom classes (e.g., .ath-card, .ath-gap-compact).
+*/
+.ath-gap-compact {
+  gap: 1rem;
+}
+
+.ath-mb-compact {
+  margin-bottom: 2rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(to right, #14b8a6, #06b6d4);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--gray-200);
+}
+
+.btn-outline {
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+.btn-outline:hover {
+  background: var(--gray-50);
+}
+
+/* Forms (component classes you can use if you want) */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.5rem;
+  transition:
+    box-shadow 0.2s ease,
+    border 0.2s ease;
+  background-color: #fff;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-select {
+  appearance: none;
+}
+
+/* Alerts */
+.alert-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.alert-info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+/* Avatars */
+.avatar-sm {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-md {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-lg {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-xl {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* Status dots */
+.status-online {
+  background: #22c55e;
+}
+
+.status-offline {
+  background: #9ca3af;
+}
+
+.status-busy {
+  background: #ef4444;
+}
+
+.status-away {
+  background: #f59e0b;
+}
+
+.status-online,
+.status-offline,
+.status-busy,
+.status-away {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  border: 2px solid white;
+}
+
+/* Message interactions */
+.message-bubble {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.message-bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Clickable conversations */
+.conversation-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.conversation-link:hover {
+  background: #f0f9ff;
+  transform: translateX(2px);
+}
+
+.conversation-link.active {
+  background: #e0f2fe;
+  border-left: 3px solid var(--primary);
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gray-800);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  z-index: 50;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* ----------------------------
+   CRITICAL FIX: Form text color
+   Tailwind CDN can inject CSS after your stylesheet.
+   Force readable typed text everywhere.
+----------------------------- */
+input,
+textarea,
+select {
+  color: #111827 !important;
+  /* gray-900-ish */
+  caret-color: #111827 !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+select:invalid {
+  color: #9ca3af !important;
+  /* gray-400 */
+}
+
+/* Prevent iOS/Safari weird autofill styling */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #111827 !important;
+  transition:
+    background-color 9999s ease-out,
+    color 9999s ease-out;
+}
+
+/* In case any parent sets text-white, keep inputs readable */
+input *,
+textarea *,
+select * {
+  color: inherit !important;
+}
+
+/* Print */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}
+
+/* ------------------------------------------------------------
+   Batch M — Mobile filter drawer (Jobs/Tradies/Customers)
+------------------------------------------------------------ */
+
+.ath-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 60;
+}
+
+.ath-filter-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(90vw, 360px);
+  z-index: 61;
+  transform: translateX(-105%);
+  transition: transform 180ms ease;
+}
+
+.ath-filter-drawer.ath-open {
+  transform: translateX(0);
+}
+
+.ath-body-lock {
+  overflow: hidden;
+}
+
+/* Desktop fallback: drawer behaves like normal sidebar on lg+ */
+@media (min-width: 1024px) {
+  .ath-filter-drawer {
+    position: static;
+    width: auto;
+    transform: none;
+    transition: none;
+    z-index: auto;
+  }
+
+  .ath-drawer-backdrop {
+    display: none !important;
+  }
+
+  .ath-body-lock {
+    overflow: auto;
+  }
+}
+
+/* ------------------------------------------------------------
+   Batch M — Mobile Improvements
+------------------------------------------------------------ */
+
+/* Ensure touch targets are at least 44px */
+button,
+a.btn-primary,
+a.btn-secondary,
+.nav-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fix Mobile Menu Button visibility */
+#mobileMenuButton {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#mobileMenuButton:hover {
+  background-color: var(--gray-100);
+}
+
+#mobileMenuButton svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Hero Section refinements for mobile */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .bg-white.rounded-lg.p-2.shadow-xl {
+    padding: 1rem;
+  }
+
+  /* Vertical spacing for stacked items */
+  .flex.flex-col.gap-2 > * {
+    margin-bottom: 0.5rem;
+  }
+
+  .flex.flex-col.gap-2 > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Smooth transitions for mobile menu */
+#mobileMenu {
+  transition: all 0.3s ease-in-out;
+}
+
+#mobileMenu.hidden {
+  display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+#mobileMenu:not(.hidden) {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card spacing on small screens */
+@media (max-width: 640px) {
+  .grid-cols-1 {
+    gap: 1.25rem;
+  }
+}
+
+/* Prevents iOS from zooming in on input focus by ensuring font-size is at least 16px */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Refine section spacing on mobile */
+  section {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  /* Make grid cards more prominent on small screens */
+  .grid {
+    gap: 1.5rem !important;
+  }
+}
+
+/* Improve button gradients for better visibility on small screens */
+.btn-primary,
+.bg-gradient-to-r.from-teal-500.to-cyan-600 {
+  background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%) !important;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Mobile-friendly scrollbar */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+/* ------------------------------------------------------------
+   Batch B — Bottom Navigation (Mobile Only)
+------------------------------------------------------------ */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 500;
+  flex: 1;
+  height: 100%;
+  transition: color 0.2s;
+}
+
+.bottom-nav-item i {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 4px;
+}
+
+.bottom-nav-item.active {
+  color: #0d9488;
+}
+
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* Mobile: prevent overlap with bottom nav */
+@media (max-width: 768px) {
+  body.messages-page {
+    padding-bottom: 70px; /* Bottom nav height + buffer */
+  }
+
+  /* Ensure message input area has extra padding on mobile */
+  .messages-page #athChatPane > div:last-child {
+    padding-bottom: 1rem !important;
+    margin-bottom: 70px !important; /* Keep input above bottom nav */
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Messages Page Mobile Optimizations
+/* -------------------------------------------------------------------------- */
+
+/* Ensure the detailed context panel (job info) is hidden on mobile by default to save space */
+@media (max-width: 768px) {
+  #jobDetailsCard {
+    display: none !important;
+  }
+}
+
+/* Mobile View States for Messages */
+@media (max-width: 768px) {
+  /* List View: Show Sidebar, Hide Chat */
+  .ath-mobile-list-view > aside:first-child {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  .ath-mobile-list-view > section,
+  .ath-mobile-list-view > #athMessagesEmptyState {
+    display: none !important;
+  }
+
+  /* Chat View: Hide Sidebar, Show Chat */
+  .ath-mobile-chat-view > aside:first-child {
+    display: none !important;
+  }
+
+  .ath-mobile-chat-view > section {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  /* When in chat view, ensure the empty state is visible only if we are truly empty state, 
+     BUT usually 'section' contains the chat pane which we want to show. 
+     Actually, section wraps both empty state and chat pane. 
+     If we want to show chat, we show section. */
+}
+
+/* Hide footer on messages page on mobile to prevent clutter */
+@media (max-width: 768px) {
+  body.messages-page footer {
+    display: none !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Messages Page Extra Refinements
+/* -------------------------------------------------------------------------- */
+
+body.messages-page #chatScroll {
+  background-color: #f0f2f5;
+  background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
+  background-attachment: fixed;
+}
+
+body.messages-page footer {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  body.messages-page .bottom-nav {
+    display: flex !important;
+  }
+  body.messages-page {
+    padding-bottom: 0 !important;
+  }
+  body.messages-page main {
+    height: calc(100vh - 64px); /* Account for bottom nav */
+  }
+}
+
+/* Ensure the chat pane is truly full height without odd gaps */
+#athMessagesContainer {
+  height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  min-height: 0 !important;
+}
+
+section.flex-1 {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+#athChatPane {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: visible !important; /* Allow emoji picker to overflow */
+}
+
+#chatScroll {
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  flex-basis: 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 1rem !important;
+  padding-bottom: 2rem !important; /* Space for last message to be visible */
+}
+
+main.flex-col > #athMessagesContainer {
+  flex-grow: 1 !important;
+}
+
+/* v0.060: Enhanced Message Search Styles */
+.search-result-highlight {
+  background-color: rgba(251, 191, 36, 0.1);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+.search-current-result {
+  animation: searchPulse 0.5s ease-in-out 2;
+}
+
+@keyframes searchPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+mark {
+  background-color: #fef08a;
+  color: #1f2937;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+/* v0.070: Voice Messages Styles */
+
+/* Recording button states */
+#voiceMicBtn {
+  transition: all 0.3s ease;
+}
+
+#voiceMicBtn.recording {
+  background-color: #dc2626;
+  color: white;
+  animation: recordingPulse 1.5s infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Voice message bubble */
+.voice-message-bubble {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  min-width: 200px;
+}
+
+.voice-play-button {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-center;
+  background-color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-play-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.voice-waveform {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+}
+
+.voice-waveform-bar {
+  flex: 1;
+  background-color: currentColor;
+  opacity: 0.6;
+  border-radius: 2px;
+  transition: height 0.1s ease;
+}
+
+.voice-duration {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Voice Message Enhancements (v0.075) */
+.voice-scrubber {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  outline: none;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.voice-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Darker scrubber for received messages */
+.voice-message-bubble.bg-white .voice-scrubber {
+  background: rgba(0, 0, 0, 0.1);
+}
+.voice-message-bubble.bg-white .voice-scrubber::-webkit-slider-thumb {
+  background: #0d9488; /* teal-600 */
+}
+
+.voice-speed-btn {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.2s;
+  min-width: 28px;
+  text-align: center;
+}
+.voice-speed-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.voice-message-bubble.bg-white .voice-speed-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+.voice-message-bubble.bg-white .voice-speed-btn:hover {
+  background: #e5e7eb;
+}

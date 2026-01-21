@@ -1,0 +1,750 @@
+// data.js
+// Global demo datasets for the static prototype.
+
+// ------------------------------------------------------------
+// Batch L — Canonical trades/categories (single source of truth)
+// ------------------------------------------------------------
+// IDs are stable keys used in filtering + storage. Labels are user-facing.
+window.TRADE_CATEGORIES = [
+  { id: 'electrical', label: 'Electrical' },
+  { id: 'plumbing', label: 'Plumbing' },
+  { id: 'carpentry', label: 'Carpentry' },
+  { id: 'painting', label: 'Painting' },
+  { id: 'tiling', label: 'Tiling' },
+  { id: 'building', label: 'Building' },
+  { id: 'gardening', label: 'Gardening' },
+  { id: 'cleaning', label: 'Cleaning' },
+  { id: 'handyman', label: 'Handyman' },
+  { id: 'other', label: 'Other' }
+];
+
+// Quick lookup maps
+window.TRADE_BY_ID = window.TRADE_CATEGORIES.reduce((acc, t) => {
+  acc[t.id] = t;
+  return acc;
+}, {});
+
+window.tradeLabel = function tradeLabel(id) {
+  const key = String(id || '').trim();
+  return (window.TRADE_BY_ID && window.TRADE_BY_ID[key]) ? window.TRADE_BY_ID[key].label : (key || 'Other');
+};
+
+window.normalizeTradeIds = function normalizeTradeIds(input) {
+  // Accept: array of ids, comma-separated string, or a single label.
+  const raw = Array.isArray(input)
+    ? input
+    : (typeof input === 'string' ? input.split(',') : [input]);
+
+  const out = [];
+  raw
+    .map(v => String(v || '').trim())
+    .filter(Boolean)
+    .forEach((v) => {
+      const norm = v.toLowerCase();
+      // allow passing labels in (e.g. "Plumbing")
+      const byLabel = window.TRADE_CATEGORIES.find(t => t.label.toLowerCase() === norm);
+      const id = byLabel ? byLabel.id : norm;
+      if (window.TRADE_BY_ID[id] && !out.includes(id)) out.push(id);
+    });
+
+  return out.length ? out : ['other'];
+};
+
+window.inferTradeIdsFromText = function inferTradeIdsFromText(text) {
+  const t = String(text || '').toLowerCase();
+  const ids = [];
+  const push = (id) => { if (window.TRADE_BY_ID[id] && !ids.includes(id)) ids.push(id); };
+
+  if (t.includes('electr')) push('electrical');
+  if (t.includes('plumb')) push('plumbing');
+  if (t.includes('carpent') || t.includes('fence') || t.includes('deck')) push('carpentry');
+  if (t.includes('paint')) push('painting');
+  if (t.includes('tile')) push('tiling');
+  if (t.includes('build') || t.includes('reno') || t.includes('contractor')) push('building');
+  if (t.includes('landscap') || t.includes('garden')) push('gardening');
+  if (t.includes('clean')) push('cleaning');
+  if (t.includes('handy') || t.includes('repairs') || t.includes('fix')) push('handyman');
+
+  return ids.length ? ids : ['other'];
+};
+
+// Batch N1: lightweight demo reviews so profiles can actually display review content.
+// We keep datasets small by generating up to 8 visible reviews, while preserving the total reviewCount.
+window.makeDemoReviews = function makeDemoReviews(totalCount, avgRating, reviewerRoleLabel) {
+  const total = Math.max(0, Number(totalCount || 0));
+  const avg = Math.max(0, Math.min(5, Number(avgRating || 0)));
+  const visible = Math.min(total, 8);
+  const role = reviewerRoleLabel || 'User';
+  const templates = [
+    'Clear communication and smooth process.',
+    'Arrived on time and kept things tidy.',
+    'Scope was clear and payment was prompt.',
+    'Good workmanship and easy to work with.',
+    'Would work together again.',
+    'Professional, responsive, and straightforward.',
+    'Job matched the description and expectations.',
+    'Handled changes in scope reasonably.'
+  ];
+  const out = [];
+  for (let i = 0; i < visible; i++) {
+    // deterministic-ish star spread around avg
+    const jitter = (i % 3) - 1; // -1,0,+1
+    const stars = Math.max(1, Math.min(5, Math.round(avg + jitter)));
+    out.push({
+      stars,
+      byRole: role,
+      text: templates[i % templates.length],
+      ts: Date.now() - (i + 1) * 86400000 * 14 // ~every 2 weeks
+    });
+  }
+  return out;
+};
+
+// ----------------------------
+// Current user (demo)
+// Stored in localStorage under athCurrentUser when edited from My Profile.
+// NOTE: Sensitive fields are kept for verification only and must never be fully shown publicly.
+
+window.CURRENT_USER_DEFAULT = {
+  id: "me",
+  role: "dual", // customer | tradie | dual
+  displayName: "Jayden",
+  avatar: "https://static.photos/people/320x240/301",
+  avatarDataUrl: "", // user-uploaded avatar stored locally for prototype
+  location: { suburb: "Pakenham", state: "VIC", postcode: "3810" },
+  contact: { phone: "", email: "" },
+  auth: { provider: "local", uid: null }, // future Google sign-in: provider "google" + uid
+  tradie: {
+    // Batch L: tradies can pick multiple trades (stored as trade IDs from TRADE_CATEGORIES)
+    trades: ['building']
+  },
+  privacy: {
+    showLocation: true,
+    addressRule: "afterAccepted" // never | afterAccepted | afterJobStarts
+  },
+  verification: {
+    verified: false,
+    abnFull: "",
+    licenseFull: ""
+  }
+};
+
+window.TRADIES = {
+  // IDs are used in: profile-tradesman.html?id=<id> and messages.html?conversation=<conversationId>
+
+  liam: {
+    name: "Liam Thompson",
+    trade: "Licensed Electrician",
+    location: "Melbourne, VIC",
+    rating: "4.8",
+    // Batch M: reviewCount is the canonical review counter shown in UI (derived later from real reviews)
+    reviewCount: 3,
+    verified: true,
+    image: "https://static.photos/people/320x240/302",
+    conversationId: "liam-thompson",
+    about:
+      "Reliable sparky for residential + light commercial. Safety-first, tidy work, clear quotes."
+  },
+  olivia: {
+    name: "Olivia Chen",
+    trade: "Plumber",
+    location: "Pakenham, VIC",
+    rating: "4.7",
+    reviewCount: 2,
+    verified: true,
+    image: "https://static.photos/people/320x240/303",
+    conversationId: "olivia-chen",
+    about:
+      "Blocked drains, hot water systems, leaking taps. Fast response and upfront pricing."
+  },
+  noah: {
+    name: "Noah Williams",
+    trade: "Carpenter",
+    location: "Dandenong, VIC",
+    rating: "4.6",
+    reviewCount: 0,
+    verified: false,
+    image: "https://static.photos/people/320x240/304",
+    conversationId: "noah-williams",
+    about:
+      "Decks, pergolas, framing, small renovations. Clean finish and good communication."
+  },
+
+  // Tradies shown on browse + home
+  mark: {
+    name: "Mark Johnson",
+    trade: "Licensed Plumber",
+    location: "Sydney, NSW",
+    rating: "4.9",
+    reviewCount: 18,
+    verified: true,
+    image: "https://static.photos/construction/320x240/201",
+    conversationId: "mark-johnson",
+    about:
+      "Residential + commercial plumbing. Fast response, clean work, transparent pricing."
+  },
+  sarah: {
+    name: "Sarah Chen",
+    trade: "Master Electrician",
+    location: "Melbourne, VIC",
+    rating: "4.7",
+    reviewCount: 14,
+    verified: true,
+    image: "https://static.photos/technology/320x240/202",
+    conversationId: "sarah-chen",
+    about:
+      "Switchboards, lighting, fault-finding, compliance work. Licensed and punctual."
+  },
+  david: {
+    name: "David Wilson",
+    trade: "Master Carpenter",
+    location: "Brisbane, QLD",
+    rating: "5.0",
+    reviewCount: 9,
+    verified: true,
+    image: "https://static.photos/people/320x240/304",
+    conversationId: "david-wilson",
+    about:
+      "Decking, framing, pergolas, renos. High-end finish, reliable timelines."
+  },
+  lisa: {
+    name: "Lisa Brown",
+    trade: "Professional Painter",
+    location: "Perth, WA",
+    rating: "4.6",
+    reviewCount: 7,
+    verified: true,
+    image: "https://static.photos/people/320x240/305",
+    conversationId: "lisa-brown",
+    about:
+      "Interior/exterior painting, patch + prep, clean lines. Protective masking + tidy handover."
+  },
+  james: {
+    name: "James Taylor",
+    trade: "Landscape Gardener",
+    location: "Adelaide, SA",
+    rating: "4.9",
+    reviewCount: 11,
+    verified: true,
+    image: "https://static.photos/people/320x240/306",
+    conversationId: "james-taylor",
+    about:
+      "Garden cleanups, turf, planting, edging, ongoing maintenance. Efficient and consistent."
+  }
+};
+
+// Batch L: normalize tradie trade(s) to canonical trade IDs.
+// Existing dataset uses a single human-readable `trade` string; we infer `trades: string[]`.
+window.inferTradeIdsFromText = function inferTradeIdsFromText(text) {
+  const t = String(text || '').toLowerCase();
+  const out = new Set();
+  if (t.includes('electric')) out.add('electrical');
+  if (t.includes('plumb')) out.add('plumbing');
+  if (t.includes('carpent') || t.includes('joiner')) out.add('carpentry');
+  if (t.includes('paint') || t.includes('decor')) out.add('painting');
+  if (t.includes('tile')) out.add('tiling');
+  if (t.includes('build') || t.includes('reno') || t.includes('contractor')) out.add('building');
+  if (t.includes('garden') || t.includes('landscape')) out.add('gardening');
+  if (t.includes('clean')) out.add('cleaning');
+  if (t.includes('handy')) out.add('handyman');
+  if (out.size === 0) out.add('other');
+  return Array.from(out);
+};
+
+Object.keys(window.TRADIES || {}).forEach((id) => {
+  const t = window.TRADIES[id];
+  if (!t) return;
+  if (!Array.isArray(t.trades) || t.trades.length === 0) {
+    t.trades = window.inferTradeIdsFromText(t.trade);
+  }
+  if (!Array.isArray(t.reviews)) {
+    t.reviews = window.makeDemoReviews(t.reviewCount, parseFloat(t.rating || '0'), 'Customer');
+  }
+});
+
+window.CUSTOMERS = {
+  // IDs are used in: profile-customer.html?id=<id> and messages.html?conversation=<conversationId>
+  "michael-roberts": {
+    name: "Michael Roberts",
+    typeLabel: "Homeowner",
+    typeColor: "bg-blue-500",
+    location: "Sydney, NSW",
+    tagline: "Member since 2022",
+    rating: "4.3",
+    reviewCount: 12,
+    image: "https://static.photos/people/320x240/301",
+    conversationId: "michael-roberts",
+    about:
+      "Homeowner looking for various home services. Has completed 8 projects and values clear communication and tidy work."
+  },
+  "sarah-johnson": {
+    name: "Sarah Johnson",
+    typeLabel: "Business",
+    typeColor: "bg-purple-500",
+    location: "Melbourne, VIC",
+    tagline: "Property Manager",
+    rating: "4.8",
+    reviewCount: 26,
+    image: "https://static.photos/office/320x240/302",
+    conversationId: "sarah-johnson",
+    about:
+      "Property manager coordinating ongoing works. Prefers quotes with clear scope and reliable scheduling."
+  },
+  "david-chen": {
+    name: "David Chen",
+    typeLabel: "Homeowner",
+    typeColor: "bg-blue-500",
+    location: "Brisbane, QLD",
+    tagline: "Member since 2023",
+    rating: "4.5",
+    reviewCount: 8,
+    image: "https://static.photos/people/320x240/303",
+    conversationId: "david-chen",
+    about:
+      "Planning home improvement projects (deck build). Looking for a tradie who can guide material choices and timelines."
+  },
+  "lisa-williams": {
+    name: "Lisa Williams",
+    typeLabel: "Real Estate",
+    typeColor: "bg-green-500",
+    location: "Perth, WA",
+    tagline: "Real Estate Agency",
+    rating: "4.9",
+    reviewCount: 63,
+    image: "https://static.photos/workspace/320x240/304",
+    conversationId: "lisa-williams",
+    about:
+      "Real estate agency managing multiple properties. Regular work for reliable tradies. Prompt payment."
+  },
+  "robert-kim": {
+    name: "Robert Kim",
+    typeLabel: "Homeowner",
+    typeColor: "bg-blue-500",
+    location: "Adelaide, SA",
+    tagline: "Member since 2021",
+    rating: "4.2",
+    reviewCount: 5,
+    image: "https://static.photos/people/320x240/305",
+    conversationId: "robert-kim",
+    about:
+      "Occasional projects and emergency repairs. Values quick response and quality work."
+  }
+};
+
+Object.keys(window.CUSTOMERS || {}).forEach((id) => {
+  const c = window.CUSTOMERS[id];
+  if (!c) return;
+  if (!Array.isArray(c.reviews)) {
+    c.reviews = window.makeDemoReviews(c.reviewCount, parseFloat(c.rating || '0'), 'Tradie');
+  }
+});
+
+// Inject current user into datasets based on selected role (localStorage athCurrentUser)
+(function(){
+  try {
+    const raw = localStorage.getItem("athCurrentUser");
+    const u = raw ? JSON.parse(raw) : window.CURRENT_USER_DEFAULT;
+    const role = (u && u.role) ? u.role : (window.CURRENT_USER_DEFAULT.role || "dual");
+    const loc = `${(u.location?.suburb||"")} ${(u.location?.state||"")}`.trim();
+    const location = loc.replace(/\s+/g, " ").replace(/""/g, "");
+    const displayLoc = `${u.location?.suburb || ""}, ${u.location?.state || ""}`.replace("undefined","").replace(" ,","").trim();
+
+    const enableCustomer = (role === "customer" || role === "dual");
+    const enableTradie = (role === "tradie" || role === "dual");
+
+    if (enableTradie) {
+      const tradeIds = Array.isArray(u.tradie?.trades) && u.tradie.trades.length
+        ? u.tradie.trades
+        : (u.tradie?.trade ? window.inferTradeIdsFromText(u.tradie.trade) : window.inferTradeIdsFromText('builder'));
+      const tradeLabelLine = tradeIds.map(window.tradeLabel).join(' • ');
+      window.TRADIES.me = {
+        name: u.displayName || "Me",
+        trade: tradeLabelLine || "General Contractor",
+        trades: tradeIds,
+        location: displayLoc,
+        rating: "—",
+        reviewCount: 0,
+        verified: !!u.verification?.verified,
+        image: u.avatarDataUrl || u.avatar || "https://static.photos/people/320x240/301",
+        conversationId: "me",
+        about: "This is your public tradie profile preview."
+      };
+    } else {
+      delete window.TRADIES.me;
+    }
+
+    if (enableCustomer) {
+      window.CUSTOMERS.me = {
+        name: u.displayName || "Me",
+        typeLabel: "Customer",
+        typeColor: "bg-blue-500",
+        location: displayLoc,
+        tagline: "Your account",
+        rating: "—",
+        reviewCount: 0,
+        image: u.avatarDataUrl || u.avatar || "https://static.photos/people/320x240/301",
+        conversationId: "me",
+        about: "This is your public customer profile preview."
+      };
+    } else {
+      delete window.CUSTOMERS.me;
+    }
+  } catch(e) { /* ignore */ }
+})();
+
+
+// Conversations dataset (single source of truth for Messages page)
+
+// Each message has a numeric ts (ms since epoch) to support ordering + unread logic.
+// Note: This is a static prototype dataset (no backend yet).
+window.CONVERSATIONS = {
+  "michael-roberts": {
+    name: "Michael Roberts",
+    meta: "Homeowner • Sydney, NSW",
+    avatar: "https://static.photos/people/320x240/301",
+  avatarDataUrl: "", // user-uploaded avatar stored locally for prototype
+    online: true,
+    tag: { label: "Bathroom Renovation", color: "bg-blue-100 text-blue-800" },
+    messages: [
+      { from: "them", time: "10:15 AM", ts: 1768676100000, text: "When can you start?" },
+      { from: "me", time: "10:24 AM", ts: 1768676640000, text: "Next Monday works." }
+    ]
+  },
+  "sarah-johnson": {
+    name: "Sarah Johnson",
+    meta: "Office Manager • Melbourne, VIC",
+    avatar: "https://static.photos/office/320x240/302",
+    online: true,
+    tag: { label: "Office Electrical", color: "bg-purple-100 text-purple-800" },
+    messages: [
+      { from: "them", time: "Yesterday", ts: 1768590000000, text: "I've attached the electrical schematics for the office upgrade project." }
+    ]
+  },
+  "david-chen": {
+    name: "David Chen",
+    meta: "Homeowner • Brisbane, QLD",
+    avatar: "https://static.photos/people/320x240/303",
+    online: false,
+    tag: { label: "Deck Construction", color: "bg-green-100 text-green-800" },
+    messages: [
+      { from: "them", time: "2 days ago", ts: 1768503600000, text: "The timber has arrived. Are you still available to start next Monday?" }
+    ]
+  },
+  "lisa-williams": {
+    name: "Lisa Williams",
+    meta: "Real Estate • Perth, WA",
+    avatar: "https://static.photos/workspace/320x240/304",
+    online: true,
+    tag: { label: "Maintenance Contract", color: "bg-blue-100 text-blue-800" },
+    messages: [
+      { from: "them", time: "3 days ago", ts: 1768417200000, text: "Can you provide a quote for the monthly maintenance contract?" }
+    ]
+  },
+  "robert-kim": {
+    name: "Robert Kim",
+    meta: "Homeowner • Adelaide, SA",
+    avatar: "https://static.photos/people/320x240/305",
+    online: false,
+    tag: { label: "Emergency Callout", color: "bg-red-100 text-red-800" },
+    messages: [
+      { from: "them", time: "1 week ago", ts: 1768068000000, text: "We have a leaking pipe under the sink — can you come ASAP?" }
+    ]
+  },
+
+  // Tradie conversations (reachable via tradie profiles)
+  "mark-johnson": {
+    name: "Mark Johnson",
+    meta: "Licensed Plumber • Sydney, NSW",
+    avatar: "https://static.photos/construction/320x240/201",
+    online: true,
+    tag: { label: "Plumbing", color: "bg-blue-100 text-blue-800" },
+    messages: [
+      { from: "them", time: "2 weeks ago", ts: 1767463200000, text: "Thanks for the great work last time — can you quote another job?" }
+    ]
+  },
+  "sarah-chen": {
+    name: "Sarah Chen",
+    meta: "Master Electrician • Melbourne, VIC",
+    avatar: "https://static.photos/technology/320x240/202",
+    online: false,
+    tag: { label: "Electrical Inspection", color: "bg-purple-100 text-purple-800" },
+    messages: [
+      { from: "them", time: "3 weeks ago", ts: 1766858400000, text: "When can you schedule the electrical inspection?" }
+    ]
+  },
+  "liam-thompson": {
+    name: "Liam Thompson",
+    meta: "Licensed Electrician • Melbourne, VIC",
+    avatar: "https://static.photos/people/320x240/302",
+    online: true,
+    tag: { label: "Switchboard Upgrade", color: "bg-purple-100 text-purple-800" },
+    messages: [
+      { from: "them", time: "Now", ts: 1768677000000, text: "Hey mate, can you do a quick quote for a switchboard upgrade?" },
+      { from: "me", time: "Now", ts: 1768677060000, text: "Yep — send photos of the board and your suburb and I'll price it." }
+    ]
+  },
+  "olivia-chen": {
+    name: "Olivia Chen",
+    meta: "Plumber • Pakenham, VIC",
+    avatar: "https://static.photos/people/320x240/303",
+    online: true,
+    tag: { label: "Hot Water", color: "bg-blue-100 text-blue-800" },
+    messages: [
+      { from: "them", time: "Now", ts: 1768677300000, text: "Hot water system playing up — can you take a look tomorrow?" }
+    ]
+  },
+  "noah-williams": {
+    name: "Noah Williams",
+    meta: "Carpenter • Dandenong, VIC",
+    avatar: "https://static.photos/people/320x240/304",
+    online: false,
+    tag: { label: "Pergola", color: "bg-green-100 text-green-800" },
+    messages: [
+      { from: "them", time: "Yesterday", ts: 1768593000000, text: "Looking at a small pergola — what do you need from me to quote?" }
+    ]
+  },
+  "david-wilson": {
+    name: "David Wilson",
+    meta: "Master Carpenter • Brisbane, QLD",
+    avatar: "https://static.photos/people/320x240/304",
+    online: false,
+    tag: { label: "Decking", color: "bg-green-100 text-green-800" },
+    messages: [
+      { from: "them", time: "Last week", ts: 1768071600000, text: "Thanks again — the decking came up unreal." }
+    ]
+  },
+  "lisa-brown": {
+    name: "Lisa Brown",
+    meta: "Professional Painter • Perth, WA",
+    avatar: "https://static.photos/people/320x240/305",
+    online: true,
+    tag: { label: "Painting", color: "bg-yellow-100 text-yellow-800" },
+    messages: [
+      { from: "them", time: "2 days ago", ts: 1768507200000, text: "Can you squeeze in a bedroom repaint next week?" }
+    ]
+  },
+  "james-taylor": {
+    name: "James Taylor",
+    meta: "Landscape Gardener • Adelaide, SA",
+    avatar: "https://static.photos/people/320x240/306",
+    online: true,
+    tag: { label: "Garden Cleanup", color: "bg-green-100 text-green-800" },
+    messages: [
+      { from: "them", time: "3 days ago", ts: 1768420800000, text: "Need a quick garden cleanup before an inspection — available this weekend?" }
+    ]
+  }
+};
+
+// Jobs dataset (Job Board)
+// Schema:
+//  {
+//    id, title, description, category, location, state,
+//    budgetMin, budgetMax, timeline, urgency, type,
+//    quotes, customerId, postedAt (ISO), status
+//  }
+window.JOBS = [
+  {
+    id: 'job-bathroom-reno-001',
+    title: 'Bathroom Renovation',
+    description: 'Full bathroom remodel including tiling, plumbing, and electrical work. Need completion within 2–3 weeks.',
+    categories: ['plumbing', 'electrical', 'tiling'],
+    location: 'Sydney, NSW',
+    state: 'NSW',
+    budgetMin: 8000,
+    budgetMax: 12000,
+    timeline: '2–3 weeks',
+    urgency: 'urgent',
+    type: 'contract',
+    quotes: 3,
+    customerId: 'michael-roberts',
+    postedAt: '2026-01-18T07:15:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-office-electrical-002',
+    title: 'Office Electrical Upgrade',
+    description: 'Commercial electrical work for 10 office units. LED lighting installation and power point upgrades. Specs available.',
+    categories: ['electrical'],
+    location: 'Melbourne, VIC',
+    state: 'VIC',
+    budgetMin: 15000,
+    budgetMax: 25000,
+    timeline: 'Flexible',
+    urgency: 'week',
+    type: 'contract',
+    quotes: 8,
+    customerId: 'sarah-johnson',
+    postedAt: '2026-01-17T03:00:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-deck-003',
+    title: 'Deck Construction (6x4m)',
+    description: 'Build a 6x4m timber deck with stairs and railing. Materials provided by customer. Start in 3–4 weeks.',
+    categories: ['carpentry'],
+    location: 'Brisbane, QLD',
+    state: 'QLD',
+    budgetMin: 3500,
+    budgetMax: 5000,
+    timeline: '2 weeks',
+    urgency: 'flexible',
+    type: 'one-off',
+    quotes: 12,
+    customerId: 'david-chen',
+    postedAt: '2026-01-16T01:30:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-interior-paint-004',
+    title: 'Interior repaint (3 bedrooms)',
+    description: 'Prep + paint 3 bedrooms. Walls + trims. Customer to supply paint if recommended. Prefer tidy & quick turnaround.',
+    categories: ['painting'],
+    location: 'Perth, WA',
+    state: 'WA',
+    budgetMin: 900,
+    budgetMax: 1800,
+    timeline: '3–5 days',
+    urgency: 'week',
+    type: 'one-off',
+    quotes: 4,
+    customerId: 'lisa-williams',
+    postedAt: '2026-01-15T05:00:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-garden-cleanup-005',
+    title: 'Garden cleanup before inspection',
+    description: 'Mow, edge, weed, green waste removal. Need done this weekend before property inspection.',
+    categories: ['gardening'],
+    location: 'Adelaide, SA',
+    state: 'SA',
+    budgetMin: 250,
+    budgetMax: 450,
+    timeline: '1 day',
+    urgency: 'urgent',
+    type: 'one-off',
+    quotes: 2,
+    customerId: 'robert-kim',
+    postedAt: '2026-01-18T00:20:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-hot-water-006',
+    title: 'Hot water system replacement',
+    description: 'Existing unit failing. Need supply + install of suitable replacement, and disposal of old unit.',
+    categories: ['plumbing'],
+    location: 'Pakenham, VIC',
+    state: 'VIC',
+    budgetMin: 1200,
+    budgetMax: 2500,
+    timeline: '1–2 days',
+    urgency: 'urgent',
+    type: 'one-off',
+    quotes: 5,
+    customerId: 'michael-roberts',
+    postedAt: '2026-01-17T23:10:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-lawn-ongoing-007',
+    title: 'Ongoing lawn maintenance (fortnightly)',
+    description: 'Small front + backyard. Fortnightly mow/edge and seasonal tidy-ups.',
+    categories: ['gardening'],
+    location: 'Melbourne, VIC',
+    state: 'VIC',
+    budgetMin: 80,
+    budgetMax: 140,
+    timeline: 'Ongoing',
+    urgency: 'flexible',
+    type: 'ongoing',
+    quotes: 6,
+    customerId: 'sarah-johnson',
+    postedAt: '2026-01-14T02:00:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-bond-clean-008',
+    title: 'Bond clean (2 bed unit)',
+    description: 'End-of-lease clean. Kitchen, bathroom, floors, windows. Must be completed by Friday.',
+    categories: ['cleaning'],
+    location: 'Sydney, NSW',
+    state: 'NSW',
+    budgetMin: 300,
+    budgetMax: 550,
+    timeline: '1 day',
+    urgency: 'week',
+    type: 'one-off',
+    quotes: 9,
+    customerId: 'lisa-williams',
+    postedAt: '2026-01-13T10:30:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-handy-009',
+    title: 'Fix doors + replace handles',
+    description: '3 internal doors sticking. Replace 2 handles and align hinges. Quick handyman job.',
+    categories: ['handyman'],
+    location: 'Brisbane, QLD',
+    state: 'QLD',
+    budgetMin: 180,
+    budgetMax: 350,
+    timeline: 'Half day',
+    urgency: 'flexible',
+    type: 'one-off',
+    quotes: 1,
+    customerId: 'david-chen',
+    postedAt: '2026-01-12T00:15:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-switchboard-010',
+    title: 'Switchboard safety check',
+    description: 'Need a licensed electrician to inspect switchboard, test RCDs, and provide compliance note.',
+    categories: ['electrical'],
+    location: 'Adelaide, SA',
+    state: 'SA',
+    budgetMin: 220,
+    budgetMax: 420,
+    timeline: '1–2 hours',
+    urgency: 'week',
+    type: 'one-off',
+    quotes: 7,
+    customerId: 'robert-kim',
+    postedAt: '2026-01-11T04:45:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-fence-011',
+    title: 'Replace side fence (approx. 18m)',
+    description: 'Old timber fence needs replacement. Prefer treated pine. Please include removal of old fence and materials.',
+    categories: ['carpentry', 'building'],
+    location: 'Perth, WA',
+    state: 'WA',
+    budgetMin: 4000,
+    budgetMax: 6500,
+    timeline: '1 week',
+    urgency: 'flexible',
+    type: 'contract',
+    quotes: 3,
+    customerId: 'lisa-williams',
+    postedAt: '2026-01-10T09:00:00.000Z',
+    status: 'open'
+  },
+  {
+    id: 'job-kitchen-tap-012',
+    title: 'Kitchen tap leaking',
+    description: 'Tap is dripping constantly. Might need new mixer. Accessible under-sink plumbing.',
+    categories: ['plumbing'],
+    location: 'Melbourne, VIC',
+    state: 'VIC',
+    budgetMin: 150,
+    budgetMax: 380,
+    timeline: '1–2 hours',
+    urgency: 'urgent',
+    type: 'one-off',
+    quotes: 2,
+    customerId: 'sarah-johnson',
+    postedAt: '2026-01-18T02:40:00.000Z',
+    status: 'open'
+  }
+];
