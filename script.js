@@ -1551,7 +1551,7 @@ window.ATHCustomerBookings = window.ATHCustomerBookings || (function () {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof feather !== 'undefined') feather.replace();
-  initAuthUI();
+  // initAuthUI(); // Disabled: Supabase auth.js handles this now
   // Allow deep-link: index.html#signin
   try {
     if (String(window.location.hash || '').toLowerCase() === '#signin') openAuthModal('signin');
