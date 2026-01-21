@@ -5306,3 +5306,245 @@ window.formatVoiceDuration = function(seconds) {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
+
+// ============================================================================
+// v0.095: Customer Profile (Edit)
+// ============================================================================
+
+function initProfilePage() {
+  // Elements
+  const els = {
+    avatar: document.getElementById('mpAvatar'),
+    name: document.getElementById('mpName'),
+    subtitle: document.getElementById('mpSubtitle'),
+    roleBadge: document.getElementById('mpRoleBadge'),
+    verifiedBadge: document.getElementById('mpVerifiedBadge'),
+    
+    displayName: document.getElementById('mpDisplayName'),
+    email: document.getElementById('mpEmail'),
+    phone: document.getElementById('mpPhone'),
+    location: document.getElementById('mpLocation'),
+    
+    btnEdit: document.getElementById('mpEditBtn'),
+    btnSave: document.getElementById('mpSaveBtn'),
+    btnCancel: document.getElementById('mpCancelBtn'),
+    
+    roleBtns: document.querySelectorAll('.mpRoleBtn'),
+    
+    publicTradie: document.getElementById('mpPublicTradieLink'),
+    publicCustomer: document.getElementById('mpPublicCustomerLink')
+  };
+
+  // Check if we are on the profile page by checking for a key element
+  if (!els.avatar) return;
+
+  // Load Data
+  let user = {
+    name: 'Jayden Goblin',
+    email: 'jayden.goblin@example.com',
+    phone: '0400 000 000',
+    location: 'Sydney, NSW',
+    role: 'customer',
+    avatar: 'https://ui-avatars.com/api/?name=Jayden+Goblin&background=0D9488&color=fff',
+    verified: true
+  };
+
+  try {
+    const stored = localStorage.getItem('athUser');
+    if (stored) {
+      user = { ...user, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.error('Error loading profile:', e);
+  }
+
+  // State
+  let editing = false;
+  let tempAvatarBase64 = null;
+  let draftUser = null;
+
+  // Render
+  const render = (data = user) => {
+    const displayAvatar = tempAvatarBase64 || data.avatar;
+    
+    if (els.avatar) els.avatar.src = displayAvatar;
+    if (els.name) els.name.textContent = data.name;
+    
+    // Subtitle logic
+    let roleText = 'Customer Account';
+    if (data.role === 'tradie') roleText = 'Tradie Account';
+    else if (data.role === 'dual') roleText = 'Dual Account';
+    if (els.subtitle) els.subtitle.textContent = `Manage your ${roleText}, role, and privacy.`;
+
+    // Badges
+    if (els.roleBadge) els.roleBadge.textContent = data.role.charAt(0).toUpperCase() + data.role.slice(1);
+    if (els.verifiedBadge) els.verifiedBadge.classList.toggle('hidden', !data.verified);
+    
+    // Inputs
+    if (els.displayName) els.displayName.value = data.name;
+    if (els.email) els.email.value = data.email;
+    if (els.phone) els.phone.value = data.phone;
+    if (els.location) els.location.value = data.location;
+    
+    // Role Buttons
+    if (els.roleBtns) {
+      els.roleBtns.forEach(btn => {
+        const r = btn.dataset.role;
+        btn.disabled = !editing;
+        if (r === data.role) {
+          btn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200');
+          btn.classList.remove('text-gray-600', 'bg-white', 'border-gray-200');
+        } else {
+          btn.classList.remove('bg-teal-50', 'text-teal-700', 'border-teal-200');
+          btn.classList.add('text-gray-600', 'bg-white', 'border-gray-200');
+        }
+        btn.style.opacity = editing ? '1' : '0.6';
+        btn.style.cursor = editing ? 'pointer' : 'not-allowed';
+      });
+    }
+
+    // Public Links
+    if (els.publicTradie) els.publicTradie.classList.toggle('hidden', data.role === 'customer');
+    if (els.publicCustomer) els.publicCustomer.classList.toggle('hidden', data.role === 'tradie');
+  };
+
+  // Toggle Edit
+  const setEditing = (isEditing) => {
+    editing = isEditing;
+    
+    if (editing) {
+      draftUser = { ...user }; // Clone
+    } else {
+      draftUser = null;
+      tempAvatarBase64 = null;
+    }
+
+    if (els.btnEdit) els.btnEdit.classList.toggle('hidden', editing);
+    if (els.btnSave) els.btnSave.classList.toggle('hidden', !editing);
+    if (els.btnCancel) els.btnCancel.classList.toggle('hidden', !editing);
+
+    // Inputs
+    [els.displayName, els.email, els.phone, els.location].forEach(input => {
+      if (input) {
+        input.disabled = !editing;
+        // Visual
+        input.classList.toggle('bg-white', editing);
+        input.classList.toggle('bg-gray-50', !editing); // Usually disabled background
+        input.classList.toggle('border-teal-500', editing);
+        input.classList.toggle('ring-1', editing);
+        input.classList.toggle('ring-teal-500', editing);
+      }
+    });
+    
+    render(editing ? draftUser : user);
+  };
+
+  // Avatar Input
+  let fileInput = document.getElementById('hiddenAvatarInput');
+  if (!fileInput) {
+    fileInput = document.createElement('input');
+    fileInput.id = 'hiddenAvatarInput';
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        if (els.avatar) els.avatar.style.opacity = '0.5';
+        
+        const result = await window.ATHImages.processImageFile(file);
+        tempAvatarBase64 = result.base64;
+        
+        if (els.avatar) els.avatar.style.opacity = '1';
+        render(draftUser || user);
+      } catch (err) {
+        console.error(err);
+        alert('Failed to process image.');
+        if (els.avatar) els.avatar.style.opacity = '1';
+      }
+    });
+  }
+
+  // Avatar Click
+  if (els.avatar) {
+    els.avatar.title = 'Click Edit to change avatar';
+    els.avatar.style.cursor = 'default';
+    
+    els.avatar.addEventListener('click', () => {
+      if (editing) {
+        fileInput.click();
+      }
+    });
+    
+    // Update cursor logic in setEditing or here with an observer? 
+    // Easier to just toggle style in setEditing loop? 
+    // Let's add it to the render/setEditing logic implicitly by logic but explictly:
+    // We'll update the title/cursor in setEditing for better UX.
+  }
+  
+  // Extend setEditing to handle avatar cursor
+  const originalSetEditing = setEditing;
+  const enhancedSetEditing = (isEditing) => {
+    originalSetEditing(isEditing);
+    if (els.avatar) {
+      els.avatar.style.cursor = isEditing ? 'pointer' : 'default';
+      els.avatar.title = isEditing ? 'Click to upload new avatar' : 'Click Edit to change avatar';
+    }
+  };
+
+
+  // Buttons
+  if (els.btnEdit) els.btnEdit.addEventListener('click', () => enhancedSetEditing(true));
+  
+  if (els.btnCancel) els.btnCancel.addEventListener('click', () => {
+    enhancedSetEditing(false); // Discards draft
+  });
+  
+  if (els.btnSave) els.btnSave.addEventListener('click', () => {
+    // Commit changes
+    if (draftUser) {
+      if (els.displayName) draftUser.name = els.displayName.value;
+      if (els.email) draftUser.email = els.email.value;
+      if (els.phone) draftUser.phone = els.phone.value;
+      if (els.location) draftUser.location = els.location.value;
+      if (tempAvatarBase64) draftUser.avatar = tempAvatarBase64;
+      
+      user = { ...draftUser };
+      localStorage.setItem('athUser', JSON.stringify(user));
+      
+      alert('Profile saved successfully!');
+      enhancedSetEditing(false);
+      
+      // Update global header avatar if exists
+      // const headerAvatar = document.querySelector('nav .rounded-full'); // hypothetical
+      // if (headerAvatar) headerAvatar.src = user.avatar;
+    }
+  });
+  
+  // Role Toggles
+  if (els.roleBtns) {
+    els.roleBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!editing || !draftUser) return;
+        draftUser.role = btn.dataset.role;
+        render(draftUser);
+      });
+    });
+  }
+
+  // Initial Render
+  render();
+}
+
+// Router
+if (window.location.pathname.includes('my-profile.html')) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProfilePage);
+  } else {
+    initProfilePage();
+  }
+}
