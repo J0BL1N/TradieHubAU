@@ -359,16 +359,177 @@ async function handleSignOutClick() {
 // SIGN UP MODAL (for completeness)
 // ============================================================================
 
+/**
+ * Show sign-up modal
+ */
 function showSignUpModal() {
   hideSignInModal();
-  // TODO: Implement sign-up modal
-  alert('Sign up coming soon! For now, please contact admin to create an account.');
+  
+  if (!signUpModal) {
+    createSignUpModal();
+  }
+  
+  // Clear form fields
+  const emailInput = document.getElementById('athSignUpEmail');
+  const passwordInput = document.getElementById('athSignUpPassword');
+  const nameInput = document.getElementById('athSignUpName');
+  
+  if (emailInput) emailInput.value = '';
+  if (passwordInput) passwordInput.value = '';
+  if (nameInput) nameInput.value = '';
+  
+  signUpModal.style.display = 'flex';
+}
+
+/**
+ * Hide sign-up modal
+ */
+function hideSignUpModal() {
+  if (signUpModal) {
+    signUpModal.style.display = 'none';
+  }
+}
+
+// ============================================================================
+// SIGN UP MODAL
+// ============================================================================
+
+let signUpModal = null;
+
+function createSignUpModal() {
+  const modal = document.createElement('div');
+  modal.id = 'athSignUpModal';
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+  modal.style.display = 'none';
+  
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">Create Account</h2>
+        <button onclick="window.hideSignUpModal()" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Email/Password Sign Up Form -->
+      <form id="athEmailSignUpForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <input type="text" id="athSignUpName" required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="John Doe">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="athSignUpEmail" required
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="you@example.com">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="athSignUpPassword" required minlength="6"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            placeholder="••••••••">
+          <p class="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
+        </div>
+        
+        <button type="submit" class="w-full bg-teal-600 text-white rounded-lg px-6 py-3 font-semibold hover:bg-teal-700 transition">
+          Sign Up
+        </button>
+      </form>
+      
+      <p class="mt-4 text-center text-sm text-gray-600">
+        Already have an account? 
+        <button onclick="window.showSignInModal(); window.hideSignUpModal()" class="text-teal-600 hover:text-teal-700 font-semibold">Sign In</button>
+      </p>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  signUpModal = modal;
+  
+  // Add event listeners
+  document.getElementById('athEmailSignUpForm').addEventListener('submit', handleEmailSignUp);
+  
+  // Close on outside click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      hideSignUpModal();
+    }
+  });
+}
+
+/**
+ * Handle email sign-up form submission
+ */
+async function handleEmailSignUp(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('athSignUpName').value;
+  const email = document.getElementById('athSignUpEmail').value;
+  const password = document.getElementById('athSignUpPassword').value;
+  
+  console.log('📝 Signing up:', email);
+  
+  // Show loading state
+  const btn = e.target.querySelector('button[type="submit"]');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Creating Account...';
+  
+  try {
+    const { user, session, error } = await signUpWithEmail(email, password, {
+      full_name: name
+    });
+    
+    if (error) throw error;
+    
+    // Check if email confirmation is required (session might be null)
+    if (user && !session) {
+      if (window.ATHToast) {
+        window.ATHToast.show({
+          type: 'success',
+          message: 'Account created! Please check your email to confirm.',
+          duration: 6000
+        });
+      }
+      alert('Account created! Please check your email to confirm your registration before logging in.');
+      hideSignUpModal();
+    } else {
+      // Auto-login successful
+      console.log('✅ Account created and signed in');
+       if (window.ATHToast) {
+        window.ATHToast.show({
+          type: 'success',
+          message: 'Account created successfully!',
+          duration: 3000
+        });
+      }
+      hideSignUpModal();
+    }
+    
+  } catch (error) {
+    console.error('❌ Sign up failed:', error.message);
+    if (window.ATHToast) {
+      window.ATHToast.show({
+        type: 'error',
+        message: error.message,
+        duration: 4000
+      });
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 // Export functions for global access
 window.hideSignInModal = hideSignInModal;
 window.showSignInModal = showSignInModal;
 window.showSignUpModal = showSignUpModal;
+window.hideSignUpModal = hideSignUpModal;
 
 // Initialize auth on page load
 if (document.readyState === 'loading') {
