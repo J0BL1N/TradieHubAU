@@ -1,0 +1,128 @@
+/* Carousel Component Styles */
+
+.ath-carousel {
+  position: relative;
+  overflow: hidden;
+}
+
+.ath-carousel-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  gap: 1rem;
+  transition: transform 0.5s ease-in-out;
+}
+
+@media (min-width: 768px) {
+  .ath-carousel-track {
+    grid-auto-columns: calc(50% - 0.5rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ath-carousel-track {
+    grid-auto-columns: calc(33.333% - 0.67rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .ath-carousel-track {
+    grid-auto-columns: calc(25% - 0.75rem);
+  }
+}
+
+.ath-carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  width: 2.5rem;
+  height: 2 .5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.ath-carousel-nav:hover {
+  background: #f9fafb;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.ath-carousel-nav.prev {
+  left: -1.25rem;
+}
+
+.ath-carousel-nav.next {
+  right: -1.25rem;
+}
+
+.ath-carousel-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.ath-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.ath-carousel-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ath-carousel-dot.active {
+  background: #0d9488;
+  width: 1.5rem;
+}
+
+.ath-carousel-dot:hover {
+  background: #9ca3af;
+}
+
+/* News Feed Ticker Animation */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ath-news-ticker {
+  display: flex;
+  animation: ticker-scroll 30s linear infinite;
+}
+
+.ath-news-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Number Animation */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ath-stat-number {
+  animation: count-up 0.6s ease-out;
+}
