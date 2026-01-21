@@ -5548,3 +5548,61 @@ if (window.location.pathname.includes('my-profile.html')) {
     initProfilePage();
   }
 }
+// ============================================================================
+// v0.096: Gallery View
+// ============================================================================
+
+window.openGallery = function() {
+  const modal = document.getElementById('galleryModal');
+  const grid = document.getElementById('galleryGrid');
+  const empty = document.getElementById('galleryEmpty');
+  if (!modal || !grid) return;
+
+  // Get current conversation
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentConvoId = urlParams.get('conversation');
+  if (!currentConvoId) {
+    alert('Please open a conversation first.');
+    return;
+  }
+
+  const DATA = window.ATHStore.get('athMessagesData', {});
+  const convo = DATA[currentConvoId];
+  if (!convo || !convo.messages) {
+    alert('No messages found.');
+    return;
+  }
+
+  // Filter image messages
+  const images = convo.messages.filter(m => m.type === 'image' && m.imageData);
+  
+  // Render
+  grid.innerHTML = '';
+  if (images.length === 0) {
+    if (empty) empty.classList.remove('hidden');
+    grid.classList.add('hidden');
+  } else {
+    if (empty) empty.classList.add('hidden');
+    grid.classList.remove('hidden');
+    
+    images.forEach(img => {
+      const div = document.createElement('div');
+      div.className = 'aspect-square bg-gray-100 rounded-lg overflow-hidden relative cursor-pointer group border border-gray-200';
+      div.onclick = () => window.openLightbox(img.imageData);
+      
+      div.innerHTML = `
+        <img src="${img.imageData}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+        ${img.text ? `<div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent text-white text-xs truncate">${img.text}</div>` : ''}
+      `;
+      grid.appendChild(div);
+    });
+  }
+
+  modal.classList.remove('hidden');
+};
+
+window.closeGallery = function() {
+  const modal = document.getElementById('galleryModal');
+  if (modal) modal.classList.add('hidden');
+};

@@ -179,6 +179,10 @@
                   <button class="p-2 hover:bg-gray-100 rounded-lg" type="button" aria-label="Info">
                     <i data-feather="info" class="w-4 h-4 text-gray-600"></i>
                   </button>
+                  <!-- v0.096: Gallery View Button -->
+                  <button onclick="window.openGallery()" class="p-2 hover:bg-gray-100 rounded-lg" type="button" aria-label="Gallery" title="View Shared Media">
+                    <i data-feather="grid" class="w-4 h-4 text-gray-600"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -446,6 +450,27 @@
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
     </button>
     <img id="lightboxImage" src="" class="max-w-[95vw] max-h-[95vh] object-contain shadow-2xl" onclick="event.stopPropagation()" />
+  </div>
+
+  <!-- v0.096: Gallery View Modal -->
+  <div id="galleryModal" class="fixed inset-0 z-[55] bg-white hidden flex flex-col transition-opacity duration-200">
+    <!-- Header -->
+    <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-white shadow-sm">
+      <h3 class="font-bold text-gray-900 text-lg">Shared Media</h3>
+      <button onclick="window.closeGallery()" class="p-2 hover:bg-gray-100 rounded-full text-gray-500">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4 bg-gray-50">
+      <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <!-- Rendered by script.js -->
+      </div>
+      <div id="galleryEmpty" class="hidden flex flex-col items-center justify-center h-full text-gray-500 mt-20">
+        <i data-feather="image" class="w-12 h-12 mb-3 opacity-50"></i>
+        <p>No images shared yet.</p>
+      </div>
+    </div>
   </div>
 
   <script src="data.js"></script>
