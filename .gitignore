@@ -15,3 +15,8 @@ tests/
 
 # Dependencies
 node_modules/
+
+# Environment variables (NEVER commit API keys!)
+.env
+.env.local
+.env.*.local

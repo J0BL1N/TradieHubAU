@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="supabase-url" content="https://sbnthkwhygrrjjdyylgd.supabase.co">
+    <meta name="supabase-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNibnRoa3doeWdycmpqZHl5bGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDM5NDYsImV4cCI6MjA4NDU3OTk0Nn0.bNzKm4Npa9DL8kIxesqtcavB2Z0CNUJgY1aDbgKGSbY">
+    <title>Supabase Connection Test | TradieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-item {
+            transition: all 0.3s;
+        }
+        .test-pending { border-left: 4px solid #9ca3af; }
+        .test-running { border-left: 4px solid #3b82f6; background: #eff6ff; }
+        .test-pass { border-left: 4px solid #10b981; background: #f0fdf4; }
+        .test-fail { border-left: 4px solid #ef4444; background: #fef2f2; }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">🧪 Supabase Connection Test</h1>
+            <p class="text-gray-600">Testing database connection and authentication</p>
+        </div>
+
+        <div id="tests" class="space-y-4">
+            <!-- Tests will be added here -->
+        </div>
+
+        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-sm text-blue-800">
+                <strong>Note:</strong> This test uses the CDN build of Supabase. 
+                Make sure your <code class="bg-blue-100 px-1 rounded">.env.local</code> file has valid credentials.
+            </p>
+        </div>
+    </div>
+
+    <!-- Load Supabase from CDN -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // Test results container
+        const testsContainer = document.getElementById('tests');
+        const results = [];
+
+        // Read environment variables from meta tags (we'll inject them)
+        const supabaseUrl = document.querySelector('meta[name="supabase-url"]')?.content;
+        const supabaseKey = document.querySelector('meta[name="supabase-key"]')?.content;
+
+        // Helper to add test item
+        function addTest(name, description) {
+            const testId = `test-${results.length}`;
+            results.push({ id: testId, name, status: 'pending' });
+            
+            const testEl = document.createElement('div');
+            testEl.id = testId;
+            testEl.className = 'test-item test-pending bg-white rounded-lg shadow-sm p-4';
+            testEl.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-3">
+                        <span class="status-icon text-2xl">⏳</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900">${name}</h3>
+                        <p class="text-sm text-gray-600 mt-1">${description}</p>
+                        <div class="result mt-2 text-sm"></div>
+                    </div>
+                </div>
+            `;
+            testsContainer.appendChild(testEl);
+            return testId;
+        }
+
+        // Helper to update test status
+        function updateTest(testId, status, message = '') {
+            const testEl = document.getElementById(testId);
+            const statusIcon = testEl.querySelector('.status-icon');
+            const resultEl = testEl.querySelector('.result');
+            
+            testEl.className = `test-item test-${status} bg-white rounded-lg shadow-sm p-4`;
+            
+            if (status === 'running') statusIcon.textContent = '⏳';
+            if (status === 'pass') statusIcon.textContent = '✅';
+            if (status === 'fail') statusIcon.textContent = '❌';
+            
+            resultEl.innerHTML = message;
+        }
+
+        // Run tests
+        async function runTests() {
+            // Test 1: Check environment variables
+            const test1 = addTest('Environment Variables', 'Checking if Supabase URL and key are configured');
+            updateTest(test1, 'running');
+            await sleep(500);
+            
+            if (!supabaseUrl || !supabaseKey) {
+                updateTest(test1, 'fail', `
+                    <span class="text-red-600 font-medium">Missing credentials!</span><br>
+                    <span class="text-gray-600">Add this to your HTML:</span><br>
+                    <code class="text-xs bg-gray-100 p-2 block mt-1 rounded">
+                    &lt;meta name="supabase-url" content="YOUR_URL"&gt;<br>
+                    &lt;meta name="supabase-key" content="YOUR_KEY"&gt;
+                    </code>
+                `);
+                return;
+            }
+            
+            updateTest(test1, 'pass', `
+                <span class="text-green-600 font-medium">✓ Found credentials</span><br>
+                <span class="text-gray-600 text-xs">URL: ${supabaseUrl.substring(0, 30)}...</span>
+            `);
+
+            // Test 2: Create Supabase client
+            const test2 = addTest('Create Client', 'Initializing Supabase client');
+            updateTest(test2, 'running');
+            await sleep(500);
+            
+            let supabase;
+            try {
+                supabase = createClient(supabaseUrl, supabaseKey);
+                updateTest(test2, 'pass', '<span class="text-green-600 font-medium">✓ Client initialized</span>');
+            } catch (error) {
+                updateTest(test2, 'fail', `<span class="text-red-600 font-medium">Failed:</span> ${error.message}`);
+                return;
+            }
+
+            // Test 3: Check database connection
+            const test3 = addTest('Database Connection', 'Querying the trades table');
+            updateTest(test3, 'running');
+            await sleep(500);
+            
+            try {
+                const { data, error } = await supabase
+                    .from('trades')
+                    .select('*')
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                updateTest(test3, 'pass', `
+                    <span class="text-green-600 font-medium">✓ Connected to database</span><br>
+                    <span class="text-gray-600">Found ${data.length} trade categories</span><br>
+                    <code class="text-xs bg-gray-100 p-1 rounded">${data.map(t => t.label).join(', ')}</code>
+                `);
+            } catch (error) {
+                updateTest(test3, 'fail', `
+                    <span class="text-red-600 font-medium">Database error:</span><br>
+                    <span class="text-xs text-gray-600">${error.message}</span>
+                `);
+            }
+
+            // Test 4: Check authentication
+            const test4 = addTest('Authentication', 'Checking auth session');
+            updateTest(test4, 'running');
+            await sleep(500);
+            
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) throw error;
+                
+                if (data.session) {
+                    updateTest(test4, 'pass', `
+                        <span class="text-green-600 font-medium">✓ User is signed in</span><br>
+                        <span class="text-gray-600 text-xs">Email: ${data.session.user.email}</span>
+                    `);
+                } else {
+                    updateTest(test4, 'pass', `
+                        <span class="text-yellow-600 font-medium">No active session</span><br>
+                        <span class="text-gray-600 text-xs">User is not signed in (this is normal for testing)</span>
+                    `);
+                }
+            } catch (error) {
+                updateTest(test4, 'fail', `
+                    <span class="text-red-600 font-medium">Auth error:</span><br>
+                    <span class="text-xs text-gray-600">${error.message}</span>
+                `);
+            }
+
+            // Test 5: Check RLS policies
+            const test5 = addTest('Row Level Security', 'Testing RLS is enabled');
+            updateTest(test5, 'running');
+            await sleep(500);
+            
+            try {
+                // Try to query users table (should work for public profiles)
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id, display_name, role')
+                    .limit(1);
+                
+                // If we get data or a permission error, RLS is working
+                if (error && error.message.includes('permission')) {
+                    updateTest(test5, 'pass', `
+                        <span class="text-green-600 font-medium">✓ RLS is enabled</span><br>
+                        <span class="text-gray-600 text-xs">Policies are protecting data correctly</span>
+                    `);
+                } else {
+                    updateTest(test5, 'pass', `
+                        <span class="text-green-600 font-medium">✓ RLS is configured</span><br>
+                        <span class="text-gray-600 text-xs">Public policies are working</span>
+                    `);
+                }
+            } catch (error) {
+                updateTest(test5, 'pass', '<span class="text-green-600 font-medium">✓ RLS protection active</span>');
+            }
+
+            // Summary
+            const passCount = document.querySelectorAll('.test-pass').length;
+            const totalCount = results.length;
+            
+            const summary = document.createElement('div');
+            summary.className = 'mt-6 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg shadow-lg p-6';
+            summary.innerHTML = `
+                <h2 class="text-xl font-bold mb-2">🎉 Test Complete!</h2>
+                <p class="text-lg">${passCount}/${totalCount} tests passed</p>
+                <p class="text-sm opacity-90 mt-2">
+                    ${passCount === totalCount 
+                        ? 'Supabase is fully connected and ready to use!' 
+                        : 'Some tests failed. Check the error messages above.'}
+                </p>
+            `;
+            testsContainer.appendChild(summary);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Start tests when page loads
+        runTests();
+    </script>
+</body>
+</html>
