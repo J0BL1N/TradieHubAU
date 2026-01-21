@@ -283,11 +283,168 @@
     </div>
   </main>
 
+  <!-- Supabase Client & Auth -->
+  <script type="module" src="supabase-client.js"></script>
+  <script type="module" src="auth.js"></script>
+  
   <script src="data.js"></script>
   <script src="script.js"></script>
-  <script>
-    // Mobile menu handled by script.js
-    document.addEventListener('DOMContentLoaded', () => feather.replace());
+  <script type="module">
+    import { supabase, getCurrentUser, getUserProfile, updateUserProfile } from './supabase-client.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof feather !== 'undefined') feather.replace();
+      
+      // Wait for auth to initialize
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Not signed in? distinct from guest mode? 
+        // For now, redirect to home or show sign in
+        // window.location.href = 'index.html'; 
+        return;
+      }
+      
+      const userId = session.user.id;
+      console.log('👤 Loading profile for:', userId);
+      
+      // Load profile
+      const { profile, error } = await getUserProfile(userId);
+      
+      if (error) {
+        console.error('❌ Failed to load profile:', error);
+        return;
+      }
+      
+      if (profile) {
+        // Populate UI
+        document.getElementById('mpName').textContent = profile.display_name || 'New User';
+        document.getElementById('mpDisplayName').value = profile.display_name || '';
+        document.getElementById('mpEmail').value = profile.email || session.user.email;
+        document.getElementById('mpSuburb').value = profile.suburb || '';
+        document.getElementById('mpState').value = profile.state || '';
+        document.getElementById('mpPhone').value = profile.phone || '';
+        
+        // Role badge
+        const role = profile.role || 'customer';
+        const roleBadge = document.getElementById('mpRoleBadge');
+        if (roleBadge) {
+          roleBadge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+          // Highlight active role button
+          document.querySelectorAll('.mpRoleBtn').forEach(btn => {
+            if (btn.dataset.role === role) {
+              btn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200', 'font-medium');
+            } else {
+              btn.classList.remove('bg-teal-50', 'text-teal-700', 'border-teal-200', 'font-medium');
+            }
+          });
+        }
+        
+        // Avatar
+        if (profile.avatar_url) {
+          document.getElementById('mpAvatar').src = profile.avatar_url;
+        } else {
+          // Default avatar
+          document.getElementById('mpAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.display_name)}&background=0d9488&color=fff`;
+        }
+      }
+      
+      // Avatar Upload Handle
+      const avatarInput = document.getElementById('mpAvatarFile');
+      const avatarPickBtn = document.getElementById('mpAvatarPickBtn');
+      const avatarRemoveBtn = document.getElementById('mpAvatarRemoveBtn');
+      
+      if (avatarPickBtn && avatarInput) {
+        avatarPickBtn.addEventListener('click', () => avatarInput.click());
+        
+        avatarInput.addEventListener('change', async (e) => {
+          if (!e.target.files || e.target.files.length === 0) return;
+          
+          const file = e.target.files[0];
+          avatarPickBtn.disabled = true;
+          avatarPickBtn.textContent = 'Uploading...';
+          feather.replace();
+          
+          try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+            
+            // Import upload function dynamically if needed or assume it's available
+            const { uploadAvatar, getPublicUrl } = await import('./supabase-client.js');
+            
+            const { data, error } = await uploadAvatar(file); // helper handles bucket logic
+            
+            if (error) throw error;
+            
+            // Get public URL
+            // const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.path);
+             /* The helper uploadAvatar returns the path or full object. 
+                Let's assume we need to construct the URL or the helper does it. 
+                Checking supabase-client.js... it returns {data, error}. 
+                We usually store the public URL. */
+            
+             // Construct public URL (assuming bucket is public)
+             const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.path);
+             
+             // Update profile immediately with new avatar URL
+             await updateUserProfile(userId, { avatar_url: publicUrl });
+             
+             // Update UI
+             document.getElementById('mpAvatar').src = publicUrl;
+             console.log('✅ Avatar uploaded:', publicUrl);
+             
+          } catch (uploadError) {
+            console.error('❌ Upload failed:', uploadError);
+            alert('Failed to upload avatar.');
+          } finally {
+            avatarPickBtn.disabled = false;
+            avatarPickBtn.textContent = 'Upload image';
+          }
+        });
+      }
+
+      // Handle Save
+      const saveBtn = document.getElementById('mpSaveBtn');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          const updates = {
+            display_name: document.getElementById('mpDisplayName').value,
+            suburb: document.getElementById('mpSuburb').value,
+            state: document.getElementById('mpState').value,
+            phone: document.getElementById('mpPhone').value,
+            updated_at: new Date().toISOString()
+          };
+          
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="animate-spin" data-feather="loader"></i> Saving...';
+          feather.replace();
+          
+          const { error: updateError } = await updateUserProfile(userId, updates);
+          
+          if (updateError) {
+            console.error('❌ Save failed:', updateError);
+            alert('Failed to save profile changes.');
+          } else {
+            console.log('✅ Profile updated');
+            // Update display name immediately
+            document.getElementById('mpName').textContent = updates.display_name;
+            
+            // Show toast/feedback
+            if (window.ATHToast) {
+              window.ATHToast.show({ type: 'success', message: 'Profile saved successfully!' });
+            }
+            
+            // Exit edit mode (logic handled by existing script or we can replicate)
+            document.getElementById('mpCancelBtn').click();
+          }
+          
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i data-feather="save"></i> Save';
+          feather.replace();
+        });
+      }
+    });
   </script>
 
   <!-- Bottom Navigation (Mobile Only) -->

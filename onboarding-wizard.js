@@ -56,7 +56,8 @@ window.ATHOnboarding = window.ATHOnboarding || (function () {
     }
   }
 
-  function complete() {
+  async function complete() {
+    // Basic user object for local storage (fallback/legacy)
     const user = {
       id: `user-${Date.now()}`,
       role: wizardData.role,
@@ -67,9 +68,36 @@ window.ATHOnboarding = window.ATHOnboarding || (function () {
     };
 
     try {
+      // 1. Save to localStorage keys (legacy support)
       window.ATHStore?.set(STORAGE_KEY, true);
       window.ATHStore?.set(USER_KEY, user);
-    } catch { }
+      
+      // 2. Save to Supabase (if authenticated)
+      if (window.supabase) {
+        const { data: { user: authUser } } = await window.supabase.auth.getUser();
+        
+        if (authUser) {
+          const profileData = {
+            id: authUser.id,
+            role: wizardData.role,
+            display_name: wizardData.name || authUser.user_metadata?.full_name || 'New User',
+            suburb: '', // Onboarding only asks for state effectively
+            state: wizardData.location || '',
+            onboarded_at: new Date().toISOString()
+            // trades are stored in a separate table/column - simplified for now
+          };
+          
+          const { error } = await window.supabase
+            .from('users')
+            .upsert(profileData);
+            
+          if (error) console.error('Supabase profile update failed:', error);
+          else console.log('✅ Supabase profile updated from wizard');
+        }
+      }
+    } catch (e) {
+      console.error('Onboarding complete error:', e);
+    }
 
     hide();
 
