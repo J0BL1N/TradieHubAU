@@ -3,7 +3,7 @@
  * Replaces static JOBS array with real database operations
  */
 
-import { supabase } from './supabase-client.js';
+import { supabase } from '../core/supabase-client.js';
 
 // ============================================================================
 // JOB QUERIES
