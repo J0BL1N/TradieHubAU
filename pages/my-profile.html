@@ -250,6 +250,24 @@
               <label class="text-sm text-gray-600">License / ID (stored privately)</label>
               <input id="mpLicense" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2"
                 placeholder="Not shown publicly" disabled />
+                
+              <!-- Phase 3B: Identity Verification UI -->
+              <div id="mpVerificationSection" class="mt-3 pt-3 border-t border-gray-100 hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-gray-700">Identity Verification</span>
+                    <span id="mpVerificationStatus" class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Unverified</span>
+                </div>
+                
+                <div id="mpVerifyAction" class="hidden">
+                    <button type="button" id="mpVerifyBtn" class="w-full py-1.5 text-xs bg-teal-50 text-teal-700 border border-teal-200 rounded hover:bg-teal-100 transition">
+                        Verify Identity
+                    </button>
+                    <input type="file" id="mpVerifyInput" accept="image/*,.pdf" class="hidden" />
+                </div>
+                <div id="mpVerifyPending" class="hidden text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                    Verification in progress.
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -290,26 +308,28 @@
   <script src="../js/core/data.js"></script>
   <script src="../js/core/script.js"></script>
   <script type="module">
-    import { supabase, getCurrentUser, getUserProfile, updateUserProfile } from \x27../js/core/supabase-client.js\x27;
+    import { supabase, getCurrentUser } from '../js/core/auth.js';
+    import db from '../js/core/db.js';
+    import { uploadAvatar } from '../js/api/storage-api.js';
+    import { uploadVerificationDocument, getVerificationStatus } from '../js/api/verification-api.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize icons
       if (typeof feather !== 'undefined') feather.replace();
       
       // Wait for auth to initialize
-      const { data: { session } } = await supabase.auth.getSession();
+      const { user } = await getCurrentUser();
       
-      if (!session) {
-        // Not signed in? distinct from guest mode? 
-        // For now, redirect to home or show sign in
-        // window.location.href = 'index.html'; 
+      if (!user) {
+        console.log('Not signed in');
         return;
       }
       
-      const userId = session.user.id;
+      const userId = user.id;
       console.log('?? Loading profile for:', userId);
       
       // Load profile
-      const { profile, error } = await getUserProfile(userId);
+      const { data: profile, error } = await db.getUserProfile(userId);
       
       if (error) {
         console.error('? Failed to load profile:', error);
@@ -346,6 +366,67 @@
         } else {
           // Default avatar
           document.getElementById('mpAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.display_name)}&background=0d9488&color=fff`;
+        }
+
+        // --- Phase 3B: Identity Verification Logic ---
+        const verifSection = document.getElementById('mpVerificationSection');
+        if (verifSection) {
+            // Show verification section only for tradies/dual
+            if (['tradie', 'dual'].includes(profile.role)) {
+                verifSection.classList.remove('hidden');
+                
+                // Fetch status
+                const { status, error: vError } = await getVerificationStatus(userId);
+                
+                const statusEl = document.getElementById('mpVerificationStatus');
+                const actionEl = document.getElementById('mpVerifyAction');
+                const pendingEl = document.getElementById('mpVerifyPending');
+                
+                if (status === 'approved') {
+                    statusEl.textContent = 'Verified';
+                    statusEl.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+                    document.getElementById('mpVerifiedBadge')?.classList.remove('hidden');
+                } else if (status === 'pending') {
+                    statusEl.textContent = 'Pending';
+                    statusEl.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
+                    pendingEl.classList.remove('hidden');
+                } else {
+                    statusEl.textContent = 'Unverified';
+                    actionEl.classList.remove('hidden');
+                }
+                
+                // Handle Upload
+                const verifyBtn = document.getElementById('mpVerifyBtn');
+                const verifyInput = document.getElementById('mpVerifyInput');
+                
+                if (verifyBtn && verifyInput) {
+                    verifyBtn.addEventListener('click', () => verifyInput.click());
+                    verifyInput.addEventListener('change', async (e) => {
+                        if (!e.target.files || e.target.files.length === 0) return;
+                        
+                        const file = e.target.files[0];
+                        verifyBtn.disabled = true;
+                        verifyBtn.textContent = 'Uploading...';
+                        
+                        const { verification, error } = await uploadVerificationDocument(file, 'license');
+                        
+                        if (error) {
+                            console.error('Verification upload failed:', error);
+                            alert('Failed to upload document. Please try again.');
+                            verifyBtn.disabled = false;
+                            verifyBtn.textContent = 'Verify Identity';
+                        } else {
+                             // Update UI to pending
+                             actionEl.classList.add('hidden');
+                             pendingEl.classList.remove('hidden');
+                             statusEl.textContent = 'Pending';
+                             statusEl.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
+                             
+                             if (window.ATHToast) window.ATHToast.show({ type: 'success', message: 'Document submitted for review' });
+                        }
+                    });
+                }
+            }
         }
       }
       
@@ -405,9 +486,9 @@
             postcode: document.getElementById('mpPostcode').value,
             phone: document.getElementById('mpPhone').value,
             abn: document.getElementById('mpAbn')?.value || null,
-            license: document.getElementById('mpLicense')?.value || null,
+            license_number: document.getElementById('mpLicense')?.value || null, // DB column is license_number
             show_location: document.getElementById('mpShowLocation')?.checked || false,
-            address_reveal_rule: document.getElementById('mpAddressRule')?.value || 'afterAccepted',
+            address_rule: document.getElementById('mpAddressRule')?.value || 'afterAccepted',
             updated_at: new Date().toISOString()
           };
           
@@ -431,7 +512,7 @@
           saveBtn.innerHTML = '<i class="animate-spin" data-feather="loader"></i> Saving...';
           feather.replace();
           
-          const { error: updateError } = await updateUserProfile(userId, updates);
+          const { error: updateError } = await db.updateUserProfile(userId, updates);
           
           if (updateError) {
             console.error('? Save failed:', updateError);
@@ -446,7 +527,7 @@
               window.ATHToast.show({ type: 'success', message: 'Profile saved successfully!' });
             }
             
-            // Exit edit mode (logic handled by existing script or we can replicate)
+            // Exit edit mode
             document.getElementById('mpCancelBtn').click();
           }
           

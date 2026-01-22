@@ -35,179 +35,26 @@ window.ATHStore = window.ATHStore || (function () {
 })();
 
 // ----------------------------
-// v0.026: Prototype auth (email/password) + session
+// v0.026: Auth (Deprecated)
 // ----------------------------
-// Client-side only (localStorage). This is for MVP UX testing.
-// It is intentionally separated from `athCurrentUser` so the existing demo
-// identity/profile/job-ownership model continues to work unchanged.
+// Replaced by Supabase Auth (auth.js).
+// Keeping minimal references if needed to avoid crash, but logic is moved.
 window.ATHAuth = window.ATHAuth || (function () {
-  const USERS_KEY = 'athAuthUsers';
-  const SESSION_KEY = 'athAuthSession';
-
-  function readUsers() {
-    const u = window.ATHStore?.get(USERS_KEY, []);
-    return Array.isArray(u) ? u : [];
-  }
-
-  function writeUsers(users) {
-    window.ATHStore?.set(USERS_KEY, Array.isArray(users) ? users : []);
-  }
-
-  function getSession() {
-    const s = window.ATHStore?.get(SESSION_KEY, null);
-    return (s && typeof s === 'object') ? s : null;
-  }
-
-  function setSession(session) {
-    window.ATHStore?.set(SESSION_KEY, session);
-    try {
-      window.dispatchEvent(new CustomEvent('ath:authchange', { detail: { session: getSession() } }));
-    } catch { }
-  }
-
-  function clearSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch { }
-    try {
-      window.dispatchEvent(new CustomEvent('ath:authchange', { detail: { session: null } }));
-    } catch { }
-  }
-
-  function normalizeEmail(email) {
-    return String(email || '').trim().toLowerCase();
-  }
-
-  function isValidEmail(email) {
-    const e = normalizeEmail(email);
-    // permissive RFC-ish check for MVP
-    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
-  }
-
-  async function sha256Hex(input) {
-    const str = String(input || '');
-    try {
-      if (!window.crypto?.subtle) throw new Error('no-subtle');
-      const enc = new TextEncoder();
-      const buf = await window.crypto.subtle.digest('SHA-256', enc.encode(str));
-      const bytes = Array.from(new Uint8Array(buf));
-      return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch {
-      // Fallback: not cryptographically strong. Still avoids plaintext storage.
-      let h = 0;
-      for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
-      return `weak-${Math.abs(h)}`;
-    }
-  }
-
-  function makeId() {
-    return `auth-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  }
-
-  async function signUp(email, password) {
-    const e = normalizeEmail(email);
-    if (!isValidEmail(e)) return { ok: false, error: 'Please enter a valid email.' };
-    const p = String(password || '');
-    if (p.length < 6) return { ok: false, error: 'Password must be at least 6 characters.' };
-
-    const users = readUsers();
-    if (users.some(u => normalizeEmail(u?.email) === e)) {
-      return { ok: false, error: 'An account with that email already exists.' };
-    }
-
-    const passwordHash = await sha256Hex(p);
-    const user = {
-      id: makeId(),
-      email: e,
-      passwordHash,
-      emailVerified: false,
-      createdAt: new Date().toISOString()
-    };
-    users.push(user);
-    writeUsers(users);
-    setSession({ userId: user.id, email: user.email, signedInAt: new Date().toISOString() });
-    return { ok: true, user };
-  }
-
-  async function signIn(email, password) {
-    const e = normalizeEmail(email);
-    if (!isValidEmail(e)) return { ok: false, error: 'Please enter a valid email.' };
-    const p = String(password || '');
-
-    const users = readUsers();
-    const user = users.find(u => normalizeEmail(u?.email) === e);
-    if (!user) return { ok: false, error: 'Incorrect email or password.' };
-
-    const hash = await sha256Hex(p);
-    if (String(user.passwordHash) !== String(hash)) {
-      return { ok: false, error: 'Incorrect email or password.' };
-    }
-    return { ok: true, user };
-  }
-
-  async function signInWithGoogle(googleUser) {
-    // googleUser: { email, name, picture, sub }
-    const e = normalizeEmail(googleUser.email);
-    const users = readUsers();
-
-    // Check if user exists
-    let user = users.find(u => normalizeEmail(u?.email) === e);
-
-    if (!user) {
-      // Create new user from Google data
-      user = {
-        id: makeId(),
-        email: e,
-        // No password hash for google-only users, or we could set a random one
-        passwordHash: 'google-auth-no-pass',
-        displayName: googleUser.name,
-        avatar: googleUser.picture, // Store Google avatar URL
-        emailVerified: true, // Google emails are verified
-        createdAt: new Date().toISOString(),
-        authProvider: 'google'
-      };
-      users.push(user);
-      writeUsers(users);
-    } else {
-      // Update existing user with latest Google info (optional, but good for avatar)
-      // Only update if they don't have a custom avatar set locally? 
-      // For MVP, let's update basic info if it's missing or if they are a google user.
-      if (!user.displayName) user.displayName = googleUser.name;
-      if (!user.avatar) user.avatar = googleUser.picture;
-
-      // Merge changes
-      const idx = users.indexOf(user);
-      if (idx !== -1) {
-        users[idx] = user;
-        writeUsers(users);
-      }
-    }
-
-    setSession({ userId: user.id, email: user.email, signedInAt: new Date().toISOString(), provider: 'google' });
-    return { ok: true, user };
-  }
-
-  function signOut() {
-    clearSession();
-  }
-
-  function getCurrentAuthUser() {
-    const s = getSession();
-    if (!s?.userId) return null;
-    const users = readUsers();
-    return users.find(u => String(u?.id) === String(s.userId)) || null;
-  }
+  // Stub for backward compatibility during migration
+  function readUsers() { return []; }
+  function getSession() { return null; }
+  function setSession() {}
+  function clearSession() {}
+  function getCurrentAuthUser() { return null; }
 
   return {
     readUsers,
     getSession,
     setSession,
     clearSession,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signOut,
     getCurrentAuthUser,
-    normalizeEmail,
-    isValidEmail,
+    normalizeEmail: (e) => String(e || '').trim().toLowerCase(),
+    isValidEmail: () => true
   };
 })();
 
@@ -605,54 +452,70 @@ window.ATHJobDetails = window.ATHJobDetails || (function () {
 // ----------------------------
 // Batch N3: Integrity (no direct contact until payment)
 // ----------------------------
+// ----------------------------
+// Batch N3: Integrity (no direct contact until payment)
+// ----------------------------
 window.ATHIntegrity = window.ATHIntegrity || (function () {
   // Batch N3+: Integrity (no direct contact until payment)
   const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig;
   // Best-effort phone matcher: long digit runs with optional separators
-  const PHONE_RE = /(?:\+?\d[\d\s().-]{7,}\d)/g;
+  // Improved to catch more obfuscations like "0 four ... "
+  const PHONE_RE = /(?:\+?\d[\d\s().-]{7,}\d)|(?:\b0\s*4\s*\d(?:\s*\d){7})/g;
   // URLs with scheme or www
   const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<]+/ig;
-  // Bare domains (e.g., example.com, example.com.au). TLD must be letters.
+  // Bare domains (e.g., example.com)
   const DOMAIN_RE = /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,})(?:\/[\w\-./?%&=+#]*)?/ig;
 
-  function canShareContact() {
-    // Future: flip true after payment confirmation.
-    // For now: privacy-first prototype rule.
-    return false;
+  // Cache unlock status per job
+  const _unlockCache = new Map(); 
+
+  async function canShareContact(jobId) {
+    if (!jobId) return false;
+    
+    // Check cache
+    if (_unlockCache.has(jobId)) return _unlockCache.get(jobId);
+
+    try {
+      // Check payment status via API (dynamically imported)
+      const { getJobPayment } = await import('../api/payments-api.js');
+      const { payment } = await getJobPayment(jobId);
+      
+      // Unlock if payment is held in escrow or released
+      // Also unlock if the job is just 'completed' (legacy/historic) but for Phase 3 strictness, we require payment
+      const unlocked = payment && ['held_in_escrow', 'released'].includes(payment.status);
+      
+      _unlockCache.set(jobId, unlocked);
+      return unlocked;
+    } catch (e) {
+      return false; // Fail safe (remain locked)
+    }
   }
 
   function normalizeForScan(input) {
     let t = String(input || '').toLowerCase();
-    // normalize whitespace
     t = t.replace(/[\r\n\t]+/g, ' ');
-    // normalize common obfuscations
     t = t.replace(/[\[(\{]\s*dot\s*[\]\)\}]/g, '.');
     t = t.replace(/[\[(\{]\s*at\s*[\]\)\}]/g, '@');
     t = t.replace(/\s+dot\s+/g, '.');
     t = t.replace(/\s+at\s+/g, '@');
-    // collapse spaced-out words: "t r a d i e" -> "tradie"
     t = t.replace(/\b(?:[a-z]\s+){2,}[a-z]\b/g, (m) => m.replace(/\s+/g, ''));
     return t;
   }
 
-  function scanText(input) {
-    if (canShareContact()) return { hasContact: false, types: { email: false, phone: false, url: false } };
-
+  function scanText(input, jobId) {
+    // Synchronous scan mainly for warnings. Actual enforcement is async/server-side ideally.
+    // For UI feedback, we assume locked unless we know otherwise.
+    
     const original = String(input || '');
     const norm = normalizeForScan(original);
     const compact = norm.replace(/[\s\u200B\u200C\u200D\uFEFF_\-()\[\]{}<>|]+/g, '');
 
-    // Email: direct OR obfuscated (at/dot)
     const email = EMAIL_RE.test(original) || EMAIL_RE.test(norm) || EMAIL_RE.test(compact);
-
-    // Phone: direct pattern OR obfuscated digit runs (e.g., 0x4x1x...)
     const digits = compact.replace(/x/g, '').replace(/\D/g, '');
     const phone = PHONE_RE.test(original) || (digits.length >= 8);
-
-    // URL/domain: direct or obfuscated
     const url = URL_RE.test(original) || DOMAIN_RE.test(norm) || DOMAIN_RE.test(compact);
 
-    // Reset global regex state after .test on /g
+    // Reset regex state
     EMAIL_RE.lastIndex = 0;
     PHONE_RE.lastIndex = 0;
     URL_RE.lastIndex = 0;
@@ -661,50 +524,54 @@ window.ATHIntegrity = window.ATHIntegrity || (function () {
     return { hasContact: !!(email || phone || url), types: { email: !!email, phone: !!phone, url: !!url } };
   }
 
-  function sanitizeTextJs(input) {
+  // Async sanitize (checks unlock status)
+  async function sanitizeText(input, jobId) {
     const original = String(input || '');
-    if (canShareContact()) return { text: original, changed: false };
+    
+    // If unlocked, return as-is
+    if (await canShareContact(jobId)) {
+        return { text: original, changed: false, unlocked: true };
+    }
 
     let out = original;
+    const mask = ' [Hidden until job accepted] ';
 
-    // Remove emails
-    out = out.replace(EMAIL_RE, '•••••');
-
-    // Remove phone-ish sequences
+    out = out.replace(EMAIL_RE, mask);
     out = out.replace(PHONE_RE, (m) => {
-      const digits = String(m).toLowerCase().replace(/x/g, '').replace(/\D/g, '');
+      // Allow short numbers (prices, dims) but block phone-like lengths
+      const digits = String(m).replace(/\D/g, '');
       if (digits.length < 8) return m;
-      return '•••••';
+      return mask;
     });
-
-    // Remove URLs + bare domains
-    out = out.replace(URL_RE, '•••••');
+    out = out.replace(URL_RE, mask);
     out = out.replace(DOMAIN_RE, (m) => {
-      // avoid nuking version strings like v0.029
-      const hasAlpha = /[a-z]/i.test(m);
-      const hasDot = m.includes('.');
-      if (!hasAlpha || !hasDot) return m;
-      return '•••••';
+      // avoid nuking version strings
+      if (!m.includes('.') || !/[a-z]/i.test(m)) return m;
+      return mask;
     });
 
-    return { text: out, changed: out !== original };
+    return { text: out, changed: out !== original, unlocked: false };
   }
 
-  function renderBanner(mountEl) {
+  function renderBanner(mountEl, isUnlocked) {
     if (!mountEl) return;
-    if (canShareContact()) {
-      mountEl.innerHTML = '';
-      return;
-    }
-    mountEl.innerHTML = `
-      <div class="ath-integrity-banner flex items-start gap-3 p-3 rounded-xl border border-teal-200 bg-teal-50 text-teal-900">
-        <div class="mt-0.5"><i data-feather="lock" class="w-4 h-4"></i></div>
-        <div class="text-sm">
-          <div class="font-semibold">Contact details are locked until payment is confirmed.</div>
-          <div class="text-teal-800">Keep chat and job info inside TradieHub to stay protected.</div>
+    if (isUnlocked) {
+      mountEl.innerHTML = `
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50 text-green-900">
+             <i data-feather="unlock" class="w-4 h-4"></i>
+             <div class="text-sm font-semibold">Payment secured. Contact details unlocked.</div>
+        </div>`;
+    } else {
+      mountEl.innerHTML = `
+        <div class="ath-integrity-banner flex items-start gap-3 p-3 rounded-xl border border-teal-200 bg-teal-50 text-teal-900">
+          <div class="mt-0.5"><i data-feather="lock" class="w-4 h-4"></i></div>
+          <div class="text-sm">
+            <div class="font-semibold">Contact details are locked until payment is confirmed.</div>
+            <div class="text-teal-800">Keep chat and job info inside TradieHub to stay protected.</div>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
     if (typeof feather !== 'undefined') feather.replace();
   }
 
@@ -715,7 +582,7 @@ window.ATHIntegrity = window.ATHIntegrity || (function () {
     else el.classList.remove('hidden');
   }
 
-  return { canShareContact, scanText, sanitizeText: sanitizeTextJs, renderBanner, setInlineNotice };
+  return { canShareContact, scanText, sanitizeText, renderBanner, setInlineNotice };
 })();
 
 // ----------------------------

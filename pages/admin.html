@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | AussieTradieHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-teal-500 p-1.5 rounded">
+                    <i data-feather="shield" class="w-5 h-5 text-white"></i>
+                </div>
+                <h1 class="font-bold text-lg tracking-tight">ATH Admin</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="adminName" class="text-sm text-gray-400">Loading...</span>
+                <button onclick="window.location.href='../index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Total Users</p>
+                        <h3 id="statUsers" class="text-2xl font-bold text-gray-900 mt-1">-</h3>
+                    </div>
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-feather="users" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Active Jobs</p>
+                        <h3 id="statJobs" class="text-2xl font-bold text-gray-900 mt-1">-</h3>
+                    </div>
+                    <div class="p-2 bg-teal-50 text-teal-600 rounded-lg"><i data-feather="briefcase" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Pending Verifications</p>
+                        <h3 id="statVerifications" class="text-2xl font-bold text-amber-600 mt-1">-</h3>
+                    </div>
+                    <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-feather="file-text" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Platform Revenue</p>
+                        <h3 id="statRevenue" class="text-2xl font-bold text-green-600 mt-1">$0.00</h3>
+                    </div>
+                    <div class="p-2 bg-green-50 text-green-600 rounded-lg"><i data-feather="dollar-sign" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Verification Queue -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h2 class="font-bold text-gray-800">Verification Queue</h2>
+                        <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">Requires Action</span>
+                    </div>
+                    <div id="verificationList" class="divide-y divide-gray-100">
+                        <div class="p-4 text-center text-gray-500 text-sm">Loading queue...</div>
+                    </div>
+                    <div class="p-4 border-t border-gray-200 bg-gray-50 text-center">
+                        <button class="text-sm text-teal-600 font-medium hover:text-teal-700">View All Verifications</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h2 class="font-bold text-gray-800">Recent Users</h2>
+                    </div>
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-3">User</th>
+                                <th class="px-6 py-3">Role</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right: System Health & Logs -->
+            <div class="space-y-6">
+                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-800 mb-4">System Health</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Database</span>
+                            <span class="flex items-center text-green-600"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Connected</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Storage</span>
+                            <span class="flex items-center text-green-600"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Online</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-600">Auth Services</span>
+                            <span class="flex items-center text-green-600"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> Operational</span>
+                        </div>
+                        <div class="pt-3 border-t border-gray-100 mt-2">
+                            <button id="runMigrationBtn" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm transition">
+                                <i data-feather="database" class="w-3 h-3 inline mr-1"></i> Sync Local Data
+                            </button>
+                        </div>
+                    </div>
+                 </div>
+
+                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-800 mb-4">Admin Actions</h3>
+                    <div class="space-y-2">
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                            <span>Manage Categories</span>
+                            <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                        </button>
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                            <span>Review Disputes</span>
+                            <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                        </button>
+                        <button class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                            <span>Platform Settings</span>
+                            <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                        </button>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="../js/core/supabase-client.js"></script>
+    <script type="module" src="../js/api/verification-api.js"></script>
+    <script type="module">
+        import { supabase, getCurrentUser } from '../js/core/supabase-client.js';
+        import { adminApproveVerification } from '../js/api/verification-api.js';
+
+        async function initAdmin() {
+            if (typeof feather !== 'undefined') feather.replace();
+
+            const { user } = await getCurrentUser();
+            if(!user) {
+                window.location.href = '../index.html';
+                return;
+            }
+            document.getElementById('adminName').textContent = user.email;
+
+            // Load Stats (Mocked counts via simple queries)
+            // In real app use count() queries
+            const { count: userCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+            document.getElementById('statUsers').textContent = userCount || 0;
+
+            const { count: jobCount } = await supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'open');
+            document.getElementById('statJobs').textContent = jobCount || 0;
+
+            const { count: verifCount } = await supabase.from('verifications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+            document.getElementById('statVerifications').textContent = verifCount || 0;
+
+
+            // Load Pending Verifications
+            const { data: verifs } = await supabase
+                .from('verifications')
+                .select('*, users(display_name, email)')
+                .eq('status', 'pending')
+                .limit(5);
+
+            const vList = document.getElementById('verificationList');
+            if (!verifs || verifs.length === 0) {
+                vList.innerHTML = '<div class="p-8 text-center text-gray-500 text-sm">No pending verifications. All caught up!</div>';
+            } else {
+                vList.innerHTML = verifs.map(v => `
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                                <i data-feather="file" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900">${v.users?.display_name || 'Unknown User'}</h4>
+                                <p class="text-xs text-gray-500">Document: ${v.document_type} • ${new Date(v.submitted_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${supabase.storage.from('verifications').getPublicUrl(v.document_url).data.publicUrl}" target="_blank" class="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-white transition text-gray-700">View PDF</a>
+                            <button onclick="window.approveVerif('${v.id}')" class="px-3 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 transition">Approve</button>
+                        </div>
+                    </div>
+                `).join('');
+                if (typeof feather !== 'undefined') feather.replace();
+            }
+
+            // Expose approve function
+            window.approveVerif = async (id) => {
+                const btn = document.activeElement;
+                if(btn) btn.innerHTML = '...';
+                
+                await adminApproveVerification(id);
+                window.location.reload();
+            };
+            
+            // Load Recent Users
+            const { data: recentUsers } = await supabase.from('users').select('*').order('created_at', { ascending: false }).limit(5);
+            const userTable = document.getElementById('userTableBody');
+            if(recentUsers) {
+                userTable.innerHTML = recentUsers.map(u => `
+                    <tr class="hover:bg-gray-50 bg-white">
+                        <td class="px-6 py-4 font-medium text-gray-900">
+                             <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                                    <img src="${u.avatar_url || 'https://ui-avatars.com/api/?name='+u.display_name}" class="w-full h-full object-cover">
+                                </div>
+                                ${u.display_name || 'No Name'}
+                             </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-500 capitalize">${u.role || 'customer'}</td>
+                        <td class="px-6 py-4">
+                            ${u.verified 
+                                ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>' 
+                                : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Unverified</span>'}
+                        </td>
+                        <td class="px-6 py-4 text-gray-500">${new Date(u.created_at).toLocaleDateString()}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        initAdmin();
+    </script>
+</body>
+</html>
