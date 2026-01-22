@@ -1,0 +1,76 @@
+<!-- Shared Navigation Component - Copy this to all pages -->
+<nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center">
+                    <i data-feather="tool" class="w-4 h-4 text-white"></i>
+                </div>
+                <span class="text-xl font-bold text-gray-900 dark:text-white">AussieTradieHub</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-6">
+                <a href="../index.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1">
+                    <i data-feather="home" class="w-4 h-4"></i> Home
+                </a>
+                <a href="browse-trades.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1">
+                    <i data-feather="users" class="w-4 h-4"></i> Find Tradies
+                </a>
+                <a href="browse-customers.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1">
+                    <i data-feather="user-check" class="w-4 h-4"></i> Find Customers
+                </a>
+                <a href="jobs.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1">
+                    <i data-feather="briefcase" class="w-4 h-4"></i> Job Board
+                </a>
+                <a href="messages.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1">
+                    <i data-feather="message-square" class="w-4 h-4"></i> Messages
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Dark Mode Toggle -->
+                <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300" aria-label="Toggle dark mode">
+                    <i data-feather="moon" class="w-5 h-5 dark-mode-icon"></i>
+                    <i data-feather="sun" class="w-5 h-5 light-mode-icon hidden"></i>
+                </button>
+                
+                <a href="my-profile.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium">Log In</a>
+                <a href="my-profile.html" class="bg-gray-900 dark:bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-teal-700 font-medium">Sign Up</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Dark Mode Script - Add before closing </body> tag -->
+<script>
+    // Dark Mode Toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const htmlElement = document.documentElement;
+    
+    // Check for saved preference or default to light mode
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+        htmlElement.classList.add('dark');
+    }
+    
+    darkModeToggle.addEventListener('click', () => {
+        htmlElement.classList.toggle('dark');
+        const theme = htmlElement.classList.contains('dark') ? 'dark' : 'light';
+        localStorage.setItem('theme', theme);
+        feather.replace(); // Refresh icons
+    });
+</script>
+
+<!-- Add to <head> section -->
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+    }
+</script>
+<style>
+    .dark .dark-mode-icon { display: none; }
+    .dark .light-mode-icon { display: block; }
+</style>
+
+<!-- Add dark mode classes to body tag -->
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
