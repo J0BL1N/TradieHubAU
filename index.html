@@ -7,9 +7,9 @@
     <meta name="theme-color" content="#0d9488">
     <title>AussieTradieHub | Connect with Trusted Tradesmen</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>`r`n    <script src="js/core/data.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <link rel="stylesheet" href="css/main/style.css">
+    <link rel="stylesheet" href="css/main/style.css">`r`n    <link rel="stylesheet" href="css/components/carousel.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -105,6 +105,23 @@
     </section>
     <!-- Main Content -->
     <main class="container mx-auto px-3 py-6">
+    <!-- News/Activity Feed Section -->
+    <section class="mb-8 bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <i data-feather="activity" class="w-5 h-5 text-teal-600"></i>
+                <h2 class="text-lg font-bold text-gray-900">Live Activity</h2>
+            </div>
+            <span class="text-xs text-gray-500">Updates every 30s</span>
+        </div>
+        <div id="news-feed-container" class="space-y-2 max-h-64 overflow-y-auto">
+            <!-- Activity feed will be rendered here -->
+            <div class="flex items-center justify-center py-8 text-gray-400">
+                <i data-feather="loader" class="w-5 h-5 animate-spin mr-2"></i>
+                <span>Loading activity...</span>
+            </div>
+        </div>
+    </section>
         <!-- Featured Tradesmen -->
         <section class="mb-12">
             <div class="flex justify-between items-center mb-6">
@@ -118,7 +135,7 @@
                 </a>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div class="ath-carousel"><div class="ath-carousel-track grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <!-- Featured Tradesman Card 1 -->
                 <div
                     class="bg-white rounded-lg shadow-sm hover:shadow-md transition duration-300 border border-gray-200">
@@ -328,9 +345,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
-        <!-- Stats & Features -->
+            </div><button class="ath-carousel-nav prev" aria-label="Previous"><i data-feather="chevron-left"></i></button><button class="ath-carousel-nav next" aria-label="Next"><i data-feather="chevron-right"></i></button><div class="ath-carousel-dots"><span class="ath-carousel-dot active"></span><span class="ath-carousel-dot"></span><span class="ath-carousel-dot"></span></div></div></section><!-- Stats & Features -->
         <section class="mb-12">
             <div class="text-center mb-8">
                 <h2 class="text-xl font-bold text-gray-900 mb-2">Why AussieTradieHub?</h2>
@@ -347,7 +362,7 @@
                     <p class="text-teal-100 mb-4 text-sm">Every tradesman is verified with ABN, license checks, and
                         thorough background verification.</p>
                     <div class="flex items-center">
-                        <span class="text-2xl font-bold mr-1">12,500+</span>
+                        <span id="stat-verified-trades" class="text-2xl font-bold mr-1 ath-stat-number">12,500+</span>
                         <span class="text-teal-100 text-sm">Verified Trades</span>
                     </div>
                 </div>
@@ -360,7 +375,7 @@
                     <p class="text-gray-600 mb-4 text-sm">Both customers and tradesmen can leave reviews, ensuring
                         honest feedback from all parties.</p>
                     <div class="flex items-center">
-                        <span class="text-2xl font-bold mr-1 text-gray-900">45,000+</span>
+                        <span id="stat-verified-reviews" class="text-2xl font-bold mr-1 text-gray-900 ath-stat-number">45,000+</span>
                         <span class="text-gray-600 text-sm">Verified Reviews</span>
                     </div>
                 </div>
@@ -373,7 +388,7 @@
                     <p class="text-gray-600 mb-4 text-sm">Built-in messaging with file sharing, job references, and
                         real-time notifications.</p>
                     <div class="flex items-center">
-                        <span class="text-2xl font-bold mr-1 text-gray-900">8,500+</span>
+                        <span id="stat-active-chats" class="text-2xl font-bold mr-1 text-gray-900 ath-stat-number">8,500+</span>
                         <span class="text-gray-600 text-sm">Active Chats</span>
                     </div>
                 </div>
@@ -386,8 +401,8 @@
                 <p class="text-sm text-gray-600">Find the right professional for any job</p>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <a href="browse-trades.html?category=plumbing"
+            <div id="trade-categories-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <a href="pages/browse-trades.html?category=plumbing"
                     class="bg-white p-4 rounded-lg shadow-sm hover:shadow transition duration-300 border border-gray-200 text-center group hover:border-teal-500">
                     <div
                         class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-100 transition">
@@ -397,7 +412,7 @@
                     <p class="text-gray-500 text-xs">1,240 professionals</p>
                 </a>
 
-                <a href="browse-trades.html?category=electrical"
+                <a href="pages/browse-trades.html?category=electrical"
                     class="bg-white p-4 rounded-lg shadow-sm hover:shadow transition duration-300 border border-gray-200 text-center group hover:border-teal-500">
                     <div
                         class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-100 transition">
@@ -407,7 +422,7 @@
                     <p class="text-gray-500 text-xs">890 professionals</p>
                 </a>
 
-                <a href="browse-trades.html?category=carpentry"
+                <a href="pages/browse-trades.html?category=carpentry"
                     class="bg-white p-4 rounded-lg shadow-sm hover:shadow transition duration-300 border border-gray-200 text-center group hover:border-teal-500">
                     <div
                         class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-100 transition">
@@ -417,7 +432,7 @@
                     <p class="text-gray-500 text-xs">760 professionals</p>
                 </a>
 
-                <a href="browse-trades.html?category=painting"
+                <a href="pages/browse-trades.html?category=painting"
                     class="bg-white p-4 rounded-lg shadow-sm hover:shadow transition duration-300 border border-gray-200 text-center group hover:border-teal-500">
                     <div
                         class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-100 transition">
@@ -427,7 +442,7 @@
                     <p class="text-gray-500 text-xs">540 professionals</p>
                 </a>
 
-                <a href="browse-trades.html?category=gardening"
+                <a href="pages/browse-trades.html?category=gardening"
                     class="bg-white p-4 rounded-lg shadow-sm hover:shadow transition duration-300 border border-gray-200 text-center group hover:border-teal-500">
                     <div
                         class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-100 transition">
@@ -437,7 +452,7 @@
                     <p class="text-gray-500 text-xs">420 professionals</p>
                 </a>
 
-                <a href="browse-trades.html?category=cleaning"
+                <a href="pages/browse-trades.html?category=cleaning"
                     class="bg-white p-4 rounded-lg shadow-sm hover:shadow transition duration-300 border border-gray-200 text-center group hover:border-teal-500">
                     <div
                         class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-teal-100 transition">
@@ -573,7 +588,7 @@
     
     <!-- Supabase Client & Authentication -->
     <script type="module" src="js/core/supabase-client.js"></script>
-    <script type="module" src="js/core/auth.js"></script>
+    <script type="module" src="js/core/auth.js"></script>`r`n    <script type="module" src="js/components/index-enhancements.js"></script>
     
     <script>
         // Mobile menu handled by script.js
@@ -589,3 +604,11 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
+
