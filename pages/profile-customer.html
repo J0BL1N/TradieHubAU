@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -89,7 +89,7 @@
 
           <div class="mt-4">
             <h1 id="customerName" class="text-2xl font-bold text-gray-900">Customer Name</h1>
-            <p id="customerMeta" class="text-gray-600 mt-1">Location • Tagline</p>
+            <p id="customerMeta" class="text-gray-600 mt-1">Location â€¢ Tagline</p>
 
             <div class="mt-3 flex flex-wrap gap-2">
               <span
@@ -129,7 +129,7 @@
           <div class="flex justify-end">
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 w-full md:w-auto">
               <p class="text-xs text-gray-500">Response expectations</p>
-              <p class="font-semibold text-gray-900 text-sm mt-1">Clear scope • Prompt replies</p>
+              <p class="font-semibold text-gray-900 text-sm mt-1">Clear scope â€¢ Prompt replies</p>
             </div>
           </div>
 
@@ -213,7 +213,7 @@
               typeColor: 'bg-blue-500',
               location: (u.privacy && u.privacy.showLocation) ? `${u.location?.suburb || ''}${u.location?.state ? ', ' + u.location.state : ''}`.replace('undefined', '').replace(' ,', '').trim() : 'Hidden',
               tagline: 'Your public customer profile preview',
-              rating: '—',
+              rating: 'â€”',
               reviews: '',
               image: (u.avatarDataUrl || u.avatar) || 'https://static.photos/people/320x240/301',
               conversationId: 'me',
@@ -275,7 +275,7 @@
                     <div class="font-bold text-gray-900">${esc(job.title || 'Job')}</div>
                     <div class="mt-1 text-sm text-gray-600 flex items-center">
                       <i data-feather="map-pin" class="w-4 h-4 mr-1"></i>
-                      <span>${esc(job.location || '—')}</span>
+                      <span>${esc(job.location || 'â€”')}</span>
                     </div>
                   </div>
                   <span class="${statusPill(st)} text-xs font-semibold px-3 py-1 rounded-full">${esc(st.replace('_', ' '))}</span>

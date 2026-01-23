@@ -15,7 +15,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
-<body class="font-inter bg-gray-50">
+<body class="font-inter bg-gray-50 ath-jobs-page">
 
   <!-- Main Navigation -->
   <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
@@ -79,7 +79,7 @@
     </div>
 
     <!-- Stats & CTA -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ath-jobs-stats">
       <div class="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
@@ -118,7 +118,7 @@
       <!-- Left Sidebar - Filters -->
       <aside class="lg:w-1/4 ath-filter-drawer" id="athFiltersDrawer">
         <div
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-24 h-full lg:h-auto overflow-auto">
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-24 h-full lg:h-auto overflow-auto ath-job-filters-card">
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-lg font-bold text-gray-900">Filters</h2>
             <div class="flex items-center gap-3">
@@ -250,8 +250,8 @@
       <!-- Right Content - Job Listings -->
       <div class="lg:w-3/4">
         <!-- Results Header -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div class="flex flex-col md:flex-row md:items-center justify-between">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 ath-jobs-results-header">
+          <div class="flex flex-col md:flex-row md:items-center justify-between ath-jobs-controls">
             <div>
               <h3 class="font-bold text-gray-900"><span id="athJobResultsCount">0</span> Jobs Found</h3>
               <p class="text-sm text-gray-600">Sorted by:</p>

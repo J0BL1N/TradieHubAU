@@ -36,6 +36,9 @@
                     <a href="messages.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="message-square" class="w-3.5 h-3.5"></i> Messages</a>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="mobileMenuButton" class="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="Open menu" aria-expanded="false">
+                        <i data-feather="menu" class="w-4 h-4"></i>
+                    </button>
                     <button id="darkModeToggle" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
                         <i data-feather="moon" class="w-4 h-4 dark-mode-icon"></i>
                         <i data-feather="sun" class="w-4 h-4 light-mode-icon hidden"></i>
@@ -46,6 +49,19 @@
             </div>
         </div>
     </nav>
+    <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
+            <a href="../index.html" class="block text-gray-700 dark:text-gray-200">Home</a>
+            <a href="browse-trades.html" class="block text-gray-700 dark:text-gray-200 font-semibold">Find Tradies</a>
+            <a href="browse-customers.html" class="block text-gray-700 dark:text-gray-200">Find Customers</a>
+            <a href="jobs.html" class="block text-gray-700 dark:text-gray-200">Job Board</a>
+            <a href="messages.html" class="block text-gray-700 dark:text-gray-200">Messages</a>
+            <div class="border-t border-gray-200 dark:border-gray-700 pt-2">
+                <a href="my-profile.html" class="block text-gray-700 dark:text-gray-200">Log In</a>
+                <a href="my-profile.html" class="block text-gray-700 dark:text-gray-200">Sign Up</a>
+            </div>
+        </div>
+    </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div id="athFiltersBackdrop" class="ath-drawer-backdrop hidden lg:hidden"></div>
         <div class="flex gap-4 ath-browse-layout">
@@ -270,6 +286,18 @@
             loadTradies();
         }
 
+        function getAvatarUrl(name) {
+            const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const colors = ['#0d9488', '#0891b2', '#0f766e', '#0e7490']; // Teal/Cyan variations
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <rect width="100" height="100" fill="${color}"/>
+                <text x="50" y="50" dy=".35em" fill="white" font-family="Arial" font-size="40" text-anchor="middle" font-weight="bold">${initials}</text>
+            </svg>`;
+            return `data:image/svg+xml;base64,${btoa(svg)}`;
+        }
+
         function loadFeaturedTradies() {
             const tradiesObj = window.TRADIES || {};
             const tradies = Object.values(tradiesObj)
@@ -288,8 +316,9 @@
                         <span class="px-2 py-0.5 bg-teal-600 text-white text-xs font-bold rounded">FEATURED</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
-                             class="w-12 h-12 rounded-full border-2 border-teal-400">
+                        <img src="${t.image || getAvatarUrl(t.name)}" 
+                             onerror="this.onerror=null; this.src='${getAvatarUrl(t.name)}'"
+                             class="w-12 h-12 rounded-full border-2 border-teal-400 object-cover">
                         <div class="flex-1">
                             <h3 class="font-semibold text-sm text-gray-900 dark:text-white">${t.name}</h3>
                             <p class="text-xs text-gray-600 dark:text-gray-300">${t.trade || 'Electrician'}</p>
@@ -430,8 +459,9 @@
             // Render tradies
             list.innerHTML = paginatedTradies.map(t => `
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition flex gap-3 ath-result-card">
-                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
-                         class="w-14 h-14 rounded-full border-2 border-teal-500 flex-shrink-0" alt="${t.name}"/>
+                    <img src="${t.image || getAvatarUrl(t.name)}" 
+                         onerror="this.onerror=null; this.src='${getAvatarUrl(t.name)}'"
+                         class="w-14 h-14 rounded-full border-2 border-teal-500 flex-shrink-0 object-cover" alt="${t.name}"/>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-1">
                             <div>

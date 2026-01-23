@@ -133,7 +133,7 @@
 
         <div id="athChatPane" class="flex-1 flex flex-col min-h-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <!-- Header (JS updates these IDs) -->
-            <div class="p-4 border-b border-gray-200">
+            <div class="p-4 border-b border-gray-200 ath-chat-header">
               <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                   <button id="chatBackBtn"
@@ -148,14 +148,14 @@
                   </div>
                   <div>
                     <h3 id="chatName" class="font-bold text-gray-900">Michael Roberts</h3>
-                    <div class="flex items-center text-sm text-gray-600">
+                    <div class="flex items-center text-sm text-gray-600 ath-chat-meta">
                       <span id="chatMeta">Homeowner &bull; Sydney, NSW</span>
                       <span class="mx-2">&bull;</span>
                       <span id="chatStatus" class="text-green-600">Online now</span>
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2 ath-chat-actions">
                   <!-- v0.060: Message Search Button -->
                   <button onclick="window.toggleMessageSearch()" class="p-2 hover:bg-gray-100 rounded-lg" type="button" aria-label="Search messages" title="Search in conversation">
                     <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

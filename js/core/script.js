@@ -1428,6 +1428,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMyProfilePage();
   initFilterDrawer();
   initIntegrityBanners();
+  initMobileMenu();
   if (document.querySelector('.bottom-nav')) {
     document.body.classList.add('has-bottom-nav');
   }
@@ -1494,6 +1495,44 @@ function initFilterDrawer() {
   };
   if (mq.addEventListener) mq.addEventListener('change', onMq);
   else if (mq.addListener) mq.addListener(onMq);
+}
+
+// ----------------------------
+// Mobile top-nav menu
+// ----------------------------
+function initMobileMenu() {
+  const btn = document.getElementById('mobileMenuButton');
+  const menu = document.getElementById('mobileMenu');
+  if (!btn || !menu) return;
+
+  const close = () => {
+    menu.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+  };
+
+  const toggle = () => {
+    const isOpen = !menu.classList.contains('hidden');
+    if (isOpen) close();
+    else {
+      menu.classList.remove('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  };
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggle();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (menu.classList.contains('hidden')) return;
+    if (btn.contains(e.target) || menu.contains(e.target)) return;
+    close();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
 }
 
 

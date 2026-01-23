@@ -157,7 +157,7 @@ window.TRADIES = {
     // Batch M: reviewCount is the canonical review counter shown in UI (derived later from real reviews)
     reviewCount: 3,
     verified: true,
-    image: "https://static.photos/people/320x240/302",
+    image: "https://randomuser.me/api/portraits/men/32.jpg",
     conversationId: "liam-thompson",
     yearLevel: 3,
     about:
@@ -171,7 +171,7 @@ window.TRADIES = {
     rating: "4.7",
     reviewCount: 2,
     verified: true,
-    image: "https://static.photos/people/320x240/303",
+    image: "https://randomuser.me/api/portraits/women/65.jpg",
     conversationId: "olivia-chen",
     yearLevel: 5,
     about:
@@ -185,7 +185,7 @@ window.TRADIES = {
     rating: "4.6",
     reviewCount: 0,
     verified: false,
-    image: "https://static.photos/people/320x240/304",
+    image: "https://randomuser.me/api/portraits/men/45.jpg",
     conversationId: "noah-williams",
     yearLevel: 2,
     about:
@@ -201,7 +201,7 @@ window.TRADIES = {
     rating: "4.9",
     reviewCount: 18,
     verified: true,
-    image: "https://static.photos/construction/320x240/201",
+    image: "https://randomuser.me/api/portraits/men/11.jpg",
     conversationId: "mark-johnson",
     yearLevel: 6,
     about:
@@ -215,7 +215,7 @@ window.TRADIES = {
     rating: "4.7",
     reviewCount: 14,
     verified: true,
-    image: "https://static.photos/technology/320x240/202",
+    image: "https://randomuser.me/api/portraits/women/33.jpg",
     conversationId: "sarah-chen",
     yearLevel: 7,
     about:
@@ -229,7 +229,7 @@ window.TRADIES = {
     rating: "5.0",
     reviewCount: 9,
     verified: true,
-    image: "https://static.photos/people/320x240/304",
+    image: "https://randomuser.me/api/portraits/men/22.jpg",
     conversationId: "david-wilson",
     yearLevel: 8,
     about:
@@ -243,7 +243,7 @@ window.TRADIES = {
     rating: "4.6",
     reviewCount: 7,
     verified: true,
-    image: "https://static.photos/people/320x240/305",
+    image: "https://randomuser.me/api/portraits/women/40.jpg",
     conversationId: "lisa-brown",
     yearLevel: 4,
     about:
@@ -796,6 +796,7 @@ window.CUSTOMERS = {
     jobsPosted: 8,
     jobsCompleted: 7,
     verified: true,
+    image: 'https://randomuser.me/api/portraits/women/44.jpg',
     bio: 'Homeowner looking for reliable tradies for ongoing property maintenance and occasional renovations.',
     preferredJobs: ['Residential', 'Renovation', 'Repair']
   },
@@ -810,6 +811,7 @@ window.CUSTOMERS = {
     jobsPosted: 10,
     jobsCompleted: 10,
     verified: true,
+    image: 'https://randomuser.me/api/portraits/men/32.jpg',
     bio: 'Property investor managing multiple rental properties. Always need quick, quality work from licensed professionals.',
     preferredJobs: ['Emergency', 'Repair', 'Commercial']
   },
@@ -824,6 +826,7 @@ window.CUSTOMERS = {
     jobsPosted: 4,
     jobsCompleted: 4,
     verified: true,
+    image: 'https://randomuser.me/api/portraits/women/68.jpg',
     bio: 'Small business owner needing commercial fit-outs and maintenance for office spaces.',
     preferredJobs: ['Commercial', 'Renovation']
   },
@@ -838,6 +841,7 @@ window.CUSTOMERS = {
     jobsPosted: 6,
     jobsCompleted: 5,
     verified: true,
+    image: 'https://randomuser.me/api/portraits/men/86.jpg',
     bio: 'Renovating our family home room by room. Looking for skilled tradies who take pride in their work.',
     preferredJobs: ['Residential', 'Renovation']
   },
@@ -852,6 +856,7 @@ window.CUSTOMERS = {
     jobsPosted: 12,
     jobsCompleted: 12,
     verified: true,
+    image: 'https://randomuser.me/api/portraits/women/22.jpg',
     bio: 'Real estate agent coordinating repairs and renovations for property sales. Fast payment, clear communication.',
     preferredJobs: ['Residential', 'Repair', 'Emergency']
   },
