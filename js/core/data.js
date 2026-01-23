@@ -6,16 +6,32 @@
 // ------------------------------------------------------------
 // IDs are stable keys used in filtering + storage. Labels are user-facing.
 window.TRADE_CATEGORIES = [
-  { id: 'electrical', label: 'Electrical' },
-  { id: 'plumbing', label: 'Plumbing' },
-  { id: 'carpentry', label: 'Carpentry' },
-  { id: 'painting', label: 'Painting' },
-  { id: 'tiling', label: 'Tiling' },
-  { id: 'building', label: 'Building' },
-  { id: 'gardening', label: 'Gardening' },
-  { id: 'cleaning', label: 'Cleaning' },
-  { id: 'handyman', label: 'Handyman' },
-  { id: 'other', label: 'Other' }
+  { id: 'electrician', label: 'Electrician', duration: 4 },
+  { id: 'plumber', label: 'Plumber & Gasfitter', duration: 4 },
+  { id: 'carpenter', label: 'Carpenter / Joiner', duration: 4 },
+  { id: 'shopfitter', label: 'Shopfitter', duration: 4 },
+  { id: 'bricklayer', label: 'Bricklayer / Blocklayer', duration: 4 },
+  { id: 'stonemason', label: 'Stonemason', duration: 4 },
+  { id: 'concreter', label: 'Concreter', duration: 3 },
+  { id: 'plasterer', label: 'Plasterer', duration: 4 },
+  { id: 'tiler', label: 'Wall & Floor Tiler', duration: 4 },
+  { id: 'waterproofer', label: 'Waterproofer', duration: 3 },
+  { id: 'rooftiler', label: 'Roof Tiler / Slater', duration: 4 },
+  { id: 'roofplumber', label: 'Roof Plumber', duration: 4 },
+  { id: 'painter', label: 'Painter & Decorator', duration: 4 },
+  { id: 'glazier', label: 'Glazier', duration: 4 },
+  { id: 'locksmith', label: 'Locksmith', duration: 4 },
+  { id: 'floorfinisher', label: 'Floor Finisher', duration: 3 },
+  { id: 'cabinetmaker', label: 'Cabinet Maker', duration: 4 },
+  { id: 'refrigeration', label: 'Refrigeration & Air Conditioning', duration: 4 },
+  { id: 'fencer', label: 'Fencer', duration: 3 },
+  { id: 'scaffolder', label: 'Scaffolder', duration: 3 },
+  { id: 'demolisher', label: 'Demolisher', duration: 3 },
+  { id: 'excavator', label: 'Excavator Operator', duration: 3 },
+  { id: 'poolbuilder', label: 'Swimming Pool Builder', duration: 4 },
+  { id: 'landscaper', label: 'Landscape Construction', duration: 4 },
+  { id: 'handyman', label: 'Handyman', duration: 0 },
+  { id: 'other', label: 'Other', duration: 0 }
 ];
 
 // Quick lookup maps
@@ -133,8 +149,9 @@ window.TRADIES = {
   // IDs are used in: profile-tradesman.html?id=<id> and messages.html?conversation=<conversationId>
 
   liam: {
+    id: "liam",
     name: "Liam Thompson",
-    trade: "Licensed Electrician",
+    trade: "Electrician",
     location: "Melbourne, VIC",
     rating: "4.8",
     // Batch M: reviewCount is the canonical review counter shown in UI (derived later from real reviews)
@@ -142,10 +159,12 @@ window.TRADIES = {
     verified: true,
     image: "https://static.photos/people/320x240/302",
     conversationId: "liam-thompson",
+    yearLevel: 3,
     about:
       "Reliable sparky for residential + light commercial. Safety-first, tidy work, clear quotes."
   },
   olivia: {
+    id: "olivia",
     name: "Olivia Chen",
     trade: "Plumber",
     location: "Pakenham, VIC",
@@ -154,10 +173,12 @@ window.TRADIES = {
     verified: true,
     image: "https://static.photos/people/320x240/303",
     conversationId: "olivia-chen",
+    yearLevel: 5,
     about:
       "Blocked drains, hot water systems, leaking taps. Fast response and upfront pricing."
   },
   noah: {
+    id: "noah",
     name: "Noah Williams",
     trade: "Carpenter",
     location: "Dandenong, VIC",
@@ -166,68 +187,79 @@ window.TRADIES = {
     verified: false,
     image: "https://static.photos/people/320x240/304",
     conversationId: "noah-williams",
+    yearLevel: 2,
     about:
       "Decks, pergolas, framing, small renovations. Clean finish and good communication."
   },
 
   // Tradies shown on browse + home
   mark: {
+    id: "mark",
     name: "Mark Johnson",
-    trade: "Licensed Plumber",
+    trade: "Plumber",
     location: "Sydney, NSW",
     rating: "4.9",
     reviewCount: 18,
     verified: true,
     image: "https://static.photos/construction/320x240/201",
     conversationId: "mark-johnson",
+    yearLevel: 6,
     about:
       "Residential + commercial plumbing. Fast response, clean work, transparent pricing."
   },
   sarah: {
+    id: "sarah",
     name: "Sarah Chen",
-    trade: "Master Electrician",
+    trade: "Electrician",
     location: "Melbourne, VIC",
     rating: "4.7",
     reviewCount: 14,
     verified: true,
     image: "https://static.photos/technology/320x240/202",
     conversationId: "sarah-chen",
+    yearLevel: 7,
     about:
       "Switchboards, lighting, fault-finding, compliance work. Licensed and punctual."
   },
   david: {
+    id: "david",
     name: "David Wilson",
-    trade: "Master Carpenter",
+    trade: "Carpenter",
     location: "Brisbane, QLD",
     rating: "5.0",
     reviewCount: 9,
     verified: true,
     image: "https://static.photos/people/320x240/304",
     conversationId: "david-wilson",
+    yearLevel: 8,
     about:
       "Decking, framing, pergolas, renos. High-end finish, reliable timelines."
   },
   lisa: {
+    id: "lisa",
     name: "Lisa Brown",
-    trade: "Professional Painter",
+    trade: "Painter",
     location: "Perth, WA",
     rating: "4.6",
     reviewCount: 7,
     verified: true,
     image: "https://static.photos/people/320x240/305",
     conversationId: "lisa-brown",
+    yearLevel: 4,
     about:
       "Interior/exterior painting, patch + prep, clean lines. Protective masking + tidy handover."
   },
   james: {
+    id: "james",
     name: "James Taylor",
-    trade: "Landscape Gardener",
+    trade: "Landscaper",
     location: "Adelaide, SA",
     rating: "4.9",
     reviewCount: 11,
     verified: true,
     image: "https://static.photos/people/320x240/306",
     conversationId: "james-taylor",
+    yearLevel: 6,
     about:
       "Garden cleanups, turf, planting, edging, ongoing maintenance. Efficient and consistent."
   }

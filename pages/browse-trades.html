@@ -1,377 +1,484 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0d9488">
     <title>Find Tradies | AussieTradieHub</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/main/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dark .dark-mode-icon { display: none; }
+        .dark .light-mode-icon { display: block; }
+        select option { background: white; color: black; }
+        .dark select option { background: #1f2937; color: #f3f4f6; }
+        .dark select { color: white; }
+    </style>
 </head>
-
-<body class="font-inter bg-gray-50">
-    <!-- Main Navigation -->
-    <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
-        <div class="container mx-auto px-3 py-2">
-            <div class="flex justify-between items-center">
-
-                <!-- Logo -->
-                <div class="flex items-center space-x-2">
-                    <div
-                        class="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
-                        <i data-feather="tool" class="text-white w-4 h-4"></i>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-teal-600 rounded flex items-center justify-center">
+                        <i data-feather="tool" class="w-3.5 h-3.5 text-white"></i>
                     </div>
-                    <div>
-                        <h1 class="text-lg font-bold text-gray-900">AussieTradieHub</h1>
-                        <p class="text-xs text-gray-500">Connecting Australia with trust</p>
-                    </div>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">AussieTradieHub</span>
                 </div>
-
-                <div class="hidden md:flex items-center space-x-6">
-
-                    <a href="../index.html" class="text-gray-700 hover:text-teal-600 transition">
-                        <i data-feather="home" class="inline-block w-3 h-3 mr-1"></i>Home
-                    </a>
-
-                    <!-- ? ACTIVE -->
-                    <a href="browse-trades.html" class="text-teal-600 font-semibold border-b-2 border-teal-600 pb-1">
-                        <i data-feather="users" class="inline-block w-3 h-3 mr-1"></i>Find Tradies
-                    </a>
-
-                    <a href="browse-customers.html" class="text-gray-700 hover:text-teal-600 transition">
-                        <i data-feather="user-check" class="inline-block w-3 h-3 mr-1"></i>Find Customers
-                    </a>
-
-                    <a href="jobs.html" class="text-gray-700 hover:text-teal-600 transition">
-                        <i data-feather="briefcase" class="inline-block w-3 h-3 mr-1"></i>Job Board
-                    </a>
-
-                    <a href="messages.html" class="text-gray-700 hover:text-teal-600 transition">
-                        <i data-feather="message-square" class="inline-block w-3 h-3 mr-1"></i>Messages
-                    </a>
-
+                <div class="hidden md:flex items-center gap-5">
+                    <a href="../index.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="home" class="w-3.5 h-3.5"></i> Home</a>
+                    <a href="browse-trades.html" class="text-teal-600 font-semibold flex items-center gap-1 text-sm"><i data-feather="users" class="w-3.5 h-3.5"></i> Find Tradies</a>
+                    <a href="browse-customers.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="user-check" class="w-3.5 h-3.5"></i> Find Customers</a>
+                    <a href="jobs.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="briefcase" class="w-3.5 h-3.5"></i> Job Board</a>
+                    <a href="messages.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="message-square" class="w-3.5 h-3.5"></i> Messages</a>
                 </div>
-                <!-- User Actions -->
-                <div class="flex items-center space-x-3">
-                    <a href="my-profile.html"
-                        class="hidden md:inline-flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:opacity-90 transition text-sm">
-                        <i data-feather="user" class="w-3 h-3"></i>
-                        <span>My Profile</span>
-                    </a>
-
-
+                <div class="flex items-center gap-2">
+                    <button id="darkModeToggle" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        <i data-feather="moon" class="w-4 h-4 dark-mode-icon"></i>
+                        <i data-feather="sun" class="w-4 h-4 light-mode-icon hidden"></i>
+                    </button>
+                    <a href="my-profile.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-sm">Log In</a>
+                    <a href="my-profile.html" class="bg-gray-900 dark:bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-teal-700 font-medium text-sm">Sign Up</a>
                 </div>
             </div>
-
-
-        </div>
         </div>
     </nav>
-
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-3 py-6">
-        <!-- Page Header -->
-        <div class="mb-8">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Find Trusted Tradies</h1>
-            <p class="text-gray-600">Browse verified tradies across Australia. Filter by trade, location, rating, and
-                more.</p>
-        </div>
-
-        <!-- Batch M: mobile filter drawer backdrop -->
-        <div id="athFiltersBackdrop" class="ath-drawer-backdrop hidden lg:hidden"></div>
-
-        <div class="flex flex-col lg:flex-row gap-6">
-            <!-- Left Sidebar - Filters -->
-            <aside class="lg:w-1/4 ath-filter-drawer" id="athFiltersDrawer">
-                <div
-                    class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-24 h-full lg:h-auto overflow-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-bold text-gray-900">Filters</h2>
-                        <div class="flex items-center gap-3">
-                            <button class="text-sm text-teal-600 hover:text-teal-700 font-medium" id="athClearAll">Clear
-                                All</button>
-                            <button type="button" id="athCloseFilters"
-                                class="lg:hidden text-sm text-gray-600 hover:text-gray-800 font-medium">Close</button>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex gap-4">
+            <aside class="w-56 flex-shrink-0">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sticky top-20">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-2">Filters</h2>
+                    <div class="space-y-2.5">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Search</label>
+                            <input type="text" id="searchInput" placeholder="Name or skill..." 
+                                   class="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Trade</label>
+                            <select id="categoryFilter" class="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                <option value="">All Trades</option>
+                                <option value="Electrician">Electrician</option>
+                                <option value="Plumber">Plumber & Gasfitter</option>
+                                <option value="Carpenter">Carpenter / Joiner</option>
+                                <option value="Shopfitter">Shopfitter</option>
+                                <option value="Bricklayer">Bricklayer / Blocklayer</option>
+                                <option value="Stonemason">Stonemason</option>
+                                <option value="Concreter">Concreter</option>
+                                <option value="Plasterer">Plasterer</option>
+                                <option value="Tiler">Wall & Floor Tiler</option>
+                                <option value="Waterproofer">Waterproofer</option>
+                                <option value="Roof Tiler">Roof Tiler / Slater</option>
+                                <option value="Roof Plumber">Roof Plumber</option>
+                                <option value="Painter">Painter & Decorator</option>
+                                <option value="Glazier">Glazier</option>
+                                <option value="Locksmith">Locksmith</option>
+                                <option value="Floor Finisher">Floor Finisher</option>
+                                <option value="Cabinet Maker">Cabinet Maker</option>
+                                <option value="Refrigeration">Refrigeration & Air Conditioning</option>
+                                <option value="Fencer">Fencer</option>
+                                <option value="Scaffolder">Scaffolder</option>
+                                <option value="Demolisher">Demolisher</option>
+                                <option value="Excavator">Excavator Operator</option>
+                                <option value="Pool Builder">Swimming Pool Builder</option>
+                                <option value="Landscaper">Landscape Construction</option>
+                                <option value="Handyman">Handyman</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Location</label>
+                            <input type="text" id="locationFilter" placeholder="Suburb or postcode" 
+                                   class="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-900 dark:placeholder-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Experience Level</label>
+                            <select id="experienceFilter" class="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                <option value="">Any Experience</option>
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                                <option value="5">Fully Qualified</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Rating</label>
+                            <select id="ratingFilter" class="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                <option value="">Any Rating</option>
+                                <option value="5">5 Stars</option>
+                                <option value="4">4+ Stars</option>
+                                <option value="3">3+ Stars</option>
+                            </select>
+                        </div>
+                        <button onclick="clearFilters()" 
+                                class="w-full px-2 py-1.5 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100 rounded hover:bg-gray-300 dark:hover:bg-gray-500 text-xs font-medium transition">
+                            Clear Filters
+                        </button>
+                        
+                        <!-- Why Choose Info Card -->
+                        <div class="mt-4 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-3">
+                            <h3 class="font-bold text-xs text-teal-900 dark:text-teal-300 mb-2 flex items-center gap-1">
+                                <i data-feather="info" class="w-3.5 h-3.5"></i> Why Choose Verified?
+                            </h3>
+                            <ul class="space-y-1.5 text-xs text-teal-800 dark:text-teal-300">
+                                <li class="flex items-start gap-1.5">
+                                    <i data-feather="check" class="w-3 h-3 flex-shrink-0 mt-0.5"></i>
+                                    <span>ID & License verified</span>
+                                </li>
+                                <li class="flex items-start gap-1.5">
+                                    <i data-feather="check" class="w-3 h-3 flex-shrink-0 mt-0.5"></i>
+                                    <span>Secure escrow payments</span>
+                                </li>
+                                <li class="flex items-start gap-1.5">
+                                    <i data-feather="check" class="w-3 h-3 flex-shrink-0 mt-0.5"></i>
+                                    <span>Real customer reviews</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
-
-                    <!-- Search -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                        <div class="relative">
-                            <i data-feather="search"
-                                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-                            <input id="athFilterSearch" type="text" placeholder="Name, trade, or skill"
-                                class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                        </div>
-                    </div>
-
-                    <!-- Trade Category -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Trade Category</label>
-                        <!-- Batch N1: Exact trade match (default) + optional broaden results -->
-                        <div class="flex items-start gap-2 mb-2" aria-label="Trade filter match mode">
-                            <input id="athTradeMatchAny" type="checkbox"
-                                class="mt-0.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                            <div>
-                                <div class="text-sm font-medium text-gray-800">Broaden results (match ANY selected)
-                                </div>
-                                <p class="text-xs text-gray-500">Default is <span class="font-medium">Exact
-                                        match</span>: tradies must have the <span class="font-medium">same set</span> of
-                                    trades you selected (no more, no less).</p>
-                            </div>
-                        </div>
-                        <div id="athCategoryList" class="space-y-2"></div>
-                    </div>
-
-                    <!-- Location -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                        <select id="athFilterState"
-                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                            <option value="all">All Australia</option>
-                            <option value="NSW">New South Wales</option>
-                            <option value="VIC">Victoria</option>
-                            <option value="QLD">Queensland</option>
-                            <option value="WA">Western Australia</option>
-                            <option value="SA">South Australia</option>
-                            <option value="TAS">Tasmania</option>
-                            <option value="ACT">Australian Capital Territory</option>
-                            <option value="NT">Northern Territory</option>
-                        </select>
-                    </div>
-
-                    <!-- Rating -->
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Rating</label>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">0.0+</span>
-                            <span id="athRatingValue" class="text-sm font-medium text-gray-800">0.0</span>
-                        </div>
-                        <input id="athFilterRating" type="range" min="0" max="5" step="0.1" value="0"
-                            class="w-full mt-2">
-                    </div>
-
-                    <!-- Verified -->
-                    <div class="mb-6">
-                        <label class="flex items-center">
-                            <input id="athFilterVerified" type="checkbox"
-                                class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                            <span class="ml-2 text-sm text-gray-700">Verified only</span>
-                        </label>
-                        <p class="text-xs text-gray-500 mt-2">Filters to tradies marked as verified in the demo dataset.
-                        </p>
-                    </div>
-
                 </div>
             </aside>
-
-            <!-- Right Content - Tradie Listings -->
-            <div class="lg:w-3/4">
-                <!-- Results Header -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between">
+            <main class="flex-1">
+                <!-- Quick Stats Banner -->
+                <div class="bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg p-4 mb-4">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h3 class="font-bold text-gray-900"><span id="athResultsCount">0</span> Tradies Found</h3>
-                            <p class="text-sm text-gray-600">Sorted by: <span class="font-medium">Highest Rated</span>
-                            </p>
+                            <div class="text-2xl font-bold" id="statsCount">0</div>
+                            <div class="text-sm text-teal-100" id="statsText">tradies available</div>
                         </div>
-                        <div class="flex items-center space-x-3 mt-3 md:mt-0">
-                            <button id="athOpenFilters" type="button"
-                                class="lg:hidden px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-                                <span class="inline-flex items-center">
-                                    <i data-feather="sliders" class="w-4 h-4 mr-2 text-gray-600"></i>
-                                    Filters
-                                </span>
-                            </button>
-                            <select
-                                class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                                <option>Highest Rated</option>
-                                <option>Most Reviews</option>
-                                <option>Most Experience</option>
-                                <option>Lowest Price</option>
-                                <option>Nearest</option>
-                            </select>
-                            <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                                <i data-feather="grid" class="w-4 h-4 text-gray-600"></i>
-                            </button>
-                            <button class="p-2 border border-gray-300 rounded-lg bg-gray-50">
-                                <i data-feather="list" class="w-4 h-4 text-gray-600"></i>
-                            </button>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i data-feather="map-pin" class="w-4 h-4"></i>
+                            <span id="statsLocation">All Locations</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tradie Listings -->
-                <div id="athResults" class="space-y-4">
-                    <!-- Rendered by components/search-filter.js -->
+                <!-- Featured/Premium Tradies -->
+                <div id="featuredSection" class="mb-4">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                        <i data-feather="star" class="w-4 h-4 text-yellow-500"></i>
+                        Featured Professionals
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4" id="featuredTradiesList"></div>
                 </div>
+
+                <!-- Sort & Filter Controls -->
+                <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <div>
+                        <h1 class="text-lg font-bold text-gray-900 dark:text-white mb-0.5">All Tradies</h1>
+                        <p class="text-xs text-gray-600 dark:text-gray-300" id="resultCount">Loading...</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-gray-600 dark:text-gray-300">Sort:</label>
+                        <select id="sortBy" class="px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
+                            <option value="rating">Highest Rated</option>
+                            <option value="reviews">Most Reviews</option>
+                            <option value="name">Name (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Active Filter Tags -->
+                <div id="activeFilters" class="flex flex-wrap gap-2 mb-3"></div>
+
+                <!-- Tradies List -->
+                <div id="tradiesList" class="space-y-2"></div>
 
                 <!-- Pagination -->
-                <div class="mt-8 flex justify-center">
-                    <nav class="flex items-center space-x-2">
-                        <button
-                            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">
-                            <i data-feather="chevron-left" class="w-4 h-4"></i>
-                        </button>
-                        <button
-                            class="w-10 h-10 flex items-center justify-center rounded-lg bg-teal-500 text-white font-medium">1</button>
-                        <button
-                            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">2</button>
-                        <button
-                            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">3</button>
-                        <span class="px-2">...</span>
-                        <button
-                            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">10</button>
-                        <button
-                            class="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-50">
-                            <i data-feather="chevron-right" class="w-4 h-4"></i>
-                        </button>
-                    </nav>
-                </div>
-            </div>
+                <div id="pagination" class="mt-4 flex items-center justify-center gap-2"></div>
+            </main>
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white pt-12 pb-8 mt-12">
-        <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div>
-                    <div class="flex items-center space-x-2 mb-4">
-                        <div
-                            class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
-                            <i data-feather="tool" class="text-white w-6 h-6"></i>
-                        </div>
-                        <h2 class="text-xl font-bold">AussieTradieHub</h2>
-                    </div>
-                    <p class="text-gray-400">Connecting trusted tradies with customers across Australia with full
-                        transparency.</p>
-                </div>
-
-                <div>
-                    <h3 class="font-bold text-lg mb-4">For Customers</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
-                        <li><a href="jobs.html" class="hover:text-white transition">Post a Job</a></li>
-                        <li><a href="browse-customers.html" class="hover:text-white transition">Browse Customers</a>
-                        </li>
-                        <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="font-bold text-lg mb-4">For Tradies</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="my-profile.html?type=tradesman" class="hover:text-white transition">Create
-                                Profile</a></li>
-                        <li><a href="jobs.html" class="hover:text-white transition">Find Jobs</a></li>
-                        <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
-                        <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="font-bold text-lg mb-4">Contact</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li class="flex items-center">
-                            <i data-feather="mail" class="w-4 h-4 mr-2"></i>
-                            support@aussietradiehub.au
-                        </li>
-                        <li class="flex items-center">
-                            <i data-feather="phone" class="w-4 h-4 mr-2"></i>
-                            1300 TRADIE (1300 872 343)
-                        </li>
-                        <li class="flex items-center">
-                            <i data-feather="map-pin" class="w-4 h-4 mr-2"></i>
-                            Sydney, Australia
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="border-t border-gray-800 pt-8">
-                <div class="flex flex-col md:flex-row justify-between items-center">
-                    <p class="text-gray-400 text-sm mb-4 md:mb-0">� 2024 AussieTradieHub. All rights reserved.</p>
-                    <div class="flex space-x-6">
-                        <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
-                        <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of
-                            Service</a>
-                        <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy
-                            Policy</a>
-                        <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-
+    </div>
     <script src="../js/core/data.js"></script>
-    <script src="../js/components/search-filter.js"></script>
-    <script type="module" src="../js/core/supabase-client.js"></script>
-  <script type="module" src="../js/core/auth.js"></script>
-  <script src="../js/core/script.js"></script>
+    <script src="../js/core/script.js"></script>
     <script>
-        // Mobile menu handled by script.js
+        feather.replace();
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const htmlElement = document.documentElement;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') htmlElement.classList.add('dark');
+        darkModeToggle.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+            feather.replace();
+        });
 
-        // Initialize Feather Icons + page filters
-        document.addEventListener('DOMContentLoaded', function () {
-            if (typeof feather !== 'undefined') feather.replace();
-            if (window.ATHSearchFilter) window.ATHSearchFilter.initTradiesBrowse();
+        let currentPage = 1;
+        const perPage = 10;
+
+        function getExperienceBadge(yearLevel) {
+            if (!yearLevel || yearLevel < 1) return '';
+            if (yearLevel >= 5) {
+                return '<span class="px-1.5 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 text-xs font-medium rounded-full">Qualified</span>';
+            }
+            const ordinal = ['1st Year', '2nd Year', '3rd Year', '4th Year'][yearLevel - 1] || `${yearLevel}th Year`;
+            return `<span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">${ordinal}</span>`;
+        }
+
+        function updateStats(tradies, locationTerm) {
+            document.getElementById('statsCount').textContent = tradies.length.toLocaleString();
+            document.getElementById('statsLocation').textContent = locationTerm || 'All Locations';
+        }
+
+        function updateActiveFilters() {
+            const container = document.getElementById('activeFilters');
+            const filters = [];
+            
+            const search = document.getElementById('searchInput').value;
+            const category = document.getElementById('categoryFilter').value;
+            const location = document.getElementById('locationFilter').value;
+            const experience = document.getElementById('experienceFilter').value;
+            const rating = document.getElementById('ratingFilter').value;
+            
+            if (search) filters.push({ label: `Search: ${search}`, field: 'searchInput' });
+            if (category) filters.push({ label: document.getElementById('categoryFilter').selectedOptions[0].text, field: 'categoryFilter' });
+            if (location) filters.push({ label: `Location: ${location}`, field: 'locationFilter' });
+            if (experience) filters.push({ label: document.getElementById('experienceFilter').selectedOptions[0].text, field: 'experienceFilter' });
+            if (rating) filters.push({ label: document.getElementById('ratingFilter').selectedOptions[0].text, field: 'ratingFilter' });
+            
+            if (filters.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = filters.map(f => `
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 text-xs font-medium rounded-full">
+                    ${f.label}
+                    <button onclick="removeFilter('${f.field}')" class="hover:text-teal-900 dark:hover:text-teal-100">
+                        <i data-feather="x" class="w-3 h-3"></i>
+                    </button>
+                </span>
+            `).join('');
+            feather.replace();
+        }
+
+        function removeFilter(field) {
+            document.getElementById(field).value = '';
+            loadTradies();
+        }
+
+        function loadFeaturedTradies() {
+            const tradiesObj = window.TRADIES || {};
+            const tradies = Object.values(tradiesObj)
+                .sort((a, b) => parseFloat(b.rating || 0) - parseFloat(a.rating || 0))
+                .slice(0, 2);
+            
+            const container = document.getElementById('featuredTradiesList');
+            if (tradies.length === 0) {
+                document.getElementById('featuredSection').style.display = 'none';
+                return;
+            }
+            
+            container.innerHTML = tradies.map(t => `
+                <div class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-2 border-teal-300 dark:border-teal-700 rounded-lg p-3 hover:shadow-md transition">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-0.5 bg-teal-600 text-white text-xs font-bold rounded">FEATURED</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
+                             class="w-12 h-12 rounded-lg border border-teal-400">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-sm text-gray-900 dark:text-white">${t.name}</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-300">${t.trade || 'Electrician'}</p>
+                        </div>
+                        <div class="flex items-center gap-0.5 text-yellow-500">
+                            <i data-feather="star" class="w-3.5 h-3.5 fill-current"></i>
+                            <span class="text-gray-900 dark:text-white font-semibold text-sm">${t.rating || '5.0'}</span>
+                        </div>
+                    </div>
+                    <a href="profile-tradesman.html?id=${t.id}" 
+                       class="mt-2 block text-center bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded font-medium text-xs transition">
+                        View Profile →
+                    </a>
+                </div>
+            `).join('');
+            feather.replace();
+        }
+
+        function sortTradies(tradies, sortBy) {
+            switch(sortBy) {
+                case 'rating':
+                    return tradies.sort((a, b) => parseFloat(b.rating || 0) - parseFloat(a.rating || 0));
+                case 'reviews':
+                    return tradies.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+                case 'name':
+                    return tradies.sort((a, b) => a.name.localeCompare(b.name));
+                default:
+                    return tradies;
+            }
+        }
+
+        function renderPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / perPage);
+            const container = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous button
+            html += `<button onclick="changePage(${currentPage - 1})" 
+                      class="px-3 py-1 rounded text-xs font-medium ${currentPage === 1 ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'}" 
+                      ${currentPage === 1 ? 'disabled' : ''}>Previous</button>`;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button onclick="changePage(${i})" 
+                              class="px-3 py-1 rounded text-xs font-medium ${i === currentPage ? 'bg-teal-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'}">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += '<span class="px-2 text-gray-500">...</span>';
+                }
+            }
+            
+            // Next button
+            html += `<button onclick="changePage(${currentPage + 1})" 
+                      class="px-3 py-1 rounded text-xs font-medium ${currentPage === totalPages ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'}"
+                      ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+            
+            container.innerHTML = html;
+        }
+
+        function changePage(page) {
+            const totalItems = parseInt(document.getElementById('resultCount').textContent);
+            const totalPages = Math.ceil(totalItems / perPage);
+            
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            loadTradies();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function loadTradies() {
+            const list = document.getElementById('tradiesList');
+            const tradiesObj = window.TRADIES || {};
+            let tradies = Object.values(tradiesObj);
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const locationTerm = document.getElementById('locationFilter').value.toLowerCase();
+            const experienceFilter = document.getElementById('experienceFilter').value;
+            const ratingFilter = document.getElementById('ratingFilter').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            // Filter
+            tradies = tradies.filter(t => {
+                const matchesSearch = !searchTerm || 
+                    t.name.toLowerCase().includes(searchTerm) || 
+                    t.trade.toLowerCase().includes(searchTerm) ||
+                    (t.bio && t.bio.toLowerCase().includes(searchTerm));
+                const matchesCategory = !categoryFilter || t.trade.includes(categoryFilter);
+                const matchesLocation = !locationTerm || 
+                    (t.serviceArea && t.serviceArea.toLowerCase().includes(locationTerm));
+                const matchesExperience = !experienceFilter || 
+                    (experienceFilter === '5' ? (t.yearLevel || 0) >= 5 : (t.yearLevel || 0) == experienceFilter);
+                const matchesRating = !ratingFilter || 
+                    parseFloat(t.rating || 0) >= parseFloat(ratingFilter);
+                return matchesSearch && matchesCategory && matchesLocation && matchesExperience && matchesRating;
+            });
+            
+            // Update stats and filters
+            updateStats(tradies, locationTerm);
+            updateActiveFilters();
+            
+            // Sort
+            tradies = sortTradies(tradies, sortBy);
+            
+            // Pagination
+            const totalItems = tradies.length;
+            const startIndex = (currentPage - 1) * perPage;
+            const endIndex = startIndex + perPage;
+            const paginatedTradies = tradies.slice(startIndex, endIndex);
+            
+            document.getElementById('resultCount').textContent = `${tradies.length} tradie${tradies.length !== 1 ? 's' : ''} found`;
+            
+            // Empty state
+            if (!tradies.length) {
+                list.innerHTML = `
+                    <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-feather="search" class="w-10 h-10 text-gray-400"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-gray-900 dark:text-white mb-2">No tradies found</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Try adjusting your filters or search terms</p>
+                        <button onclick="clearFilters()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium text-sm">
+                            Clear All Filters
+                        </button>
+                    </div>
+                `;
+                feather.replace();
+                renderPagination(0);
+                return;
+            }
+            
+            // Render tradies
+            list.innerHTML = paginatedTradies.map(t => `
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition flex gap-3">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
+                         class="w-14 h-14 rounded-lg border border-teal-500 flex-shrink-0" alt="${t.name}"/>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between mb-1">
+                            <div>
+                                <h3 class="font-semibold text-sm text-gray-900 dark:text-white">${t.name}</h3>
+                                <p class="text-xs text-gray-600 dark:text-gray-300">${t.trade || 'Electrician'}</p>
+                            </div>
+                            <div class="flex items-center gap-0.5 text-yellow-500">
+                                <i data-feather="star" class="w-3 h-3 fill-current"></i>
+                                <span class="text-gray-900 dark:text-white font-semibold text-xs">${t.rating || '5.0'}</span>
+                                <span class="text-gray-500 dark:text-gray-400 text-xs">(${t.reviewCount || 0})</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-300 text-xs mb-2 line-clamp-1">${t.bio || t.about || 'Experienced professional ready to help with your project.'}</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1 text-xs flex-wrap">
+                                <span class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full flex items-center gap-0.5">
+                                    <i data-feather="map-pin" class="w-2.5 h-2.5"></i> ${(t.serviceArea || t.location || 'Sydney').split(',')[0]}
+                                </span>
+                                <span class="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full flex items-center gap-0.5">
+                                    <i data-feather="check-circle" class="w-2.5 h-2.5"></i> Verified
+                                </span>
+                                ${getExperienceBadge(t.yearLevel)}
+                            </div>
+                            <a href="profile-tradesman.html?id=${t.id}" 
+                               class="bg-teal-600 text-white px-3 py-1 rounded hover:bg-teal-700 font-medium text-xs whitespace-nowrap transition">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            feather.replace();
+            renderPagination(totalItems);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('locationFilter').value = '';
+            document.getElementById('experienceFilter').value = '';
+            document.getElementById('ratingFilter').value = '';
+            currentPage = 1;
+            loadTradies();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; loadTradies(); });
+        document.getElementById('categoryFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
+        document.getElementById('locationFilter').addEventListener('input', () => { currentPage = 1; loadTradies(); });
+        document.getElementById('experienceFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
+        document.getElementById('ratingFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
+        document.getElementById('sortBy').addEventListener('change', () => { currentPage = 1; loadTradies(); });
+        
+        window.addEventListener('load', () => {
+            loadFeaturedTradies();
+            loadTradies();
         });
     </script>
-
-    <!-- Bottom Navigation (Mobile Only) -->
-    <nav class="bottom-nav">
-        <a href="../index.html" class="bottom-nav-item">
-            <i data-feather="home"></i>
-            <span>Home</span>
-        </a>
-        <a href="browse-trades.html" class="bottom-nav-item">
-            <i data-feather="users"></i>
-            <span>Tradies</span>
-        </a>
-        <a href="browse-customers.html" class="bottom-nav-item">
-            <i data-feather="user-check"></i>
-            <span>Customers</span>
-        </a>
-        <a href="jobs.html" class="bottom-nav-item">
-            <i data-feather="briefcase"></i>
-            <span>Jobs</span>
-        </a>
-        <a href="messages.html" class="bottom-nav-item">
-            <i data-feather="message-square"></i>
-            <span>Messages</span>
-        </a>
-        <a href="my-profile.html" class="bottom-nav-item">
-            <i data-feather="user"></i>
-            <span>Profile</span>
-        </a>
-    </nav>
-    <script>
-        (function () {
-            var path = window.location.pathname.split('/').pop() || 'index.html';
-            var items = document.querySelectorAll('.bottom-nav-item');
-            items.forEach(function (item) {
-                var href = item.getAttribute('href').split('?')[0];
-                if (href === path.split('?')[0]) {
-                    item.classList.add('active');
-                } else {
-                    item.classList.remove('active');
-                }
-            });
-            if (typeof feather !== 'undefined') feather.replace();
-        })();
-    </script>
 </body>
-
 </html>
-
