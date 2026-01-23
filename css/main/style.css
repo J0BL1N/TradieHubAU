@@ -33,8 +33,27 @@ body {
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
   text-align: left;
+  overflow-x: hidden;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Layout helpers (avoid overriding Tailwind classnames)
@@ -582,6 +601,7 @@ a.btn-secondary,
   font-weight: 500;
   flex: 1;
   height: 100%;
+  position: relative;
   transition: color 0.2s;
 }
 
@@ -595,6 +615,22 @@ a.btn-secondary,
   color: #0d9488;
 }
 
+.bottom-nav-item.active::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #0d9488;
+  transform: translateX(-50%);
+}
+
+.bottom-nav-item:active {
+  background: rgba(13, 148, 136, 0.08);
+}
+
 @media (min-width: 768px) {
   .bottom-nav {
     display: none;
@@ -603,8 +639,12 @@ a.btn-secondary,
 
 /* Mobile: prevent overlap with bottom nav */
 @media (max-width: 768px) {
+  body.has-bottom-nav {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+
   body.messages-page {
-    padding-bottom: 70px; /* Bottom nav height + buffer */
+    padding-bottom: calc(70px + env(safe-area-inset-bottom)); /* Bottom nav height + buffer */
   }
 
   /* Ensure message input area has extra padding on mobile */

@@ -780,3 +780,150 @@ window.JOBS = [
     status: 'open'
   }
 ];
+
+// ------------------------------------------------------------
+// CUSTOMERS — Customer profiles data
+// ------------------------------------------------------------
+window.CUSTOMERS = {
+  'sarah-mitchell': {
+    id: 'sarah-mitchell',
+    name: 'Sarah Mitchell',
+    location: 'Bondi, NSW',
+    serviceArea: 'Eastern Suburbs, Sydney',
+    memberSince: '2024-03-15',
+    rating: '4.8',
+    reviewCount: 12,
+    jobsPosted: 8,
+    jobsCompleted: 7,
+    verified: true,
+    bio: 'Homeowner looking for reliable tradies for ongoing property maintenance and occasional renovations.',
+    preferredJobs: ['Residential', 'Renovation', 'Repair']
+  },
+  'david-chen': {
+    id: 'david-chen',
+    name: 'David Chen',
+    location: 'Parramatta, NSW',
+    serviceArea: 'Western Sydney, NSW',
+    memberSince: '2023-11-20',
+    rating: '5.0',
+    reviewCount: 15,
+    jobsPosted: 10,
+    jobsCompleted: 10,
+    verified: true,
+    bio: 'Property investor managing multiple rental properties. Always need quick, quality work from licensed professionals.',
+    preferredJobs: ['Emergency', 'Repair', 'Commercial']
+  },
+  'emma-wilson': {
+    id: 'emma-wilson',
+    name: 'Emma Wilson',
+    location: 'Melbourne, VIC',
+    serviceArea: 'Melbourne Metro, VIC',
+    memberSince: '2025-01-08',
+    rating: '4.9',
+    reviewCount: 6,
+    jobsPosted: 4,
+    jobsCompleted: 4,
+    verified: true,
+    bio: 'Small business owner needing commercial fit-outs and maintenance for office spaces.',
+    preferredJobs: ['Commercial', 'Renovation']
+  },
+  'michael-brown': {
+    id: 'michael-brown',
+    name: 'Michael Brown',
+    location: 'Brisbane, QLD',
+    serviceArea: 'Brisbane, QLD',
+    memberSince: '2024-06-12',
+    rating: '4.7',
+    reviewCount: 9,
+    jobsPosted: 6,
+    jobsCompleted: 5,
+    verified: true,
+    bio: 'Renovating our family home room by room. Looking for skilled tradies who take pride in their work.',
+    preferredJobs: ['Residential', 'Renovation']
+  },
+  'lisa-taylor': {
+    id: 'lisa-taylor',
+    name: 'Lisa Taylor',
+    location: 'Sydney, NSW',
+    serviceArea: 'Greater Sydney, NSW',
+    memberSince: '2023-09-30',
+    rating: '5.0',
+    reviewCount: 18,
+    jobsPosted: 12,
+    jobsCompleted: 12,
+    verified: true,
+    bio: 'Real estate agent coordinating repairs and renovations for property sales. Fast payment, clear communication.',
+    preferredJobs: ['Residential', 'Repair', 'Emergency']
+  },
+  'james-anderson': {
+    id: 'james-anderson',
+    name: 'James Anderson',
+    location: 'Perth, WA',
+    serviceArea: 'Perth Metro, WA',
+    memberSince: '2024-02-18',
+    rating: '4.6',
+    reviewCount: 7,
+    jobsPosted: 5,
+    jobsCompleted: 4,
+    verified: true,
+    bio: 'Building our dream home. Need experienced tradies for outdoor landscaping and deck construction.',
+    preferredJobs: ['New Build', 'Residential']
+  },
+  'rachel-nguyen': {
+    id: 'rachel-nguyen',
+    name: 'Rachel Nguyen',
+    location: 'Adelaide, SA',
+    serviceArea: 'Adelaide, SA',
+    memberSince: '2024-08-05',
+    rating: '4.9',
+    reviewCount: 11,
+    jobsPosted: 8,
+    jobsCompleted: 7,
+    verified: true,
+    bio: 'Restaurant owner needing commercial kitchen maintenance and occasional emergency repairs.',
+    preferredJobs: ['Commercial', 'Emergency', 'Repair']
+  },
+  'tom-roberts': {
+    id: 'tom-roberts',
+    name: 'Tom Roberts',
+    location: 'Gold Coast, QLD',
+    serviceArea: 'Gold Coast, QLD',
+    memberSince: '2025-01-12',
+    rating: '5.0',
+    reviewCount: 3,
+    jobsPosted: 2,
+    jobsCompleted: 2,
+    verified: true,
+    bio: 'First home buyer tackling DIY projects but need professionals for electrical and plumbing work.',
+    preferredJobs: ['Residential', 'Repair']
+  },
+  'kate-sullivan': {
+    id: 'kate-sullivan',
+    name: 'Kate Sullivan',
+    location: 'Canberra, ACT',
+    serviceArea: 'Canberra, ACT',
+    memberSince: '2024-04-22',
+    rating: '4.8',
+    reviewCount: 14,
+    jobsPosted: 10,
+    jobsCompleted: 9,
+    verified: true,
+    bio: 'Managing rental properties for family investment portfolio. Reliability and clear quotes are essential.',
+    preferredJobs: ['Residential', 'Repair', 'Renovation']
+  },
+  'mark-johnson': {
+    id: 'mark-johnson',
+    name: 'Mark Johnson',
+    location: 'Newcastle, NSW',
+    serviceArea: 'Newcastle, NSW',
+    memberSince: '2023-12-10',
+    rating: '4.9',
+    reviewCount: 16,
+    jobsPosted: 11,
+    jobsCompleted: 10,
+    verified: true,
+    bio: 'Contractor coordinating sub-contractors for residential builds and renovations across Newcastle region.',
+    preferredJobs: ['New Build', 'Commercial', 'Residential']
+  }
+};
+

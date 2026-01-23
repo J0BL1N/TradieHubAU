@@ -18,7 +18,7 @@
         .dark select { color: white; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-browse-page">
     <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-14">
@@ -47,10 +47,14 @@
         </div>
     </nav>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex gap-4">
-            <aside class="w-56 flex-shrink-0">
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sticky top-20">
-                    <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-2">Filters</h2>
+        <div id="athFiltersBackdrop" class="ath-drawer-backdrop hidden lg:hidden"></div>
+        <div class="flex gap-4 ath-browse-layout">
+            <aside class="w-56 flex-shrink-0 ath-filter-drawer" id="athFiltersDrawer">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sticky top-20 ath-filter-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-bold text-gray-900 dark:text-white">Filters</h2>
+                        <button type="button" id="athCloseFilters" class="lg:hidden text-xs text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Close</button>
+                    </div>
                     <div class="space-y-2.5">
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Search</label>
@@ -141,9 +145,15 @@
                     </div>
                 </div>
             </aside>
-            <main class="flex-1">
+            <main class="flex-1 ath-browse-main">
+                <div class="flex items-center justify-between mb-3 lg:hidden ath-mobile-filter-bar">
+                    <button id="athOpenFilters" class="px-3 py-2 text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800">
+                        Filters
+                    </button>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Refine results</span>
+                </div>
                 <!-- Quick Stats Banner -->
-                <div class="bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg p-4 mb-4">
+                <div class="bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg p-4 mb-4 ath-stat-banner">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
                             <div class="text-2xl font-bold" id="statsCount">0</div>
@@ -166,12 +176,12 @@
                 </div>
 
                 <!-- Sort & Filter Controls -->
-                <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div class="flex items-center justify-between mb-3 flex-wrap gap-2 ath-sort-row">
                     <div>
                         <h1 class="text-lg font-bold text-gray-900 dark:text-white mb-0.5">All Tradies</h1>
                         <p class="text-xs text-gray-600 dark:text-gray-300" id="resultCount">Loading...</p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 ath-sort-controls">
                         <label class="text-xs text-gray-600 dark:text-gray-300">Sort:</label>
                         <select id="sortBy" class="px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
                             <option value="rating">Highest Rated</option>
@@ -273,13 +283,13 @@
             }
             
             container.innerHTML = tradies.map(t => `
-                <div class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-2 border-teal-300 dark:border-teal-700 rounded-lg p-3 hover:shadow-md transition">
+                <div class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-2 border-teal-200 dark:border-teal-700 rounded-lg p-3 hover:shadow-md transition">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="px-2 py-0.5 bg-teal-600 text-white text-xs font-bold rounded">FEATURED</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
-                             class="w-12 h-12 rounded-lg border border-teal-400">
+                             class="w-12 h-12 rounded-full border-2 border-teal-400">
                         <div class="flex-1">
                             <h3 class="font-semibold text-sm text-gray-900 dark:text-white">${t.name}</h3>
                             <p class="text-xs text-gray-600 dark:text-gray-300">${t.trade || 'Electrician'}</p>
@@ -419,9 +429,9 @@
             
             // Render tradies
             list.innerHTML = paginatedTradies.map(t => `
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition flex gap-3">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition flex gap-3 ath-result-card">
                     <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
-                         class="w-14 h-14 rounded-lg border border-teal-500 flex-shrink-0" alt="${t.name}"/>
+                         class="w-14 h-14 rounded-full border-2 border-teal-500 flex-shrink-0" alt="${t.name}"/>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-1">
                             <div>
@@ -435,8 +445,8 @@
                             </div>
                         </div>
                         <p class="text-gray-600 dark:text-gray-300 text-xs mb-2 line-clamp-1">${t.bio || t.about || 'Experienced professional ready to help with your project.'}</p>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1 text-xs flex-wrap">
+                        <div class="flex items-center justify-between ath-card-footer">
+                            <div class="flex items-center gap-1 text-xs flex-wrap ath-card-tags">
                                 <span class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full flex items-center gap-0.5">
                                     <i data-feather="map-pin" class="w-2.5 h-2.5"></i> ${(t.serviceArea || t.location || 'Sydney').split(',')[0]}
                                 </span>

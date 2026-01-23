@@ -1428,6 +1428,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initMyProfilePage();
   initFilterDrawer();
   initIntegrityBanners();
+  if (document.querySelector('.bottom-nav')) {
+    document.body.classList.add('has-bottom-nav');
+  }
+  const path = String(window.location.pathname || '').split('/').pop()?.toLowerCase() || 'index.html';
+  const onboardingAllowed = [
+    'index.html',
+    'browse-trades.html',
+    'browse-customers.html',
+    'jobs.html',
+    'messages.html',
+    'my-profile.html'
+  ].includes(path);
+  if (onboardingAllowed && window.ATHOnboarding?.shouldShow()) {
+    window.ATHOnboarding.show();
+  }
 });
 
 
