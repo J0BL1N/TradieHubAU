@@ -648,6 +648,11 @@ a.btn-secondary,
   transition: all 0.3s ease-in-out;
 }
 
+#mobileMenu a {
+  display: block;
+  padding: 0.5rem 0;
+}
+
 #mobileMenu.hidden {
   display: none;
   opacity: 0;

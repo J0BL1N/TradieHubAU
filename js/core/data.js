@@ -161,7 +161,12 @@ window.TRADIES = {
     conversationId: "liam-thompson",
     yearLevel: 3,
     about:
-      "Reliable sparky for residential + light commercial. Safety-first, tidy work, clear quotes."
+      "Reliable sparky for residential + light commercial. Safety-first, tidy work, clear quotes.",
+    reviews: [
+      { author: "Paul S.", date: "2 weeks ago", rating: 5, text: "Liam did a great job on our switchboard. Very tidy." },
+      { author: "Karen M.", date: "1 month ago", rating: 4.5, text: "Good communication and arrived on time." },
+      { author: "Mike R.", date: "2 months ago", rating: 5, text: "Fixed the lighting issue quickly. Highly recommend." }
+    ]
   },
   olivia: {
     id: "olivia",
@@ -175,7 +180,11 @@ window.TRADIES = {
     conversationId: "olivia-chen",
     yearLevel: 5,
     about:
-      "Blocked drains, hot water systems, leaking taps. Fast response and upfront pricing."
+      "Blocked drains, hot water systems, leaking taps. Fast response and upfront pricing.",
+    reviews: [
+      { author: "James K.", date: "1 week ago", rating: 5, text: "Saved us on a weekend! Fast and professional." },
+      { author: "Elena G.", date: "3 weeks ago", rating: 4.5, text: "Fixed the leak, very transparent pricing." }
+    ]
   },
   noah: {
     id: "noah",
@@ -205,7 +214,12 @@ window.TRADIES = {
     conversationId: "mark-johnson",
     yearLevel: 6,
     about:
-      "Residential + commercial plumbing. Fast response, clean work, transparent pricing."
+      "Residential + commercial plumbing. Fast response, clean work, transparent pricing.",
+    reviews: [
+      { author: "Tom W.", date: "3 days ago", rating: 5, text: "Mark is the best plumber we've used. Efficient and honest." },
+      { author: "Sarah L.", date: "1 week ago", rating: 5, text: "Clean work, great price. Will use again." },
+      { author: "David B.", date: "2 weeks ago", rating: 4.8, text: "Professional service, highly recommended." }
+    ]
   },
   sarah: {
     id: "sarah",
@@ -219,7 +233,11 @@ window.TRADIES = {
     conversationId: "sarah-chen",
     yearLevel: 7,
     about:
-      "Switchboards, lighting, fault-finding, compliance work. Licensed and punctual."
+      "Switchboards, lighting, fault-finding, compliance work. Licensed and punctual.",
+    reviews: [
+      { author: "Greg M.", date: "4 days ago", rating: 5, text: "Sarah rewired our kitchen. Fantastic job." },
+      { author: "Lisa T.", date: "2 weeks ago", rating: 4.5, text: "Very knowledgeable and thorough." }
+    ]
   },
   david: {
     id: "david",
@@ -233,7 +251,11 @@ window.TRADIES = {
     conversationId: "david-wilson",
     yearLevel: 8,
     about:
-      "Decking, framing, pergolas, renos. High-end finish, reliable timelines."
+      "Decking, framing, pergolas, renos. High-end finish, reliable timelines.",
+    reviews: [
+      { author: "Brad C.", date: "1 month ago", rating: 5, text: "The deck looks amazing. David is a true craftsman." },
+      { author: "Jenny P.", date: "2 months ago", rating: 5, text: "On time and on budget. Love the new pergola." }
+    ]
   },
   lisa: {
     id: "lisa",
@@ -247,7 +269,11 @@ window.TRADIES = {
     conversationId: "lisa-brown",
     yearLevel: 4,
     about:
-      "Interior/exterior painting, patch + prep, clean lines. Protective masking + tidy handover."
+      "Interior/exterior painting, patch + prep, clean lines. Protective masking + tidy handover.",
+    reviews: [
+      { author: "Ryan K.", date: "3 weeks ago", rating: 4.5, text: "Great finish on the walls. Very careful with furniture." },
+      { author: "Amanda J.", date: "1 month ago", rating: 5, text: "Lisa transformed our living room. Beautiful work." }
+    ]
   },
   james: {
     id: "james",
@@ -257,11 +283,15 @@ window.TRADIES = {
     rating: "4.9",
     reviewCount: 11,
     verified: true,
-    image: "https://static.photos/people/320x240/306",
+    image: "https://randomuser.me/api/portraits/men/55.jpg",
     conversationId: "james-taylor",
     yearLevel: 6,
     about:
-      "Garden cleanups, turf, planting, edging, ongoing maintenance. Efficient and consistent."
+      "Garden cleanups, turf, planting, edging, ongoing maintenance. Efficient and consistent.",
+    reviews: [
+      { author: "Linda W.", date: "1 week ago", rating: 5, text: "James did an amazing job on our garden. Looks brand new." },
+      { author: "Peter H.", date: "3 weeks ago", rating: 4.8, text: "Reliable and hard working. Good value." }
+    ]
   }
 };
 
@@ -497,7 +527,7 @@ window.CONVERSATIONS = {
   "sarah-chen": {
     name: "Sarah Chen",
     meta: "Master Electrician • Melbourne, VIC",
-    avatar: "https://static.photos/technology/320x240/202",
+    avatar: "https://randomuser.me/api/portraits/women/33.jpg",
     online: false,
     tag: { label: "Electrical Inspection", color: "bg-purple-100 text-purple-800" },
     messages: [
@@ -507,7 +537,7 @@ window.CONVERSATIONS = {
   "liam-thompson": {
     name: "Liam Thompson",
     meta: "Licensed Electrician • Melbourne, VIC",
-    avatar: "https://static.photos/people/320x240/302",
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
     online: true,
     tag: { label: "Switchboard Upgrade", color: "bg-purple-100 text-purple-800" },
     messages: [
@@ -518,7 +548,7 @@ window.CONVERSATIONS = {
   "olivia-chen": {
     name: "Olivia Chen",
     meta: "Plumber • Pakenham, VIC",
-    avatar: "https://static.photos/people/320x240/303",
+    avatar: "https://randomuser.me/api/portraits/women/65.jpg",
     online: true,
     tag: { label: "Hot Water", color: "bg-blue-100 text-blue-800" },
     messages: [
@@ -528,7 +558,7 @@ window.CONVERSATIONS = {
   "noah-williams": {
     name: "Noah Williams",
     meta: "Carpenter • Dandenong, VIC",
-    avatar: "https://static.photos/people/320x240/304",
+    avatar: "https://randomuser.me/api/portraits/men/45.jpg",
     online: false,
     tag: { label: "Pergola", color: "bg-green-100 text-green-800" },
     messages: [
@@ -538,7 +568,7 @@ window.CONVERSATIONS = {
   "david-wilson": {
     name: "David Wilson",
     meta: "Master Carpenter • Brisbane, QLD",
-    avatar: "https://static.photos/people/320x240/304",
+    avatar: "https://randomuser.me/api/portraits/men/22.jpg",
     online: false,
     tag: { label: "Decking", color: "bg-green-100 text-green-800" },
     messages: [
@@ -548,7 +578,7 @@ window.CONVERSATIONS = {
   "lisa-brown": {
     name: "Lisa Brown",
     meta: "Professional Painter • Perth, WA",
-    avatar: "https://static.photos/people/320x240/305",
+    avatar: "https://randomuser.me/api/portraits/women/40.jpg",
     online: true,
     tag: { label: "Painting", color: "bg-yellow-100 text-yellow-800" },
     messages: [
@@ -558,7 +588,7 @@ window.CONVERSATIONS = {
   "james-taylor": {
     name: "James Taylor",
     meta: "Landscape Gardener • Adelaide, SA",
-    avatar: "https://static.photos/people/320x240/306",
+    avatar: "https://randomuser.me/api/portraits/men/55.jpg",
     online: true,
     tag: { label: "Garden Cleanup", color: "bg-green-100 text-green-800" },
     messages: [
