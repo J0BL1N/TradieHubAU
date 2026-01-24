@@ -23,7 +23,7 @@ window.ATHRouter = (function() {
 
         // Handle back/forward buttons
         window.addEventListener('popstate', () => {
-            loadPage(window.location.pathname, false);
+            loadPage(window.location.pathname + window.location.search + window.location.hash, false);
         });
     }
 
@@ -98,6 +98,8 @@ window.ATHRouter = (function() {
             if (src && (
                 src.includes('nav-shell.js') || 
                 src.includes('spa-router.js') || 
+                src.includes('script.js') ||
+                // src.includes('data.js') || // Allow data.js to reload to ensure window.TRADIES exists
                 src.includes('supabase-client.js') || 
                 src.includes('auth.js') ||
                 src.includes('feather.min.js') ||
@@ -139,6 +141,11 @@ window.ATHRouter = (function() {
             window.ATHAuth.refreshAuthUI();
         } else {
             console.warn('SPA Router: ATHAuth.refreshAuthUI not found');
+        }
+
+        // Re-run page-specific inits after SPA swap.
+        if (typeof initMessagesPage === 'function' && document.getElementById('athMessagesContainer')) {
+            initMessagesPage();
         }
     }
 

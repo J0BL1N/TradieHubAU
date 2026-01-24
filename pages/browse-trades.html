@@ -196,10 +196,10 @@
     <script src="/js/core/spa-router.js"></script>
     <script src="/js/core/script.js"></script>
     <script>
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
 
-        let currentPage = 1;
-        const perPage = 10;
+        var currentPage = 1;
+        var perPage = 10;
 
         function getExperienceBadge(yearLevel) {
             if (!yearLevel || yearLevel < 1) return '';
@@ -209,6 +209,7 @@
             const ordinal = ['1st Year', '2nd Year', '3rd Year', '4th Year'][yearLevel - 1] || `${yearLevel}th Year`;
             return `<span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">${ordinal}</span>`;
         }
+
 
         function updateStats(tradies, locationTerm) {
             document.getElementById('statsCount').textContent = tradies.length.toLocaleString();
@@ -474,36 +475,72 @@
             loadTradies();
         }
 
-        document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; loadTradies(); });
-        document.getElementById('categoryFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
-        document.getElementById('locationFilter').addEventListener('input', () => { currentPage = 1; loadTradies(); });
-        document.getElementById('experienceFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
-        document.getElementById('ratingFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
-        document.getElementById('sortBy').addEventListener('change', () => { currentPage = 1; loadTradies(); });
-        
-        function initBrowseTradies() {
+        // Run immediately on script execution (works for Transfer & Refresh)
+        window.initBrowseTradies = function() {
+            const events = [
+                { id: 'searchInput', event: 'input' },
+                { id: 'categoryFilter', event: 'change' },
+                { id: 'locationFilter', event: 'input' },
+                { id: 'experienceFilter', event: 'change' },
+                { id: 'ratingFilter', event: 'change' },
+                { id: 'sortBy', event: 'change' }
+            ];
+            
+            events.forEach(def => {
+                const el = document.getElementById(def.id);
+                if (el) {
+                    el['on' + def.event] = null;
+                    el.addEventListener(def.event, () => { currentPage = 1; loadTradies(); });
+                }
+            });
+
             try {
                 const params = new URLSearchParams(window.location.search);
                 const q = params.get('q');
                 const location = params.get('location');
-                if (q) document.getElementById('searchInput').value = q;
-                if (location) document.getElementById('locationFilter').value = location;
-            } catch { }
+                if (q && document.getElementById('searchInput')) document.getElementById('searchInput').value = q;
+                if (location && document.getElementById('locationFilter')) document.getElementById('locationFilter').value = location;
+            } catch (e) {
+                console.error(e);
+            }
 
+            let attempts = 0;
             const ensureData = () => {
+                attempts++;
                 const hasData = window.TRADIES && Object.keys(window.TRADIES).length > 0;
+                
                 if (hasData) {
                     loadFeaturedTradies();
                     loadTradies();
                     return;
                 }
-                setTimeout(ensureData, 50);
+                
+                // Self-Healing: Force load data.js if missing after 1.5s
+                if (attempts === 15) {
+                    console.warn('Data missing, forcing reload of data.js...');
+                    const script = document.createElement('script');
+                    script.src = '/js/core/data.js';
+                    script.onload = () => console.log('data.js forced reload complete');
+                    document.body.appendChild(script);
+                }
+
+                // Give up after 5s
+                if (attempts > 50) {
+                     const list = document.getElementById('tradiesList');
+                     if (list) list.innerHTML = '<div class="p-4 text-red-600 bg-red-50 rounded">Error loading data. Please refresh the page.</div>';
+                     return;
+                }
+
+                setTimeout(ensureData, 100);
             };
             ensureData();
-        }
+        };
 
-        initBrowseTradies();
-        window.addEventListener('ath:navigated', initBrowseTradies);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.initBrowseTradies);
+        } else {
+            window.initBrowseTradies();
+        }
     </script>
 </body>
 </html>

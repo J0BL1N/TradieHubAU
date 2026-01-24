@@ -1589,7 +1589,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Call other existing inits if they exist and aren't called elsewhere
   // if (typeof initAuthUI === 'function') initAuthUI(); // Disabled: Supabase auth.js handles this now
   if (typeof initMessagesPage === 'function') initMessagesPage();
-  if (typeof initProfilePage === 'function') initProfilePage();
 });
 
 
@@ -2203,20 +2202,8 @@ function initMessagesPage() {
   })();
 
   // Stop the outer function from proceeding with undefined uid
-  return; 
+  return;
 
-  function startMessagesApp(uid) {
-      const STORE_KEY = `athConversations:${uid}`;
-      const lastActiveKey = `lastActiveConversation:${uid}`;
-
-      // File attachment handlers
-      // ... (rest of the listeners and logic usually follow here)
-      // BUT initMessagesPage is too long to copy/paste entirely in a Replace block efficiently.
-      
-      // ALTERNATIVE: Use a synchronous check first, if fail, trigger async re-init.
-      // But user sees modal flicker.
-      
-      // Let's modify the code to just use the polling AND allow the code to proceed inside the .then()
   function startMessagesApp(uid) {
   const STORE_KEY = `athConversations:${uid}`;
   const lastActiveKey = `lastActiveConversation:${uid}`;
@@ -3467,11 +3454,14 @@ function initMessagesPage() {
   // Create an empty conversation stub for this account so the dialog opens.
   function resolveCounterpartyByConversationId(convId) {
     const cid = String(convId || '').trim();
+    console.log('[DEBUG] resolveCounterparty:', cid);
     if (!cid) return null;
 
     const tradies = window.TRADIES || {};
+    console.log('[DEBUG] TRADIES count:', Object.keys(tradies).length);
     for (const t of Object.values(tradies)) {
       if (t && String(t.conversationId || '') === cid) {
+        console.log('[DEBUG] Found tradie match:', t.name);
         const meta = [t.trade, t.location].filter(Boolean).join(' \u2022 ');
         return {
           name: t.name || 'Tradie',
@@ -3486,6 +3476,7 @@ function initMessagesPage() {
     const customers = window.CUSTOMERS || {};
     for (const c of Object.values(customers)) {
       if (c && String(c.conversationId || '') === cid) {
+        console.log('[DEBUG] Found customer match:', c.name);
         const meta = [c.location].filter(Boolean).join('');
         return {
           name: c.name || 'Customer',
@@ -3497,12 +3488,17 @@ function initMessagesPage() {
       }
     }
 
+    console.log('[DEBUG] No match found for:', cid);
     return null;
   }
 
   function ensureConversationExists(convId) {
     const id = String(convId || '').trim();
-    if (!id || DATA[id]) return;
+    console.log('[DEBUG] ensureConversationExists:', id);
+    if (!id || DATA[id]) {
+        console.log('[DEBUG] Exists or invalid:', !!DATA[id]);
+        return;
+    }
 
     // Optional URL-provided context (future-proofing)
     const params = new URLSearchParams(location.search);
@@ -3511,6 +3507,7 @@ function initMessagesPage() {
     const metaFromUrl = params.get('meta');
 
     const resolved = resolveCounterpartyByConversationId(id) || {};
+    console.log('[DEBUG] Resolved data:', resolved);
 
     DATA[id] = {
       id,
@@ -3523,6 +3520,7 @@ function initMessagesPage() {
     };
 
     window.ATHStore.set(STORE_KEY, DATA);
+    console.log('[DEBUG] Created mock conversation:', id);
   }
 
   function load(id) {
@@ -3914,26 +3912,6 @@ function initMessagesPage() {
     }, DRAFT_DEBOUNCE_MS);
   });
 
-  // Init
-  renderConversationList('');
-
-  // Handle SPA navigation for conversation list
-  list.addEventListener('click', (e) => {
-    const item = e.target.closest('.conversation-item');
-    if (item) {
-      e.preventDefault();
-      const id = item.dataset.conversation;
-      if (id) {
-        load(id);
-        activateMobileChat(); // Switch to chat view on mobile
-        // Update URL without reload
-        const url = new URL(window.location);
-        url.searchParams.set('conversation', id);
-        window.history.pushState({}, '', url);
-      }
-    }
-  });
-
   // Initial load logic
   const urlId = getConversationIdFromUrl();
   const defaultId = getDefaultConversationId();
@@ -3942,12 +3920,11 @@ function initMessagesPage() {
     load(urlId);
     activateMobileChat();
   } else {
-    // Determine if we should load default
     if (defaultId) load(defaultId);
-    // Explicitly start in list view if no URL param
     activateMobileList();
   }
 }
+
 }
 
 // Global reaction functions
@@ -4500,6 +4477,19 @@ function initMyProfilePage() {
 // v0.050: Starred/Bookmarked Messages
 // ============================================================================
 
+function getMessagesStoreKey() {
+  const session = window.ATHAuth?.getSession?.();
+  if (session?.userId) return `athConversations:${session.userId}`;
+
+  try {
+    const raw = localStorage.getItem('athCurrentUser');
+    const user = raw ? JSON.parse(raw) : null;
+    if (user?.id) return `athConversations:${user.id}`;
+  } catch (e) { }
+
+  return 'athMessagesData';
+}
+
 /**
  * Toggle star state for a message
  * @param {string} conversationId - The conversation ID
@@ -4508,7 +4498,7 @@ function initMyProfilePage() {
 window.toggleStar = function(conversationId, messageTs) {
   if (!conversationId || !messageTs) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const convo = DATA[conversationId];
   if (!convo || !convo.messages) return;
   
@@ -4520,7 +4510,7 @@ window.toggleStar = function(conversationId, messageTs) {
   msg.starred = !msg.starred;
   
   // Save to localStorage
-  window.ATHStore.set('athMessagesData', DATA);
+  window.ATHStore.set(getMessagesStoreKey(), DATA);
   
   // Re-render messages to update star icon
   if (window.location.pathname.includes('messages.html')) {
@@ -4539,7 +4529,7 @@ window.toggleStar = function(conversationId, messageTs) {
  * Check if a message is starred
  */
 window.isStarred = function(conversationId, messageTs) {
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const convo = DATA[conversationId];
   if (!convo || !convo.messages) return false;
   const msg = convo.messages.find(m => String(m.ts) === String(messageTs));
@@ -4550,7 +4540,7 @@ window.isStarred = function(conversationId, messageTs) {
  * Get all starred messages across all conversations
  */
 window.getAllStarredMessages = function() {
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const starred = [];
   
   for (const [convId, convo] of Object.entries(DATA)) {
@@ -4964,7 +4954,7 @@ window.searchMessages = function(query) {
   const conversationId = urlParams.get('conversation');
   if (!conversationId) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const convo = DATA[conversationId];
   if (!convo || !convo.messages) return;
   
@@ -5214,7 +5204,7 @@ window.showForwardModal = function(conversationId, messageTs) {
   const modal = document.getElementById('forwardMessageModal');
   if (!modal) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const convo = DATA[conversationId];
   if (!convo || !convo.messages) return;
   
@@ -5254,7 +5244,7 @@ function renderForwardConversationList() {
   const list = document.getElementById('forwardConversationList');
   if (!list) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const currentConvoId = window.forwardContext?.sourceConversationId;
   
   let html = '';
@@ -5290,7 +5280,7 @@ function renderForwardConversationList() {
 window.forwardToConversation = function(targetConversationId) {
   if (!window.forwardContext) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const targetConvo = DATA[targetConversationId];
   if (!targetConvo) return;
   
@@ -5314,7 +5304,7 @@ window.forwardToConversation = function(targetConversationId) {
   targetConvo.messages.push(forwardedMsg);
   
   // Save
-  window.ATHStore.set('athMessagesData', DATA);
+  window.ATHStore.set(getMessagesStoreKey(), DATA);
   
   // Close modal
   window.hideForwardModal();
@@ -5357,7 +5347,7 @@ window.forwardMultipleMessages = function(conversationId, messageTimestamps) {
   const modal = document.getElementById('forwardMessageModal');
   if (!modal) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const convo = DATA[conversationId];
   if (!convo || !convo.messages) return;
   
@@ -5389,7 +5379,7 @@ window.forwardMultipleMessages = function(conversationId, messageTimestamps) {
 window.forwardMultipleToConversation = function(targetConversationId) {
   if (!window.forwardContext || !window.forwardContext.multiple) return;
   
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const targetConvo = DATA[targetConversationId];
   if (!targetConvo) return;
   
@@ -5414,7 +5404,7 @@ window.forwardMultipleToConversation = function(targetConversationId) {
   });
   
   // Save
-  window.ATHStore.set('athMessagesData', DATA);
+  window.ATHStore.set(getMessagesStoreKey(), DATA);
   
   // Close modal
   window.hideForwardModal();
@@ -6096,7 +6086,7 @@ window.openGallery = function() {
     return;
   }
 
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   const convo = DATA[currentConvoId];
   if (!convo || !convo.messages) {
     alert('No messages found.');
@@ -6281,13 +6271,13 @@ window.sendPhotoSet = function() {
   // Ideally, I should expose a 'sendExternalMessage' helper in script.js, but I'm appending.
   
   // Direct injection to localStorage for prototype
-  const DATA = window.ATHStore.get('athMessagesData', {});
+  const DATA = window.ATHStore.get(getMessagesStoreKey(), {});
   if (DATA[currentConvoId]) {
     DATA[currentConvoId].messages.push(msg);
     // Update preview
     DATA[currentConvoId].preview = `📷 Photo Set: ${caption || (currentPhotoSet.length + ' photos')}`;
     DATA[currentConvoId].ts = msg.ts;
-    window.ATHStore.set('athMessagesData', DATA);
+    window.ATHStore.set(getMessagesStoreKey(), DATA);
     
     // Refresh UI
     if (typeof renderMessages === 'function') renderMessages();
@@ -6296,4 +6286,8 @@ window.sendPhotoSet = function() {
   }
   
   window.closePhotoSetBuilder();
-}}
+};
+
+
+
+

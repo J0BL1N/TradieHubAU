@@ -46,7 +46,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="container mx-auto px-0 md:px-3 flex-1 w-full min-h-0 min-w-0 overflow-hidden flex flex-col">
+  <div class="container mx-auto px-0 md:px-3 flex-1 w-full min-h-0 min-w-0 overflow-hidden flex flex-col">
     <!-- Page Header (Simplified for App Feel) -->
     <div class="hidden md:flex items-center justify-between mb-2 px-4 md:px-0 mt-3">
       <div>
@@ -317,7 +317,7 @@
 
     </div>
     </div>
-  </main>
+  </div>
 
   <!-- Footer -->
   <footer class="bg-gray-900 text-white pt-12 pb-8 mt-auto md:hidden">
@@ -376,7 +376,7 @@
 
       <div class="border-t border-gray-800 pt-8">
         <div class="flex flex-col md:flex-row justify-between items-center">
-          <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2024 AussieTradieHub. All rights reserved.</p>
+          <p class="text-gray-400 text-sm mb-4 md:mb-0">&copy; 2024 AussieTradieHub. All rights reserved.</p>
           <div class="flex space-x-6">
             <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
             <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
@@ -491,11 +491,6 @@
     </div>
   </div>
 
-  <script src="/js/core/data.js"></script>
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/script.js"></script>
-
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
     <a href="../index.html" class="bottom-nav-item">
@@ -523,18 +518,11 @@
       <span>Profile</span>
     </a>
   </nav>
-  </nav>
-  <script>
-    // Ensure messages logic runs on SPA navigation
-    if (typeof initMessagesPage === 'function') {
-      initMessagesPage();
-    }
-  </script>
   </main>
 
+  <script src="/js/core/data.js"></script>
   <script type="module" src="/js/core/supabase-client.js"></script>
   <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/data.js"></script>
   <script src="/js/components/nav-shell.js"></script>
   <script src="/js/core/spa-router.js"></script>
   <script src="/js/core/script.js"></script>
@@ -546,6 +534,7 @@
 </body>
 
 </html>
+
 
 
 

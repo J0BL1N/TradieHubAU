@@ -7,7 +7,7 @@
 
 // Import Supabase client
 // Using CDN for browser compatibility without bundler
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Safe environment variable access
 const getEnv = (key) => {

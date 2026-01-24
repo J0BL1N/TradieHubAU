@@ -157,15 +157,17 @@
             </main>
         </div>
     </div>
-            </main>
-        </div>
-    </div>
-    
+    <script type="module" src="/js/core/supabase-client.js"></script>
+    <script type="module" src="/js/core/auth.js"></script>
+    <script src="/js/core/data.js"></script>
+    <script src="/js/components/nav-shell.js"></script>
+    <script src="/js/core/spa-router.js"></script>
+    <script src="/js/core/script.js"></script>
     <script>
-        feather.replace();
+        if (typeof feather !== 'undefined') feather.replace();
 
-        let currentPage = 1;
-        const perPage = 10;
+        var currentPage = 1;
+        var perPage = 10;
         // ... (rest of the script logic will be re-injected by valid SPA handling)
         // Check window.CUSTOMERS availability immediately
         function initBrowseCustomers() {
@@ -457,16 +459,42 @@
             loadCustomers();
         };
 
-        // Attach listeners
-        ['searchInput', 'categoryFilter', 'locationFilter', 'activityFilter', 'sortBy'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener(id === 'searchInput' || id === 'locationFilter' ? 'input' : 'change', () => { currentPage = 1; loadCustomers(); });
-        });
+        window.initBrowseCustomers = function() {
+            // Re-attach listeners to new DOM elements
+            const events = [
+                { id: 'searchInput', event: 'input' },
+                { id: 'categoryFilter', event: 'change' },
+                { id: 'locationFilter', event: 'input' },
+                { id: 'activityFilter', event: 'change' },
+                { id: 'sortBy', event: 'change' }
+            ];
+            
+            events.forEach(def => {
+                const el = document.getElementById(def.id);
+                if (el) {
+                    el['on' + def.event] = null;
+                    el.addEventListener(def.event, () => { currentPage = 1; loadCustomers(); });
+                }
+            });
+
+            const checkData = () => {
+                const hasData = window.CUSTOMERS && Object.keys(window.CUSTOMERS).length > 0;
+                if (hasData) {
+                    loadFeaturedCustomers();
+                    loadCustomers();
+                } else {
+                    setTimeout(checkData, 100);
+                }
+            };
+            checkData();
+        };
         
-        // Init
-        initBrowseCustomers();
-        // Also listen for re-navigation
-        window.addEventListener('ath:navigated', initBrowseCustomers);
+        // Auto-run
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.initBrowseCustomers);
+        } else {
+            window.initBrowseCustomers();
+        }
 
     </script>
 </body>

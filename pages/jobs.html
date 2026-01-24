@@ -387,13 +387,21 @@
     };
 
     // --- Core Logic ---
-    async function init() {
+    // --- Core Logic ---
+    // --- Core Logic ---
+    window.initJobsPage = async function() {
+      // Re-query DOM elements? setupListeners does that.
+      // But we need to ensure we don't have stale listeners.
+      // Since SPA replaces the whole body content of #athMain, the elements are new.
+      // So we just need to run setupListeners again.
+      
       setupUI();
       
       // 1. Initial Data Fetch
       let jobs = [];
       let error = null;
       try {
+          // If the module is already loaded, getJobs works.
           const result = await getJobs({ status: 'open' });
           jobs = result.jobs;
           error = result.error;
@@ -409,9 +417,18 @@
           let attempts = 0;
           const interval = setInterval(() => {
               attempts++;
-              if (window.JOBS || attempts > 20) { // 2s timeout
+              if (window.JOBS) {
                   clearInterval(interval);
-                  resolve(window.JOBS || []);
+                  resolve(window.JOBS);
+              } else if (attempts === 15) {
+                   // Force load
+                   console.warn('Jobs data missing, forcing reload of data.js...');
+                   const script = document.createElement('script');
+                   script.src = '/js/core/data.js';
+                   document.body.appendChild(script);
+              } else if (attempts > 50) { // 5s timeout
+                  clearInterval(interval);
+                  resolve([]); // Give up
               }
           }, 100);
       });
@@ -446,6 +463,13 @@
       
       // Initial Render
       applyFilters();
+    };
+
+    // Auto-run
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.initJobsPage);
+    } else {
+        window.initJobsPage();
     }
 
     function setupListeners() {
