@@ -1,23 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        (function () {
-            const path = window.location.pathname;
-            if (path.includes('/pages/pages/')) {
-                window.location.replace(path.replace('/pages/pages/', '/pages/'));
-            }
-        })();
-    </script>
     <title>Find Tradies | AussieTradieHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/js/core/device-detect.js"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/main/style.css">
+    <link rel="stylesheet" href="../css/main/style.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .dark .dark-mode-icon { display: none; }
@@ -27,19 +18,39 @@
         .dark select { color: white; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-browse-page">
-    <div id="athNavMount"></div>
-
-    <main id="athMain" class="flex-1 overflow-y-auto relative w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div id="athFiltersBackdrop" class="ath-drawer-backdrop hidden lg:hidden"></div>
-        <div class="flex gap-4 ath-browse-layout">
-            <aside class="w-56 flex-shrink-0 ath-filter-drawer" id="athFiltersDrawer">
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sticky top-20 ath-filter-card">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-sm font-bold text-gray-900 dark:text-white">Filters</h2>
-                        <button type="button" id="athCloseFilters" class="lg:hidden text-xs text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Close</button>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-teal-600 rounded flex items-center justify-center">
+                        <i data-feather="tool" class="w-3.5 h-3.5 text-white"></i>
                     </div>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">AussieTradieHub</span>
+                </div>
+                <div class="hidden md:flex items-center gap-5">
+                    <a href="../index.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="home" class="w-3.5 h-3.5"></i> Home</a>
+                    <a href="browse-trades.html" class="text-teal-600 font-semibold flex items-center gap-1 text-sm"><i data-feather="users" class="w-3.5 h-3.5"></i> Find Tradies</a>
+                    <a href="browse-customers.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="user-check" class="w-3.5 h-3.5"></i> Find Customers</a>
+                    <a href="jobs.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="briefcase" class="w-3.5 h-3.5"></i> Job Board</a>
+                    <a href="messages.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="message-square" class="w-3.5 h-3.5"></i> Messages</a>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="darkModeToggle" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        <i data-feather="moon" class="w-4 h-4 dark-mode-icon"></i>
+                        <i data-feather="sun" class="w-4 h-4 light-mode-icon hidden"></i>
+                    </button>
+                    <a href="my-profile.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-sm">Log In</a>
+                    <a href="my-profile.html" class="bg-gray-900 dark:bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-teal-700 font-medium text-sm">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex gap-4">
+            <aside class="w-56 flex-shrink-0">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sticky top-20">
+                    <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-2">Filters</h2>
                     <div class="space-y-2.5">
                         <div>
                             <label class="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">Search</label>
@@ -130,15 +141,9 @@
                     </div>
                 </div>
             </aside>
-            <main class="flex-1 ath-browse-main">
-                <div class="flex items-center justify-between mb-3 lg:hidden ath-mobile-filter-bar">
-                    <button id="athOpenFilters" class="px-3 py-2 text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800">
-                        Filters
-                    </button>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Refine results</span>
-                </div>
+            <main class="flex-1">
                 <!-- Quick Stats Banner -->
-                <div class="bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg p-4 mb-4 ath-stat-banner">
+                <div class="bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg p-4 mb-4">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div>
                             <div class="text-2xl font-bold" id="statsCount">0</div>
@@ -161,12 +166,12 @@
                 </div>
 
                 <!-- Sort & Filter Controls -->
-                <div class="flex items-center justify-between mb-3 flex-wrap gap-2 ath-sort-row">
+                <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <div>
                         <h1 class="text-lg font-bold text-gray-900 dark:text-white mb-0.5">All Tradies</h1>
                         <p class="text-xs text-gray-600 dark:text-gray-300" id="resultCount">Loading...</p>
                     </div>
-                    <div class="flex items-center gap-2 ath-sort-controls">
+                    <div class="flex items-center gap-2">
                         <label class="text-xs text-gray-600 dark:text-gray-300">Sort:</label>
                         <select id="sortBy" class="px-2 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded text-xs focus:outline-none focus:ring-1 focus:ring-teal-500">
                             <option value="rating">Highest Rated</option>
@@ -187,16 +192,19 @@
             </main>
         </div>
     </div>
-    </main>
-
-    <script type="module" src="/js/core/supabase-client.js"></script>
-    <script type="module" src="/js/core/auth.js"></script>
-    <script src="/js/core/data.js"></script>
-    <script src="/js/components/nav-shell.js"></script>
-    <script src="/js/core/spa-router.js"></script>
-    <script src="/js/core/script.js"></script>
+    <script src="../js/core/data.js"></script>
+    <script src="../js/core/script.js"></script>
     <script>
         feather.replace();
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const htmlElement = document.documentElement;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') htmlElement.classList.add('dark');
+        darkModeToggle.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+            feather.replace();
+        });
 
         let currentPage = 1;
         const perPage = 10;
@@ -252,18 +260,6 @@
             loadTradies();
         }
 
-        function getAvatarUrl(name) {
-            const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-            const colors = ['#0d9488', '#0891b2', '#0f766e', '#0e7490']; // Teal/Cyan variations
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const svg = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                <rect width="100" height="100" fill="${color}"/>
-                <text x="50" y="50" dy=".35em" fill="white" font-family="Arial" font-size="40" text-anchor="middle" font-weight="bold">${initials}</text>
-            </svg>`;
-            return `data:image/svg+xml;base64,${btoa(svg)}`;
-        }
-
         function loadFeaturedTradies() {
             const tradiesObj = window.TRADIES || {};
             const tradies = Object.values(tradiesObj)
@@ -277,14 +273,13 @@
             }
             
             container.innerHTML = tradies.map(t => `
-                <div class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-2 border-teal-200 dark:border-teal-700 rounded-lg p-3 hover:shadow-md transition">
+                <div class="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-2 border-teal-300 dark:border-teal-700 rounded-lg p-3 hover:shadow-md transition">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="px-2 py-0.5 bg-teal-600 text-white text-xs font-bold rounded">FEATURED</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <img src="${t.image || getAvatarUrl(t.name)}" 
-                             onerror="this.onerror=null; this.src='${getAvatarUrl(t.name)}'"
-                             class="w-12 h-12 rounded-full border-2 border-teal-400 object-cover">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
+                             class="w-12 h-12 rounded-full border-2 border-teal-400">
                         <div class="flex-1">
                             <h3 class="font-semibold text-sm text-gray-900 dark:text-white">${t.name}</h3>
                             <p class="text-xs text-gray-600 dark:text-gray-300">${t.trade || 'Electrician'}</p>
@@ -296,7 +291,7 @@
                     </div>
                     <a href="profile-tradesman.html?id=${t.id}" 
                        class="mt-2 block text-center bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded font-medium text-xs transition">
-                        View Profile ?
+                        View Profile →
                     </a>
                 </div>
             `).join('');
@@ -424,10 +419,9 @@
             
             // Render tradies
             list.innerHTML = paginatedTradies.map(t => `
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition flex gap-3 ath-result-card">
-                    <img src="${t.image || getAvatarUrl(t.name)}" 
-                         onerror="this.onerror=null; this.src='${getAvatarUrl(t.name)}'"
-                         class="w-14 h-14 rounded-full border-2 border-teal-500 flex-shrink-0 object-cover" alt="${t.name}"/>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-md transition flex gap-3">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=0d9488&color=fff" 
+                         class="w-14 h-14 rounded-full border-2 border-teal-500 flex-shrink-0" alt="${t.name}"/>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-1">
                             <div>
@@ -441,8 +435,8 @@
                             </div>
                         </div>
                         <p class="text-gray-600 dark:text-gray-300 text-xs mb-2 line-clamp-1">${t.bio || t.about || 'Experienced professional ready to help with your project.'}</p>
-                        <div class="flex items-center justify-between ath-card-footer">
-                            <div class="flex items-center gap-1 text-xs flex-wrap ath-card-tags">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1 text-xs flex-wrap">
                                 <span class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full flex items-center gap-0.5">
                                     <i data-feather="map-pin" class="w-2.5 h-2.5"></i> ${(t.serviceArea || t.location || 'Sydney').split(',')[0]}
                                 </span>
@@ -481,32 +475,11 @@
         document.getElementById('ratingFilter').addEventListener('change', () => { currentPage = 1; loadTradies(); });
         document.getElementById('sortBy').addEventListener('change', () => { currentPage = 1; loadTradies(); });
         
-        function initBrowseTradies() {
-            try {
-                const params = new URLSearchParams(window.location.search);
-                const q = params.get('q');
-                const location = params.get('location');
-                if (q) document.getElementById('searchInput').value = q;
-                if (location) document.getElementById('locationFilter').value = location;
-            } catch { }
-
-            const ensureData = () => {
-                const hasData = window.TRADIES && Object.keys(window.TRADIES).length > 0;
-                if (hasData) {
-                    loadFeaturedTradies();
-                    loadTradies();
-                    return;
-                }
-                setTimeout(ensureData, 50);
-            };
-            ensureData();
-        }
-
-        initBrowseTradies();
-        window.addEventListener('ath:navigated', initBrowseTradies);
+        window.addEventListener('load', () => {
+            loadFeaturedTradies();
+            loadTradies();
+        });
     </script>
 </body>
 </html>
-
-
 

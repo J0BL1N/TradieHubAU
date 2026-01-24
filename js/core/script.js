@@ -6296,4 +6296,4 @@ window.sendPhotoSet = function() {
   }
   
   window.closePhotoSetBuilder();
-};
+}}

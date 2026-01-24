@@ -46,19 +46,19 @@
   </div>
 
   <!-- Main Content -->
-  <main class="container mx-auto px-0 md:px-3 py-0 md:py-3 flex-1 w-full min-h-0 min-w-0 overflow-hidden flex flex-col">
+  <main class="container mx-auto px-0 md:px-3 flex-1 w-full min-h-0 min-w-0 overflow-hidden flex flex-col">
     <!-- Page Header (Simplified for App Feel) -->
-    <div class="hidden md:flex items-center justify-between mb-2 px-4 md:px-0">
+    <div class="hidden md:flex items-center justify-between mb-2 px-4 md:px-0 mt-3">
       <div>
         <h1 class="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
         <p class="text-xs text-gray-500 dark:text-gray-400">All your communications in one place.</p>
       </div>
     </div>
 
-    <div id="athMessagesContainer" class="flex flex-col lg:flex-row gap-4 min-h-0 flex-1 ath-mobile-list-view relative">
+    <div id="athMessagesContainer" class="flex flex-col lg:flex-row gap-4 min-h-0 flex-1 ath-mobile-list-view relative h-full">
 
       <!-- Left Sidebar (Conversations) -->
-      <aside class="lg:w-[280px] xl:w-[300px] flex-shrink-0 flex flex-col min-h-0 transition-colors duration-200">
+      <aside class="lg:w-[280px] xl:w-[300px] flex-shrink-0 flex flex-col min-h-0 transition-colors duration-200 h-full">
 
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 transition-colors duration-200">
           <div class="relative">
@@ -86,10 +86,10 @@
       </aside>
 
       <!-- Chat (Primary) -->
-      <section class="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
+      <section class="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden h-full">
         <!-- Empty state (shown when no conversation or not signed in) -->
         <div id="athMessagesEmptyState"
-          class="hidden flex-1 min-h-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 flex items-center justify-center transition-colors duration-200">
+          class="hidden flex-1 min-h-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 flex items-center justify-center transition-colors duration-200 h-full">
           <div class="max-w-md text-center">
             <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center">
               <i data-feather="message-square" class="w-6 h-6 text-teal-600 dark:text-teal-400"></i>
@@ -99,7 +99,7 @@
           </div>
         </div>
 
-        <div id="athChatPane" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
+        <div id="athChatPane" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200 h-full">
             <!-- Header (JS updates these IDs) -->
             <div class="p-4 border-b border-gray-200 dark:border-gray-700 ath-chat-header">
               <div class="flex items-center justify-between">
@@ -308,7 +308,7 @@
 
       <!-- Context Panel (jobs + showcase) -->
       <aside id="jobDetailsCard"
-        class="lg:w-[340px] xl:w-[360px] flex-shrink-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 flex flex-col min-h-0 overflow-hidden transition-colors duration-200">
+        class="lg:w-[340px] xl:w-[360px] flex-shrink-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 flex flex-col min-h-0 overflow-hidden transition-colors duration-200 h-full">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-bold text-gray-900 dark:text-white">Context</h3>
         </div>

@@ -1,0 +1,343 @@
+/* ============================================================================
+   COMPREHENSIVE RESPONSIVE SYSTEM (v0.0298)
+   Mobile-first progressive enhancement for all devices
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   BASE (320px+) - Smallest phones (iPhone SE 1st gen, old Androids)
+   Ultra-compact, everything fits
+   ---------------------------------------------------------------------------- */
+
+/* Global mobile optimizations */
+@media (max-width: 767px) {
+  
+  /* Ensure no horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Base font size (14px minimum for iOS to prevent zoom) */
+  html {
+    font-size: 14px;
+  }
+  
+  /* Compact header - base for all mobile */
+  nav .container {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  nav h1 {
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+  
+  nav p {
+    font-size: 0.6rem;
+  }
+  
+  /* Logo size */
+  nav .w-8 {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  /* CRITICAL: Hide email from logout button on ALL mobile */
+  #athAuthNavBtn {
+    font-size: 0 !important; /* Hide text */
+    padding: 0.5rem 0.75rem !important;
+    min-width: 70px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  #athAuthNavBtn::before {
+    content: 'Logout';
+    font-size: 0.75rem;
+    display: inline-block;
+  }
+  
+  /* Compact main content */
+  main.container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 1rem !important;
+  }
+  
+  /* Page headers */
+  .container h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .container h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Compact cards */
+  .bg-white.rounded-lg {
+    padding: 0.75rem !important;
+  }
+  
+  /* Form inputs */
+  input,
+  textarea,
+  select {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Buttons */
+  button,
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    min-height: 44px; /* Minimum tap target */
+  }
+  
+  /* Bottom nav - compact */
+  .bottom-nav {
+    height: 56px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.625rem;
+  }
+  
+  .bottom-nav-item i {
+    width: 18px;
+    height: 18px;
+    margin-bottom: 2px;
+  }
+  
+  /* Messages: Compact chat header */
+  #athChatPane header {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Hide less critical chat header icons on all mobile */
+  #chatHeaderPhone,
+  #chatHeaderVideo {
+    display: none !important;
+  }
+  
+  /* Chat header text */
+  #athChatPane header h2,
+  #athChatPane header .font-bold {
+    font-size: 1rem !important;
+  }
+  
+  #athChatPane header .text-sm,
+  #athChatPane header .text-xs {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Message composer - ensure input is wide enough */
+  #lightningBtn,
+  #emojiPickerBtn {
+    display: none !important;
+  }
+  
+  #athMessageInput {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  
+  /* Modal fixes */
+  #athJobModalClose {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+  }
+  
+  #athJobModalBody {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   COMPACT PHONES (360px+) - Samsung S24, Pixel 5, Galaxy S21
+   Slightly more breathing room
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 360px) and (max-width: 767px) {
+  
+  /* Can afford slightly larger fonts */
+  html {
+    font-size: 14.5px;
+  }
+  
+  /* Slightly larger header */
+  nav h1 {
+    font-size: 1rem;
+  }
+  
+  /* Cards can have a bit more padding */
+  .bg-white.rounded-lg {
+    padding: 0.875rem !important;
+  }
+  
+  /* Chat header: show one more icon */
+  #chatHeaderGallery {
+    display: inline-flex !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   STANDARD PHONES (375px+) - iPhone 14/15, iPhone X-13
+   Balanced, comfortable spacing
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 375px) and (max-width: 767px) {
+  
+  html {
+    font-size: 15px;
+  }
+  
+  /* Full header size */
+  nav h1 {
+    font-size: 1.125rem;
+  }
+  
+  nav p {
+    font-size: 0.65rem;
+  }
+  
+  /* Standard card padding */
+  .bg-white.rounded-lg {
+    padding: 1rem !important;
+  }
+  
+  /* Can show abbreviated email if short */
+  #athAuthNavBtn::before {
+    content: attr(data-short-label);
+  }
+  
+  /* Bottom nav can be slightly taller */
+  .bottom-nav {
+    height: 60px;
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.65rem;
+  }
+  
+  .bottom-nav-item i {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   LARGE PHONES (414px+) - iPhone Pro Max, Galaxy S23 Ultra
+   Comfortable, spacious
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 414px) and (max-width: 767px) {
+  
+  html {
+    font-size: 16px;
+  }
+  
+  /* Full-size elements */
+  nav h1 {
+    font-size: 1.25rem;
+  }
+  
+  nav p {
+    font-size: 0.7rem;
+  }
+  
+  /* Generous padding */
+  .bg-white.rounded-lg {
+    padding: 1.25rem !important;
+  }
+  
+  main.container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Show more chat icons */
+  #chatHeaderStar {
+    display: inline-flex !important;
+  }
+  
+  /* Full bottom nav */
+  .bottom-nav {
+    height: 64px;
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.7rem;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   TABLETS (768px+) - iPad Mini, iPad
+   Desktop-like layout
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  
+  /* Reset mobile overrides */
+  html {
+    font-size: 16px;
+  }
+  
+  /* Show all elements */
+  #athAuthNavBtn {
+    font-size: 0.875rem !important;
+  }
+  
+  #athAuthNavBtn::before {
+    content: none;
+  }
+  
+  /* Show all chat icons */
+  #chatHeaderPhone,
+  #chatHeaderVideo,
+  #chatHeaderStar,
+  #chatHeaderGallery {
+    display: inline-flex !important;
+  }
+  
+  /* Show all composer buttons */
+  #lightningBtn,
+  #emojiPickerBtn {
+    display: inline-flex !important;
+  }
+  
+  /* Hide bottom nav on tablets */
+  .bottom-nav {
+    display: none !important;
+  }
+  
+  /* Standard spacing */
+  .bg-white.rounded-lg {
+    padding: 1.5rem !important;
+  }
+  
+  main.container {
+    padding: 1.5rem !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   LARGE TABLETS / DESKTOP (1024px+)
+   Full desktop experience
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  
+  /* Generous spacing */
+  main.container {
+    padding: 2rem !important;
+  }
+  
+  .bg-white.rounded-lg {
+    padding: 2rem !important;
+  }
+}

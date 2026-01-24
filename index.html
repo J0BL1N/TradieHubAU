@@ -31,10 +31,11 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-home-page">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-home-page h-screen overflow-hidden flex flex-col">
     <div id="athNavMount"></div>
 
-    <main id="athMain">
+    <main id="athMain" class="flex-1 overflow-hidden relative flex flex-col">
+      <div id="homePageScroll" class="h-full overflow-y-auto w-full">
 
     <!-- Hero Section -->
     <div class="bg-white dark:bg-gray-800 transition-colors duration-200">
@@ -595,6 +596,7 @@
     </footer>
 
 
+    </div>
     </main>
 
     <script type="module" src="js/core/supabase-client.js"></script>
