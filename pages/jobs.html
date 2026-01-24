@@ -1010,15 +1010,22 @@
         if (typeof feather !== 'undefined') feather.replace();
     };
 
-    document.getElementById('athJobModalClose').addEventListener('click', () => {
-        document.getElementById('athJobModal').classList.add('hidden');
-    });
+    const closeBtn = document.getElementById('athJobModalClose');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            const modal = document.getElementById('athJobModal');
+            if (modal) modal.classList.add('hidden');
+        });
+    }
 
-    document.getElementById('athJobModal').addEventListener('click', (e) => {
-        if (e.target.id === 'athJobModal') {
-            document.getElementById('athJobModal').classList.add('hidden');
-        }
-    });
+    const jobModal = document.getElementById('athJobModal');
+    if (jobModal) {
+        jobModal.addEventListener('click', (e) => {
+            if (e.target.id === 'athJobModal') {
+                jobModal.classList.add('hidden');
+            }
+        });
+    }
 
     // Start App
     init();

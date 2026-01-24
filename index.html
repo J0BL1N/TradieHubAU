@@ -274,18 +274,22 @@
             renderReview(index);
         }
 
+        let carouselInterval;
+
         function nextReview() {
+            if (!document.getElementById('reviewCarousel')) {
+                clearInterval(carouselInterval);
+                return;
+            }
             currentReview = (currentReview + 1) % reviews.length;
             renderReview(currentReview);
         }
 
         // Auto-rotate every 5 seconds
-        setInterval(nextReview, 5000);
+        carouselInterval = setInterval(nextReview, 5000);
 
         // Initial render
-        window.addEventListener('load', () => {
-            renderReview(0);
-        });
+        renderReview(0);
     </script>
 
     <!-- How It Works -->

@@ -2743,6 +2743,43 @@ function initMessagesPage() {
 
     const active = getConversationIdFromUrl() || getDefaultConversationId();
 
+    // Delete conversation
+    window.deleteConversation = function(id) {
+        if (!confirm('Are you sure you want to delete this conversation? This cannot be undone.')) return;
+        
+        if (DATA[id]) {
+            delete DATA[id];
+            window.ATHStore.set(STORE_KEY, DATA);
+            
+            // If active, clear selection
+            const active = getConversationIdFromUrl() || getDefaultConversationId();
+            if (active === id) {
+                // Clear URL param
+                const url = new URL(window.location.href);
+                url.searchParams.delete('conversation');
+                window.history.replaceState({}, '', url);
+                
+                // Reset UI
+                if (chat) chat.innerHTML = '';
+                if (chatName) chatName.textContent = 'Select a conversation';
+                if (chatMeta) chatMeta.textContent = '';
+                if (chatAvatar) chatAvatar.src = '';
+                // Hide chat pane on mobile if open? Maybe just show empty state
+                if (window.innerWidth < 768) {
+                   document.getElementById('mobileMenu')?.classList.remove('hidden'); // Go back to list?
+                   // Actually we rely on CSS/JS toggles usually. 
+                   // For now, reload to keep it simple or just render list
+                }
+            }
+            
+            renderConversationList(searchInput?.value || '');
+            
+            if (window.ATHToast) {
+                window.ATHToast.show({ message: 'Conversation deleted', icon: 'trash-2' });
+            }
+        }
+    };
+
     list.innerHTML = ids.map((id, idx) => {
       const c = DATA[id];
       const last = getLastMessage(id);
@@ -2754,34 +2791,44 @@ function initMessagesPage() {
 
       const dotClass = online ? 'bg-green-500' : 'bg-gray-400';
       const activeClass = (id === active) ? 'bg-teal-50 dark:bg-teal-900/40' : '';
-      const borderClass = idx === ids.length - 1 ? '' : 'border-b border-gray-200 dark:border-gray-700/50';
+      const borderClass = idx === ids.length - 1 ? '' : 'border-b border-gray-100 dark:border-gray-700/50';
 
       return `
-         <a href="messages.html?conversation=${encodeURIComponent(id)}"
-           class="conversation-item block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 ${borderClass} ${activeClass}"
+         <div 
+           class="conversation-item group block px-2 py-1.5 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 ${borderClass} ${activeClass} cursor-pointer relative"
            data-conversation="${escapeHtml(id)}">
-          <div class="flex items-start space-x-3">
-            <div class="relative">
-              <img src="${escapeHtml(c?.avatar || '')}" alt="${escapeHtml(c?.name || '')}" class="w-10 h-10 rounded-full object-cover border-2 border-teal-100">
-              <span class="absolute -bottom-1 -right-1 w-3 h-3 ${dotClass} rounded-full border-2 border-white"></span>
+          <div class="flex items-center space-x-2">
+            <div class="relative flex-shrink-0">
+              <img src="${escapeHtml(c?.avatar || '')}" alt="${escapeHtml(c?.name || '')}" class="w-8 h-8 rounded-full object-cover border border-teal-100">
+              <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 ${dotClass} rounded-full border border-white"></span>
             </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-start mb-1">
-                <h3 class="font-bold text-gray-900 dark:text-white truncate pr-2">${escapeHtml(c?.name || 'Conversation')}</h3>
-                <span class="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">${escapeHtml(time)}</span>
+            <div class="flex-1 min-w-0 flex flex-col justify-center">
+              <div class="flex justify-between items-baseline leading-none">
+                <h3 class="font-bold text-base text-gray-900 dark:text-white truncate pr-1">${escapeHtml(c?.name || 'Conversation')}</h3>
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">${escapeHtml(time)}</span>
+                </div>
               </div>
-              <p class="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">${escapeHtml(preview)}</p>
-              <div class="flex items-center">
-                ${tag ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${escapeHtml(tag.color || '')} mr-2">${escapeHtml(tag.label || '')}</span>` : ''}
-                ${unread ? `<span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">${unread}</span>` : ''}
+              <div class="flex justify-between items-center leading-none mt-0.5">
+                  <p class="text-xs text-gray-600 dark:text-gray-400 truncate pr-2 flex-1">${escapeHtml(preview)}</p>
+                  <button onclick="event.stopPropagation(); window.deleteConversation('${escapeHtml(id)}')" 
+                        class="md:invisible group-hover:visible p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all flex-shrink-0 ml-1" 
+                        title="Delete Conversation">
+                    <i data-feather="trash-2" class="w-3 h-3"></i>
+                  </button>
+              </div>
+              <div class="hidden">
+                ${tag ? `<span class="hidden">${escapeHtml(tag.label || '')}</span>` : ''}
+                ${unread ? `<span class="absolute top-1 right-1 bg-red-500 text-white text-[9px] rounded-full min-w-[1rem] h-4 flex items-center justify-center px-1 border border-white">${unread}</span>` : ''}
               </div>
             </div>
           </div>
-        </a>
+        </div>
       `;
     }).join('');
 
     updateUnreadUI();
+    if (typeof feather !== 'undefined') feather.replace();
   }
 
   // ----------------------------
@@ -3079,15 +3126,15 @@ function initMessagesPage() {
                   <button class="bg-white border border-gray-300 rounded-full p-1 text-gray-600 hover:bg-gray-50" onclick="window.toggleMessageMenu('${m.ts}')" title="More options">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                   </button>
-                  <div id="menu-${m.ts}" class="hidden absolute left-0 bottom-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-32 z-50">
-                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700" onclick="window.startReply('${m.ts}')">
+                  <div id="menu-${m.ts}" class="hidden absolute right-full mr-1 top-0 bg-white rounded shadow-lg ring-1 ring-black ring-opacity-5 py-0 w-auto min-w-[80px] flex flex-col z-50 overflow-hidden">
+                    <button class="w-full text-left px-3 py-1 hover:bg-gray-100 text-xs text-gray-700 font-medium whitespace-nowrap leading-tight" onclick="window.startReply('${m.ts}')">
                       Reply
                     </button>
-                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700" onclick="window.togglePin('${m.ts}')">
+                    <button class="w-full text-left px-3 py-1 hover:bg-gray-100 text-xs text-gray-700 font-medium whitespace-nowrap leading-tight" onclick="window.togglePin('${m.ts}')">
                       ${isPinned(c?.id, m.ts) ? 'Unpin' : 'Pin'}
                     </button>
-                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700" onclick="window.startEditMessage('${m.ts}')">Edit</button>
-                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-red-600" onclick="window.deleteMessage('${m.ts}')">Delete</button>
+                    <button class="w-full text-left px-3 py-1 hover:bg-gray-100 text-xs text-gray-700 font-medium whitespace-nowrap leading-tight" onclick="window.startEditMessage('${m.ts}')">Edit</button>
+                    <button class="w-full text-left px-3 py-1 hover:bg-gray-100 text-xs text-red-600 font-medium whitespace-nowrap leading-tight" onclick="window.deleteMessage('${m.ts}')">Delete</button>
                   </div>
                 </div>
               ` : `
@@ -3459,8 +3506,15 @@ function initMessagesPage() {
 
     const tradies = window.TRADIES || {};
     console.log('[DEBUG] TRADIES count:', Object.keys(tradies).length);
-    for (const t of Object.values(tradies)) {
-      if (t && String(t.conversationId || '') === cid) {
+    // 1. Try Tradies
+    for (const [key, t] of Object.entries(tradies)) {
+      if (!t) continue;
+      // Check conversationId, id, or dictionary key
+      if (
+        String(t.conversationId || '') === cid || 
+        String(t.id || '') === cid || 
+        key === cid
+      ) {
         console.log('[DEBUG] Found tradie match:', t.name);
         const meta = [t.trade, t.location].filter(Boolean).join(' \u2022 ');
         return {
@@ -3473,9 +3527,15 @@ function initMessagesPage() {
       }
     }
 
+    // 2. Try Customers
     const customers = window.CUSTOMERS || {};
-    for (const c of Object.values(customers)) {
-      if (c && String(c.conversationId || '') === cid) {
+    for (const [key, c] of Object.entries(customers)) {
+      if (!c) continue;
+      // Check conversationId, or dictionary key
+      if (
+        String(c.conversationId || '') === cid || 
+        key === cid
+      ) {
         console.log('[DEBUG] Found customer match:', c.name);
         const meta = [c.location].filter(Boolean).join('');
         return {
