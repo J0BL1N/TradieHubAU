@@ -70,7 +70,7 @@ async function handleSignInSuccess(session) {
     window.ATHToast.show({
       type: 'success',
       message: `Welcome back, ${session.user.email}!`,
-      duration: 3000
+      duration: 2200
     });
   }
 }
@@ -137,8 +137,9 @@ function handleSignOut() {
   }
   
   // Redirect to home
-  if (window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
-    window.location.href = 'index.html';
+  if (window.location.pathname !== '/index.html' && window.location.pathname !== '/' && !window.location.pathname.endsWith('index.html')) {
+    const homePath = window.location.pathname.includes('/pages/') ? '../index.html' : 'index.html';
+    window.location.href = homePath;
   }
 }
 
@@ -146,45 +147,147 @@ function handleSignOut() {
  * Update UI based on auth state
  * @param {boolean} isSignedIn 
  */
+/**
+ * Update UI based on auth state
+ * @param {boolean} isSignedIn 
+ */
 function updateUIForAuthState(isSignedIn) {
-  // Update nav buttons
-  let authNavBtn = document.getElementById('athAuthNavBtn');
+  const adminSlot = document.getElementById('athAdminSlot');
+  const adminSlotMobile = document.getElementById('athAdminSlotMobile');
+  const userSlot = document.getElementById('athUserSlot');
+  const userSlotMobile = document.getElementById('athUserSlotMobile');
   
-  // Inject button if missing (Supabase Auth takes over UI creation)
-  if (!authNavBtn) {
-    const navEl = document.querySelector('nav');
-    // Find My Profile link to place 'Sign In' next to
-    const desktopProfileLink = navEl
-      ? Array.from(navEl.querySelectorAll('a[href^="my-profile.html"]')).find(a => !a.closest('#mobileMenu'))
-      : null;
+  if (!userSlot) return; // Nav not mounted yet
+
+  const basePath = window.location.pathname.includes('/pages/') ? '../' : '';
+  
+  // 1. Resolve Identity
+  let displayName = 'User';
+  let avatarUrl = ''; // Will use fallback if empty
+  
+  if (isSignedIn && currentUser) {
+    const profile = JSON.parse(localStorage.getItem('athCurrentUser') || '{}');
+    displayName = profile.display_name || currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+    avatarUrl = profile.avatar_url || currentUser.user_metadata?.avatar_url || '';
+  }
+
+  // 2. Admin Logic
+  const adminAllowlist = ['jaydenln.work@gmail.com'];
+  const canAccessAdmin = isSignedIn && adminAllowlist.includes(String(currentUser?.email || '').toLowerCase());
+  
+  if (adminSlot) {
+    adminSlot.innerHTML = canAccessAdmin ? `
+      <a href="${basePath}pages/admin.html" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+        <i data-feather="shield" class="w-4 h-4"></i> <span>Admin</span>
+      </a>
+    ` : '';
+  }
+  
+  if (adminSlotMobile) {
+    adminSlotMobile.innerHTML = canAccessAdmin ? `
+      <a href="${basePath}pages/admin.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Admin</a>
+    ` : '';
+  }
+
+  // 3. User Controls (Desktop)
+  if (isSignedIn) {
+    userSlot.innerHTML = `
+      <button id="athUserMenuBtn" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition flex-shrink-0 max-w-[180px]">
+        <img src="${avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=fff`}" class="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600 shadow-sm" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=fff'">
+        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">${displayName}</span>
+        <i data-feather="chevron-down" class="w-4 h-4 text-gray-400"></i>
+      </button>
+      <div id="athUserDropdown" class="hidden absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-[100] py-1 overflow-hidden transition-all duration-200">
+        <a href="${basePath}pages/my-profile.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-teal-900/20">
+          <i data-feather="user" class="w-4 h-4"></i> My Profile
+        </a>
+        <div class="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+        <button id="athSignOutBtn" class="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 font-medium">
+          <i data-feather="log-out" class="w-4 h-4"></i> Log Out
+        </button>
+      </div>
+    `;
+    
+    // Wire up dropdown
+    const btn = document.getElementById('athUserMenuBtn');
+    const dropdown = document.getElementById('athUserDropdown');
+    const signOutBtn = document.getElementById('athSignOutBtn');
+    
+    if (btn && dropdown) {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+      };
       
-    if (desktopProfileLink) {
-      authNavBtn = document.createElement('button');
-      authNavBtn.id = 'athAuthNavBtn';
-      authNavBtn.type = 'button';
-      authNavBtn.className = 'ml-3 px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 transition';
-      desktopProfileLink.insertAdjacentElement('afterend', authNavBtn);
+      // Close dropdown when clicking outside
+      window.addEventListener('click', () => dropdown.classList.add('hidden'), { once: true });
+    }
+    
+    if (signOutBtn) {
+      signOutBtn.onclick = handleSignOutClick;
+    }
+
+  } else {
+    userSlot.innerHTML = `
+      <div class="flex items-center gap-2">
+        <button id="athSignInBtn" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-sm px-2">Log In</button>
+        <button id="athSignUpBtn" class="bg-gray-900 dark:bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-teal-700 font-medium text-sm transition shadow-sm">Sign Up</button>
+      </div>
+    `;
+    
+    const signInBtn = document.getElementById('athSignInBtn');
+    const signUpBtn = document.getElementById('athSignUpBtn');
+    
+    if (signInBtn) signInBtn.onclick = showSignInModal;
+    if (signUpBtn) signUpBtn.onclick = showSignUpModal;
+  }
+
+  // 4. User Controls (Mobile)
+  if (userSlotMobile) {
+    if (isSignedIn) {
+      userSlotMobile.innerHTML = `
+        <div class="flex items-center gap-3 px-3 py-3 mb-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+           <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover">
+           <div class="min-w-0">
+             <div class="text-sm font-bold text-gray-900 dark:text-white truncate">${displayName}</div>
+             <div class="text-xs text-gray-500 truncate">${currentUser.email}</div>
+           </div>
+        </div>
+        <a href="${basePath}pages/my-profile.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 font-medium">My Profile</a>
+        <button id="athSignOutBtnMobile" class="w-full text-left px-3 py-2 rounded-lg text-red-600 font-medium">Log Out</button>
+      `;
+      const signOutBtnM = document.getElementById('athSignOutBtnMobile');
+      if (signOutBtnM) signOutBtnM.onclick = handleSignOutClick;
+    } else {
+      userSlotMobile.innerHTML = `
+        <button onclick="window.showSignInModal()" class="block w-full text-left px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 font-medium">Log In</button>
+        <button onclick="window.showSignUpModal()" class="block w-full text-left px-3 py-2 mt-1 rounded-lg bg-teal-600 text-white font-medium text-center">Sign Up</button>
+      `;
     }
   }
 
-  if (authNavBtn) {
-    if (isSignedIn) {
-      authNavBtn.textContent = `Logout (${currentUser?.email || ''})`;
-      authNavBtn.onclick = handleSignOutClick;
-    } else {
-      authNavBtn.textContent = 'Sign In';
-      authNavBtn.onclick = showSignInModal;
-    }
-  }
-  
-  // Show/hide protected content
+  // Auth Guards
   document.querySelectorAll('[data-auth-required]').forEach(el => {
     el.style.display = isSignedIn ? '' : 'none';
   });
-  
   document.querySelectorAll('[data-guest-only]').forEach(el => {
     el.style.display = isSignedIn ? 'none' : '';
   });
+
+  // Re-run feather icons for dynamic content
+  if (typeof feather !== 'undefined') {
+    feather.replace();
+  }
+}
+
+// v0.045: Helper for SPA router to trigger UI updates
+export function refreshAuthUI() {
+  updateUIForAuthState(!!currentSession);
+}
+if (window.ATHAuth) {
+  window.ATHAuth.refreshAuthUI = refreshAuthUI;
+} else {
+  window.ATHAuth = { refreshAuthUI };
 }
 
 // ============================================================================
@@ -548,6 +651,35 @@ window.hideSignInModal = hideSignInModal;
 window.showSignInModal = showSignInModal;
 window.showSignUpModal = showSignUpModal;
 window.hideSignUpModal = hideSignUpModal;
+
+// Bridge for legacy UI guards (script.js expects window.ATHAuth)
+window.ATHAuth = window.ATHAuth || {};
+window.ATHAuth.getSession = function () {
+  if (currentSession?.user) {
+    return { userId: currentSession.user.id, email: currentSession.user.email };
+  }
+  try {
+    const raw = localStorage.getItem('athCurrentUser');
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return { userId: user.id, email: user.email || user.displayName || '' };
+  } catch {
+    return null;
+  }
+};
+window.ATHAuth.signOut = async function () {
+  await signOut();
+  return { error: null };
+};
+window.ATHAuth.signIn = async function (email, password) {
+  return await signInWithEmail(email, password);
+};
+window.ATHAuth.signUp = async function (email, password) {
+  return await signUpWithEmail(email, password);
+};
+window.ATHAuth.signInWithGoogle = async function () {
+  return await signInWithGoogle();
+};
 
 // Initialize auth on page load
 if (document.readyState === 'loading') {

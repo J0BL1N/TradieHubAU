@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Settings | ATH Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="bg-indigo-500 p-1.5 rounded">
+          <i data-feather="settings" class="w-5 h-5 text-white"></i>
+        </div>
+        <h1 class="font-bold text-lg tracking-tight">Platform Settings</h1>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span id="adminName" class="text-xs text-gray-400">Loading...</span>
+        <a href="admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        <div>
+          <h2 class="font-bold text-gray-900">Core Settings</h2>
+          <p class="text-xs text-gray-500">Configure the platform rules and on-site behavior.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg">
+            <input id="settingMaintenance" type="checkbox" class="mt-1">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Maintenance Mode</p>
+              <p class="text-xs text-gray-500">Show a banner to visitors and pause new job posts.</p>
+            </div>
+          </label>
+          <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg">
+            <input id="settingVerification" type="checkbox" class="mt-1">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Require Verification</p>
+              <p class="text-xs text-gray-500">Force tradie verification before listing on search.</p>
+            </div>
+          </label>
+          <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg">
+            <input id="settingAutoMatch" type="checkbox" class="mt-1">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Auto-Match Jobs</p>
+              <p class="text-xs text-gray-500">Suggest tradies to customers immediately after posting.</p>
+            </div>
+          </label>
+          <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg">
+            <input id="settingNotifications" type="checkbox" class="mt-1">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Notify Admins</p>
+              <p class="text-xs text-gray-500">Email admins when disputes or verifications arrive.</p>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <aside class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+        <h3 class="font-bold text-gray-900">Commercial Settings</h3>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Platform Fee (%)</label>
+          <input id="settingFee" type="number" min="0" step="0.1" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Verification SLA (days)</label>
+          <input id="settingSla" type="number" min="1" step="1" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-600">Support Email</label>
+          <input id="settingSupport" type="email" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="flex items-center gap-2 pt-2">
+          <button id="saveSettingsBtn" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold py-2 rounded-lg transition">Save Changes</button>
+          <button id="resetSettingsBtn" class="flex-1 border border-gray-200 text-gray-600 text-sm font-semibold py-2 rounded-lg hover:bg-gray-50 transition">Reset</button>
+        </div>
+        <p id="settingsStatus" class="text-xs text-gray-500"></p>
+      </aside>
+    </div>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script type="module">
+    import { getCurrentUser } from '/js/core/supabase-client.js';
+
+    const STORAGE_KEY = 'ath_admin_settings';
+    const DEFAULT_SETTINGS = {
+      maintenanceMode: false,
+      requireVerification: true,
+      autoMatchJobs: true,
+      notifyAdmins: true,
+      platformFee: 7.5,
+      verificationSla: 3,
+      supportEmail: 'support@aussietradiehub.com'
+    };
+
+    const elements = {
+      maintenance: document.getElementById('settingMaintenance'),
+      verification: document.getElementById('settingVerification'),
+      autoMatch: document.getElementById('settingAutoMatch'),
+      notifications: document.getElementById('settingNotifications'),
+      fee: document.getElementById('settingFee'),
+      sla: document.getElementById('settingSla'),
+      support: document.getElementById('settingSupport'),
+      status: document.getElementById('settingsStatus')
+    };
+
+    function loadSettings() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+        } catch (error) {
+          return { ...DEFAULT_SETTINGS };
+        }
+      }
+      return { ...DEFAULT_SETTINGS };
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    }
+
+    function populate(settings) {
+      elements.maintenance.checked = settings.maintenanceMode;
+      elements.verification.checked = settings.requireVerification;
+      elements.autoMatch.checked = settings.autoMatchJobs;
+      elements.notifications.checked = settings.notifyAdmins;
+      elements.fee.value = settings.platformFee;
+      elements.sla.value = settings.verificationSla;
+      elements.support.value = settings.supportEmail;
+    }
+
+    function readForm() {
+      return {
+        maintenanceMode: elements.maintenance.checked,
+        requireVerification: elements.verification.checked,
+        autoMatchJobs: elements.autoMatch.checked,
+        notifyAdmins: elements.notifications.checked,
+        platformFee: Number(elements.fee.value || 0),
+        verificationSla: Number(elements.sla.value || 1),
+        supportEmail: elements.support.value.trim()
+      };
+    }
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      const settings = readForm();
+      saveSettings(settings);
+      elements.status.textContent = 'Settings saved locally.';
+    });
+
+    document.getElementById('resetSettingsBtn').addEventListener('click', () => {
+      saveSettings(DEFAULT_SETTINGS);
+      populate(DEFAULT_SETTINGS);
+      elements.status.textContent = 'Defaults restored.';
+    });
+
+    async function init() {
+      if (typeof feather !== 'undefined') feather.replace();
+      const { user } = await getCurrentUser();
+      if (!user) {
+        window.location.href = '../index.html';
+        return;
+      }
+      const adminAllowlist = ['jaydenln.work@gmail.com'];
+      const userEmail = String(user.email || '').toLowerCase();
+      if (!adminAllowlist.includes(userEmail)) {
+        window.location.href = '../index.html';
+        return;
+      }
+      document.getElementById('adminName').textContent = user.email;
+      const settings = loadSettings();
+      populate(settings);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
+
+

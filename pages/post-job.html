@@ -8,7 +8,7 @@
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="../css/main/style.css" />
+  <link rel="stylesheet" href="/css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -16,37 +16,12 @@
 
 <body class="font-inter bg-gray-50">
 
-  <!-- Main Navigation -->
-  <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
-    <div class="container mx-auto px-4 py-3">
-      <div class="flex justify-between items-center">
-        <a href="../index.html" class="flex items-center space-x-2">
-          <div
-            class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
-            <i data-feather="tool" class="text-white w-6 h-6"></i>
-          </div>
-          <span class="text-xl font-bold text-gray-900">AussieTradieHub</span>
-        </a>
+  <div id="athNavMount"></div>
 
-        <div class="hidden md:flex items-center space-x-1">
-          <a href="../index.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Home</a>
-          <a href="browse-trades.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Find Tradies</a>
-          <a href="browse-customers.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Find
-            Customers</a>
-          <a href="jobs.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Jobs</a>
-          <a href="messages.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">Messages</a>
-          <a href="my-profile.html" class="px-4 py-2 text-gray-600 hover:text-teal-600 font-medium">My Profile</a>
-        </div>
-
-
-      </div>
-
-
-    </div>
-  </nav>
+  <main id="athMain">
 
   <!-- Main Content -->
-  <main class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8">
     <div class="max-w-3xl mx-auto">
       <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
         <div class="flex items-start justify-between gap-4 mb-6">
@@ -209,13 +184,16 @@
     </div>
   </footer>
 
-  <script src="../js/core/data.js"></script>
-  <script src="../js/core/script.js"></script>
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script src="/js/core/data.js"></script>
+  <script src="/js/core/script.js"></script>
   <script>
     const STORAGE_KEY = 'athPostedJobs';
 
-    <script type="module">
-      import { supabase, getCurrentUser } from \x27../js/core/supabase-client.js\x27;
+  </script>
+  <script type="module">
+      import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
 
       // Mobile menu handled by script.js (loaded separately)
 
@@ -409,21 +387,22 @@
       <span>Profile</span>
     </a>
   </nav>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script src="/js/core/data.js"></script>
+  <script src="/js/components/nav-shell.js"></script>
+  <script src="/js/core/spa-router.js"></script>
+  <script src="/js/core/script.js"></script>
   <script>
     (function () {
-      var path = window.location.pathname.split('/').pop() || 'index.html';
-      var items = document.querySelectorAll('.bottom-nav-item');
-      items.forEach(function (item) {
-        var href = item.getAttribute('href').split('?')[0];
-        if (href === path.split('?')[0]) {
-          item.classList.add('active');
-        } else {
-          item.classList.remove('active');
-        }
-      });
       if (typeof feather !== 'undefined') feather.replace();
     })();
   </script>
 </body>
 
 </html>
+
+
+

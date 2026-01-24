@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Disputes | ATH Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="bg-amber-500 p-1.5 rounded">
+          <i data-feather="alert-triangle" class="w-5 h-5 text-white"></i>
+        </div>
+        <h1 class="font-bold text-lg tracking-tight">Review Disputes</h1>
+      </div>
+      <div class="flex items-center space-x-3">
+        <span id="adminName" class="text-xs text-gray-400">Loading...</span>
+        <a href="admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-gray-900">Dispute Queue</h2>
+          <p class="text-xs text-gray-500">Track cases between customers and tradies and log resolutions.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="statusFilter" class="border border-gray-200 text-sm rounded-lg px-3 py-2">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="under_review">Under Review</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+          <button id="resetDisputesBtn" class="text-xs px-3 py-2 rounded border border-gray-200 hover:bg-gray-50">Reset Defaults</button>
+        </div>
+      </div>
+      <div id="disputeList" class="divide-y divide-gray-100"></div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script type="module">
+    import { getCurrentUser } from '/js/core/supabase-client.js';
+
+    const STORAGE_KEY = 'ath_admin_disputes';
+    const DEFAULT_DISPUTES = [
+      {
+        id: 'disp_001',
+        title: 'Incomplete bathroom renovation',
+        customer: 'Sophie Tran',
+        tradie: 'Harbor Tiling Co.',
+        status: 'open',
+        createdAt: '2024-06-11',
+        amount: 820,
+        notes: 'Customer claims waterproofing failed during final inspection.'
+      },
+      {
+        id: 'disp_002',
+        title: 'Late arrival and no show',
+        customer: 'Liam Patel',
+        tradie: 'Prime Electrical',
+        status: 'under_review',
+        createdAt: '2024-06-08',
+        amount: 240,
+        notes: 'Tradie claims access issue. Customer wants refund.'
+      },
+      {
+        id: 'disp_003',
+        title: 'Paint finish mismatch',
+        customer: 'Mia Roberts',
+        tradie: 'Coastal Paintworks',
+        status: 'resolved',
+        createdAt: '2024-06-02',
+        amount: 460,
+        notes: 'Resolved with partial refund and revisit scheduled.'
+      }
+    ];
+
+    let disputes = [];
+
+    const listEl = document.getElementById('disputeList');
+    const filterEl = document.getElementById('statusFilter');
+    const resetBtn = document.getElementById('resetDisputesBtn');
+
+    function loadDisputes() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (error) {
+          return [...DEFAULT_DISPUTES];
+        }
+      }
+      return [...DEFAULT_DISPUTES];
+    }
+
+    function saveDisputes() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(disputes));
+    }
+
+    function statusBadge(status) {
+      const map = {
+        open: 'bg-red-100 text-red-700',
+        under_review: 'bg-amber-100 text-amber-700',
+        resolved: 'bg-green-100 text-green-700',
+        dismissed: 'bg-gray-100 text-gray-600'
+      };
+      return map[status] || 'bg-gray-100 text-gray-600';
+    }
+
+    function renderList() {
+      const filter = filterEl.value;
+      const filtered = filter === 'all' ? disputes : disputes.filter(item => item.status === filter);
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="p-6 text-center text-sm text-gray-500">No disputes match this filter.</div>';
+        return;
+      }
+      listEl.innerHTML = filtered.map(item => `
+        <div class="p-6 flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h3 class="font-semibold text-gray-900">${item.title}</h3>
+              <p class="text-xs text-gray-500">Customer: ${item.customer} - Tradie: ${item.tradie}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] px-2 py-0.5 rounded-full ${statusBadge(item.status)}">${item.status.replace('_', ' ')}</span>
+              <span class="text-xs text-gray-500">${new Date(item.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-sm text-gray-600">${item.notes}</div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="text-xs text-gray-500">Claimed amount: <span class="font-semibold text-gray-700">$${item.amount}</span></div>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button data-action="assign" data-id="${item.id}" class="px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50">Assign</button>
+              <button data-action="resolve" data-id="${item.id}" class="px-3 py-1.5 rounded border border-green-200 text-green-700 hover:bg-green-50">Resolve</button>
+              <button data-action="dismiss" data-id="${item.id}" class="px-3 py-1.5 rounded border border-gray-200 text-gray-600 hover:bg-gray-50">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    listEl.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      const id = button.dataset.id;
+      const action = button.dataset.action;
+      const dispute = disputes.find(item => item.id === id);
+      if (!dispute) return;
+
+      if (action === 'assign') {
+        dispute.status = 'under_review';
+      } else if (action === 'resolve') {
+        dispute.status = 'resolved';
+      } else if (action === 'dismiss') {
+        dispute.status = 'dismissed';
+      }
+      saveDisputes();
+      renderList();
+    });
+
+    filterEl.addEventListener('change', renderList);
+
+    resetBtn.addEventListener('click', () => {
+      disputes = [...DEFAULT_DISPUTES];
+      saveDisputes();
+      renderList();
+    });
+
+    async function init() {
+      if (typeof feather !== 'undefined') feather.replace();
+      const { user } = await getCurrentUser();
+      if (!user) {
+        window.location.href = '../index.html';
+        return;
+      }
+      const adminAllowlist = ['jaydenln.work@gmail.com'];
+      const userEmail = String(user.email || '').toLowerCase();
+      if (!adminAllowlist.includes(userEmail)) {
+        window.location.href = '../index.html';
+        return;
+      }
+      document.getElementById('adminName').textContent = user.email;
+      disputes = loadDisputes();
+      renderList();
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
+
+

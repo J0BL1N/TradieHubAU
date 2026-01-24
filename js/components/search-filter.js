@@ -1130,7 +1130,7 @@
                 </div>
               </div>
 
-              <p class="text-gray-600 mb-4">${escapeHtml((window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(job.description || '').text : job.description || ''))}</p>
+              <p class="text-gray-600 mb-4">${escapeHtml((window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function' ? window.ATHIntegrity.sanitizeTextSync(job.description || '').text : job.description || ''))}</p>
 
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 <div class="bg-gray-50 p-3 rounded-lg">
@@ -1264,7 +1264,7 @@
                 </div>
                 <div>
                   <p class="text-sm font-semibold text-gray-900 mb-1">Description</p>
-                  <p class="text-sm text-gray-700 whitespace-pre-line">${escapeHtml((window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(job.description || '').text : job.description || ''))}</p>
+                  <p class="text-sm text-gray-700 whitespace-pre-line">${escapeHtml((window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function' ? window.ATHIntegrity.sanitizeTextSync(job.description || '').text : job.description || ''))}</p>
                 </div>
                 ${c ? `
                 <div class="border-t border-gray-200 pt-4">
@@ -2074,7 +2074,7 @@
               </div>
               <div>
                 <p class="text-sm font-semibold text-gray-900 mb-1">Description</p>
-                <p class="text-sm text-gray-700 whitespace-pre-line">${escapeHtml((window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(job.description || '').text : job.description || ''))}</p>
+                <p class="text-sm text-gray-700 whitespace-pre-line">${escapeHtml((window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function' ? window.ATHIntegrity.sanitizeTextSync(job.description || '').text : job.description || ''))}</p>
               </div>
             </div>
           `);

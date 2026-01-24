@@ -8,151 +8,126 @@
   <title>Job Board | AussieTradieHub</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../js/core/device-detect.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="/js/core/device-detect.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="../css/main/style.css">
+  <link rel="stylesheet" href="/css/main/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
+  <style>
+    .dark .dark-mode-icon { display: none; }
+    .dark .light-mode-icon { display: block; }
+  </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
-<body class="font-inter bg-gray-50 ath-jobs-page">
 
-  <!-- Main Navigation -->
-  <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
-    <div class="container mx-auto px-3 py-2">
-      <div class="flex justify-between items-center">
-
-        <!-- Logo -->
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
-            <i data-feather="tool" class="text-white w-4 h-4"></i>
-          </div>
-          <div>
-            <h1 class="text-lg font-bold text-gray-900">AussieTradieHub</h1>
-            <p class="text-xs text-gray-500">Connecting Australia with trust</p>
-          </div>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-jobs-page">
+    <div id="athNavMount"></div><div class="hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-teal-600 rounded flex items-center justify-center">
+                        <i data-feather="tool" class="w-3.5 h-3.5 text-white"></i>
+                    </div>
+                    <span class="text-lg font-bold text-gray-900 dark:text-white">AussieTradieHub</span>
+                </div>
+                <div class="hidden md:flex items-center gap-5">
+                    <a href="../index.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="home" class="w-3.5 h-3.5"></i> Home</a>
+                    <a href="browse-trades.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="users" class="w-3.5 h-3.5"></i> Find Tradies</a>
+                    <a href="browse-customers.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="user-check" class="w-3.5 h-3.5"></i> Find Customers</a>
+                    <a href="jobs.html" class="text-teal-600 font-semibold flex items-center gap-1 text-sm"><i data-feather="briefcase" class="w-3.5 h-3.5"></i> Job Board</a>
+                    <a href="messages.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="message-square" class="w-3.5 h-3.5"></i> Messages</a>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="mobileMenuButton" class="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="Open menu" aria-expanded="false">
+                        <i data-feather="menu" class="w-4 h-4"></i>
+                    </button>
+                    <button id="darkModeToggle" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        <i data-feather="moon" class="w-4 h-4 dark-mode-icon"></i>
+                        <i data-feather="sun" class="w-4 h-4 light-mode-icon hidden"></i>
+                    </button>
+                    <a href="my-profile.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-sm">Log In</a>
+                    <a href="my-profile.html" class="bg-gray-900 dark:bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-teal-700 font-medium text-sm">Sign Up</a>
+                </div>
+            </div>
         </div>
-
-        <!-- Desktop Navigation -->
-        <div class="hidden md:flex items-center space-x-6">
-          <a href="../index.html" class="text-gray-700 hover:text-teal-600 transition">
-            <i data-feather="home" class="inline-block w-3 h-3 mr-1"></i>Home
-          </a>
-          <a href="browse-trades.html" class="text-gray-700 hover:text-teal-600 transition">
-            <i data-feather="users" class="inline-block w-3 h-3 mr-1"></i>Find Tradies
-          </a>
-          <a href="browse-customers.html" class="text-gray-700 hover:text-teal-600 transition">
-            <i data-feather="user-check" class="inline-block w-3 h-3 mr-1"></i>Find Customers
-          </a>
-          <a href="jobs.html" class="text-teal-600 font-semibold border-b-2 border-teal-600 pb-1">
-            <i data-feather="briefcase" class="inline-block w-3 h-3 mr-1"></i>Job Board
-          </a>
-          <a href="messages.html" class="text-gray-700 hover:text-teal-600 transition">
-            <i data-feather="message-square" class="inline-block w-3 h-3 mr-1"></i>Messages
-          </a>
-        </div>
-
-        <!-- User Actions -->
-        <div class="flex items-center space-x-3">
-          <a href="my-profile.html"
-            class="hidden md:inline-flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:opacity-90 transition text-sm">
-            <i data-feather="user" class="w-3 h-3"></i>
-            <span>My Profile</span>
-          </a>
-
-
-        </div>
-      </div>
-
-
-    </div>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="container mx-auto px-3 py-6">
-    <!-- Page Header -->
-    <div class="mb-8">
-      <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Job Board</h1>
-      <p class="text-gray-600">Browse job listings posted by customers. Apply for jobs that match your skills and
-        availability.</p>
     </div>
 
+    <main id="athMain">
+
+    <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Stats & CTA -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 ath-jobs-stats">
-      <div class="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-6 text-white">
-        <div class="flex items-center justify-between">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-4 text-white shadow-sm overflow-hidden relative">
+        <div class="flex justify-between items-center relative z-10">
           <div>
-            <div id="athJobStatActive" class="text-3xl font-bold">0</div>
-            <p class="text-teal-100">Active Jobs</p>
+            <div id="athJobStatActive" class="text-2xl font-bold">0</div>
+            <p class="text-teal-100 text-xs">Active Jobs</p>
           </div>
-          <i data-feather="briefcase" class="w-10 h-10 opacity-20"></i>
+          <i data-feather="briefcase" class="w-8 h-8 opacity-20"></i>
+        </div>
+        <div class="absolute -right-2 -bottom-2 w-16 h-16 bg-white/5 rounded-full"></div>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <div id="athJobStatValue" class="text-2xl font-bold text-gray-900 dark:text-white">$0</div>
+            <p class="text-gray-600 dark:text-gray-400 text-xs">Total Pool Value</p>
+          </div>
+          <i data-feather="dollar-sign" class="w-8 h-8 text-gray-300 dark:text-gray-600"></i>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+        <div class="flex justify-between items-center">
           <div>
-            <div id="athJobStatValue" class="text-3xl font-bold text-gray-900">$0</div>
-            <p class="text-gray-600">Total Job Value</p>
+            <div id="athJobStatUrgent" class="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+            <p class="text-gray-600 dark:text-gray-400 text-xs">Urgent Requests</p>
           </div>
-          <i data-feather="dollar-sign" class="w-10 h-10 text-gray-300"></i>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div id="athJobStatUrgent" class="text-3xl font-bold text-gray-900">0</div>
-            <p class="text-gray-600">Urgent Jobs</p>
-          </div>
-          <i data-feather="alert-triangle" class="w-10 h-10 text-amber-300"></i>
+          <i data-feather="alert-triangle" class="w-8 h-8 text-amber-300 opacity-50"></i>
         </div>
       </div>
     </div>
 
-    <!-- Batch M: mobile filter drawer backdrop -->
     <div id="athFiltersBackdrop" class="ath-drawer-backdrop hidden lg:hidden"></div>
 
     <div class="flex flex-col lg:flex-row gap-6">
       <!-- Left Sidebar - Filters -->
-      <aside class="lg:w-1/4 ath-filter-drawer" id="athFiltersDrawer">
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sticky top-24 h-full lg:h-auto overflow-auto ath-job-filters-card">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-lg font-bold text-gray-900">Filters</h2>
+      <aside class="lg:w-64 flex-shrink-0 ath-filter-drawer" id="athFiltersDrawer">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 sticky top-20 ath-job-filters-card">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-sm font-bold text-gray-900 dark:text-white">Filters</h2>
             <div class="flex items-center gap-3">
-              <button id="athJobClearAll" class="text-sm text-teal-600 hover:text-teal-700 font-medium"
-                type="button">Clear All</button>
-              <button type="button" id="athCloseFilters"
-                class="lg:hidden text-sm text-gray-600 hover:text-gray-800 font-medium">Close</button>
+              <button id="athJobClearAll" class="text-[11px] text-teal-600 font-bold hover:underline">Clear All</button>
+              <button type="button" id="athCloseFilters" class="lg:hidden text-xs text-gray-600 dark:text-gray-300 font-medium">Close</button>
             </div>
           </div>
 
           <!-- Search -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Search Jobs</label>
-            <div class="relative">
-              <i data-feather="search"
-                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
-              <input id="athJobSearch" type="text" placeholder="Job title or keywords"
-                class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-            </div>
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">Search Jobs</label>
+            <input id="athJobSearch" type="text" placeholder="Keywords..."
+                   class="w-full px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500">
           </div>
 
           <!-- Category -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Trade Category</label>
-            <div id="athJobCategoryList" class="space-y-2"></div>
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">Category</label>
+            <div id="athJobCategoryList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 ath-scrollbar"></div>
           </div>
 
           <!-- Location -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
-            <select id="athJobLocation"
-              class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-              <option value="all">All Australia</option>
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">State</label>
+            <select id="athJobLocation" class="w-full px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500">
+              <option value="all">All States</option>
               <option value="NSW">NSW</option>
               <option value="VIC">VIC</option>
               <option value="QLD">QLD</option>
@@ -165,125 +140,87 @@
           </div>
 
           <!-- Budget -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <input type="radio" name="athJobBudget" value="any"
-                  class="border-gray-300 text-teal-600 focus:ring-teal-500" checked>
-                <span class="ml-2 text-sm text-gray-600">Any</span>
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">Budget</label>
+            <div class="space-y-1.5">
+              <label class="flex items-center text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="radio" name="athJobBudget" value="any" class="w-3 h-3 text-teal-600 focus:ring-teal-500 mr-2" checked>
+                Any Budget
               </label>
-              <label class="flex items-center">
-                <input type="radio" name="athJobBudget" value="under500"
-                  class="border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">Under $500</span>
+              <label class="flex items-center text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="radio" name="athJobBudget" value="under500" class="w-3 h-3 text-teal-600 focus:ring-teal-500 mr-2">
+                Under $500
               </label>
-              <label class="flex items-center">
-                <input type="radio" name="athJobBudget" value="500-2000"
-                  class="border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">$500 - $2,000</span>
+              <label class="flex items-center text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="radio" name="athJobBudget" value="500-2000" class="w-3 h-3 text-teal-600 focus:ring-teal-500 mr-2">
+                $500 - $2,000
               </label>
-              <label class="flex items-center">
-                <input type="radio" name="athJobBudget" value="2000-10000"
-                  class="border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">$2,000 - $10,000</span>
+              <label class="flex items-center text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="radio" name="athJobBudget" value="2000-10000" class="w-3 h-3 text-teal-600 focus:ring-teal-500 mr-2">
+                $2k - $10k
               </label>
-              <label class="flex items-center">
-                <input type="radio" name="athJobBudget" value="10000plus"
-                  class="border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">$10,000+</span>
+              <label class="flex items-center text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                <input type="radio" name="athJobBudget" value="10000plus" class="w-3 h-3 text-teal-600 focus:ring-teal-500 mr-2">
+                $10k+
               </label>
             </div>
           </div>
 
-          <!-- Urgency -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Urgency</label>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <input type="checkbox" name="athJobUrgency" value="urgent"
-                  class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">Urgent (24hrs)</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" name="athJobUrgency" value="week"
-                  class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">This Week</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" name="athJobUrgency" value="flexible"
-                  class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">Flexible</span>
-              </label>
-            </div>
+          <!-- More Filters -->
+          <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
+             <a href="post-job.html" class="flex items-center justify-center gap-2 w-full py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors">
+                <i data-feather="plus" class="w-3 h-3"></i>
+                Post Your Job
+             </a>
           </div>
-
-          <!-- Job Type -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <input type="checkbox" name="athJobType" value="one-off"
-                  class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">One-off</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" name="athJobType" value="ongoing"
-                  class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">Ongoing</span>
-              </label>
-              <label class="flex items-center">
-                <input type="checkbox" name="athJobType" value="contract"
-                  class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                <span class="ml-2 text-sm text-gray-600">Contract</span>
-              </label>
-            </div>
-          </div>
-
-          <button
-            class="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-medium py-2.5 px-4 rounded-lg hover:opacity-90 transition"
-            type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
-            Apply Filters
-          </button>
         </div>
       </aside>
 
+
       <!-- Right Content - Job Listings -->
       <div class="lg:w-3/4">
-        <!-- Results Header -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 ath-jobs-results-header">
-          <div class="flex flex-col md:flex-row md:items-center justify-between ath-jobs-controls">
-            <div>
-              <h3 class="font-bold text-gray-900"><span id="athJobResultsCount">0</span> Jobs Found</h3>
-              <p class="text-sm text-gray-600">Sorted by:</p>
-            </div>
-            <div class="flex items-center space-x-3 mt-3 md:mt-0">
-              <button id="athOpenFilters" type="button"
-                class="lg:hidden px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-                <span class="inline-flex items-center">
-                  <i data-feather="sliders" class="w-4 h-4 mr-2 text-gray-600"></i>
-                  Filters
-                </span>
-              </button>
-              <select id="athJobSort"
-                class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                <option value="recent">Most Recent</option>
-                <option value="highest">Highest Budget</option>
-                <option value="urgent">Urgent First</option>
-              </select>
-              <a href="post-job.html"
-                class="bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-medium py-2 px-4 rounded-lg hover:opacity-90 transition">
-                Post a Job
-              </a>
-            </div>
+        <!-- Mobile Filter Button -->
+        <div class="flex items-center justify-between mb-3 lg:hidden">
+          <button id="athOpenFilters" class="px-3 py-2 text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800">
+            Filters
+          </button>
+          <span class="text-xs text-gray-500">Refine results</span>
+        </div>
+
+        <!-- Featured Jobs Section -->
+        <div id="featuredJobsSection" class="mb-4">
+          <h2 class="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+            <i data-feather="zap" class="w-4 h-4 text-amber-500"></i>
+            Featured & Urgent Jobs
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4" id="featuredJobsList"></div>
+        </div>
+
+        <!-- Sort & Filter Controls -->
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <h1 class="text-lg font-bold text-gray-900 dark:text-white mb-0.5">All Jobs</h1>
+            <p class="text-xs text-gray-600 dark:text-gray-400" id="athJobResultsCount">Loading...</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="athJobSort"
+              class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+              <option value="newest">Newest First</option>
+              <option value="budget-high">Budget: High to Low</option>
+              <option value="budget-low">Budget: Low to High</option>
+              <option value="urgent">Most Urgent</option>
+            </select>
           </div>
         </div>
 
+        <!-- Active Filter Tags -->
+        <div id="activeFilterTags" class="mb-3"></div>
+
         <!-- Job Listings (rendered) -->
-        <div id="athJobResults" class="space-y-4"></div>
+        <div id="athJobResults" class="space-y-3"></div>
 
         <!-- Pagination (rendered) -->
-        <div id="athJobPagination" class="mt-8"></div>
+        <div id="athJobPagination" class="mt-6"></div>
       </div>
     </div>
   </main>
@@ -363,84 +300,707 @@
   </footer>
 
   <!-- Supabase Client & Jobs API -->
-  <script type="module" src="../js/core/supabase-client.js"></script>
-  <script type="module" src="../js/core/auth.js"></script>
-  <script type="module" src="../js/api/jobs-api.js"></script>
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script type="module" src="/js/api/jobs-api.js"></script>
   
-  <script src="../js/core/data.js"></script>
-  <script src="../js/components/search-filter.js"></script>
-  <script src="../js/core/script.js"></script>
+  <script src="/js/core/data.js"></script>
+  <script src="/js/components/nav-shell.js"></script>
+  <script src="/js/core/spa-router.js"></script>
+  <script src="/js/components/search-filter.js"></script>
+  <script src="/js/core/script.js"></script>
   <script type="module">
-    import { getJobs, seedDemoJobs } from \x27../js/api/jobs-api.js\x27;
-    
-    document.addEventListener('DOMContentLoaded', async function () {
-      // Load jobs from Supabase
-      console.log('?? Loading jobs from database...');
+    import { getJobs, seedDemoJobs } from '/js/api/jobs-api.js';
+
+    // State management
+    const state = {
+      jobs: [],
+      filteredJobs: [],
+      filters: {
+        search: '',
+        categories: new Set(),
+        location: 'all',
+        budget: 'any',
+        urgency: new Set(),
+        type: new Set()
+      },
+      sortBy: 'newest',
+      currentPage: 1,
+      pageSize: 6
+    };
+
+    // --- Helpers ---
+    function getAvatarUrl(name, color = '0D9488') {
+      const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '??';
+      return `data:image/svg+xml;base64,${btoa(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+          <rect width="100" height="100" fill="#${color}" />
+          <text x="50" y="55" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="middle">${initials}</text>
+        </svg>
+      `)}`;
+    }
+
+    function formatCurrency(n) {
+      return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n);
+    }
+
+    function timeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
       
-      const { jobs, error } = await getJobs({ status: 'open' });
-      
-      if (error) {
-        console.error('? Failed to load jobs:', error.message);
-        
-        // Check if database is empty
-        if (jobs.length === 0) {
-          console.log('?? No jobs found. You can seed demo data by running: seedDemoJobs()');
-          
-          // Show message to user
-          const resultsContainer = document.getElementById('athJobResults');
-          if (resultsContainer) {
-            resultsContainer.innerHTML = `
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                <h3 class="font-bold text-blue-900 mb-2">No Jobs Yet</h3>
-                <p class="text-blue-700 mb-4">The database is empty. Would you like to add demo jobs?</p>
-                <button id="seedJobsBtn" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
-                  Add Demo Jobs
-                </button>
-              </div>
-            `;
-            
-            document.getElementById('seedJobsBtn').addEventListener('click', async () => {
-              console.log('?? Seeding demo jobs...');
-              const { jobs: seededJobs } = await seedDemoJobs();
-              if (seededJobs) {
-                window.location.reload(); // Reload to show new jobs
-              }
+      if (seconds < 60) return 'Just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 30) return `${days}d ago`;
+      return date.toLocaleDateString('en-AU');
+    }
+
+    // --- UI State & Logic ---
+    const htmlElement = document.documentElement;
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') htmlElement.classList.add('dark');
+
+    const setupUI = () => {
+        // Dark Mode
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                htmlElement.classList.toggle('dark');
+                localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+                if (typeof feather !== 'undefined') feather.replace();
             });
-          }
         }
+
+        // Mobile Menu
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.setAttribute('aria-expanded', !mobileMenu.classList.contains('hidden'));
+            });
+        }
+    };
+
+    // --- Core Logic ---
+    async function init() {
+      setupUI();
+      
+      // 1. Initial Data Fetch
+      let jobs = [];
+      let error = null;
+      try {
+          const result = await getJobs({ status: 'open' });
+          jobs = result.jobs;
+          error = result.error;
+      } catch (err) {
+          console.warn('Jobs API failed, falling back to local data', err);
+      }
+      
+      const container = document.getElementById('athJobResults');
+
+      // Fallback to demo data if empty, with wait-for-data check
+      const waitForData = () => new Promise(resolve => {
+          if (window.JOBS) return resolve(window.JOBS);
+          let attempts = 0;
+          const interval = setInterval(() => {
+              attempts++;
+              if (window.JOBS || attempts > 20) { // 2s timeout
+                  clearInterval(interval);
+                  resolve(window.JOBS || []);
+              }
+          }, 100);
+      });
+
+      if (!jobs || jobs.length === 0) {
+           const localJobs = await waitForData();
+           state.jobs = localJobs;
       } else {
-        console.log(`? Loaded ${jobs.length} jobs from database`);
-        
-        // Store jobs globally for search-filter component
-        window.JOBS = jobs.map(job => ({
-          id: job.id,
-          title: job.title,
-          description: job.description,
-          categories: job.categories,
-          location: job.location,
-          state: job.state,
-          budgetMin: job.budget_min,
-          budgetMax: job.budget_max,
-          timeline: job.timeline,
-          urgency: job.urgency,
-          type: job.type,
-          quotes: job.quotes_count,
-          customerId: job.customer_id,
-          customerName: job.customer?.display_name || 'Customer',
-          postedAt: job.created_at,
-          status: job.status
-        }));
-        
-        // Initialize the jobs board filter
-        if (window.ATHSearchFilter && typeof window.ATHSearchFilter.initJobsBoard === 'function') {
-          window.ATHSearchFilter.initJobsBoard();
+          state.jobs = jobs;
+      }
+      
+      if (state.jobs.length === 0) {
+        if (container) {
+          container.innerHTML = `
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 text-center">
+              <h3 class="font-bold text-blue-900 dark:text-blue-200 mb-2">No Jobs Yet</h3>
+              <p class="text-blue-700 dark:text-blue-300 mb-4">The database is empty. Would you like to add demo jobs?</p>
+              <button id="seedJobsBtn" class="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 font-bold transition">
+                Add Demo Jobs
+              </button>
+            </div>
+          `;
+          document.getElementById('seedJobsBtn').addEventListener('click', async () => {
+            const { jobs: seededJobs } = await seedDemoJobs();
+            if (seededJobs) window.location.reload();
+          });
         }
       }
+
+      // Setup UI Listeners
+      setupListeners();
+      
+      // Initial Render
+      applyFilters();
+    }
+
+    function setupListeners() {
+      // Search
+      const searchInput = document.getElementById('athJobSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          state.filters.search = e.target.value;
+          state.currentPage = 1;
+          applyFilters();
+        });
+      }
+
+      // Location
+      const locationSelect = document.getElementById('athJobLocation');
+      if (locationSelect) {
+        locationSelect.addEventListener('change', (e) => {
+          state.filters.location = e.target.value;
+          state.currentPage = 1;
+          applyFilters();
+        });
+      }
+
+      // Budget (Radio)
+      document.querySelectorAll('input[name="athJobBudget"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          state.filters.budget = e.target.value;
+          state.currentPage = 1;
+          applyFilters();
+        });
+      });
+
+      // Urgency
+      document.querySelectorAll('input[name="athJobUrgency"]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          if (e.target.checked) state.filters.urgency.add(e.target.value);
+          else state.filters.urgency.delete(e.target.value);
+          state.currentPage = 1;
+          applyFilters();
+        });
+      });
+
+      // Job Type
+      document.querySelectorAll('input[name="athJobType"]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          if (e.target.checked) state.filters.type.add(e.target.value);
+          else state.filters.type.delete(e.target.value);
+          state.currentPage = 1;
+          applyFilters();
+        });
+      });
+
+      // Sort
+      const sortSelect = document.getElementById('athJobSort');
+      if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+          state.sortBy = e.target.value;
+          applyFilters();
+        });
+      }
+
+      // Mobile Drawer Toggle
+      const openFiltersBtn = document.getElementById('athOpenFilters');
+      const closeFiltersBtn = document.getElementById('athCloseFilters');
+      const filtersDrawer = document.getElementById('athFiltersDrawer');
+      const backdrop = document.getElementById('athFiltersBackdrop');
+
+      if (openFiltersBtn && filtersDrawer && backdrop) {
+        openFiltersBtn.addEventListener('click', () => {
+          filtersDrawer.classList.add('active');
+          backdrop.classList.remove('hidden');
+        });
+      }
+
+      if (closeFiltersBtn && filtersDrawer && backdrop) {
+        closeFiltersBtn.addEventListener('click', () => {
+          filtersDrawer.classList.remove('active');
+          backdrop.classList.add('hidden');
+        });
+      }
+
+      if (backdrop) {
+          backdrop.addEventListener('click', () => {
+              filtersDrawer.classList.remove('active');
+              backdrop.classList.add('hidden');
+          });
+      }
+
+      // Clear All
+      const clearAllBtn = document.getElementById('athJobClearAll');
+      if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+          resetFilters();
+        });
+      }
+
+      // Populate Categories dynamically
+      renderCategories();
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('athJobCategoryList');
+      if (!container) return;
+
+      const categories = window.TRADE_CATEGORIES || [];
+      container.innerHTML = categories.map(cat => `
+        <label class="flex items-center">
+          <input type="checkbox" name="athJobCategory" value="${cat.id}"
+            class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+          <span class="ml-2 text-sm text-gray-600">${cat.label}</span>
+        </label>
+      `).join('');
+
+      container.querySelectorAll('input').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          if (e.target.checked) state.filters.categories.add(e.target.value);
+          else state.filters.categories.delete(e.target.value);
+          state.currentPage = 1;
+          applyFilters();
+        });
+      });
+    }
+
+    function resetFilters() {
+      state.filters = {
+        search: '',
+        categories: new Set(),
+        location: 'all',
+        budget: 'any',
+        urgency: new Set(),
+        type: new Set()
+      };
+      
+      // Update UI
+      const searchInput = document.getElementById('athJobSearch');
+      if (searchInput) searchInput.value = '';
+      
+      const locationSelect = document.getElementById('athJobLocation');
+      if (locationSelect) locationSelect.value = 'all';
+      
+      document.querySelectorAll('input[name="athJobBudget"]').forEach(radio => radio.checked = radio.value === 'any');
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      
+      state.currentPage = 1;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      let filtered = [...state.jobs];
+
+      // Filter: Search
+      if (state.filters.search) {
+        const query = state.filters.search.toLowerCase();
+        filtered = filtered.filter(j => 
+          j.title.toLowerCase().includes(query) || 
+          j.description.toLowerCase().includes(query)
+        );
+      }
+
+      // Filter: Categories
+      if (state.filters.categories.size > 0) {
+        filtered = filtered.filter(j => {
+          const cats = j.categories || (j.category ? [j.category] : []);
+          return Array.from(state.filters.categories).some(c => cats.includes(c));
+        });
+      }
+
+      // Filter: Location
+      if (state.filters.location !== 'all') {
+        filtered = filtered.filter(j => j.state === state.filters.location);
+      }
+
+      // Filter: Budget
+      if (state.filters.budget !== 'any') {
+        const range = state.filters.budget;
+        filtered = filtered.filter(j => {
+          const min = j.budget_min || j.budgetMin || 0;
+          const max = j.budget_max || j.budgetMax || 0;
+          const avg = (min + max) / 2 || max || min;
+          
+          if (range === 'under500') return avg < 500;
+          if (range === '500-2000') return avg >= 500 && avg <= 2000;
+          if (range === '2000-10000') return avg > 2000 && avg <= 10000;
+          if (range === '10000plus') return avg > 10000;
+          return true;
+        });
+      }
+
+      // Filter: Urgency
+      if (state.filters.urgency.size > 0) {
+        filtered = filtered.filter(j => state.filters.urgency.has(j.urgency));
+      }
+
+      // Filter: Job Type
+      if (state.filters.type.size > 0) {
+        filtered = filtered.filter(j => state.filters.type.has(j.type));
+      }
+
+      // Sorting
+      sortJobs(filtered);
+
+      state.filteredJobs = filtered;
+      renderAll();
+    }
+
+    function sortJobs(jobsList) {
+      if (state.sortBy === 'newest') {
+        jobsList.sort((a, b) => new Date(b.created_at || b.postedAt) - new Date(a.created_at || a.postedAt));
+      } else if (state.sortBy === 'budget-high') {
+        jobsList.sort((a, b) => (b.budget_max || b.budgetMax || 0) - (a.budget_max || a.budgetMax || 0));
+      } else if (state.sortBy === 'budget-low') {
+        jobsList.sort((a, b) => (a.budget_min || a.budgetMin || 0) - (b.budget_min || b.budgetMin || 0));
+      } else if (state.sortBy === 'urgent') {
+        const urgencyScore = { 'urgent': 3, 'week': 2, 'flexible': 1 };
+        jobsList.sort((a, b) => (urgencyScore[b.urgency] || 0) - (urgencyScore[a.urgency] || 0));
+      }
+    }
+
+    function renderAll() {
+      renderStatsBanner();
+      renderFeaturedJobs();
+      renderActiveTags();
+      renderJobsList();
+      renderPagination();
+      
+      if (typeof feather !== 'undefined') feather.replace();
+    }
+
+    function renderStatsBanner() {
+      const activeEl = document.getElementById('athJobStatActive');
+      const valueEl = document.getElementById('athJobStatValue');
+      const urgentEl = document.getElementById('athJobStatUrgent');
+
+      if (activeEl) activeEl.textContent = state.jobs.length;
+      if (urgentEl) urgentEl.textContent = state.jobs.filter(j => j.urgency === 'urgent').length;
+      
+      if (valueEl) {
+        const total = state.jobs.reduce((sum, j) => sum + (j.budget_max || j.budgetMax || j.budget_min || j.budgetMin || 0), 0);
+        valueEl.textContent = total > 1000 ? `$${(total/1000).toFixed(1)}k` : `$${total}`;
+      }
+    }
+
+    function renderFeaturedJobs() {
+      const container = document.getElementById('featuredJobsList');
+      const section = document.getElementById('featuredJobsSection');
+      if (!container || !section) return;
+
+      const featured = state.jobs.filter(j => j.urgency === 'urgent' || (j.budget_max || j.budgetMax) > 5000).slice(0, 2);
+      
+      if (featured.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+      container.innerHTML = featured.map(j => {
+        const name = j.customerName || j.customer?.display_name || 'Customer';
+        const avatar = j.customer?.avatar || getAvatarUrl(name);
+        return `
+          <div class="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-gray-800 dark:to-gray-800 border border-teal-200 dark:border-teal-900 rounded-xl p-3 flex gap-3 hover:shadow-md transition cursor-pointer" onclick="openJobModal('${j.id}')">
+            <div class="relative">
+              <img src="${avatar}" class="w-12 h-12 rounded-full border-2 border-white shadow-sm" alt="${name}">
+              <div class="absolute -bottom-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-white">
+                <i data-feather="star" class="w-2.5 h-2.5 text-white fill-current"></i>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+               <h3 class="font-bold text-gray-900 dark:text-white text-sm truncate">${j.title}</h3>
+               <div class="flex items-center gap-2 mt-1">
+                 <span class="text-[10px] font-bold px-1.5 py-0.5 bg-red-100 text-red-700 rounded uppercase">Urgent</span>
+                 <span class="text-xs text-teal-700 font-bold">${formatCurrency(j.budget_max || j.budgetMax || j.budget_min || j.budgetMin)}</span>
+               </div>
+               <div class="flex items-center gap-1 mt-1.5 text-[10px] text-gray-500">
+                  <i data-feather="map-pin" class="w-2.5 h-2.5"></i>
+                  <span>${j.location || j.state}</span>
+                  <span class="mx-1">•</span>
+                  <span>${timeAgo(j.created_at || j.postedAt)}</span>
+               </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderActiveTags() {
+      const container = document.getElementById('activeFilterTags');
+      if (!container) return;
+
+      const tags = [];
+      
+      if (state.filters.search) tags.push({ type: 'search', label: `Search: ${state.filters.search}` });
+      if (state.filters.location !== 'all') tags.push({ type: 'location', label: `State: ${state.filters.location}` });
+      if (state.filters.budget !== 'any') tags.push({ type: 'budget', label: `Budget: ${state.filters.budget}` });
+      
+      state.filters.categories.forEach(c => {
+        const catObj = (window.TRADE_CATEGORIES || []).find(x => x.id === c);
+        tags.push({ type: 'category', value: c, label: catObj ? catObj.label : c });
+      });
+
+      state.filters.urgency.forEach(u => tags.push({ type: 'urgency', value: u, label: u.charAt(0).toUpperCase() + u.slice(1) }));
+      state.filters.type.forEach(t => tags.push({ type: 'type', value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
+
+      if (tags.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="flex flex-wrap gap-2">
+          ${tags.map(tag => `
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-[11px] font-medium border border-gray-200 dark:border-gray-700">
+              ${tag.label}
+              <button onclick="removeFilterTag('${tag.type}', '${tag.value || ''}')" class="hover:text-red-500">
+                <i data-feather="x" class="w-3 h-3"></i>
+              </button>
+            </span>
+          `).join('')}
+          <button onclick="resetFilters()" class="text-[11px] text-teal-600 font-bold hover:underline ml-1">Clear All</button>
+        </div>
+      `;
+    }
+
+    window.removeFilterTag = (type, value) => {
+      if (type === 'search') {
+        state.filters.search = '';
+        const searchInput = document.getElementById('athJobSearch');
+        if (searchInput) searchInput.value = '';
+      } else if (type === 'location') {
+        state.filters.location = 'all';
+        const locationSelect = document.getElementById('athJobLocation');
+        if (locationSelect) locationSelect.value = 'all';
+      } else if (type === 'budget') {
+        state.filters.budget = 'any';
+        document.querySelectorAll('input[name="athJobBudget"]').forEach(radio => radio.checked = radio.value === 'any');
+      } else if (type === 'category') {
+        state.filters.categories.delete(value);
+        document.querySelectorAll('input[name="athJobCategory"]').forEach(cb => {
+            if (cb.value === value) cb.checked = false;
+        });
+      } else if (type === 'urgency') {
+        state.filters.urgency.delete(value);
+        document.querySelectorAll('input[name="athJobUrgency"]').forEach(cb => {
+            if (cb.value === value) cb.checked = false;
+        });
+      } else if (type === 'type') {
+        state.filters.type.delete(value);
+        document.querySelectorAll('input[name="athJobType"]').forEach(cb => {
+            if (cb.value === value) cb.checked = false;
+        });
+      }
+      
+      state.currentPage = 1;
+      applyFilters();
+    };
+
+    window.resetFilters = resetFilters;
+
+    function renderJobsList() {
+      const container = document.getElementById('athJobResults');
+      const countEl = document.getElementById('athJobResultsCount');
+      if (!container) return;
+
+      if (state.filteredJobs.length === 0) {
+        if (countEl) countEl.textContent = '0 jobs found';
+        container.innerHTML = `
+          <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center">
+            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-feather="search" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <h3 class="font-bold text-gray-900 dark:text-white mb-2">No jobs match your filters</h3>
+            <p class="text-gray-600 dark:text-gray-400 text-sm mb-6">Try broadening your search or clearing some filters.</p>
+            <button onclick="resetFilters()" class="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">Clear All Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (countEl) countEl.textContent = `${state.filteredJobs.length} jobs found`;
+
+      const start = (state.currentPage - 1) * state.pageSize;
+      const end = start + state.pageSize;
+      const paginatedJobs = state.filteredJobs.slice(start, end);
+
+      container.innerHTML = paginatedJobs.map(j => {
+        const name = j.customerName || j.customer?.display_name || 'Customer';
+        const avatar = j.customer?.avatar || getAvatarUrl(name);
+        const cats = j.categories || (j.category ? [j.category] : []);
+        const catLabels = cats.map(c => {
+            const co = (window.TRADE_CATEGORIES || []).find(x => x.id === c);
+            return co ? co.label : c;
+        });
+
+        const budget = formatCurrency(j.budget_max || j.budgetMax || j.budget_min || j.budgetMin);
+        const urgencyClass = j.urgency === 'urgent'
+          ? 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-900/30'
+          : (j.urgency === 'week'
+            ? 'text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-900/30'
+            : 'text-gray-600 bg-gray-50 dark:text-gray-300 dark:bg-gray-800');
+
+        return `
+          <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 hover:border-teal-400 transition cursor-pointer" onclick="openJobModal('${j.id}')">
+            <div class="flex gap-4">
+              <div class="flex-shrink-0">
+                <img src="${avatar}" class="w-12 h-12 rounded-full border-2 border-teal-500" alt="${name}">
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start mb-1">
+                  <h3 class="font-bold text-gray-900 dark:text-white truncate pr-4 text-sm md:text-base">${j.title}</h3>
+                  <span class="text-sm font-bold text-teal-600 whitespace-nowrap">${budget}</span>
+                </div>
+                
+                <div class="flex flex-wrap gap-2 mb-3">
+                  ${catLabels.map(cl => `<span class="text-[10px] bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">${cl}</span>`).join('')}
+                  <span class="text-[10px] ${urgencyClass} px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">${j.urgency}</span>
+                </div>
+
+                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">${j.description}</p>
+
+                <div class="flex items-center justify-between mt-auto">
+                    <div class="flex items-center gap-3 text-[10px] text-gray-500">
+                        <span class="flex items-center gap-1"><i data-feather="map-pin" class="w-3 h-3"></i> ${j.location || j.state}</span>
+                        <span class="flex items-center gap-1"><i data-feather="calendar" class="w-3 h-3"></i> ${timeAgo(j.created_at || j.postedAt)}</span>
+                    </div>
+                    <div class="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                        <i data-feather="message-square" class="w-3 h-3"></i>
+                        ${j.quotes || 0} quotes
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPagination() {
+      const container = document.getElementById('athJobPagination');
+      if (!container) return;
+
+      const totalPages = Math.ceil(state.filteredJobs.length / state.pageSize);
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `<div class="flex items-center justify-center gap-2">`;
+      
+      // Prev
+      html += `
+        <button onclick="changePage(${state.currentPage - 1})" ${state.currentPage === 1 ? 'disabled' : ''} class="p-2 rounded-lg border border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed">
+          <i data-feather="chevron-left" class="w-4 h-4"></i>
+        </button>
+      `;
+
+      // Pages
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === state.currentPage) {
+          html += `<button class="w-9 h-9 rounded-lg bg-teal-600 text-white font-bold text-sm">${i}</button>`;
+        } else {
+          html += `<button onclick="changePage(${i})" class="w-9 h-9 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium">${i}</button>`;
+        }
+      }
+
+      // Next
+      html += `
+        <button onclick="changePage(${state.currentPage + 1})" ${state.currentPage === totalPages ? 'disabled' : ''} class="p-2 rounded-lg border border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed">
+          <i data-feather="chevron-right" class="w-4 h-4"></i>
+        </button>
+      </div>`;
+
+      container.innerHTML = html;
+    }
+
+    window.changePage = (p) => {
+      const totalPages = Math.ceil(state.filteredJobs.length / state.pageSize);
+      if (p < 1 || p > totalPages) return;
+      state.currentPage = p;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      renderAll();
+    };
+
+    window.openJobModal = (jobId) => {
+        const job = state.jobs.find(j => j.id == jobId);
+        if (!job) return;
+
+        const modal = document.getElementById('athJobModal');
+        const title = document.getElementById('athJobModalTitle');
+        const body = document.getElementById('athJobModalBody');
+
+        title.textContent = job.title;
+        
+        const customerName = job.customerName || job.customer?.display_name || 'Customer';
+        const avatar = job.customer?.avatar || getAvatarUrl(customerName);
+
+        body.innerHTML = `
+            <div class="space-y-6">
+                <div class="flex items-center gap-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl">
+                    <img src="${avatar}" class="w-14 h-14 rounded-full border-2 border-teal-500" alt="${customerName}">
+                    <div>
+                        <div class="text-sm text-gray-500 uppercase font-bold tracking-wider">Posted by</div>
+                        <div class="font-bold text-gray-900 dark:text-white">${customerName}</div>
+                        <div class="text-xs text-gray-500">${job.location || job.state} • ${timeAgo(job.created_at || job.postedAt)}</div>
+                    </div>
+                    <div class="ml-auto text-right">
+                        <div class="text-xs text-gray-500 uppercase font-bold tracking-wider">Budget</div>
+                        <div class="text-xl font-bold text-teal-600">${formatCurrency(job.budget_max || job.budgetMax || job.budget_min || job.budgetMin)}</div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white mb-2">Description</h4>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">${job.description}</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                        <div class="text-[10px] text-gray-500 uppercase font-bold mb-1">Timeline</div>
+                        <div class="text-sm font-semibold">${job.timeline || 'Flexible'}</div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                        <div class="text-[10px] text-gray-500 uppercase font-bold mb-1">Urgency</div>
+                        <div class="text-sm font-semibold capitalize">${job.urgency}</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <a href="messages.html?conversation=${job.customerId}" class="flex-1 bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold py-3 rounded-xl text-center hover:opacity-90 transition">
+                        Quick Quote / Apply
+                    </a>
+                    <button class="px-4 border border-gray-300 rounded-xl hover:bg-gray-50">
+                        <i data-feather="share-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+        if (typeof feather !== 'undefined') feather.replace();
+    };
+
+    document.getElementById('athJobModalClose').addEventListener('click', () => {
+        document.getElementById('athJobModal').classList.add('hidden');
     });
-    
-    // Export seedDemoJobs for console access
-    window.seedDemoJobs = seedDemoJobs;
+
+    document.getElementById('athJobModal').addEventListener('click', (e) => {
+        if (e.target.id === 'athJobModal') {
+            document.getElementById('athJobModal').classList.add('hidden');
+        }
+    });
+
+    // Start App
+    init();
+
   </script>
+
 
   <nav class="bottom-nav">
     <a href="../index.html" class="bottom-nav-item">
@@ -486,3 +1046,6 @@
 </body>
 
 </html>
+
+
+

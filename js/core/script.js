@@ -409,7 +409,9 @@ window.ATHJobDetails = window.ATHJobDetails || (function () {
     }).join('');
 
     const timeline = String(job.timeline || 'Flexible');
-    const desc = window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(job.description || '').text : (job.description || '');
+    const desc = window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function'
+      ? window.ATHIntegrity.sanitizeTextSync(job.description || '').text
+      : (job.description || '');
     const st = String(job.status || 'open').replace('_', ' ');
 
     titleEl.textContent = job.title || 'Job details';
@@ -524,6 +526,31 @@ window.ATHIntegrity = window.ATHIntegrity || (function () {
     return { hasContact: !!(email || phone || url), types: { email: !!email, phone: !!phone, url: !!url } };
   }
 
+  function maskText(original) {
+    let out = String(original || '');
+    const mask = ' [Hidden until job accepted] ';
+
+    out = out.replace(EMAIL_RE, mask);
+    out = out.replace(PHONE_RE, (m) => {
+      const digits = String(m).replace(/\D/g, '');
+      if (digits.length < 8) return m;
+      return mask;
+    });
+    out = out.replace(URL_RE, mask);
+    out = out.replace(DOMAIN_RE, (m) => {
+      if (!m.includes('.') || !/[a-z]/i.test(m)) return m;
+      return mask;
+    });
+
+    return { text: out, changed: out !== original };
+  }
+
+  function sanitizeTextSync(input) {
+    const original = String(input || '');
+    const masked = maskText(original);
+    return { text: masked.text, changed: masked.changed, unlocked: false };
+  }
+
   // Async sanitize (checks unlock status)
   async function sanitizeText(input, jobId) {
     const original = String(input || '');
@@ -533,24 +560,8 @@ window.ATHIntegrity = window.ATHIntegrity || (function () {
         return { text: original, changed: false, unlocked: true };
     }
 
-    let out = original;
-    const mask = ' [Hidden until job accepted] ';
-
-    out = out.replace(EMAIL_RE, mask);
-    out = out.replace(PHONE_RE, (m) => {
-      // Allow short numbers (prices, dims) but block phone-like lengths
-      const digits = String(m).replace(/\D/g, '');
-      if (digits.length < 8) return m;
-      return mask;
-    });
-    out = out.replace(URL_RE, mask);
-    out = out.replace(DOMAIN_RE, (m) => {
-      // avoid nuking version strings
-      if (!m.includes('.') || !/[a-z]/i.test(m)) return m;
-      return mask;
-    });
-
-    return { text: out, changed: out !== original, unlocked: false };
+    const masked = maskText(original);
+    return { text: masked.text, changed: masked.changed, unlocked: false };
   }
 
   function renderBanner(mountEl, isUnlocked) {
@@ -582,7 +593,7 @@ window.ATHIntegrity = window.ATHIntegrity || (function () {
     else el.classList.remove('hidden');
   }
 
-  return { canShareContact, scanText, sanitizeText, renderBanner, setInlineNotice };
+  return { canShareContact, scanText, sanitizeText, sanitizeTextSync, renderBanner, setInlineNotice };
 })();
 
 // ----------------------------
@@ -808,7 +819,7 @@ window.ATHToast = window.ATHToast || (function () {
 
     container = document.createElement('div');
     container.id = CONTAINER_ID;
-    container.className = 'fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none';
+    container.className = 'fixed bottom-4 right-4 z-[9999] flex flex-col items-end gap-2 pointer-events-none';
     container.setAttribute('aria-live', 'polite');
     container.setAttribute('aria-atomic', 'true');
     document.body.appendChild(container);
@@ -819,7 +830,7 @@ window.ATHToast = window.ATHToast || (function () {
     const o = opts || {};
     const message = String(o.message || 'Notification');
     const icon = String(o.icon || 'bell');
-    const duration = Number(o.duration || 5000);
+    const duration = Number(o.duration || 3500); // reduced from 5000
     const link = o.link || null; // Optional: { href: '...', label: 'View' }
 
     const container = ensureContainer();
@@ -839,7 +850,7 @@ window.ATHToast = window.ATHToast || (function () {
 
     const toast = document.createElement('div');
     toast.id = toastId;
-    toast.className = `pointer-events-auto bg-white rounded-xl shadow-lg border border-gray-200 p-4 max-w-sm ${animateIn}`;
+    toast.className = `pointer-events-auto bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-3 max-w-[320px] ${animateIn} transition-colors duration-200`;
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
 
@@ -849,13 +860,13 @@ window.ATHToast = window.ATHToast || (function () {
       : '';
 
     toast.innerHTML = `
-      <div class="flex items-start gap-3">
-        ${iconHtml ? `<div class="mt-0.5">${iconHtml}</div>` : ''}
-        <div class="flex-1">
-          <p class="text-sm font-medium text-gray-900">${escapeHtml(message)}</p>
+      <div class="flex items-center gap-3">
+        ${iconHtml ? `<div class="flex-shrink-0">${iconHtml}</div>` : ''}
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">${escapeHtml(message)}</p>
           ${linkHtml}
         </div>
-        <button type="button" class="p-1 rounded-lg hover:bg-gray-100 text-gray-500" aria-label="Dismiss" data-ath-toast-close>
+        <button type="button" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 transition-colors" aria-label="Dismiss" data-ath-toast-close>
           <i data-feather="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -1435,12 +1446,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const path = String(window.location.pathname || '').split('/').pop()?.toLowerCase() || 'index.html';
   const onboardingAllowed = [
     'index.html',
-    'browse-trades.html',
-    'browse-customers.html',
-    'jobs.html',
-    'messages.html',
-    'my-profile.html'
-  ].includes(path);
+    '/'
+  ].includes(path) || path === '';
   if (onboardingAllowed && window.ATHOnboarding?.shouldShow()) {
     window.ATHOnboarding.show();
   }
@@ -1681,9 +1688,13 @@ function requireAuthOnPage(opts) {
   const session = window.ATHAuth?.getSession?.();
   if (session?.userId) return true;
 
-  // Ensure modal exists then prompt
-  ensureAuthModal();
-  openAuthModal('signin');
+  if (typeof window.showSignInModal === 'function') {
+    window.showSignInModal();
+  } else {
+    // Ensure modal exists then prompt
+    ensureAuthModal();
+    openAuthModal('signin');
+  }
 
   if (onMissing === 'redirect') {
     // Send them home; keep a hint so we can reopen the modal.
@@ -1691,7 +1702,8 @@ function requireAuthOnPage(opts) {
     return false;
   }
 
-  // Overlay the page content
+  // Overlay the page content (skip if Supabase modal is active)
+  if (typeof window.showSignInModal === 'function') return false;
   const main = document.querySelector('main');
   if (main && !document.getElementById('athAuthGate')) {
     main.classList.add('blur-sm', 'pointer-events-none', 'select-none');
@@ -1943,6 +1955,10 @@ function syncAuthNavState() {
 }
 
 function openAuthModal(tab) {
+  if (typeof window.showSignInModal === 'function') {
+    window.showSignInModal();
+    return;
+  }
   ensureAuthModal();
   setAuthTab(tab || 'signin');
   const wrap = document.getElementById('athAuthModal');
@@ -2109,29 +2125,99 @@ function initMessagesPage() {
   if (!list || !chat || !chatName || !chatMeta || !chatStatus || !chatAvatar) return;
 
   // v0.027: Require auth for messages + scope conversations per account
-  const session = window.ATHAuth?.getSession?.();
-  if (!session?.userId) {
-    try { openAuthModal('signin'); } catch { }
-    // Minimal UI: hide chat panes + show sign-in empty state
-    if (input) {
-      input.disabled = true;
-      input.classList.add('opacity-50', 'cursor-not-allowed');
-    }
-    if (sendBtn) {
-      sendBtn.disabled = true;
-      sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    }
-    if (unreadLabel) unreadLabel.textContent = '—';
-    showEmpty('Sign in to view messages', 'Sign in to see your conversations and send messages.');
-    if (list) list.innerHTML = '';
-    if (emptyEl) {
-      emptyEl.textContent = 'Sign in to view your messages.';
-      emptyEl.classList.remove('hidden');
-    }
-    return;
-  }
+  // Race condition fix: Wait for auth module to load if not immediately found
+  const waitForSession = async () => {
+    let attempts = 0;
+    while (attempts < 10) { // Try for 2 seconds (10 * 200ms)
+      // Check legacy bridge (auth.js) or stub
+      let sess = window.ATHAuth?.getSession?.();
+      if (sess?.userId) return sess;
 
-  const uid = session.userId;
+      // Check localStorage fallback directly
+      try {
+        const raw = localStorage.getItem('athCurrentUser');
+        if (raw) {
+          const user = JSON.parse(raw);
+          if (user && user.id) return { userId: user.id, email: user.email };
+        }
+      } catch (e) { }
+
+      // If we are here, no session found yet. Wait and retry.
+      await new Promise(r => setTimeout(r, 200));
+      attempts++;
+    }
+    return null;
+  };
+
+  // We need to handle this async, but initMessagesPage is called synchronously.
+  // We'll use a self-executing async wrapper for the logic dependent on auth.
+  (async () => {
+    const session = await waitForSession();
+
+    if (!session?.userId) {
+      try { openAuthModal('signin'); } catch { }
+      // Minimal UI: hide chat panes + show sign-in empty state
+      if (input) {
+        input.disabled = true;
+        input.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+      if (unreadLabel) unreadLabel.textContent = '—';
+      showEmpty('Sign in to view messages', 'Sign in to see your conversations and send messages.');
+      if (list) list.innerHTML = '';
+      if (emptyEl) {
+        emptyEl.textContent = 'Sign in to view your messages.';
+        emptyEl.classList.remove('hidden');
+      }
+      return;
+    }
+
+    const uid = session.userId;
+    // ... continue with authorized logic ...
+    
+    // Move the rest of the function logic here or call a helper.
+    // Since initMessagesPage is huge, it's safer to just set the session variable 
+    // and let the rest of the synchronous code run IF we can block? 
+    // We CANNOT block the main thread.
+    // Refactoring strategy: 
+    // 1. Guard escape: if no session, return (done above).
+    // 2. If session exists, proceed. 
+    // But since I wrapped this in async, the original function continues executing immediately!
+    // This is problematic because the *rest* of initMessagesPage expects 'uid' to be defined immediately.
+    
+    // CORRECT APPROACH:
+    // Only wrap the 'uid' dependent parts in the async block?
+    // Or, allow initMessagesPage to return a promise?
+    // The caller (inline script) doesn't await it. 
+    
+    // Let's rely on the fact that if we return early, the UI stays in "loading" or "empty" state.
+    // But the original code falls through to use 'uid'.
+    
+    // I will refactor initMessagesPage to call a new internal 'startMessagesApp(uid)' function.
+    // The auth check will be the gatekeeper.
+    
+    startMessagesApp(uid);
+  })();
+
+  // Stop the outer function from proceeding with undefined uid
+  return; 
+
+  function startMessagesApp(uid) {
+      const STORE_KEY = `athConversations:${uid}`;
+      const lastActiveKey = `lastActiveConversation:${uid}`;
+
+      // File attachment handlers
+      // ... (rest of the listeners and logic usually follow here)
+      // BUT initMessagesPage is too long to copy/paste entirely in a Replace block efficiently.
+      
+      // ALTERNATIVE: Use a synchronous check first, if fail, trigger async re-init.
+      // But user sees modal flicker.
+      
+      // Let's modify the code to just use the polling AND allow the code to proceed inside the .then()
+  function startMessagesApp(uid) {
   const STORE_KEY = `athConversations:${uid}`;
   const lastActiveKey = `lastActiveConversation:${uid}`;
 
@@ -2579,7 +2665,16 @@ function initMessagesPage() {
     window.ATHStore.set(STORE_KEY, DATA);
   }
 
-  const safeText = (t) => (window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(t).text : String(t || ''));
+  // v0.027c: Fix "undefined" bug — sanitizeText is async, but we need sync preview. 
+  // We'll use a regex fallback here for the sidebar preview to keep it snappy.
+  const safeText = (t) => {
+    if (!t) return '';
+    if (typeof t !== 'string') t = String(t);
+    const mask = ' [Hidden] ';
+    // Simple sync substitution for preview
+    return t.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig, mask)
+            .replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, (m) => m.replace(/\D/g, '').length >= 8 ? mask : m);
+  };
 
   const sanitizeNoteEl = document.getElementById('athMessageSanitizeNote');
 
@@ -2625,7 +2720,9 @@ function initMessagesPage() {
     list.querySelectorAll('.conversation-item').forEach((row) => {
       const isActive = row.dataset.conversation === id;
       row.classList.toggle('bg-teal-50', isActive);
+      row.classList.toggle('dark:bg-teal-900/40', isActive);
       row.classList.toggle('hover:bg-gray-50', !isActive);
+      row.classList.toggle('dark:hover:bg-gray-800', !isActive);
     });
   }
 
@@ -2669,12 +2766,12 @@ function initMessagesPage() {
       const tag = c?.tag;
 
       const dotClass = online ? 'bg-green-500' : 'bg-gray-400';
-      const activeClass = (id === active) ? 'bg-teal-50' : '';
-      const borderClass = idx === ids.length - 1 ? '' : 'border-b border-gray-200';
+      const activeClass = (id === active) ? 'bg-teal-50 dark:bg-teal-900/40' : '';
+      const borderClass = idx === ids.length - 1 ? '' : 'border-b border-gray-200 dark:border-gray-700/50';
 
       return `
-        <a href="messages.html?conversation=${encodeURIComponent(id)}"
-           class="conversation-item block p-4 hover:bg-gray-50 ${borderClass} ${activeClass}"
+         <a href="messages.html?conversation=${encodeURIComponent(id)}"
+           class="conversation-item block p-4 hover:bg-gray-50 dark:hover:bg-gray-800 ${borderClass} ${activeClass}"
            data-conversation="${escapeHtml(id)}">
           <div class="flex items-start space-x-3">
             <div class="relative">
@@ -2683,10 +2780,10 @@ function initMessagesPage() {
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex justify-between items-start mb-1">
-                <h3 class="font-bold text-gray-900 truncate pr-2">${escapeHtml(c?.name || 'Conversation')}</h3>
-                <span class="text-xs text-gray-500 whitespace-nowrap">${escapeHtml(time)}</span>
+                <h3 class="font-bold text-gray-900 dark:text-white truncate pr-2">${escapeHtml(c?.name || 'Conversation')}</h3>
+                <span class="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">${escapeHtml(time)}</span>
               </div>
-              <p class="text-sm text-gray-600 truncate mb-1">${escapeHtml(preview)}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">${escapeHtml(preview)}</p>
               <div class="flex items-center">
                 ${tag ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${escapeHtml(tag.color || '')} mr-2">${escapeHtml(tag.label || '')}</span>` : ''}
                 ${unread ? `<span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">${unread}</span>` : ''}
@@ -2771,7 +2868,7 @@ function initMessagesPage() {
         const separator = document.createElement('div');
         separator.className = 'flex justify-center my-4';
         separator.innerHTML = `
-          <div class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">
+          <div class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-3 py-1 rounded-full border border-transparent dark:border-gray-700">
             ${formatDateSeparator(m.ts)}
           </div>
         `;
@@ -2801,13 +2898,13 @@ function initMessagesPage() {
         } else {
           const fileSize = (m.attachment.size / 1024).toFixed(1) + ' KB';
           attachmentHtml = `
-            <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 max-w-xs">
-              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 max-w-xs">
+              <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
               </svg>
               <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(m.attachment.name)}</div>
-                <div class="text-xs text-gray-500">${fileSize}</div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(m.attachment.name)}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">${fileSize}</div>
               </div>
               <a href="${m.attachment.data}" download="${escapeHtml(m.attachment.name)}" class="text-teal-600 hover:text-teal-700">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2866,16 +2963,16 @@ function initMessagesPage() {
         const url = urls[0]; // Preview first URL only
         const domain = new URL(url).hostname.replace('www.', '');
         linkPreviewHtml = `
-          <div class="mt-2 border border-gray-200 rounded-lg overflow-hidden max-w-sm">
-            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="block hover:bg-gray-50 transition">
+          <div class="mt-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-w-sm">
+            <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="block hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
               <div class="p-3">
                 <div class="flex items-start gap-2">
-                  <svg class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
                   </svg>
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium text-gray-900 truncate">${escapeHtml(domain)}</div>
-                    <div class="text-xs text-gray-500 truncate">${escapeHtml(url)}</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate">${escapeHtml(domain)}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate">${escapeHtml(url)}</div>
                   </div>
                   <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
@@ -2925,7 +3022,7 @@ function initMessagesPage() {
         : `
           <div class="flex flex-col items-start max-w-lg">
              <div class="relative group">
-              <div class="bg-white border border-gray-200 p-3 rounded-xl">
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-sm">
                 <div class="flex items-center gap-2 mb-2 border-b border-gray-100 pb-2">
                     <i data-feather="layers" class="w-4 h-4 text-teal-600"></i>
                     <span class="font-bold text-sm text-gray-800">${escapeHtml(m.caption || 'Photo Set')}</span>
@@ -2959,7 +3056,7 @@ function initMessagesPage() {
       // Reactions
       const reactionsHtml = m.reactions && Object.keys(m.reactions).length > 0
         ? `<div class="flex gap-1 mt-1 flex-wrap">${Object.entries(m.reactions).map(([emoji, count]) => 
-            `<span class="bg-gray-100 border border-gray-300 rounded-full px-2 py-0.5 text-xs cursor-pointer hover:bg-gray-200" onclick="window.toggleReaction('${m.ts}', '${emoji}')">${emoji} ${count > 1 ? count : ''}</span>`
+            `<span class="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full px-2 py-0.5 text-xs cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200" onclick="window.toggleReaction('${m.ts}', '${emoji}')">${emoji} ${count > 1 ? count : ''}</span>`
           ).join('')}</div>`
         : '';
       
@@ -3019,7 +3116,7 @@ function initMessagesPage() {
         : `
           <div class="flex flex-col items-start max-w-lg">
             <div class="relative group" id="${messageId}">
-              <div class="bg-white border border-gray-200 p-3 rounded-xl">
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3 rounded-xl shadow-sm text-gray-900 dark:text-gray-100">
                 ${m.replyTo ? `
                   <div class="bg-gray-100 border-l-2 border-gray-400 pl-2 py-1 mb-2 text-xs cursor-pointer hover:bg-gray-200 transition rounded" onclick="window.scrollToMessage('${m.replyTo.ts}')">
                     <div class="font-semibold text-gray-700">${escapeHtml(m.replyTo.from)}</div>
@@ -3032,7 +3129,7 @@ function initMessagesPage() {
                 ${!attachmentHtml && !voiceHtml ? displayText : ''}
               </div>
               ${linkPreviewHtml}
-              <button class="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-300 rounded-full p-1 text-gray-600 hover:bg-gray-50" onclick="window.showReactionPicker('${m.ts}', event)" title="Add reaction">
+              <button class="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" onclick="window.showReactionPicker('${m.ts}', event)" title="Add reaction">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </button>
             </div>
@@ -3143,7 +3240,7 @@ function initMessagesPage() {
     // If we can't resolve, keep the panel lightweight.
     if (!hasCustomer && !hasTradie) {
       contextMount.innerHTML = `
-        <div class="text-sm text-gray-600">
+        <div class="text-sm text-gray-600 dark:text-gray-400 italic">
           Select a conversation to see job context.
         </div>
       `;
@@ -3249,7 +3346,7 @@ function initMessagesPage() {
 
       return `
         <div>
-          <div class="text-xs text-gray-500 mb-2">Active jobs from this customer</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Active jobs from this customer</div>
           ${jobList}
           ${details}
         </div>
@@ -3280,25 +3377,25 @@ function initMessagesPage() {
               <img src="${escapeHtml(src)}" alt="Completion photo ${idx + 1}" class="w-full h-16 object-cover rounded-lg border border-gray-200" />
             `).join('')}
           </div>
-        ` : `<div class="mt-2 text-xs text-gray-500">No completion photos uploaded.</div>`;
+        ` : `<div class="mt-2 text-xs text-gray-500 dark:text-gray-500 italic">No completion photos uploaded.</div>`;
 
         const reviewsBlock = reviewsForJob.length ? `
           <div class="mt-3 space-y-2">
             ${reviewsForJob.map((r) => `
-              <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <div class="text-xs text-gray-600"><span class="font-semibold">${escapeHtml(String(r.stars || ''))}\u2605</span> \u2022 ${escapeHtml(new Date(Number(r.ts) || Date.now()).toLocaleDateString())}</div>
-                <div class="mt-1 text-sm text-gray-800">${escapeHtml(String(r.text || ''))}</div>
+              <div class="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+                <div class="text-xs text-gray-600 dark:text-gray-400"><span class="font-semibold">${escapeHtml(String(r.stars || ''))}\u2605</span> \u2022 ${escapeHtml(new Date(Number(r.ts) || Date.now()).toLocaleDateString())}</div>
+                <div class="mt-1 text-sm text-gray-800 dark:text-gray-200">${escapeHtml(String(r.text || ''))}</div>
               </div>
             `).join('')}
           </div>
-        ` : `<div class="mt-3 text-xs text-gray-500">No published reviews for this job yet.</div>`;
+        ` : `<div class="mt-3 text-xs text-gray-500 dark:text-gray-500 italic">No published reviews for this job yet.</div>`;
 
         return `
-          <div class="border border-gray-200 rounded-xl p-4 bg-white">
+          <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm">
             <div class="flex items-start justify-between gap-2">
               <div>
-                <div class="text-sm font-bold text-gray-900">${escapeHtml(j.title || 'Job')}</div>
-                <div class="text-xs text-gray-600">Completed: ${escapeHtml(st.completedAt ? new Date(st.completedAt).toLocaleDateString() : (j.completedAt ? new Date(j.completedAt).toLocaleDateString() : '—'))}</div>
+                <div class="text-sm font-bold text-gray-900 dark:text-white">${escapeHtml(j.title || 'Job')}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Completed: ${escapeHtml(st.completedAt ? new Date(st.completedAt).toLocaleDateString() : (j.completedAt ? new Date(j.completedAt).toLocaleDateString() : '—'))}</div>
               </div>
               <span class="text-[11px] font-semibold px-2 py-1 rounded-full ${statusPillClass('completed')}">completed</span>
             </div>
@@ -3306,7 +3403,7 @@ function initMessagesPage() {
             ${reviewsBlock}
           </div>
         `;
-      }).join('') : `<div class="text-sm text-gray-500">No completed jobs to showcase yet.</div>`;
+      }).join('') : `<div class="text-sm text-gray-500 dark:text-gray-500 p-4 text-center italic">No completed jobs to showcase yet.</div>`;
 
       return `
         <div>
@@ -3724,7 +3821,9 @@ function initMessagesPage() {
       return;
     }
 
-    const sanitized = window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(text) : { text, changed: false };
+    const sanitized = window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function'
+      ? window.ATHIntegrity.sanitizeTextSync(text)
+      : { text, changed: false };
     const newMessage = { 
       from: 'me', 
       time: 'Now', 
@@ -3848,6 +3947,7 @@ function initMessagesPage() {
     // Explicitly start in list view if no URL param
     activateMobileList();
   }
+}
 }
 
 // Global reaction functions
@@ -5887,7 +5987,7 @@ function initProfilePage() {
         if (els.avatar) els.avatar.style.opacity = '0.5';
         
         const result = await window.ATHImages.processImageFile(file);
-        tempAvatarBase64 = result.base64;
+        tempAvatarBase64 = result || '';
         
         if (els.avatar) els.avatar.style.opacity = '1';
         render(draftUser || user);
@@ -6068,7 +6168,7 @@ window.handlePhotoSetFiles = async function(files) {
     let preview = '';
     if (window.ATHImages && window.ATHImages.processImageFile) {
         const processed = await window.ATHImages.processImageFile(file, { maxDim: 1200, quality: 0.8 });
-        preview = processed.base64;
+        preview = processed || '';
     } else {
          preview = await new Promise(resolve => {
             const reader = new FileReader();

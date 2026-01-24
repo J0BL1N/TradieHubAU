@@ -7,9 +7,9 @@
   <title>My Profile | AussieTradieHub</title>
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="../js/core/device-detect.js"></script>
+  <script src="/js/core/device-detect.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="../css/main/style.css" />
+  <link rel="stylesheet" href="/css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -17,7 +17,7 @@
 
 <body class="font-inter bg-gray-50 ath-profile-page">
   <!-- Nav (kept simple + compatible with your script.js mobile toggle) -->
-  <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+  <div id="athNavMount"></div><div class="hidden">
     <div class="container mx-auto px-3 py-2">
       <div class="flex justify-between items-center">
 
@@ -73,9 +73,9 @@
 
     </div>
     </div>
-  </nav>
+    </div>
 
-  <main class="container mx-auto px-3 py-8">
+  <main id="athMain" class="container mx-auto px-3 py-8">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 ath-profile-card">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="flex items-center gap-4">
@@ -303,16 +303,16 @@
   </main>
 
   <!-- Supabase Client & Auth -->
-  <script type="module" src="../js/core/supabase-client.js"></script>
-  <script type="module" src="../js/core/auth.js"></script>
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
   
-  <script src="../js/core/data.js"></script>
-  <script src="../js/core/script.js"></script>
+  <script src="/js/core/data.js"></script>
+  <script src="/js/core/script.js"></script>
   <script type="module">
-    import { supabase, getCurrentUser } from '../js/core/auth.js';
-    import db from '../js/core/db.js';
-    import { uploadAvatar } from '../js/api/storage-api.js';
-    import { uploadVerificationDocument, getVerificationStatus } from '../js/api/verification-api.js';
+    import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
+    import db from '/js/core/db.js';
+    import { uploadAvatar } from '/js/api/storage-api.js';
+    import { uploadVerificationDocument, getVerificationStatus } from '/js/api/verification-api.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       // Initialize icons
@@ -567,21 +567,22 @@
       <span>Profile</span>
     </a>
   </nav>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script src="/js/core/data.js"></script>
+  <script src="/js/components/nav-shell.js"></script>
+  <script src="/js/core/spa-router.js"></script>
+  <script src="/js/core/script.js"></script>
   <script>
     (function () {
-      var path = window.location.pathname.split('/').pop() || 'index.html';
-      var items = document.querySelectorAll('.bottom-nav-item');
-      items.forEach(function (item) {
-        var href = item.getAttribute('href').split('?')[0];
-        if (href === path.split('?')[0]) {
-          item.classList.add('active');
-        } else {
-          item.classList.remove('active');
-        }
-      });
       if (typeof feather !== 'undefined') feather.replace();
     })();
   </script>
 </body>
 
 </html>
+
+
+

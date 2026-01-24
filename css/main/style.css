@@ -850,6 +850,12 @@ body.messages-page #chatScroll {
   background-attachment: fixed;
 }
 
+html.dark body.messages-page #chatScroll {
+  background-color: #0f172a !important; /* Matches --gray-900 */
+  background-image: none !important;
+}
+
+
 body.messages-page footer {
   display: none !important;
 }
@@ -1075,11 +1081,11 @@ mark {
 @keyframes ath-toast-slide-in {
   from {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateY(1rem);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 

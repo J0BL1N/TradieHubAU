@@ -6,19 +6,22 @@
 // ------------------------------------------------------------
 // IDs are stable keys used in filtering + storage. Labels are user-facing.
 window.TRADE_CATEGORIES = [
-  { id: 'electrician', label: 'Electrician', duration: 4 },
-  { id: 'plumber', label: 'Plumber & Gasfitter', duration: 4 },
-  { id: 'carpenter', label: 'Carpenter / Joiner', duration: 4 },
+  { id: 'electrical', label: 'Electrician', duration: 4 },
+  { id: 'plumbing', label: 'Plumber & Gasfitter', duration: 4 },
+  { id: 'carpentry', label: 'Carpenter / Joiner', duration: 4 },
+  { id: 'building', label: 'Builder / Contractor', duration: 4 },
+  { id: 'tiling', label: 'Wall & Floor Tiler', duration: 4 },
+  { id: 'painting', label: 'Painter & Decorator', duration: 4 },
+  { id: 'gardening', label: 'Landscape Construction', duration: 4 },
+  { id: 'cleaning', label: 'Cleaner', duration: 0 },
   { id: 'shopfitter', label: 'Shopfitter', duration: 4 },
   { id: 'bricklayer', label: 'Bricklayer / Blocklayer', duration: 4 },
   { id: 'stonemason', label: 'Stonemason', duration: 4 },
   { id: 'concreter', label: 'Concreter', duration: 3 },
   { id: 'plasterer', label: 'Plasterer', duration: 4 },
-  { id: 'tiler', label: 'Wall & Floor Tiler', duration: 4 },
   { id: 'waterproofer', label: 'Waterproofer', duration: 3 },
   { id: 'rooftiler', label: 'Roof Tiler / Slater', duration: 4 },
   { id: 'roofplumber', label: 'Roof Plumber', duration: 4 },
-  { id: 'painter', label: 'Painter & Decorator', duration: 4 },
   { id: 'glazier', label: 'Glazier', duration: 4 },
   { id: 'locksmith', label: 'Locksmith', duration: 4 },
   { id: 'floorfinisher', label: 'Floor Finisher', duration: 3 },
@@ -29,7 +32,6 @@ window.TRADE_CATEGORIES = [
   { id: 'demolisher', label: 'Demolisher', duration: 3 },
   { id: 'excavator', label: 'Excavator Operator', duration: 3 },
   { id: 'poolbuilder', label: 'Swimming Pool Builder', duration: 4 },
-  { id: 'landscaper', label: 'Landscape Construction', duration: 4 },
   { id: 'handyman', label: 'Handyman', duration: 0 },
   { id: 'other', label: 'Other', duration: 0 }
 ];
@@ -51,6 +53,15 @@ window.normalizeTradeIds = function normalizeTradeIds(input) {
     ? input
     : (typeof input === 'string' ? input.split(',') : [input]);
 
+  const legacyMap = {
+    electrician: 'electrical',
+    plumber: 'plumbing',
+    carpenter: 'carpentry',
+    tiler: 'tiling',
+    painter: 'painting',
+    landscaper: 'gardening'
+  };
+
   const out = [];
   raw
     .map(v => String(v || '').trim())
@@ -59,7 +70,7 @@ window.normalizeTradeIds = function normalizeTradeIds(input) {
       const norm = v.toLowerCase();
       // allow passing labels in (e.g. "Plumbing")
       const byLabel = window.TRADE_CATEGORIES.find(t => t.label.toLowerCase() === norm);
-      const id = byLabel ? byLabel.id : norm;
+      const id = byLabel ? byLabel.id : (legacyMap[norm] || norm);
       if (window.TRADE_BY_ID[id] && !out.includes(id)) out.push(id);
     });
 
@@ -73,8 +84,8 @@ window.inferTradeIdsFromText = function inferTradeIdsFromText(text) {
 
   if (t.includes('electr')) push('electrical');
   if (t.includes('plumb')) push('plumbing');
-  if (t.includes('carpent') || t.includes('fence') || t.includes('deck')) push('carpentry');
-  if (t.includes('paint')) push('painting');
+  if (t.includes('carpent') || t.includes('joiner') || t.includes('fence') || t.includes('deck')) push('carpentry');
+  if (t.includes('paint') || t.includes('decor')) push('painting');
   if (t.includes('tile')) push('tiling');
   if (t.includes('build') || t.includes('reno') || t.includes('contractor')) push('building');
   if (t.includes('landscap') || t.includes('garden')) push('gardening');
@@ -293,24 +304,6 @@ window.TRADIES = {
       { author: "Peter H.", date: "3 weeks ago", rating: 4.8, text: "Reliable and hard working. Good value." }
     ]
   }
-};
-
-// Batch L: normalize tradie trade(s) to canonical trade IDs.
-// Existing dataset uses a single human-readable `trade` string; we infer `trades: string[]`.
-window.inferTradeIdsFromText = function inferTradeIdsFromText(text) {
-  const t = String(text || '').toLowerCase();
-  const out = new Set();
-  if (t.includes('electric')) out.add('electrical');
-  if (t.includes('plumb')) out.add('plumbing');
-  if (t.includes('carpent') || t.includes('joiner')) out.add('carpentry');
-  if (t.includes('paint') || t.includes('decor')) out.add('painting');
-  if (t.includes('tile')) out.add('tiling');
-  if (t.includes('build') || t.includes('reno') || t.includes('contractor')) out.add('building');
-  if (t.includes('garden') || t.includes('landscape')) out.add('gardening');
-  if (t.includes('clean')) out.add('cleaning');
-  if (t.includes('handy')) out.add('handyman');
-  if (out.size === 0) out.add('other');
-  return Array.from(out);
 };
 
 Object.keys(window.TRADIES || {}).forEach((id) => {
@@ -814,10 +807,12 @@ window.JOBS = [
 // ------------------------------------------------------------
 // CUSTOMERS — Customer profiles data
 // ------------------------------------------------------------
-window.CUSTOMERS = {
+Object.assign(window.CUSTOMERS, {
   'sarah-mitchell': {
     id: 'sarah-mitchell',
     name: 'Sarah Mitchell',
+    typeLabel: 'Homeowner',
+    typeColor: 'bg-blue-500',
     location: 'Bondi, NSW',
     serviceArea: 'Eastern Suburbs, Sydney',
     memberSince: '2024-03-15',
@@ -833,6 +828,8 @@ window.CUSTOMERS = {
   'david-chen': {
     id: 'david-chen',
     name: 'David Chen',
+    typeLabel: 'Homeowner',
+    typeColor: 'bg-blue-500',
     location: 'Parramatta, NSW',
     serviceArea: 'Western Sydney, NSW',
     memberSince: '2023-11-20',
@@ -848,6 +845,8 @@ window.CUSTOMERS = {
   'emma-wilson': {
     id: 'emma-wilson',
     name: 'Emma Wilson',
+    typeLabel: 'Business',
+    typeColor: 'bg-purple-500',
     location: 'Melbourne, VIC',
     serviceArea: 'Melbourne Metro, VIC',
     memberSince: '2025-01-08',
@@ -863,6 +862,8 @@ window.CUSTOMERS = {
   'michael-brown': {
     id: 'michael-brown',
     name: 'Michael Brown',
+    typeLabel: 'Homeowner',
+    typeColor: 'bg-blue-500',
     location: 'Brisbane, QLD',
     serviceArea: 'Brisbane, QLD',
     memberSince: '2024-06-12',
@@ -878,6 +879,8 @@ window.CUSTOMERS = {
   'lisa-taylor': {
     id: 'lisa-taylor',
     name: 'Lisa Taylor',
+    typeLabel: 'Real Estate',
+    typeColor: 'bg-green-500',
     location: 'Sydney, NSW',
     serviceArea: 'Greater Sydney, NSW',
     memberSince: '2023-09-30',
@@ -893,6 +896,8 @@ window.CUSTOMERS = {
   'james-anderson': {
     id: 'james-anderson',
     name: 'James Anderson',
+    typeLabel: 'Homeowner',
+    typeColor: 'bg-blue-500',
     location: 'Perth, WA',
     serviceArea: 'Perth Metro, WA',
     memberSince: '2024-02-18',
@@ -907,6 +912,8 @@ window.CUSTOMERS = {
   'rachel-nguyen': {
     id: 'rachel-nguyen',
     name: 'Rachel Nguyen',
+    typeLabel: 'Business',
+    typeColor: 'bg-purple-500',
     location: 'Adelaide, SA',
     serviceArea: 'Adelaide, SA',
     memberSince: '2024-08-05',
@@ -921,6 +928,8 @@ window.CUSTOMERS = {
   'tom-roberts': {
     id: 'tom-roberts',
     name: 'Tom Roberts',
+    typeLabel: 'Homeowner',
+    typeColor: 'bg-blue-500',
     location: 'Gold Coast, QLD',
     serviceArea: 'Gold Coast, QLD',
     memberSince: '2025-01-12',
@@ -935,6 +944,8 @@ window.CUSTOMERS = {
   'kate-sullivan': {
     id: 'kate-sullivan',
     name: 'Kate Sullivan',
+    typeLabel: 'Homeowner',
+    typeColor: 'bg-blue-500',
     location: 'Canberra, ACT',
     serviceArea: 'Canberra, ACT',
     memberSince: '2024-04-22',
@@ -949,6 +960,8 @@ window.CUSTOMERS = {
   'mark-johnson': {
     id: 'mark-johnson',
     name: 'Mark Johnson',
+    typeLabel: 'Business',
+    typeColor: 'bg-purple-500',
     location: 'Newcastle, NSW',
     serviceArea: 'Newcastle, NSW',
     memberSince: '2023-12-10',
@@ -960,5 +973,4 @@ window.CUSTOMERS = {
     bio: 'Contractor coordinating sub-contractors for residential builds and renovations across Newcastle region.',
     preferredJobs: ['New Build', 'Commercial', 'Residential']
   }
-};
-
+});
