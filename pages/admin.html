@@ -21,7 +21,7 @@
             </div>
             <div class="flex items-center space-x-4">
                 <span id="adminName" class="text-sm text-gray-400">Loading...</span>
-                <button onclick="window.location.href='../index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
+                <button onclick="window.location.href='/index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
             </div>
         </div>
     </div>
@@ -129,21 +129,57 @@
                  </div>
 
                  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 class="font-bold text-gray-800 mb-4">Admin Actions</h3>
-                    <div class="space-y-2">
-                        <a href="admin-categories.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                     <h3 class="font-bold text-gray-800 mb-4">Admin Actions</h3>
+                     <div class="space-y-2">
+                         <a href="/pages/admin-users.html" class="w-full flex items-center justify-between p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition text-sm text-pink-800 font-medium">
+                            <span class="flex items-center gap-2"><i data-feather="users" class="w-4 h-4"></i> Manage Users</span>
+                            <i data-feather="chevron-right" class="w-4 h-4"></i>
+                        </a>
+                          <a href="/pages/admin-jobs.html" class="w-full flex items-center justify-between p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition text-sm text-indigo-800 font-medium">
+                             <span class="flex items-center gap-2"><i data-feather="briefcase" class="w-4 h-4"></i> Manage Jobs</span>
+                             <i data-feather="chevron-right" class="w-4 h-4"></i>
+                         </a>
+                        <a href="/pages/admin-categories.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
                             <span>Manage Categories</span>
                             <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
                         </a>
-                        <a href="admin-disputes.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                        <a href="/pages/admin-disputes.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
                             <span>Review Disputes</span>
                             <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
                         </a>
-                        <a href="admin-settings.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                        <a href="/pages/admin-settings.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
                             <span>Platform Settings</span>
                             <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
                         </a>
                     </div>
+                 </div>
+
+                 <!-- Broadcast System -->
+                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-800 mb-4">System Broadcast</h3>
+                    <div class="space-y-3">
+                        <textarea id="broadcastMsg" class="w-full border border-gray-300 rounded p-2 text-sm" placeholder="Enter global alert message..." rows="2"></textarea>
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 text-sm text-gray-600">
+                                <input type="checkbox" id="broadcastActive" class="rounded text-teal-600"> Active
+                            </label>
+                            <button onclick="window.saveBroadcast()" class="px-3 py-1.5 bg-gray-800 text-white text-xs rounded hover:bg-gray-700">Update</button>
+                        </div>
+                    </div>
+                    <script>
+                        window.saveBroadcast = () => {
+                            const msg = document.getElementById('broadcastMsg').value;
+                            const active = document.getElementById('broadcastActive').checked;
+                            localStorage.setItem('ath_broadcast', JSON.stringify({ message: msg, active, updatedAt: new Date() }));
+                            alert('Broadcast updated (stored in LocalStorage for demo)');
+                        };
+                        // Load initial
+                        const savedB = JSON.parse(localStorage.getItem('ath_broadcast') || '{}');
+                        if(savedB) {
+                            if(document.getElementById('broadcastMsg')) document.getElementById('broadcastMsg').value = savedB.message || '';
+                            if(document.getElementById('broadcastActive')) document.getElementById('broadcastActive').checked = !!savedB.active;
+                        }
+                    </script>
                  </div>
             </div>
         </div>
@@ -163,7 +199,7 @@
 
             const { user } = await getCurrentUser();
             if(!user) {
-                window.location.href = '../index.html';
+                window.location.href = '/index.html';
                 return;
             }
 
@@ -172,7 +208,7 @@
             ];
             const userEmail = String(user.email || '').toLowerCase();
             if (!adminAllowlist.includes(userEmail)) {
-                window.location.href = '../index.html';
+                window.location.href = '/index.html';
                 return;
             }
             document.getElementById('adminName').textContent = user.email;
@@ -190,11 +226,23 @@
 
 
             // Load Pending Verifications
-            const { data: verifs } = await supabase
-                .from('verifications')
-                .select('*, users(display_name, email)')
-                .eq('status', 'pending')
-                .limit(5);
+            // Load Pending Verifications
+            let verifs = [];
+            try {
+                const { data, error } = await supabase
+                    .from('verifications')
+                    .select('*, users(display_name, email)')
+                    .eq('status', 'pending')
+                    .limit(5);
+                
+                if (error) {
+                    console.warn('Verifications fetch error (table may be missing):', error);
+                } else {
+                    verifs = data || [];
+                }
+            } catch (e) {
+                console.warn('Verifications fetch failed:', e);
+            }
 
             const vList = document.getElementById('verificationList');
             if (!verifs || verifs.length === 0) {
@@ -234,24 +282,71 @@
             const userTable = document.getElementById('userTableBody');
             if(recentUsers) {
                 userTable.innerHTML = recentUsers.map(u => `
-                    <tr class="hover:bg-gray-50 bg-white">
+                    <tr class="hover:bg-gray-50 bg-white group">
                         <td class="px-6 py-4 font-medium text-gray-900">
                              <div class="flex items-center gap-2">
                                 <div class="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
                                     <img src="${u.avatar_url || 'https://ui-avatars.com/api/?name='+u.display_name}" class="w-full h-full object-cover">
                                 </div>
-                                ${u.display_name || 'No Name'}
+                                <div>
+                                    <div>${u.display_name || 'No Name'}</div>
+                                    <div class="text-xs text-gray-400 font-normal">${u.email}</div>
+                                </div>
                              </div>
                         </td>
                         <td class="px-6 py-4 text-gray-500 capitalize">${u.role || 'customer'}</td>
                         <td class="px-6 py-4">
-                            ${u.verified 
-                                ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>' 
-                                : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Unverified</span>'}
+                            <div class="flex gap-1">
+                                ${u.verified 
+                                    ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>' 
+                                    : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Unverified</span>'}
+                                ${u.role === 'banned' 
+                                    ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Banned</span>' 
+                                    : ''}
+                            </div>
                         </td>
-                        <td class="px-6 py-4 text-gray-500">${new Date(u.created_at).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 text-gray-500">
+                            <div class="flex items-center justify-between">
+                                <span>${new Date(u.created_at).toLocaleDateString()}</span>
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    ${u.role !== 'banned' ? `
+                                        <button onclick="window.banUser('${u.id}')" class="text-xs text-red-600 hover:text-red-800 font-medium hover:underline">Ban</button>
+                                    ` : `
+                                        <button onclick="window.unbanUser('${u.id}')" class="text-xs text-green-600 hover:text-green-800 font-medium hover:underline">Unban</button>
+                                    `}
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                 `).join('');
+                
+                // Expose ban functions
+                window.banUser = async (uid) => {
+                    const reason = prompt('Reason for banning this user? (This will set their role to "banned")');
+                    if (!reason) return;
+                    
+                    // Fallback to updating role since 'banned' column might not exist
+                    // We lose the reason storage in DB but we secure the access
+                    const { error } = await supabase.from('users').update({ role: 'banned' }).eq('id', uid);
+                    
+                    if (error) {
+                        alert('Error banning user: ' + error.message);
+                    } else {
+                        window.location.reload();
+                    }
+                };
+
+                window.unbanUser = async (uid) => {
+                    if(!confirm('Unban this user? They will be restored to "customer" role.')) return;
+                    // Restore to customer
+                    const { error } = await supabase.from('users').update({ role: 'customer' }).eq('id', uid);
+                    
+                    if (error) {
+                        alert('Error unbanning user: ' + error.message);
+                    } else {
+                        window.location.reload();
+                    }
+                };
             }
         }
 

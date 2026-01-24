@@ -20,7 +20,7 @@
       </div>
       <div class="flex items-center space-x-3">
         <span id="adminName" class="text-xs text-gray-400">Loading...</span>
-        <a href="admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+        <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
       </div>
     </div>
   </nav>
@@ -203,13 +203,13 @@
       if (typeof feather !== 'undefined') feather.replace();
       const { user } = await getCurrentUser();
       if (!user) {
-        window.location.href = '../index.html';
+        window.location.href = '/index.html';
         return;
       }
       const adminAllowlist = ['jaydenln.work@gmail.com'];
       const userEmail = String(user.email || '').toLowerCase();
       if (!adminAllowlist.includes(userEmail)) {
-        window.location.href = '../index.html';
+        window.location.href = '/index.html';
         return;
       }
       document.getElementById('adminName').textContent = user.email;

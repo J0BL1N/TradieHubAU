@@ -12,12 +12,30 @@ window.ATHNav = (function() {
         return '/'; // Use root-relative paths for consistency with SPA
     };
 
-    const navTemplate = (basePath) => `
+    const navTemplate = (basePath) => {
+        let banner = '';
+        try {
+            const b = JSON.parse(localStorage.getItem('ath_broadcast') || '{}');
+            if (b.active && b.message) {
+                banner = `
+                <div class="bg-indigo-600 text-white text-center py-2 px-4 text-sm font-medium relative animate-fade-in">
+                    <span class="flex items-center justify-center gap-2">
+                        <i data-feather="bell" class="w-4 h-4"></i>
+                        ${b.message}
+                    </span>
+                    <button onclick="this.parentElement.remove()" class="absolute right-4 top-1/2 -translate-y-1/2 opacity-70 hover:opacity-100" title="Dismiss">
+                        <i data-feather="x" class="w-4 h-4"></i>
+                    </button>
+                </div>`;
+            }
+        } catch (e) { console.error(e); }
+
+        return banner + `
     <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors duration-200 h-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
             <div class="flex justify-between items-center h-full">
                 <!-- Branding -->
-                <a href="${basePath}index.html" class="flex items-center gap-2 flex-shrink-0">
+                <a href="/index.html" class="flex items-center gap-2 flex-shrink-0">
                     <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center">
                         <i data-feather="tool" class="w-4 h-4 text-white"></i>
                     </div>
@@ -26,19 +44,19 @@ window.ATHNav = (function() {
                 
                 <!-- Desktop Links -->
                 <div id="athNavLinksDesktop" class="hidden md:flex items-center gap-1 lg:gap-4 ml-4 flex-1 justify-center">
-                    <a href="${basePath}index.html" data-nav="home" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+                    <a href="/index.html" data-nav="home" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
                         <i data-feather="home" class="w-4 h-4"></i> <span>Home</span>
                     </a>
-                    <a href="${basePath}pages/browse-trades.html" data-nav="trades" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+                    <a href="/pages/browse-trades.html" data-nav="trades" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
                         <i data-feather="users" class="w-4 h-4"></i> <span>Find Tradies</span>
                     </a>
-                    <a href="${basePath}pages/browse-customers.html" data-nav="customers" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+                    <a href="/pages/browse-customers.html" data-nav="customers" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
                         <i data-feather="user-check" class="w-4 h-4"></i> <span>Find Customers</span>
                     </a>
-                    <a href="${basePath}pages/jobs.html" data-nav="jobs" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+                    <a href="/pages/jobs.html" data-nav="jobs" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
                         <i data-feather="briefcase" class="w-4 h-4"></i> <span>Job Board</span>
                     </a>
-                    <a href="${basePath}pages/messages.html" data-nav="messages" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+                    <a href="/pages/messages.html" data-nav="messages" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
                         <i data-feather="message-square" class="w-4 h-4"></i> <span>Messages</span>
                     </a>
                     <div id="athAdminSlot" class="contents"></div>
@@ -67,11 +85,11 @@ window.ATHNav = (function() {
         <!-- Mobile Menu -->
         <div id="mobileMenu" class="md:hidden hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl overflow-y-auto max-h-[calc(100vh-64px)] transition-all duration-300">
             <div class="px-4 py-4 space-y-2">
-                <a href="${basePath}index.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Home</a>
-                <a href="${basePath}pages/browse-trades.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Find Tradies</a>
-                <a href="${basePath}pages/browse-customers.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Find Customers</a>
-                <a href="${basePath}pages/jobs.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Job Board</a>
-                <a href="${basePath}pages/messages.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Messages</a>
+                <a href="/index.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Home</a>
+                <a href="/pages/browse-trades.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Find Tradies</a>
+                <a href="/pages/browse-customers.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Find Customers</a>
+                <a href="/pages/jobs.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Job Board</a>
+                <a href="/pages/messages.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Messages</a>
                 <div id="athAdminSlotMobile" class="contents"></div>
                 <div class="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2" id="athUserSlotMobile"></div>
             </div>
@@ -94,6 +112,7 @@ window.ATHNav = (function() {
         }
     </style>
     `;
+    };
 
     function init() {
         if (_isInitialized) return;

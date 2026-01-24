@@ -57,7 +57,7 @@
                 </p>
 
                 <!-- Search Box -->
-                <form class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-md p-0 max-w-6xl mx-auto md:w-[120%] md:-mx-[10%]" onsubmit="const q = document.getElementById('homeSearchQuery').value.trim(); const loc = document.getElementById('homeSearchLocation').value.trim(); const params = new URLSearchParams(); if (q) params.set('q', q); if (loc) params.set('location', loc); const url = params.toString() ? `pages/browse-trades.html?${params.toString()}` : 'pages/browse-trades.html'; window.location.href = url; return false;">
+                <form class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-md p-0 max-w-6xl mx-auto md:w-[120%] md:-mx-[10%]" onsubmit="const q = document.getElementById('homeSearchQuery').value.trim(); const loc = document.getElementById('homeSearchLocation').value.trim(); const params = new URLSearchParams(); if (q) params.set('q', q); if (loc) params.set('location', loc); const url = params.toString() ? `/pages/browse-trades.html?${params.toString()}` : '/pages/browse-trades.html'; window.location.href = url; return false;">
                     <div class="flex flex-col md:flex-row gap-0.5">
                         <div class="flex-1">
                             <input id="homeSearchQuery" type="text" placeholder="What do you need done?" aria-label="Job description"
@@ -110,7 +110,7 @@
             </div>
             
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <a href="pages/browse-trades.html?category=Plumber" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                <a href="/pages/browse-trades.html?category=Plumber" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
                     <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50">
                         <i data-feather="droplet" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
                     </div>
@@ -118,7 +118,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">1,200+ pros</p>
                 </a>
                 
-                <a href="pages/browse-trades.html?category=Electrician" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                <a href="/pages/browse-trades.html?category=Electrician" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
                     <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-900/50">
                         <i data-feather="zap" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
                     </div>
@@ -126,7 +126,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">850+ pros</p>
                 </a>
                 
-                <a href="pages/browse-trades.html?category=Carpenter" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                <a href="/pages/browse-trades.html?category=Carpenter" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
                     <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50">
                         <i data-feather="home" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
                     </div>
@@ -134,7 +134,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">600+ pros</p>
                 </a>
                 
-                <a href="pages/browse-trades.html?category=Landscaper" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                <a href="/pages/browse-trades.html?category=Landscaper" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
                     <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 dark:group-hover:bg-green-900/50">
                         <i data-feather="sun" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
                     </div>
@@ -142,7 +142,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">400+ pros</p>
                 </a>
                 
-                <a href="pages/browse-trades.html?category=Painter" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                <a href="/pages/browse-trades.html?category=Painter" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
                     <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50">
                         <i data-feather="tool" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
                     </div>
@@ -150,7 +150,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">550+ pros</p>
                 </a>
                 
-                <a href="pages/browse-trades.html" class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                <a href="/pages/browse-trades.html" class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
                     <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-gray-200 dark:group-hover:bg-gray-600">
                         <i data-feather="grid" class="w-6 h-6 text-gray-600 dark:text-gray-300"></i>
                     </div>
@@ -570,26 +570,26 @@
                 <div>
                     <h3 class="text-white font-semibold mb-4">For Customers</h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="pages/post-job.html" class="hover:text-white">Post a Job</a></li>
-                        <li><a href="pages/browse-trades.html" class="hover:text-white">Find Tradies</a></li>
-                        <li><a href="pages/how-it-works.html" class="hover:text-white">How It Works</a></li>
+                        <li><a href="/pages/post-job.html" class="hover:text-white">Post a Job</a></li>
+                        <li><a href="/pages/browse-trades.html" class="hover:text-white">Find Tradies</a></li>
+                        <li><a href="/pages/how-it-works.html" class="hover:text-white">How It Works</a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="text-white font-semibold mb-4">For Tradies</h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="pages/my-profile.html" class="hover:text-white">Sign Up</a></li>
-                        <li><a href="pages/jobs.html" class="hover:text-white">Browse Jobs</a></li>
-                        <li><a href="pages/resources.html" class="hover:text-white">Resources</a></li>
+                        <li><a href="/pages/my-profile.html" class="hover:text-white">Sign Up</a></li>
+                        <li><a href="/pages/jobs.html" class="hover:text-white">Browse Jobs</a></li>
+                        <li><a href="/pages/resources.html" class="hover:text-white">Resources</a></li>
                     </ul>
                 </div>
                 <div>
                     <h3 class="text-white font-semibold mb-4">Company</h3>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="pages/about-us.html" class="hover:text-white">About Us</a></li>
-                        <li><a href="pages/trust-safety.html" class="hover:text-white">Trust & Safety</a></li>
-                        <li><a href="pages/terms-of-service.html" class="hover:text-white">Terms</a></li>
-                        <li><a href="pages/privacy-policy.html" class="hover:text-white">Privacy</a></li>
+                        <li><a href="/pages/about-us.html" class="hover:text-white">About Us</a></li>
+                        <li><a href="/pages/trust-safety.html" class="hover:text-white">Trust & Safety</a></li>
+                        <li><a href="/pages/terms-of-service.html" class="hover:text-white">Terms</a></li>
+                        <li><a href="/pages/privacy-policy.html" class="hover:text-white">Privacy</a></li>
                     </ul>
                 </div>
             </div>
@@ -603,12 +603,12 @@
     </div>
     </main>
 
-    <script type="module" src="js/core/supabase-client.js"></script>
-    <script type="module" src="js/core/auth.js"></script>
-    <script src="js/core/data.js"></script>
-    <script src="js/components/nav-shell.js"></script>
-    <script src="js/core/spa-router.js"></script>
-    <script src="js/core/script.js"></script>
+    <script type="module" src="/js/core/supabase-client.js"></script>
+    <script type="module" src="/js/core/auth.js"></script>
+    <script src="/js/core/data.js"></script>
+    <script src="/js/components/nav-shell.js"></script>
+    <script src="/js/core/spa-router.js"></script>
+    <script src="/js/core/script.js"></script>
     <script>
         feather.replace();
     </script>

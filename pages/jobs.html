@@ -26,42 +26,13 @@
 </head>
 
 
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-jobs-page">
-    <div id="athNavMount"></div><div class="hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-14">
-                <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 bg-teal-600 rounded flex items-center justify-center">
-                        <i data-feather="tool" class="w-3.5 h-3.5 text-white"></i>
-                    </div>
-                    <span class="text-lg font-bold text-gray-900 dark:text-white">AussieTradieHub</span>
-                </div>
-                <div class="hidden md:flex items-center gap-5">
-                    <a href="../index.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="home" class="w-3.5 h-3.5"></i> Home</a>
-                    <a href="browse-trades.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="users" class="w-3.5 h-3.5"></i> Find Tradies</a>
-                    <a href="browse-customers.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="user-check" class="w-3.5 h-3.5"></i> Find Customers</a>
-                    <a href="jobs.html" class="text-teal-600 font-semibold flex items-center gap-1 text-sm"><i data-feather="briefcase" class="w-3.5 h-3.5"></i> Job Board</a>
-                    <a href="messages.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 text-sm"><i data-feather="message-square" class="w-3.5 h-3.5"></i> Messages</a>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="mobileMenuButton" class="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="Open menu" aria-expanded="false">
-                        <i data-feather="menu" class="w-4 h-4"></i>
-                    </button>
-                    <button id="darkModeToggle" class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
-                        <i data-feather="moon" class="w-4 h-4 dark-mode-icon"></i>
-                        <i data-feather="sun" class="w-4 h-4 light-mode-icon hidden"></i>
-                    </button>
-                    <a href="my-profile.html" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium text-sm">Log In</a>
-                    <a href="my-profile.html" class="bg-gray-900 dark:bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 dark:hover:bg-teal-700 font-medium text-sm">Sign Up</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <main id="athMain" class="flex-1 overflow-y-auto relative w-full">
-
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-jobs-page min-h-screen flex flex-col">
+    <div id="athNavMount"></div>
+    <div id="athNavMount"></div>
+    <main id="athMain" class="flex-1 relative w-full">
+    <div class="flex flex-col h-full">
     <!-- Main Content -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full min-h-screen">
     <!-- Stats & CTA -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
       <div class="bg-gradient-to-r from-teal-500 to-cyan-600 rounded-xl p-4 text-white shadow-sm overflow-hidden relative">
@@ -167,8 +138,8 @@
           </div>
 
           <!-- More Filters -->
-          <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
-             <a href="post-job.html" class="flex items-center justify-center gap-2 w-full py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors">
+           <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
+             <a href="/pages/post-job.html" class="flex items-center justify-center gap-2 w-full py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg transition-colors">
                 <i data-feather="plus" class="w-3 h-3"></i>
                 Post Your Job
              </a>
@@ -223,6 +194,51 @@
         <div id="athJobPagination" class="mt-6"></div>
       </div>
     </div>
+  <!-- Footer -->
+  <footer class="bg-gray-900 dark:bg-black text-gray-400 dark:text-gray-500 py-12 border-t border-gray-800 dark:border-gray-900 transition-colors duration-200 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center">
+              <i data-feather="tool" class="w-4 h-4 text-white"></i>
+            </div>
+            <span class="text-white font-bold">AussieTradieHub</span>
+          </div>
+          <p class="text-sm">Australia's trusted platform for connecting customers with verified tradespeople.</p>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold mb-4">For Customers</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/pages/post-job.html" class="hover:text-white">Post a Job</a></li>
+            <li><a href="/pages/browse-trades.html" class="hover:text-white">Find Tradies</a></li>
+            <li><a href="/pages/how-it-works.html" class="hover:text-white">How It Works</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold mb-4">For Tradies</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/pages/my-profile.html" class="hover:text-white">Sign Up</a></li>
+            <li><a href="/pages/jobs.html" class="hover:text-white">Browse Jobs</a></li>
+            <li><a href="/pages/resources.html" class="hover:text-white">Resources</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold mb-4">Company</h3>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/pages/about-us.html" class="hover:text-white">About Us</a></li>
+            <li><a href="/pages/trust-safety.html" class="hover:text-white">Trust & Safety</a></li>
+            <li><a href="/pages/terms-of-service.html" class="hover:text-white">Terms</a></li>
+            <li><a href="/pages/privacy-policy.html" class="hover:text-white">Privacy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 pt-8 text-center text-sm">
+        <p>&copy; 2026 AussieTradieHub Pty Ltd. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+  </div>
   </main>
 
   <!-- Job Modal -->
@@ -238,66 +254,7 @@
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="bg-gray-900 text-white pt-12 pb-8 mt-12">
-    <div class="container mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-        <div>
-          <div class="flex items-center space-x-2 mb-4">
-            <div
-              class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
-              <i data-feather="tool" class="text-white w-6 h-6"></i>
-            </div>
-            <h2 class="text-xl font-bold">AussieTradieHub</h2>
-          </div>
-          <p class="text-gray-400">Connecting trusted tradies with customers across Australia with full transparency.
-          </p>
-        </div>
 
-        <div>
-          <h3 class="font-bold text-lg mb-4">For Customers</h3>
-          <ul class="space-y-2 text-gray-400">
-            <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
-            <li><a href="jobs.html" class="hover:text-white transition">Browse Jobs</a></li>
-            <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 class="font-bold text-lg mb-4">For Tradies</h3>
-          <ul class="space-y-2 text-gray-400">
-            <li><a href="browse-customers.html" class="hover:text-white transition">Find Customers</a></li>
-            <li><a href="my-profile.html" class="hover:text-white transition">Create Profile</a></li>
-            <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
-            <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 class="font-bold text-lg mb-4">Contact</h3>
-          <ul class="space-y-2 text-gray-400">
-            <li class="flex items-center"><i data-feather="mail" class="w-4 h-4 mr-2"></i> support@aussietradiehub.com
-            </li>
-            <li class="flex items-center"><i data-feather="phone" class="w-4 h-4 mr-2"></i> 1300 TRADIE (1300 872 343)
-            </li>
-            <li class="flex items-center"><i data-feather="map-pin" class="w-4 h-4 mr-2"></i> Sydney, Australia</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="border-t border-gray-800 pt-8">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-          <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2024 AussieTradieHub. All rights reserved.</p>
-          <div class="flex space-x-6">
-            <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
-            <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-            <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-            <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </footer>
 
   <!-- Supabase Client & Jobs API -->
   <script type="module" src="/js/core/supabase-client.js"></script>

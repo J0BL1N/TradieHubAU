@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Jobs | ATH Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <div class="bg-indigo-600 p-1.5 rounded">
+          <i data-feather="briefcase" class="w-5 h-5 text-white"></i>
+        </div>
+        <h1 class="font-bold text-lg tracking-tight">Job Management</h1>
+      </div>
+      <div class="flex items-center space-x-3">
+        <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-gray-900">All Jobs</h2>
+          <p class="text-xs text-gray-500">Oversee and override job statuses ("God Mode").</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="text" id="jobSearch" placeholder="Search title..." class="border border-gray-200 text-sm rounded-lg px-3 py-2 w-48">
+          <select id="statusFilter" class="border border-gray-200 text-sm rounded-lg px-3 py-2">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="disputed">Disputed</option>
+          </select>
+          <button id="refreshBtn" class="bg-gray-100 hover:bg-gray-200 p-2 rounded text-gray-600"><i data-feather="refresh-cw" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+      <div id="jobList" class="divide-y divide-gray-100">
+        <div class="p-8 text-center text-gray-500">Loading jobs...</div>
+      </div>
+      <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center text-xs text-gray-500">
+        <span>Showing up to 50 most recent jobs</span>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script type="module">
+    import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
+
+    let allJobs = [];
+    const listEl = document.getElementById('jobList');
+    const searchInput = document.getElementById('jobSearch');
+    const statusFilter = document.getElementById('statusFilter');
+
+    async function loadJobs() {
+      listEl.innerHTML = '<div class="p-8 text-center text-gray-500">Loading jobs...</div>';
+      
+      try {
+        const { data, error } = await supabase
+            .from('jobs')
+            .select(`*, customer:customer_id(display_name), tradie:tradie_id(display_name)`)
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+        allJobs = data || [];
+        renderList();
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+        listEl.innerHTML = `<div class="p-8 text-center text-red-500">Error loading jobs: ${err.message}</div>`;
+      }
+    }
+
+    function statusBadge(status) {
+        const map = {
+            open: 'bg-green-100 text-green-700',
+            in_progress: 'bg-blue-100 text-blue-700',
+            completed: 'bg-gray-100 text-gray-700',
+            cancelled: 'bg-red-100 text-red-700',
+            disputed: 'bg-purple-100 text-purple-700'
+        };
+        return map[status] || 'bg-gray-100 text-gray-600';
+    }
+
+    function renderList() {
+        const q = searchInput.value.toLowerCase();
+        const s = statusFilter.value;
+        
+        const filtered = allJobs.filter(job => {
+            const matchesSearch = (job.title || '').toLowerCase().includes(q);
+            const matchesStatus = s === 'all' || job.status === s;
+            return matchesSearch && matchesStatus;
+        });
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = '<div class="p-8 text-center text-gray-500">No jobs found matching filters.</div>';
+            return;
+        }
+
+        listEl.innerHTML = filtered.map(job => `
+            <div class="p-4 hover:bg-gray-50 transition group">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge(job.status)}">${job.status.replace('_',' ')}</span>
+                            <span class="text-xs text-gray-400">#${job.id}</span>
+                        </div>
+                        <h3 class="font-bold text-gray-900 text-sm">${job.title || 'Untitled'}</h3>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-gray-800">$${job.budget || 0}</div>
+                        <div class="text-xs text-gray-500">${new Date(job.created_at).toLocaleDateString()}</div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div class="text-xs text-gray-500">
+                        <div class="flex items-center gap-1">
+                            <i data-feather="user" class="w-3 h-3"></i> 
+                            ${job.customer?.display_name || 'Unknown Customer'}
+                            ${job.tradie ? `<i data-feather="arrow-right" class="w-3 h-3 mx-1"></i> ${job.tradie.display_name}` : ''}
+                        </div>
+                    </div>
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                         ${job.status !== 'cancelled' ? `<button onclick="window.overrideStatus('${job.id}', 'cancelled')" class="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50">Force Cancel</button>` : ''}
+                         ${job.status !== 'completed' ? `<button onclick="window.overrideStatus('${job.id}', 'completed')" class="px-2 py-1 text-xs border border-green-200 text-green-600 rounded hover:bg-green-50">Force Complete</button>` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        if (typeof feather !== 'undefined') feather.replace();
+    }
+
+    // Actions
+    window.overrideStatus = async (id, status) => {
+        if (!confirm(`⚠️ GOD MODE: Are you sure you want to FORCE SET this job to '${status}'? This bypasses normal checks.`)) return;
+        
+        try {
+            const { error } = await supabase.from('jobs').update({ status }).eq('id', id);
+            if (error) throw error;
+            alert(`Job updated to ${status}`);
+            const job = allJobs.find(j => j.id === id);
+            if (job) job.status = status;
+            renderList();
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    };
+
+    // Events
+    searchInput.addEventListener('input', renderList);
+    statusFilter.addEventListener('change', renderList);
+    document.getElementById('refreshBtn').addEventListener('click', loadJobs);
+
+    // Init
+    (async () => {
+        const { user } = await getCurrentUser();
+        if(!user || user.email !== 'jaydenln.work@gmail.com') {
+            window.location.href = '/index.html';
+            return;
+        }
+        loadJobs();
+    })();
+  </script>
+</body>
+</html>

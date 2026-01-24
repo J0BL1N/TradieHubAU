@@ -42,15 +42,32 @@ export async function initAuth() {
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     currentSession = session;
-    currentUser = session.user;
-    console.log('✅ User already signed in:', currentUser.email);
-    await syncUserProfile(currentUser);
-    updateUIForAuthState(true);
-  } else {
-    console.log('ℹ️ No active session');
-    updateUIForAuthState(false);
+      currentUser = session.user;
+      console.log('✅ User already signed in:', currentUser.email);
+      await syncUserProfile(currentUser);
+      updateUIForAuthState(true);
+      watchUserBanStatus(currentUser.id); // Add realtime watch
+    } else {
+      console.log('ℹ️ No active session');
+      updateUIForAuthState(false);
+    }
   }
-}
+
+  // Monitor user profile for real-time ban
+  function watchUserBanStatus(userId) {
+      supabase
+        .channel(`public:users:id=eq.${userId}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` }, async (payload) => {
+            console.log('User profile updated:', payload.new);
+            if (payload.new.role === 'banned' || payload.new.banned) {
+                console.warn('⛔ Banned in real-time');
+                await signOut();
+                alert('Session Terminated: You have been banned by an administrator.');
+                window.location.href = '/index.html';
+            }
+        })
+        .subscribe();
+  }
 
 /**
  * Handle successful sign-in
@@ -64,6 +81,9 @@ async function handleSignInSuccess(session) {
   
   // Update UI
   updateUIForAuthState(true);
+  
+  // Watch for bans
+  watchUserBanStatus(session.user.id);
   
   // Show success toast if ATHToast is available
   if (window.ATHToast) {
@@ -83,6 +103,15 @@ async function syncUserProfile(authUser) {
   // Check if profile exists
   const { profile, error } = await getUserProfile(authUser.id);
   
+  // v0.101: Check for ban status
+  if (profile && (profile.banned || profile.role === 'banned')) {
+    console.warn('⛔ User is banned:', authUser.email);
+    await signOut();
+    alert('Access Denied: Your account has been suspended by an administrator.\nReason: ' + (profile.ban_reason || 'Violation of terms.'));
+    window.location.href = '/index.html';
+    return;
+  }
+  
   if (error || !profile) {
     console.log('📝 Creating user profile in database...');
     
@@ -93,7 +122,8 @@ async function syncUserProfile(authUser) {
       display_name: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
       role: 'customer', // Default role, can be updated in onboarding
       avatar_url: authUser.user_metadata?.avatar_url || null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      banned: false // Explicitly set default
     };
     
     await createUserProfile(newProfile);
@@ -137,9 +167,9 @@ function handleSignOut() {
   }
   
   // Redirect to home
+  // Redirect to home
   if (window.location.pathname !== '/index.html' && window.location.pathname !== '/' && !window.location.pathname.endsWith('index.html')) {
-    const homePath = window.location.pathname.includes('/pages/') ? '../index.html' : 'index.html';
-    window.location.href = homePath;
+    window.location.href = '/index.html';
   }
 }
 
@@ -177,7 +207,7 @@ function updateUIForAuthState(isSignedIn) {
   
   if (adminSlot) {
     adminSlot.innerHTML = canAccessAdmin ? `
-      <a href="${basePath}pages/admin.html" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
+      <a href="/pages/admin.html" class="ath-nav-link text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1.5 transition-all duration-200 border-b-2 border-transparent">
         <i data-feather="shield" class="w-4 h-4"></i> <span>Admin</span>
       </a>
     ` : '';
@@ -185,7 +215,7 @@ function updateUIForAuthState(isSignedIn) {
   
   if (adminSlotMobile) {
     adminSlotMobile.innerHTML = canAccessAdmin ? `
-      <a href="${basePath}pages/admin.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Admin</a>
+      <a href="/pages/admin.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Admin</a>
     ` : '';
   }
 
@@ -198,7 +228,7 @@ function updateUIForAuthState(isSignedIn) {
         <i data-feather="chevron-down" class="w-4 h-4 text-gray-400"></i>
       </button>
       <div id="athUserDropdown" class="hidden absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-[100] py-1 overflow-hidden transition-all duration-200">
-        <a href="${basePath}pages/my-profile.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-teal-900/20">
+        <a href="/pages/my-profile.html" class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-teal-900/20">
           <i data-feather="user" class="w-4 h-4"></i> My Profile
         </a>
         <div class="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
@@ -253,7 +283,7 @@ function updateUIForAuthState(isSignedIn) {
              <div class="text-xs text-gray-500 truncate">${currentUser.email}</div>
            </div>
         </div>
-        <a href="${basePath}pages/my-profile.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 font-medium">My Profile</a>
+        <a href="/pages/my-profile.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 font-medium">My Profile</a>
         <button id="athSignOutBtnMobile" class="w-full text-left px-3 py-2 rounded-lg text-red-600 font-medium">Log Out</button>
       `;
       const signOutBtnM = document.getElementById('athSignOutBtnMobile');

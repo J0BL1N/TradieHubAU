@@ -18,9 +18,9 @@
         </div>
         <h1 class="font-bold text-lg tracking-tight">Review Disputes</h1>
       </div>
-      <div class="flex items-center space-x-3">
+       <div class="flex items-center space-x-3">
         <span id="adminName" class="text-xs text-gray-400">Loading...</span>
-        <a href="admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+        <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
       </div>
     </div>
   </nav>
@@ -50,68 +50,64 @@
   <script type="module" src="/js/core/supabase-client.js"></script>
   <script type="module" src="/js/core/auth.js"></script>
   <script type="module">
-    import { getCurrentUser } from '/js/core/supabase-client.js';
+    import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
 
     const STORAGE_KEY = 'ath_admin_disputes';
     const DEFAULT_DISPUTES = [
       {
-        id: 'disp_001',
+        id: 'disp_mock_1',
         title: 'Incomplete bathroom renovation',
-        customer: 'Sophie Tran',
-        tradie: 'Harbor Tiling Co.',
+        customer: { display_name: 'Sophie Tran' },
+        tradie: { display_name: 'Harbor Tiling Co.' },
         status: 'open',
-        createdAt: '2024-06-11',
-        amount: 820,
-        notes: 'Customer claims waterproofing failed during final inspection.'
-      },
-      {
-        id: 'disp_002',
-        title: 'Late arrival and no show',
-        customer: 'Liam Patel',
-        tradie: 'Prime Electrical',
-        status: 'under_review',
-        createdAt: '2024-06-08',
-        amount: 240,
-        notes: 'Tradie claims access issue. Customer wants refund.'
-      },
-      {
-        id: 'disp_003',
-        title: 'Paint finish mismatch',
-        customer: 'Mia Roberts',
-        tradie: 'Coastal Paintworks',
-        status: 'resolved',
-        createdAt: '2024-06-02',
-        amount: 460,
-        notes: 'Resolved with partial refund and revisit scheduled.'
+        created_at: '2024-06-11T10:00:00Z',
+        budget: 820,
+        description: 'Customer claims waterproofing failed during final inspection. (MOCK)'
       }
     ];
 
     let disputes = [];
-
     const listEl = document.getElementById('disputeList');
     const filterEl = document.getElementById('statusFilter');
     const resetBtn = document.getElementById('resetDisputesBtn');
 
-    function loadDisputes() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (error) {
-          return [...DEFAULT_DISPUTES];
-        }
-      }
-      return [...DEFAULT_DISPUTES];
-    }
+    async function loadDisputes() {
+      listEl.innerHTML = '<div class="p-8 text-center text-gray-500">Loading disputes...</div>';
+      
+      try {
+        // Try fetching real disputes from jobs table
+        const { data, error } = await supabase
+          .from('jobs')
+          .select(`
+            id, title, status, created_at, budget, description,
+            customer:customer_id (display_name, email),
+            tradie:tradie_id (display_name, email)
+          `)
+          .in('status', ['disputed', 'dispute_requested', 'reviewing']); // Catch all dispute-like statuses
 
-    function saveDisputes() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(disputes));
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          disputes = data;
+        } else {
+           // No real disputes, check if we should show mock for demo
+           console.log('No real disputes found.');
+           disputes = []; 
+        }
+      } catch (err) {
+        console.warn('Failed to fetch real disputes, falling back to mock:', err);
+        disputes = [...DEFAULT_DISPUTES];
+      }
+      
+      renderList();
     }
 
     function statusBadge(status) {
       const map = {
         open: 'bg-red-100 text-red-700',
-        under_review: 'bg-amber-100 text-amber-700',
+        disputed: 'bg-red-100 text-red-700',
+        dispute_requested: 'bg-amber-100 text-amber-700',
+        reviewing: 'bg-blue-100 text-blue-700',
         resolved: 'bg-green-100 text-green-700',
         dismissed: 'bg-gray-100 text-gray-600'
       };
@@ -120,7 +116,11 @@
 
     function renderList() {
       const filter = filterEl.value;
-      const filtered = filter === 'all' ? disputes : disputes.filter(item => item.status === filter);
+      const filtered = filter === 'all' ? disputes : disputes.filter(item => {
+        if(filter === 'open') return ['disputed', 'dispute_requested', 'open'].includes(item.status);
+        return item.status === filter;
+      });
+
       if (!filtered.length) {
         listEl.innerHTML = '<div class="p-6 text-center text-sm text-gray-500">No disputes match this filter.</div>';
         return;
@@ -129,70 +129,77 @@
         <div class="p-6 flex flex-col gap-4">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <h3 class="font-semibold text-gray-900">${item.title}</h3>
-              <p class="text-xs text-gray-500">Customer: ${item.customer} - Tradie: ${item.tradie}</p>
+              <h3 class="font-semibold text-gray-900">${item.title || 'Untitled Job'}</h3>
+              <p class="text-xs text-gray-500">
+                 Customer: ${item.customer?.display_name || 'Unknown'} 
+                 • Tradie: ${item.tradie?.display_name || 'Unknown'}
+                 ${item.customer?.email ? `• <span class="text-gray-400">${item.customer.email}</span>` : ''}
+              </p>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-[11px] px-2 py-0.5 rounded-full ${statusBadge(item.status)}">${item.status.replace('_', ' ')}</span>
-              <span class="text-xs text-gray-500">${new Date(item.createdAt).toLocaleDateString()}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full ${statusBadge(item.status)} uppercase">${item.status.replace(/_/g, ' ')}</span>
+              <span class="text-xs text-gray-500">${new Date(item.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-sm text-gray-600">${item.notes}</div>
+          <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-sm text-gray-600 max-h-32 overflow-y-auto">
+            ${item.description || 'No description provided.'}
+          </div>
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div class="text-xs text-gray-500">Claimed amount: <span class="font-semibold text-gray-700">$${item.amount}</span></div>
+            <div class="text-xs text-gray-500">Budget: <span class="font-semibold text-gray-700">$${item.budget || 0}</span></div>
             <div class="flex flex-wrap gap-2 text-xs">
-              <button data-action="assign" data-id="${item.id}" class="px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50">Assign</button>
-              <button data-action="resolve" data-id="${item.id}" class="px-3 py-1.5 rounded border border-green-200 text-green-700 hover:bg-green-50">Resolve</button>
-              <button data-action="dismiss" data-id="${item.id}" class="px-3 py-1.5 rounded border border-gray-200 text-gray-600 hover:bg-gray-50">Dismiss</button>
+              <a href="/pages/jobs.html?id=${item.id}" target="_blank" class="px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50">View Job</a>
+              ${!['resolved', 'completed', 'cancelled'].includes(item.status) ? `
+                <button onclick="window.resolveDispute('${item.id}', 'refund')" class="px-3 py-1.5 rounded border border-red-200 text-red-700 hover:bg-red-50">Refund Customer</button>
+                <button onclick="window.resolveDispute('${item.id}', 'pay')" class="px-3 py-1.5 rounded border border-green-200 text-green-700 hover:bg-green-50">Release to Tradie</button>
+              ` : '<span class="text-gray-400 italic px-2">Action taken</span>'}
             </div>
           </div>
         </div>
       `).join('');
     }
 
-    listEl.addEventListener('click', (event) => {
-      const button = event.target.closest('button');
-      if (!button) return;
-      const id = button.dataset.id;
-      const action = button.dataset.action;
-      const dispute = disputes.find(item => item.id === id);
-      if (!dispute) return;
+    // Expose actions
+    window.resolveDispute = async (id, action) => {
+        if(!confirm(`Are you sure you want to ${action === 'refund' ? 'REFUND the customer' : 'PAY the tradie'}? This action is final.`)) return;
+        
+        const newStatus = action === 'refund' ? 'cancelled' : 'completed';
+        const note = action === 'refund' ? 'Admin resolved dispute: Customer refunded.' : 'Admin resolved dispute: Funds released to Tradie.';
 
-      if (action === 'assign') {
-        dispute.status = 'under_review';
-      } else if (action === 'resolve') {
-        dispute.status = 'resolved';
-      } else if (action === 'dismiss') {
-        dispute.status = 'dismissed';
-      }
-      saveDisputes();
-      renderList();
-    });
+        try {
+            // Update job status
+            const { error } = await supabase.from('jobs').update({ status: newStatus }).eq('id', id);
+            if(error) throw error;
+            
+            alert(`Dispute resolved. Job marked as ${newStatus}.`);
+            loadDisputes(); // Reload
+        } catch(e) {
+            console.error(e);
+            alert('Failed to resolve dispute: ' + e.message);
+            // Fallback for mock data
+            if (id.startsWith('disp_mock')) {
+                 const d = disputes.find(x => x.id === id);
+                 if(d) d.status = 'resolved';
+                 renderList();
+            }
+        }
+    };
 
     filterEl.addEventListener('change', renderList);
-
-    resetBtn.addEventListener('click', () => {
-      disputes = [...DEFAULT_DISPUTES];
-      saveDisputes();
-      renderList();
-    });
+    resetBtn.addEventListener('click', loadDisputes);
 
     async function init() {
       if (typeof feather !== 'undefined') feather.replace();
+      // Auth check
       const { user } = await getCurrentUser();
-      if (!user) {
-        window.location.href = '../index.html';
-        return;
-      }
+      if (!user) { window.location.href = '/index.html'; return; }
       const adminAllowlist = ['jaydenln.work@gmail.com'];
-      const userEmail = String(user.email || '').toLowerCase();
-      if (!adminAllowlist.includes(userEmail)) {
-        window.location.href = '../index.html';
+      if (!adminAllowlist.includes(String(user.email || '').toLowerCase())) {
+        window.location.href = '/index.html';
         return;
       }
       document.getElementById('adminName').textContent = user.email;
-      disputes = loadDisputes();
-      renderList();
+      
+      loadDisputes();
     }
 
     init();

@@ -27,11 +27,12 @@
         .dark select { color: white; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-browse-page">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-browse-page min-h-screen flex flex-col">
     <div id="athNavMount"></div>
 
-    <main id="athMain" class="flex-1 overflow-y-auto relative w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <main id="athMain" class="flex-1 relative w-full">
+    <div class="flex flex-col h-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 w-full min-h-screen">
         <div id="athFiltersBackdrop" class="ath-drawer-backdrop hidden lg:hidden"></div>
         <div class="flex gap-4 ath-browse-layout">
             <aside class="w-56 flex-shrink-0 ath-filter-drawer" id="athFiltersDrawer">
@@ -157,6 +158,52 @@
             </main>
         </div>
     </div>
+        <!-- Footer -->
+    <footer class="bg-gray-900 dark:bg-black text-gray-400 dark:text-gray-500 py-12 border-t border-gray-800 dark:border-gray-900 transition-colors duration-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center">
+                            <i data-feather="tool" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <span class="text-white font-bold">AussieTradieHub</span>
+                    </div>
+                    <p class="text-sm">Australia's trusted platform for connecting customers with verified tradespeople.</p>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-4">For Customers</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/pages/post-job.html" class="hover:text-white">Post a Job</a></li>
+                        <li><a href="/pages/browse-trades.html" class="hover:text-white">Find Tradies</a></li>
+                        <li><a href="/pages/how-it-works.html" class="hover:text-white">How It Works</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-4">For Tradies</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/pages/my-profile.html" class="hover:text-white">Sign Up</a></li>
+                        <li><a href="/pages/jobs.html" class="hover:text-white">Browse Jobs</a></li>
+                        <li><a href="/pages/resources.html" class="hover:text-white">Resources</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/pages/about-us.html" class="hover:text-white">About Us</a></li>
+                        <li><a href="/pages/trust-safety.html" class="hover:text-white">Trust & Safety</a></li>
+                        <li><a href="/pages/terms-of-service.html" class="hover:text-white">Terms</a></li>
+                        <li><a href="/pages/privacy-policy.html" class="hover:text-white">Privacy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center text-sm">
+                <p>&copy; 2026 AussieTradieHub Pty Ltd. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    </div>
+    </main>
     <script type="module" src="/js/core/supabase-client.js"></script>
     <script type="module" src="/js/core/auth.js"></script>
     <script src="/js/core/data.js"></script>
@@ -217,7 +264,7 @@
                             <span class="text-gray-900 dark:text-white font-semibold text-sm">${c.rating || '5.0'}</span>
                         </div>
                     </div>
-                    <a href="profile-customer.html?id=${c.id}" 
+                    <a href="/pages/profile-customer.html?id=${c.id}" 
                        class="mt-2 block text-center bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded font-medium text-xs transition">
                         View Profile →
                     </a>
@@ -441,7 +488,7 @@
                          <p class="text-xs text-gray-600 dark:text-gray-300">${(c.preferredJobs || []).join(', ')}</p>
                          <div class="flex items-center justify-between mt-2">
                             <span class="text-xs text-gray-500">${c.location || 'Australia'}</span>
-                            <a href="profile-customer.html?id=${c.id}" class="bg-teal-600 text-white px-3 py-1 rounded text-xs">View</a>
+                            <a href="/pages/profile-customer.html?id=${c.id}" class="bg-teal-600 text-white px-3 py-1 rounded text-xs">View</a>
                          </div>
                     </div>
                 </div>

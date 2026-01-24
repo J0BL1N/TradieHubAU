@@ -29,7 +29,7 @@
             <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Post a Job</h1>
             <p class="text-gray-600 mt-1">Create a job listing to get quotes from trusted tradies.</p>
           </div>
-          <a href="jobs.html" class="text-teal-600 hover:text-teal-700 font-medium">Back to Jobs</a>
+          <a href="/pages/jobs.html" class="text-teal-600 hover:text-teal-700 font-medium">Back to Jobs</a>
         </div>
 
         <form id="postJobForm" class="space-y-5">
@@ -142,19 +142,19 @@
         <div>
           <h3 class="font-bold text-lg mb-4">For Customers</h3>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
-            <li><a href="jobs.html" class="hover:text-white transition">Browse Jobs</a></li>
-            <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+            <li><a href="/pages/browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+            <li><a href="/pages/jobs.html" class="hover:text-white transition">Browse Jobs</a></li>
+            <li><a href="/pages/how-it-works.html" class="hover:text-white transition">How It Works</a></li>
           </ul>
         </div>
 
         <div>
           <h3 class="font-bold text-lg mb-4">For Tradies</h3>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="browse-customers.html" class="hover:text-white transition">Find Customers</a></li>
-            <li><a href="my-profile.html" class="hover:text-white transition">Create Profile</a></li>
-            <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
-            <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+            <li><a href="/pages/browse-customers.html" class="hover:text-white transition">Find Customers</a></li>
+            <li><a href="/pages/my-profile.html" class="hover:text-white transition">Create Profile</a></li>
+            <li><a href="/pages/resources.html" class="hover:text-white transition">Resources</a></li>
+            <li><a href="/pages/trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
           </ul>
         </div>
 
@@ -174,10 +174,10 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
           <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2024 AussieTradieHub. All rights reserved.</p>
           <div class="flex space-x-6">
-            <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
-            <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-            <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-            <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+            <a href="/pages/about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+            <a href="/pages/terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+            <a href="/pages/privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+            <a href="/pages/cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
           </div>
         </div>
       </div>
@@ -198,7 +198,7 @@
       // Mobile menu handled by script.js (loaded separately)
 
       document.getElementById('cancelBtn')?.addEventListener('click', function () {
-        window.location.href = 'jobs.html';
+        window.location.href = '/pages/jobs.html';
       });
 
       document.addEventListener('DOMContentLoaded', async function () {
@@ -208,7 +208,7 @@
         const { user, error } = await getCurrentUser();
         if (!user) {
           alert('You must be logged in to post a job.');
-          window.location.href = 'index.html?action=login';
+          window.location.href = '/index.html?action=login';
           return;
         }
 
@@ -345,7 +345,7 @@
             if (error) throw error;
 
             // Success
-            window.location.href = 'jobs.html?posted=1';
+            window.location.href = '/pages/jobs.html?posted=1';
 
           } catch (err) {
             console.error('Error posting job:', err);
@@ -362,27 +362,27 @@
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
-    <a href="../index.html" class="bottom-nav-item">
+    <a href="/index.html" class="bottom-nav-item">
       <i data-feather="home"></i>
       <span>Home</span>
     </a>
-    <a href="browse-trades.html" class="bottom-nav-item">
+    <a href="/pages/browse-trades.html" class="bottom-nav-item">
       <i data-feather="users"></i>
       <span>Tradies</span>
     </a>
-    <a href="browse-customers.html" class="bottom-nav-item">
+    <a href="/pages/browse-customers.html" class="bottom-nav-item">
       <i data-feather="user-check"></i>
       <span>Customers</span>
     </a>
-    <a href="jobs.html" class="bottom-nav-item">
+    <a href="/pages/jobs.html" class="bottom-nav-item">
       <i data-feather="briefcase"></i>
       <span>Jobs</span>
     </a>
-    <a href="messages.html" class="bottom-nav-item">
+    <a href="/pages/messages.html" class="bottom-nav-item">
       <i data-feather="message-square"></i>
       <span>Messages</span>
     </a>
-    <a href="my-profile.html" class="bottom-nav-item">
+    <a href="/pages/my-profile.html" class="bottom-nav-item">
       <i data-feather="user"></i>
       <span>Profile</span>
     </a>
