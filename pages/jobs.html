@@ -984,8 +984,28 @@
         });
     }
 
+    // --- Initialization ---
+    async function initJobsPage() {
+      if (typeof feather !== 'undefined') feather.replace();
+      
+      // Ensure auth
+      const { user } = await getCurrentUser();
+      // user might be null if public browsing is allowed, or redirect
+      // For now we just load content.
+      
+      // Populate filters (Categories etc)
+      populateFilters();
+
+      // Load initial Jobs
+      // If we have a URL param "id", open that immediately (deep link)
+      const params = new URLSearchParams(window.location.search);
+      const deepId = params.get('id');
+
+      await renderJobs(deepId);
+    }
+
     // Start App
-    init();
+    initJobsPage();
 
   </script>
 

@@ -10,22 +10,24 @@
   <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-  <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50">
-    <div class="container mx-auto flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <div class="bg-teal-500 p-1.5 rounded">
-          <i data-feather="layers" class="w-5 h-5 text-white"></i>
-        </div>
-        <h1 class="font-bold text-lg tracking-tight">Manage Categories</h1>
-      </div>
-      <div class="flex items-center space-x-3">
-        <span id="adminName" class="text-xs text-gray-400">Loading...</span>
-        <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
-      </div>
-    </div>
-  </nav>
 
-  <main class="container mx-auto px-4 py-8">
+
+  <main id="athMain" class="container mx-auto px-4 py-8">
+    <!-- Admin Header -->
+    <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50 mb-8 rounded-xl -mt-4 mx-[-1rem] lg:mx-0">
+        <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <div class="bg-teal-500 p-1.5 rounded">
+            <i data-feather="layers" class="w-5 h-5 text-white"></i>
+            </div>
+            <h1 class="font-bold text-lg tracking-tight">Manage Categories</h1>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span id="adminName" class="text-xs text-gray-400">Loading...</span>
+            <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+        </div>
+        </div>
+    </nav>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <section class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -199,7 +201,7 @@
       renderList();
     });
 
-    async function init() {
+    async function initAdminCategories() {
       if (typeof feather !== 'undefined') feather.replace();
       const { user } = await getCurrentUser();
       if (!user) {
@@ -212,12 +214,14 @@
         window.location.href = '/index.html';
         return;
       }
-      document.getElementById('adminName').textContent = user.email;
+      const nameEl = document.getElementById('adminName');
+      if (nameEl) nameEl.textContent = user.email;
+      
       categories = loadCategories();
       renderList();
     }
 
-    init();
+    initAdminCategories();
   </script>
 </body>
 </html>

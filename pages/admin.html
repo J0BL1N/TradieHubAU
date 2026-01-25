@@ -11,22 +11,24 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <div id="athNavMount"></div><div class="hidden">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <div class="bg-teal-500 p-1.5 rounded">
-                    <i data-feather="shield" class="w-5 h-5 text-white"></i>
-                </div>
-                <h1 class="font-bold text-lg tracking-tight">ATH Admin</h1>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="adminName" class="text-sm text-gray-400">Loading...</span>
-                <button onclick="window.location.href='/index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
-            </div>
-        </div>
-    </div>
+
 
     <main id="athMain">
+        <!-- Admin Header (injected into main for SPA compatibility) -->
+        <div class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-50">
+             <div class="container mx-auto flex justify-between items-center text-white">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-teal-500 p-1.5 rounded">
+                        <i data-feather="shield" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <h1 class="font-bold text-lg tracking-tight">ATH Admin</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="adminName" class="text-sm text-gray-400">Loading...</span>
+                    <button onclick="window.location.href='/index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
+                </div>
+            </div>
+        </div>
 
     <div class="container mx-auto px-4 py-8">
         <!-- Stats Grid -->
