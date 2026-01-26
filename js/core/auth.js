@@ -43,7 +43,7 @@ export async function initAuth() {
   if (session) {
     currentSession = session;
       currentUser = session.user;
-      console.log('✅ User already signed in:', currentUser.email);
+      console.log('✅ User already signed in');
       await syncUserProfile(currentUser);
       updateUIForAuthState(true);
       watchUserBanStatus(currentUser.id); // Add realtime watch
@@ -74,7 +74,7 @@ export async function initAuth() {
  * @param {object} session - Supabase session
  */
 async function handleSignInSuccess(session) {
-  console.log('✅ Sign in successful:', session.user.email);
+  console.log('✅ Sign in successful');
   
   // Sync user profile with database
   await syncUserProfile(session.user);
@@ -105,7 +105,7 @@ async function syncUserProfile(authUser) {
   
   // v0.101: Check for ban status
   if (profile && (profile.banned || profile.role === 'banned')) {
-    console.warn('⛔ User is banned:', authUser.email);
+    console.warn('⛔ User is banned');
     await signOut();
     alert('Access Denied: Your account has been suspended by an administrator.\nReason: ' + (profile.ban_reason || 'Violation of terms.'));
     window.location.href = '/index.html';
@@ -122,14 +122,38 @@ async function syncUserProfile(authUser) {
       display_name: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
       role: 'customer', // Default role, can be updated in onboarding
       avatar_url: authUser.user_metadata?.avatar_url || null,
-      created_at: new Date().toISOString(),
-      banned: false // Explicitly set default
+      created_at: new Date().toISOString()
     };
     
-    await createUserProfile(newProfile);
-    console.log('✅ Profile created');
+    const { error: createError } = await createUserProfile(newProfile);
+    
+    if (createError) {
+      if (createError.code === '23505' || createError.message?.includes('duplicate key')) {
+         console.log('✅ Profile already exists (race condition resolved)');
+      } else {
+         console.error('❌ Failed to create profile:', createError.message);
+      }
+    } else {
+      console.log('✅ Profile created');
+    }
   } else {
     console.log('✅ Profile exists:', profile.display_name);
+    
+    // v0.102: Sync avatar from Auth metadata if DB version is missing
+    const authAvatar = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture;
+    if (authAvatar && !profile.avatar_url) {
+        console.log('🔄 Syncing avatar from Auth provider...');
+        await supabase.from('users').update({ avatar_url: authAvatar }).eq('id', authUser.id);
+        profile.avatar_url = authAvatar; // Update local reference for localStorage sync
+    }
+
+    // v0.103: Sync display_name if missing in DB
+    const authName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.user_metadata?.display_name;
+    if (authName && !profile.display_name) {
+        console.log('🔄 Syncing display_name from Auth provider...');
+        await supabase.from('users').update({ display_name: authName }).eq('id', authUser.id);
+        profile.display_name = authName;
+    }
   }
   
   // Sync to localStorage for backward compatibility with existing code
@@ -709,6 +733,9 @@ window.ATHAuth.signUp = async function (email, password) {
 };
 window.ATHAuth.signInWithGoogle = async function () {
   return await signInWithGoogle();
+};
+window.ATHAuth.getCurrentUser = async function() {
+  return await getCurrentUser();
 };
 
 // Initialize auth on page load

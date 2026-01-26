@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tradie Profile | AussieTradieHub</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
   <!-- ? Add this -->
-  <script src="/js/core/data.js"></script>
+  <script src="../js/core/data.js"></script>
 
-  <link rel="stylesheet" href="/css/main/style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -100,7 +100,7 @@
                 <i data-feather="check-circle" class="w-3 h-3 mr-1"></i>Verified
               </span>
 
-              <!-- ? Add id (we�ll rewrite this content for rating) -->
+              <!-- ? Add id (we’ll rewrite this content for rating) -->
               <span id="tradieRating"
                 class="inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium">
                 <i data-feather="star" class="w-3 h-3 mr-1"></i>4.8
@@ -187,160 +187,6 @@
     </div>
   </main>
 
-  <script src="/js/core/data.js"></script>
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/script.js"></script>
-
-  <script>
-    // Mobile menu handled by script.js
-
-    // ? Load tradie by querystring: profile-tradesman.html?id=liam
-    (function () {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id") || "liam";
-
-      // If viewing your own profile (id=me), prefer local user data
-      if (id === 'me') {
-        try {
-          const raw = localStorage.getItem('athCurrentUser');
-          if (raw) {
-            const u = JSON.parse(raw);
-            const tradeIds = Array.isArray(u.tradie?.trades) && u.tradie.trades.length
-              ? u.tradie.trades
-              : (typeof window.inferTradeIdsFromText === 'function' ? window.inferTradeIdsFromText(u.tradie?.trade || '') : []);
-            const tradeLine = tradeIds.map((tid) => typeof window.tradeLabel === 'function' ? window.tradeLabel(tid) : String(tid)).join(' &bull; ') || 'General Contractor';
-            window.TRADIES = window.TRADIES || {};
-            window.TRADIES.me = {
-              name: u.displayName || 'Me',
-              trade: tradeLine,
-              trades: tradeIds,
-              location: `${u.location?.suburb || ''}${u.privacy?.showLocation ? (u.location?.state ? ', ' + u.location.state : '') : ''}`.trim().replace(/^,\s*/, ''),
-              rating: u.rating || '&mdash;',
-              verified: !!u.verification?.verified,
-              image: (u.avatarDataUrl || u.avatar) || window.CURRENT_USER_DEFAULT?.avatar || '',
-              conversationId: 'me',
-              about: u.about || 'This is your public tradie profile preview.'
-            };
-          }
-        } catch (e) { }
-      }
-
-      const t = (window.TRADIES && window.TRADIES[id]) ? window.TRADIES[id] : null;
-      if (!t) return;
-
-      const $ = (id) => document.getElementById(id);
-
-      const tradeIds = Array.isArray(t.trades) && t.trades.length
-        ? t.trades
-        : (typeof window.inferTradeIdsFromText === 'function' ? window.inferTradeIdsFromText(t.trade || '') : []);
-      const tradeLine = tradeIds.map((tid) => typeof window.tradeLabel === 'function' ? window.tradeLabel(tid) : String(tid)).join(' &bull; ') || (t.trade || 'Other');
-
-      $("tradieName").textContent = t.name;
-      $("tradieTrade").textContent = tradeLine;
-      const chipsWrap = $("tradieTradesChips");
-      if (chipsWrap) {
-        chipsWrap.innerHTML = (tradeIds || []).map((tid) => (
-          `<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">${typeof window.tradeLabel === 'function' ? window.tradeLabel(tid) : String(tid)}</span>`
-        )).join('');
-      }
-      $("tradieLocation").textContent = t.location;
-      $("tradieAbout").textContent = (window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(t.about || "").text : (t.about || ""));
-
-      const img = $("tradieImage");
-      if (img && t.image) img.src = t.image;
-
-      const verifiedEl = $("tradieVerified");
-      if (verifiedEl) verifiedEl.style.display = t.verified ? "" : "none";
-
-      const ratingEl = $("tradieRating");
-      if (ratingEl && t.rating) {
-        const rc = (Number.isFinite(Number(t.reviewCount)) ? Number(t.reviewCount) : (Array.isArray(t.reviews) ? t.reviews.length : 0));
-        ratingEl.innerHTML = `<i data-feather="star" class="w-3 h-3 mr-1"></i>${t.rating} (${rc})`;
-      }
-
-      // v0.0295: mini availability calendar
-      try {
-        window.ATHAvailability?.mountMiniCalendar(document.getElementById('tradieMiniCalendar'), {
-          tradieId: id,
-          editable: id === 'me'
-        });
-      } catch (e) { }
-
-      // Batch N1: render visible reviews list
-      try {
-        window.ATHRender?.renderReviewsInto(document.getElementById('tradieReviewsList'), t, 'No reviews yet.', { id, role: 'tradie' });
-      } catch (e) { }
-
-      // v0.018: render Active / Past jobs
-      try {
-        const jobsAll = (window.ATHJobs && typeof window.ATHJobs.getAllJobs === "function") ? window.ATHJobs.getAllJobs() : [];
-        const norm = (v) => String(v || "").trim().toLowerCase();
-        const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
-
-        const statusPill = (st) => {
-          const s = norm(st || 'open');
-          if (s === 'in_progress') return 'bg-amber-100 text-amber-800';
-          if (s === 'completed') return 'bg-emerald-100 text-emerald-800';
-          if (s === 'agreed') return 'bg-blue-100 text-blue-800';
-          return 'bg-gray-100 text-gray-800';
-        };
-
-        const renderJobs = (mountId, jobs, emptyText) => {
-          const el = document.getElementById(mountId);
-          if (!el) return;
-          if (!jobs.length) {
-            el.innerHTML = `<div class="text-sm text-gray-500">${esc(emptyText)}</div>`;
-            return;
-          }
-          el.innerHTML = jobs.map((job) => {
-            const catIds = Array.isArray(job.categories) ? job.categories : (typeof window.normalizeTradeIds === 'function' ? window.normalizeTradeIds(job.categories) : []);
-            const chips = (catIds || []).slice(0, 4).map((cid) => (
-              `<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">${esc(typeof window.tradeLabel === 'function' ? window.tradeLabel(cid) : String(cid))}</span>`
-            )).join('');
-            const st = norm(job.status || 'open');
-            return `
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <div class="font-bold text-gray-900">${esc(job.title || 'Job')}</div>
-                    <div class="mt-1 text-sm text-gray-600 flex items-center">
-                      <i data-feather="map-pin" class="w-4 h-4 mr-1"></i>
-                      <span>${esc(job.location || '&mdash;')}</span>
-                    </div>
-                  </div>
-                  <span class="${statusPill(st)} text-xs font-semibold px-3 py-1 rounded-full">${esc(st.replace('_', ' '))}</span>
-                </div>
-                <div class="mt-3 flex flex-wrap gap-2">${chips}</div>
-              </div>`;
-          }).join('');
-        };
-
-        const myId = String(id);
-        const active = jobsAll.filter((j) => String(j.assignedTradieId || '') === myId && norm(j.status) === 'in_progress');
-        const past = jobsAll.filter((j) => String(j.assignedTradieId || '') === myId && norm(j.status) === 'completed');
-
-        renderJobs('tradieActiveJobsList', active, 'No active jobs yet.');
-        renderJobs('tradiePastJobsList', past, 'No past jobs yet.');
-
-        if (window.feather) feather.replace();
-      } catch (e) { }
-
-      // Batch N3: integrity banner
-      window.ATHIntegrity?.renderBanner(document.getElementById('athIntegrityBannerMountProfileTradie'));
-
-      const msgBtn = $("messageBtn");
-      if (msgBtn) msgBtn.href = `messages.html?conversation=${t.conversationId || id}`;
-
-      document.title = `${t.name} | AussieTradieHub`;
-
-      // feather icons need re-run after innerHTML changes
-      if (window.feather) feather.replace();
-    })();
-
-    document.addEventListener('DOMContentLoaded', () => feather.replace());
-  </script>
-
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
     <a href="../index.html" class="bottom-nav-item">
@@ -368,23 +214,15 @@
       <span>Profile</span>
     </a>
   </nav>
-  </main>
-
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/data.js"></script>
-  <script src="/js/components/nav-shell.js"></script>
-  <script src="/js/core/spa-router.js"></script>
-  <script src="/js/core/script.js"></script>
-  <script>
-    (function () {
-      if (typeof feather !== 'undefined') feather.replace();
-    })();
-  </script>
+  <script src="../js/core/data.js"></script>
+  <script type="module" src="../js/core/supabase-client.js"></script>
+  <script type="module" src="../js/core/db.js"></script>
+  <script type="module" src="../js/core/auth.js"></script>
+  <script src="../js/components/nav-shell.js"></script>
+  <script src="../js/core/spa-router.js"></script>
+  <script src="../js/core/script.js"></script>
+  <script type="module" src="../js/pages/profile-tradesman.js"></script>
 </body>
-
-</html>
-
 
 
 

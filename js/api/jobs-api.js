@@ -3,7 +3,7 @@
  * Bridges the gap between UI and db.js layer
  */
 import db from '../core/db.js';
-import { getCurrentUser } from '../core/supabase-client.js';
+import { supabase, getCurrentUser } from '../core/supabase-client.js';
 
 /**
  * Fetch jobs and map to legacy format for UI compatibility
@@ -19,6 +19,14 @@ export async function getJobs(filters = {}) {
   // Transform Supabase format to UI format if needed
   // db.js already does most of the heavy lifting with its join queries
   return { jobs: data, error: null };
+}
+
+/**
+ * Create a new job
+ * @param {object} jobData 
+ */
+export async function createJob(jobData) {
+  return await db.createJob(jobData);
 }
 
 /**
@@ -90,5 +98,75 @@ export async function seedDemoJobs() {
     if (data) results.push(data);
   }
   
+
   return { jobs: results, error: null };
+}
+
+/**
+ * Mark job as complete and upload proof
+ * @param {string} jobId 
+ * @param {File[]} proofFiles 
+ */
+export async function completeJob(jobId, proofFiles) {
+  // 1. Upload files
+  const proofUrls = [];
+  for (const file of proofFiles) {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `job-${jobId}-proof-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `job-images/${fileName}`;
+
+    const { error: uploadError } = await  supabase.storage
+      .from('job-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+       console.error('Proof upload failed:', uploadError);
+       return { error: uploadError };
+    }
+
+    const { data } = supabase.storage.from('job-images').getPublicUrl(filePath);
+    proofUrls.push(data.publicUrl);
+  }
+
+  // 2. Update Job Status & Proof URLs
+  const { data, error } = await supabase
+    .from('jobs')
+    .update({ 
+        status: 'review_pending',
+        completion_proof_urls: proofUrls
+    })
+    .eq('id', jobId)
+    .select()
+    .single();
+
+  return { job: data, error };
+}
+
+/**
+ * Release payout to tradie
+ * @param {string} jobId 
+ */
+export async function releasePayout(jobId) {
+    // Call Edge Function
+    const { data, error } = await supabase.functions.invoke('release-payout', {
+        body: { jobId }
+    });
+    return { data, error };
+}
+
+// Expose to window for non-module scripts
+if (typeof window !== 'undefined') {
+    window.getJobs = getJobs;
+    window.createJob = createJob;
+    window.seedDemoJobs = seedDemoJobs;
+    window.completeJob = completeJob;
+    window.releasePayout = releasePayout;
+    
+    window.ATH_JobsAPI = {
+        getJobs,
+        createJob,
+        seedDemoJobs,
+        completeJob,
+        releasePayout
+    };
 }

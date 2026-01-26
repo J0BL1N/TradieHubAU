@@ -64,9 +64,7 @@ window.ATHNav = (function() {
                 
                 <!-- Right Side Controls -->
                 <div class="flex items-center gap-2 lg:gap-3 flex-shrink-0">
-                    <button id="mobileMenuButton" class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="Open menu" aria-expanded="false">
-                        <i data-feather="menu" class="w-5 h-5"></i>
-                    </button>
+
                     
                     <!-- Dark Mode Toggle -->
                     <button id="darkModeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300" aria-label="Toggle dark mode">
@@ -82,20 +80,11 @@ window.ATHNav = (function() {
             </div>
         </div>
         
-        <!-- Mobile Menu -->
-        <div id="mobileMenu" class="md:hidden hidden absolute top-16 left-0 right-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-xl overflow-y-auto max-h-[calc(100vh-64px)] transition-all duration-300">
-            <div class="px-4 py-4 space-y-2">
-                <a href="/index.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Home</a>
-                <a href="/pages/browse-trades.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Find Tradies</a>
-                <a href="/pages/browse-customers.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Find Customers</a>
-                <a href="/pages/jobs.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Job Board</a>
-                <a href="/pages/messages.html" class="block px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-teal-700 dark:hover:text-teal-300 font-medium">Messages</a>
-                <div id="athAdminSlotMobile" class="contents"></div>
-                <div class="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2" id="athUserSlotMobile"></div>
-            </div>
-        </div>
+
     </nav>
     <style>
+        .dark .dark-mode-icon { display: none; }
+        .dark .light-mode-icon { display: block; }
         .ath-nav-link.active {
             color: #0d9488 !important;
             border-bottom-color: #0d9488;
@@ -126,20 +115,23 @@ window.ATHNav = (function() {
         updateActiveState();
         
         _isInitialized = true;
+        
+        // Theme Auto-Load
+        const storedTheme = localStorage.getItem('theme');
+        const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (storedTheme === 'dark' || (!storedTheme && sysDark)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        if (typeof feather !== 'undefined') feather.replace();
+
         // Listen for SPA navigation to update active state
         window.addEventListener('ath:navigated', updateActiveState);
     }
 
     function setupInteractions() {
-        // Mobile Menu Toggle
-        const menuBtn = document.getElementById('mobileMenuButton');
-        const mobileMenu = document.getElementById('mobileMenu');
-        if (menuBtn && mobileMenu) {
-            menuBtn.onclick = () => {
-                const isHidden = mobileMenu.classList.toggle('hidden');
-                menuBtn.setAttribute('aria-expanded', !isHidden);
-            };
-        }
+
 
         // Dark Mode Toggle (Re-bind)
         const modeBtn = document.getElementById('darkModeToggle');

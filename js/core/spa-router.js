@@ -147,6 +147,41 @@ window.ATHRouter = (function() {
         if (typeof initMessagesPage === 'function' && document.getElementById('athMessagesContainer')) {
             initMessagesPage();
         }
+
+        // Browse Tradies (External Module needs manual trigger)
+        if (typeof initBrowseTradies === 'function' && document.getElementById('tradiesList')) {
+            initBrowseTradies();
+        }
+
+        // Browse Customers (External Module needs manual trigger)
+        if (typeof initBrowseCustomers === 'function' && document.getElementById('customersList')) {
+            initBrowseCustomers();
+        }
+
+        // Customer Profile
+        if (typeof initCustomerProfile === 'function' && document.getElementById('customerImage')) {
+            initCustomerProfile();
+        }
+
+        // Tradie Profile
+        if (typeof initTradieProfile === 'function' && document.getElementById('tradieImage')) {
+            initTradieProfile();
+        }
+
+        // Jobs Page
+        if (typeof initJobsPage === 'function' && document.getElementById('athJobResults')) {
+            initJobsPage();
+        }
+
+        // Post Job Page
+        if (typeof initPostJob === 'function' && document.getElementById('postJobForm')) {
+            initPostJob();
+        }
+
+        // My Profile Page
+        if (typeof initProfilePage === 'function' && document.getElementById('mpName')) {
+            initProfilePage();
+        }
     }
 
     return {

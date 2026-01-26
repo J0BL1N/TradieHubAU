@@ -19,7 +19,7 @@ const getEnv = (key) => {
 };
 
 const supabaseUrl = getEnv('VITE_SUPABASE_URL') || 'https://sbnthkwhygrrjjdyylgd.supabase.co';
-const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNibnRoa3doeWdycmpqZHl5bGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDM5NDYsImV4cCI6MjA4NDU3OTk0Nn0.bNzKm4Npa9DL8kIxesqtcavB2Z0CNUJgY1aDbgKGSbY';
+const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'sb_publishable_ainw6qIH2SUlwQ3SAzRLZQ_oIZKyygr';
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -88,7 +88,7 @@ export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.href
+      redirectTo: window.location.origin + (window.location.pathname.includes('/TradieHubAU/') ? '/TradieHubAU/' : '/')
     }
   });
   
@@ -174,7 +174,7 @@ export async function getUserProfile(userId) {
     .from('users')
     .select('*')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
   
   if (error) {
     console.error('❌ Get profile error:', error.message);
@@ -345,6 +345,15 @@ export function subscribeToMessages(conversationId, callback) {
     .subscribe();
   
   return subscription;
+}
+
+// Expose to window for non-module scripts
+if (typeof window !== 'undefined') {
+    window.getCurrentUser = getCurrentUser;
+    window.getSession = getSession;
+    window.signInWithEmail = signInWithEmail;
+    window.signOut = signOut;
+    window.onAuthStateChange = onAuthStateChange;
 }
 
 // Export supabase client as default

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Disputes | ATH Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+
+  <main id="athMain" class="container mx-auto px-4 py-8">
+    <!-- Admin Header -->
+    <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50 mb-8 rounded-xl -mt-4 mx-[-1rem] lg:mx-0">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-amber-500 p-1.5 rounded">
+                <i data-feather="alert-triangle" class="w-5 h-5 text-white"></i>
+                </div>
+                <h1 class="font-bold text-lg tracking-tight">Review Disputes</h1>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span id="adminName" class="text-xs text-gray-400">Loading...</span>
+                <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+            </div>
+        </div>
+    </nav>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-gray-900">Dispute Queue</h2>
+          <p class="text-xs text-gray-500">Track cases between customers and tradies and log resolutions.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="statusFilter" class="border border-gray-200 text-sm rounded-lg px-3 py-2">
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="under_review">Under Review</option>
+            <option value="resolved">Resolved</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+          <button id="resetDisputesBtn" class="text-xs px-3 py-2 rounded border border-gray-200 hover:bg-gray-50">Reset Defaults</button>
+        </div>
+      </div>
+      <div id="disputeList" class="divide-y divide-gray-100"></div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script type="module">
+    import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
+
+    const STORAGE_KEY = 'ath_admin_disputes';
+    const DEFAULT_DISPUTES = [
+      {
+        id: 'disp_mock_1',
+        title: 'Incomplete bathroom renovation',
+        customer: { display_name: 'Sophie Tran' },
+        tradie: { display_name: 'Harbor Tiling Co.' },
+        status: 'open',
+        created_at: '2024-06-11T10:00:00Z',
+        budget: 820,
+        description: 'Customer claims waterproofing failed during final inspection. (MOCK)'
+      }
+    ];
+
+    let disputes = [];
+    const listEl = document.getElementById('disputeList');
+    const filterEl = document.getElementById('statusFilter');
+    const resetBtn = document.getElementById('resetDisputesBtn');
+
+    async function loadDisputes() {
+      listEl.innerHTML = '<div class="p-8 text-center text-gray-500">Loading disputes...</div>';
+      
+      try {
+        // Try fetching real disputes from jobs table
+        const { data, error } = await supabase
+          .from('jobs')
+          .select(`
+            id, title, status, created_at, budget, description,
+            customer:customer_id (display_name, email),
+            tradie:tradie_id (display_name, email)
+          `)
+          .in('status', ['disputed', 'dispute_requested', 'reviewing']); // Catch all dispute-like statuses
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          disputes = data;
+        } else {
+           // No real disputes, check if we should show mock for demo
+           console.log('No real disputes found.');
+           disputes = []; 
+        }
+      } catch (err) {
+        console.warn('Failed to fetch real disputes, falling back to mock:', err);
+        disputes = [...DEFAULT_DISPUTES];
+      }
+      
+      renderList();
+    }
+
+    function statusBadge(status) {
+      const map = {
+        open: 'bg-red-100 text-red-700',
+        disputed: 'bg-red-100 text-red-700',
+        dispute_requested: 'bg-amber-100 text-amber-700',
+        reviewing: 'bg-blue-100 text-blue-700',
+        resolved: 'bg-green-100 text-green-700',
+        dismissed: 'bg-gray-100 text-gray-600'
+      };
+      return map[status] || 'bg-gray-100 text-gray-600';
+    }
+
+    function renderList() {
+      const filter = filterEl.value;
+      const filtered = filter === 'all' ? disputes : disputes.filter(item => {
+        if(filter === 'open') return ['disputed', 'dispute_requested', 'open'].includes(item.status);
+        return item.status === filter;
+      });
+
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="p-6 text-center text-sm text-gray-500">No disputes match this filter.</div>';
+        return;
+      }
+      listEl.innerHTML = filtered.map(item => `
+        <div class="p-6 flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h3 class="font-semibold text-gray-900">${item.title || 'Untitled Job'}</h3>
+              <p class="text-xs text-gray-500">
+                 Customer: ${item.customer?.display_name || 'Unknown'} 
+                 • Tradie: ${item.tradie?.display_name || 'Unknown'}
+                 ${item.customer?.email ? `• <span class="text-gray-400">${item.customer.email}</span>` : ''}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] px-2 py-0.5 rounded-full ${statusBadge(item.status)} uppercase">${item.status.replace(/_/g, ' ')}</span>
+              <span class="text-xs text-gray-500">${new Date(item.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-sm text-gray-600 max-h-32 overflow-y-auto">
+            ${item.description || 'No description provided.'}
+          </div>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="text-xs text-gray-500">Budget: <span class="font-semibold text-gray-700">$${item.budget || 0}</span></div>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <a href="/pages/jobs.html?id=${item.id}" target="_blank" class="px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50">View Job</a>
+              ${!['resolved', 'completed', 'cancelled'].includes(item.status) ? `
+                <button onclick="window.resolveDispute('${item.id}', 'refund')" class="px-3 py-1.5 rounded border border-red-200 text-red-700 hover:bg-red-50">Refund Customer</button>
+                <button onclick="window.resolveDispute('${item.id}', 'pay')" class="px-3 py-1.5 rounded border border-green-200 text-green-700 hover:bg-green-50">Release to Tradie</button>
+              ` : '<span class="text-gray-400 italic px-2">Action taken</span>'}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Expose actions
+    window.resolveDispute = async (id, action) => {
+        if(!confirm(`Are you sure you want to ${action === 'refund' ? 'REFUND the customer' : 'PAY the tradie'}? This action is final.`)) return;
+        
+        const newStatus = action === 'refund' ? 'cancelled' : 'completed';
+        const note = action === 'refund' ? 'Admin resolved dispute: Customer refunded.' : 'Admin resolved dispute: Funds released to Tradie.';
+
+        try {
+            // Update job status
+            const { error } = await supabase.from('jobs').update({ status: newStatus }).eq('id', id);
+            if(error) throw error;
+            
+            alert(`Dispute resolved. Job marked as ${newStatus}.`);
+            loadDisputes(); // Reload
+        } catch(e) {
+            console.error(e);
+            alert('Failed to resolve dispute: ' + e.message);
+            // Fallback for mock data
+            if (id.startsWith('disp_mock')) {
+                 const d = disputes.find(x => x.id === id);
+                 if(d) d.status = 'resolved';
+                 renderList();
+            }
+        }
+    };
+
+    filterEl.addEventListener('change', renderList);
+    resetBtn.addEventListener('click', loadDisputes);
+
+    async function initAdminDisputes() {
+      if (typeof feather !== 'undefined') feather.replace();
+      // Auth check
+      const { user } = await getCurrentUser();
+      if (!user) { window.location.href = '/index.html'; return; }
+      const adminAllowlist = ['jaydenln.work@gmail.com'];
+      if (!adminAllowlist.includes(String(user.email || '').toLowerCase())) {
+        window.location.href = '/index.html';
+        return;
+      }
+      
+      const nameEl = document.getElementById('adminName');
+      if (nameEl) nameEl.textContent = user.email;
+      
+      loadDisputes();
+    }
+
+    initAdminDisputes();
+  </script>
+</body>
+</html>
+
+
+

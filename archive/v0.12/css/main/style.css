@@ -1,0 +1,1838 @@
+/* Custom Styles for AussieTradieHub - Compact Design (FIXED for Tailwind CDN overrides) */
+
+/* Font Import */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+/* CSS Variables */
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  --ring: rgba(13, 148, 136, 0.5);
+}
+
+/* Base */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  text-align: left;
+  overflow-x: hidden;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Layout helpers (avoid overriding Tailwind classnames)
+   Use these custom classes if you want consistent sizing/spacing site-wide. */
+.ath-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.ath-card {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+
+/* Headings */
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+/* IMPORTANT:
+   Do not redefine Tailwind utility classes like .bg-white, .p-8, .gap-6, etc.
+   If you need "compact" variants, create custom classes (e.g., .ath-card, .ath-gap-compact).
+*/
+.ath-gap-compact {
+  gap: 1rem;
+}
+
+.ath-mb-compact {
+  margin-bottom: 2rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(to right, #14b8a6, #06b6d4);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--gray-200);
+}
+
+.btn-outline {
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+.btn-outline:hover {
+  background: var(--gray-50);
+}
+
+/* Forms (component classes you can use if you want) */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 0.5rem;
+  transition:
+    box-shadow 0.2s ease,
+    border 0.2s ease;
+  background-color: #fff;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-select {
+  appearance: none;
+}
+
+/* Alerts */
+.alert-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.alert-info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+/* Avatars */
+.avatar-sm {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-md {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-lg {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.avatar-xl {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* Status dots */
+.status-online {
+  background: #22c55e;
+}
+
+.status-offline {
+  background: #9ca3af;
+}
+
+.status-busy {
+  background: #ef4444;
+}
+
+.status-away {
+  background: #f59e0b;
+}
+
+.status-online,
+.status-offline,
+.status-busy,
+.status-away {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  border: 2px solid white;
+}
+
+/* Message interactions */
+.message-bubble {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.message-bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Clickable conversations */
+.conversation-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.conversation-link:hover {
+  background: #f0f9ff;
+  transform: translateX(2px);
+}
+
+.conversation-link.active {
+  background: #e0f2fe;
+  border-left: 3px solid var(--primary);
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gray-800);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  z-index: 50;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* ----------------------------
+   CRITICAL FIX: Form text color
+   Tailwind CDN can inject CSS after your stylesheet.
+   Force readable typed text everywhere.
+----------------------------- */
+input,
+textarea,
+select {
+  color: #111827 !important;
+  /* gray-900-ish */
+  caret-color: #111827 !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #fff !important;
+  caret-color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+html.dark select option {
+  background: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+select:invalid {
+  color: #9ca3af !important;
+  /* gray-400 */
+}
+
+/* Prevent iOS/Safari weird autofill styling */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #111827 !important;
+  transition:
+    background-color 9999s ease-out,
+    color 9999s ease-out;
+}
+
+/* In case any parent sets text-white, keep inputs readable */
+input *,
+textarea *,
+select * {
+  color: inherit !important;
+}
+
+/* Print */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}
+
+/* ------------------------------------------------------------
+   Batch M — Mobile filter drawer (Jobs/Tradies/Customers)
+------------------------------------------------------------ */
+
+.ath-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 60;
+}
+
+.ath-filter-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(90vw, 360px);
+  z-index: 61;
+  transform: translateX(-105%);
+  transition: transform 180ms ease;
+}
+
+.ath-filter-drawer.ath-open {
+  transform: translateX(0);
+}
+
+.ath-body-lock {
+  overflow: hidden;
+}
+
+/* Desktop fallback: drawer behaves like normal sidebar on lg+ */
+@media (min-width: 1024px) {
+  .ath-filter-drawer {
+    position: static;
+    width: auto;
+    transform: none;
+    transition: none;
+    z-index: auto;
+  }
+
+  .ath-drawer-backdrop {
+    display: none !important;
+  }
+
+  .ath-body-lock {
+    overflow: auto;
+  }
+}
+
+/* ------------------------------------------------------------
+   Batch M — Mobile Improvements
+------------------------------------------------------------ */
+
+/* Ensure touch targets are at least 44px */
+button,
+a.btn-primary,
+a.btn-secondary,
+.nav-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Browse pages mobile layout */
+@media (max-width: 1023px) {
+  .ath-filter-card {
+    position: static;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .ath-browse-page .ath-browse-layout {
+    flex-direction: column;
+  }
+
+  .ath-browse-page .ath-mobile-filter-bar {
+    position: sticky;
+    top: 64px;
+    z-index: 10;
+    background: transparent;
+  }
+
+  .ath-browse-page .ath-stat-banner {
+    padding: 0.75rem;
+  }
+
+  .ath-browse-page .ath-sort-row {
+    align-items: flex-start;
+  }
+
+  .ath-browse-page .ath-sort-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ath-browse-page .ath-sort-controls select {
+    flex: 1;
+  }
+
+  .ath-browse-page .ath-result-card {
+    align-items: flex-start;
+  }
+
+  .ath-browse-page .ath-result-card img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .ath-browse-page .ath-card-tags {
+    row-gap: 0.25rem;
+  }
+
+  .ath-browse-page .ath-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .ath-browse-page .ath-card-footer a {
+    width: 100%;
+    text-align: center;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Fix Mobile Menu Button visibility */
+#mobileMenuButton {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#mobileMenuButton:hover {
+  background-color: var(--gray-100);
+}
+
+#mobileMenuButton svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Hero Section refinements for mobile */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .bg-white.rounded-lg.p-2.shadow-xl {
+    padding: 1rem;
+  }
+
+  /* Vertical spacing for stacked items */
+  .flex.flex-col.gap-2 > * {
+    margin-bottom: 0.5rem;
+  }
+
+  .flex.flex-col.gap-2 > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Page-specific mobile polish */
+@media (max-width: 768px) {
+  nav h1 {
+    font-size: 0.95rem;
+  }
+
+  nav p {
+    display: none;
+  }
+
+  .ath-jobs-page .ath-jobs-stats > div {
+    padding: 1rem;
+  }
+
+  .ath-jobs-page .ath-jobs-results-header {
+    padding: 0.75rem;
+  }
+
+  .ath-jobs-page .ath-jobs-controls {
+    gap: 0.5rem;
+  }
+
+  .ath-jobs-page #athJobSort {
+    width: 100%;
+  }
+
+  .ath-profile-page .ath-profile-card {
+    padding: 1rem;
+  }
+
+  .ath-profile-page .ath-profile-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ath-profile-page .ath-profile-actions > a,
+  .ath-profile-page .ath-profile-actions > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ath-profile-page #mpRoleSwitch {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ath-profile-page .ath-profile-location-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-page .ath-chat-header {
+    padding: 0.75rem;
+  }
+
+  .messages-page .ath-chat-meta {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .messages-page .ath-chat-actions {
+    overflow-x: auto;
+    gap: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .messages-page .ath-chat-actions::-webkit-scrollbar {
+    height: 3px;
+  }
+}
+
+/* Smooth transitions for mobile menu */
+#mobileMenu {
+  transition: all 0.3s ease-in-out;
+}
+
+#mobileMenu a {
+  display: block;
+  padding: 0.5rem 0;
+}
+
+#mobileMenu.hidden {
+  display: none;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+#mobileMenu:not(.hidden) {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card spacing on small screens */
+@media (max-width: 640px) {
+  .grid-cols-1 {
+    gap: 1.25rem;
+  }
+}
+
+/* Prevents iOS from zooming in on input focus by ensuring font-size is at least 16px */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Refine section spacing on mobile */
+  section {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  /* Make grid cards more prominent on small screens */
+  .grid {
+    gap: 1.5rem !important;
+  }
+}
+
+/* Improve button gradients for better visibility on small screens */
+.btn-primary,
+.bg-gradient-to-r.from-teal-500.to-cyan-600 {
+  background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%) !important;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Mobile-friendly scrollbar */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+/* ------------------------------------------------------------
+   Batch B — Bottom Navigation (Mobile Only)
+------------------------------------------------------------ */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 500;
+  flex: 1;
+  height: 100%;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.bottom-nav-item i {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 4px;
+}
+
+.bottom-nav-item.active {
+  color: #0d9488;
+}
+
+.bottom-nav-item.active::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #0d9488;
+  transform: translateX(-50%);
+}
+
+.bottom-nav-item:active {
+  background: rgba(13, 148, 136, 0.08);
+}
+
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* Mobile: prevent overlap with bottom nav */
+@media (max-width: 768px) {
+  body.has-bottom-nav {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+
+  body.messages-page {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom)); /* Bottom nav height + buffer */
+  }
+
+  /* Ensure message input area has extra padding on mobile */
+  .messages-page #athChatPane > div:last-child {
+    padding-bottom: 1rem !important;
+    margin-bottom: 70px !important; /* Keep input above bottom nav */
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Messages Page Mobile Optimizations
+/* -------------------------------------------------------------------------- */
+
+/* Ensure the detailed context panel (job info) is hidden on mobile by default to save space */
+@media (max-width: 768px) {
+  #jobDetailsCard {
+    display: none !important;
+  }
+}
+
+/* Mobile View States for Messages */
+@media (max-width: 768px) {
+  /* List View: Show Sidebar, Hide Chat */
+  .ath-mobile-list-view > aside:first-child {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  .ath-mobile-list-view > section,
+  .ath-mobile-list-view > #athMessagesEmptyState {
+    display: none !important;
+  }
+
+  /* Chat View: Hide Sidebar, Show Chat */
+  .ath-mobile-chat-view > aside:first-child {
+    display: none !important;
+  }
+
+  .ath-mobile-chat-view > section {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  /* When in chat view, ensure the empty state is visible only if we are truly empty state, 
+     BUT usually 'section' contains the chat pane which we want to show. 
+     Actually, section wraps both empty state and chat pane. 
+     If we want to show chat, we show section. */
+}
+
+/* Hide footer on messages page on mobile to prevent clutter */
+@media (max-width: 768px) {
+  body.messages-page footer {
+    display: none !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Messages Page Extra Refinements
+/* -------------------------------------------------------------------------- */
+
+body.messages-page #chatScroll {
+  background-color: #f0f2f5;
+  background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
+  background-attachment: fixed;
+}
+
+html.dark body.messages-page #chatScroll {
+  background-color: #0f172a !important; /* Matches --gray-900 */
+  background-image: none !important;
+}
+
+
+body.messages-page footer {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  body.messages-page .bottom-nav {
+    display: flex !important;
+  }
+  body.messages-page {
+    padding-bottom: 0 !important;
+  }
+  body.messages-page main {
+    height: calc(100vh - 64px); /* Account for bottom nav */
+  }
+}
+
+/* Ensure the chat pane is truly full height without odd gaps */
+#athMessagesContainer {
+  height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  min-height: 0 !important;
+}
+
+section.flex-1 {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+#athChatPane {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: visible !important; /* Allow emoji picker to overflow */
+}
+
+#chatScroll {
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  flex-basis: 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 1rem !important;
+  padding-bottom: 2rem !important; /* Space for last message to be visible */
+}
+
+main.flex-col > #athMessagesContainer {
+  flex-grow: 1 !important;
+}
+
+/* v0.060: Enhanced Message Search Styles */
+.search-result-highlight {
+  background-color: rgba(251, 191, 36, 0.1);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+.search-current-result {
+  animation: searchPulse 0.5s ease-in-out 2;
+}
+
+@keyframes searchPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+mark {
+  background-color: #fef08a;
+  color: #1f2937;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+/* v0.070: Voice Messages Styles */
+
+/* Recording button states */
+#voiceMicBtn {
+  transition: all 0.3s ease;
+}
+
+#voiceMicBtn.recording {
+  background-color: #dc2626;
+  color: white;
+  animation: recordingPulse 1.5s infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Voice message bubble */
+.voice-message-bubble {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  min-width: 200px;
+}
+
+.voice-play-button {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  background-color:(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-play-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.voice-waveform {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+}
+
+.voice-waveform-bar {
+  flex: 1;
+  background-color: currentColor;
+  opacity: 0.6;
+  border-radius: 2px;
+  transition: height 0.1s ease;
+}
+
+.voice-duration {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Voice Message Enhancements (v0.075) */
+.voice-scrubber {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  outline: none;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.voice-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Darker scrubber for received messages */
+.voice-message-bubble.bg-white .voice-scrubber {
+  background: rgba(0, 0, 0, 0.1);
+}
+.voice-message-bubble.bg-white .voice-scrubber::-webkit-slider-thumb {
+  background: #0d9488; /* teal-600 */
+}
+
+.voice-speed-btn {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.2s;
+  min-width: 28px;
+  text-align: center;
+}
+.voice-speed-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.voice-message-bubble.bg-white .voice-speed-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+.voice-message-bubble.bg-white .voice-speed-btn:hover {
+  background: #e5e7eb;
+}
+.voice-waveform-bar.playing {
+  animation: waveformBounce 0.5s ease-in-out infinite;
+}
+
+@keyframes waveformBounce {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+
+/* ----------------------------
+   v0.0298: Toast Notifications (Phase 1)
+----------------------------- */
+
+/* Toast slide-in animation */
+@keyframes ath-toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Toast fade-out animation */
+@keyframes ath-toast-fade-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.ath-toast-slide-in {
+  animation: ath-toast-slide-in 0.3s ease-out forwards;
+}
+
+.ath-toast-fade-out {
+  animation: ath-toast-fade-out 0.3s ease-in forwards;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .ath-toast-slide-in,
+  .ath-toast-fade-out {
+    animation: none;
+  }
+}
+/* ----------------------------
+   v0.0298: Mobile Polish (Phase 1)
+----------------------------- */
+
+/* Fix 1: Modal close button visibility and tap target */
+@media (max-width: 768px) {
+  #athJobModalClose,
+  .modal-close-btn,
+  [id*="ModalClose"],
+  [id*="Close"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Fix 2: Bottom navigation overlap on modals */
+  #athJobModalBody,
+  .modal-body,
+  [id*="ModalBody"] {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Modal content max height */
+  .modal-content,
+  #athJobModal > div {
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+
+  /* Fix 3: Message composer width optimization */
+  #lightningBtn,
+  #emojiPickerBtn,
+  button[aria-label*="Lightning"],
+  button[aria-label*="Emoji"] {
+    display: none !important;
+  }
+
+  /* Expand message input field */
+  #athMessageInput,
+  input[placeholder*="message"],
+  textarea[placeholder*="message"] {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  /* Mic button spacing */
+  #voiceMicBtn {
+    margin-left: 0.5rem !important;
+  }
+
+  /* Fix 4: Chat header icon simplification */
+  #chatHeaderStar,
+  #chatHeaderPhone,
+  #chatHeaderVideo,
+  #chatHeaderGallery,
+  [id*="chatHeader"][id*="Star"],
+  [id*="chatHeader"][id*="Phone"],
+  [id*="chatHeader"][id*="Video"],
+  [id*="chatHeader"][id*="Gallery"] {
+    display: none !important;
+  }
+
+  /* Fix 5: Header text compression */
+  .logout-text,
+  nav a[href*="logout"],
+  button[onclick*="logout"] {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  /* General mobile modal improvements */
+  .fixed.inset-0[class*="modal"],
+  [id*="Modal"].fixed {
+    padding: 1rem !important;
+  }
+
+  /* Ensure modals don't overflow viewport */
+  .fixed.inset-0 > div[class*="w-full"] {
+    max-width: 100% !important;
+    max-height: 90vh !important;
+  }
+}
+
+/* Additional small screen optimizations (iPhone SE and smaller) */
+@media (max-width: 375px) {
+  /* Job cards: make buttons stack on very small screens */
+  .job-card-actions {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Modal padding reduction for tiny screens */
+  #athJobModalBody,
+  [id*="ModalBody"] {
+    padding: 1rem !important;
+  }
+}
+
+/* ----------------------------
+   v0.0298: Onboarding Wizard (Phase 1)
+----------------------------- */
+
+/* Wizard fade-in animation */
+@keyframes ath-wizard-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ath-wizard-fade-in {
+  animation: ath-wizard-fade-in 0.3s ease-out forwards;
+}
+
+.ath-wizard-fade-out {
+  animation: ath-toast-fade-out 0.3s ease-in forwards;
+}
+
+/* Role selection cards */
+.ath-role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  background: white;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 160px;
+}
+
+.ath-role-card:hover {
+  border-color: #0d9488;
+  background: #f0fdfa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+}
+
+.ath-role-card:active {
+  transform: translateY(0);
+}
+
+/* Mobile optimizations for wizard */
+@media (max-width: 768px) {
+  .ath-role-card {
+    padding: 1.5rem 1rem;
+    min-height: 140px;
+  }
+  
+  #athOnboardingWizard .bg-white {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ath-wizard-fade-in,
+  .ath-wizard-fade-out {
+    animation: none;
+  }
+  
+  .ath-role-card:hover {
+    transform: none;
+  }
+}
+/* ----------------------------
+   v0.0298: Mobile Refinements for Modern Smartphones (Samsung S24, etc.)
+   Target: 360px-414px width devices
+----------------------------- */
+
+@media (max-width: 768px) {
+  /* 1. Compact header for modern phones */
+  nav .container {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  /* Reduce logo/branding size */
+  nav h1 {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  
+  nav p {
+    font-size: 0.65rem;
+  }
+  
+  nav .w-8 {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  /* 2. Fix logout button overflow */
+  #athAuthNavBtn,
+  a[href*="logout"],
+  button[onclick*="signOut"] {
+    font-size: 0.7rem !important;
+    padding: 0.375rem 0.75rem !important;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Hide email in logout button on very small screens */
+  @media (max-width: 380px) {
+    #athAuthNavBtn::after {
+      content: 'Logout';
+    }
+    
+    #athAuthNavBtn {
+      font-size: 0 !important;
+    }
+  }
+  
+  /* 3. Compact messages chat header */
+  #athChatPane header,
+  .chat-header {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  .chat-header h2,
+  .chat-header .font-bold {
+    font-size: 1rem !important;
+  }
+  
+  .chat-header .text-sm,
+  .chat-header .text-xs {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Reduce chat header icon sizes */
+  .chat-header button {
+    padding: 0.5rem !important;
+  }
+  
+  .chat-header i[data-feather] {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+  }
+  
+  /* 4. Optimize message bubbles spacing */
+  .message-bubble,
+  [class*="message"] {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* 5. Compact job cards on job board */
+  .bg-white.rounded-lg.shadow-sm {
+    padding: 0.875rem !important;
+  }
+  
+  /* Reduce stat card text size */
+  .bg-gradient-to-br h3,
+  .bg-white h3 {
+    font-size: 1.5rem !important;
+  }
+  
+  /* 6. Tighter bottom nav */
+  .bottom-nav {
+    height: 56px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.625rem;
+    gap: 0.125rem;
+  }
+  
+  .bottom-nav-item i {
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* 7. Optimize page headers */
+  .container h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .container h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* 8. Reduce padding in main content */
+  main.container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  /* 9. Compact form inputs */
+  input[type="text"],
+  input[type="email"],
+  textarea,
+  select {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* 10. Fix contact card in messages */
+  .contact-card,
+  [class*="contact"] {
+    padding: 0.75rem !important;
+  }
+}
+
+/* Specific optimizations for Samsung S24 and similar (360px width) */
+@media (max-width: 380px) {
+  /* Ultra-compact mode */
+  body {
+    font-size: 13px;
+  }
+  
+  /* Reduce all padding even more */
+  .p-4 {
+    padding: 0.75rem !important;
+  }
+  
+  .p-6 {
+    padding: 1rem !important;
+  }
+  
+  /* Smaller buttons */
+  button,
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* Stack action buttons vertically when needed */
+  .flex.space-x-2 {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  .flex.space-x-2 > * {
+    width: 100% !important;
+  }
+}
+/* ============================================================================
+   COMPREHENSIVE RESPONSIVE SYSTEM (v0.0298)
+   Mobile-first progressive enhancement for all devices
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   BASE (320px+) - Smallest phones (iPhone SE 1st gen, old Androids)
+   Ultra-compact, everything fits
+   ---------------------------------------------------------------------------- */
+
+/* Global mobile optimizations */
+@media (max-width: 767px) {
+  
+  /* Ensure no horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Base font size (14px minimum for iOS to prevent zoom) */
+  html {
+    font-size: 14px;
+  }
+  
+  /* Compact header - base for all mobile */
+  nav .container {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  nav h1 {
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+  
+  nav p {
+    font-size: 0.6rem;
+  }
+  
+  /* Logo size */
+  nav .w-8 {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  /* CRITICAL: Hide email from logout button on ALL mobile */
+  #athAuthNavBtn {
+    font-size: 0 !important; /* Hide text */
+    padding: 0.5rem 0.75rem !important;
+    min-width: 70px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  #athAuthNavBtn::before {
+    content: 'Logout';
+    font-size: 0.75rem;
+    display: inline-block;
+  }
+  
+  /* Compact main content */
+  main.container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 1rem !important;
+  }
+  
+  /* Page headers */
+  .container h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .container h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Compact cards */
+  .bg-white.rounded-lg {
+    padding: 0.75rem !important;
+  }
+  
+  /* Form inputs */
+  input,
+  textarea,
+  select {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Buttons */
+  button,
+  .btn-primary,
+  .btn-secondary {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    min-height: 44px; /* Minimum tap target */
+  }
+  
+  /* Bottom nav - compact */
+  .bottom-nav {
+    height: 56px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.625rem;
+  }
+  
+  .bottom-nav-item i {
+    width: 18px;
+    height: 18px;
+    margin-bottom: 2px;
+  }
+  
+  /* Messages: Compact chat header */
+  #athChatPane header {
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Hide less critical chat header icons on all mobile */
+  #chatHeaderPhone,
+  #chatHeaderVideo {
+    display: none !important;
+  }
+  
+  /* Chat header text */
+  #athChatPane header h2,
+  #athChatPane header .font-bold {
+    font-size: 1rem !important;
+  }
+  
+  #athChatPane header .text-sm,
+  #athChatPane header .text-xs {
+    font-size: 0.7rem !important;
+  }
+  
+  /* Message composer - ensure input is wide enough */
+  #lightningBtn,
+  #emojiPickerBtn {
+    display: none !important;
+  }
+  
+  #athMessageInput {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  
+  /* Modal fixes */
+  #athJobModalClose {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+  }
+  
+  #athJobModalBody {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   COMPACT PHONES (360px+) - Samsung S24, Pixel 5, Galaxy S21
+   Slightly more breathing room
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 360px) and (max-width: 767px) {
+  
+  /* Can afford slightly larger fonts */
+  html {
+    font-size: 14.5px;
+  }
+  
+  /* Slightly larger header */
+  nav h1 {
+    font-size: 1rem;
+  }
+  
+  /* Cards can have a bit more padding */
+  .bg-white.rounded-lg {
+    padding: 0.875rem !important;
+  }
+  
+  /* Chat header: show one more icon */
+  #chatHeaderGallery {
+    display: inline-flex !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   STANDARD PHONES (375px+) - iPhone 14/15, iPhone X-13
+   Balanced, comfortable spacing
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 375px) and (max-width: 767px) {
+  
+  html {
+    font-size: 15px;
+  }
+  
+  /* Full header size */
+  nav h1 {
+    font-size: 1.125rem;
+  }
+  
+  nav p {
+    font-size: 0.65rem;
+  }
+  
+  /* Standard card padding */
+  .bg-white.rounded-lg {
+    padding: 1rem !important;
+  }
+  
+  /* Can show abbreviated email if short */
+  #athAuthNavBtn::before {
+    content: attr(data-short-label);
+  }
+  
+  /* Bottom nav can be slightly taller */
+  .bottom-nav {
+    height: 60px;
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.65rem;
+  }
+  
+  .bottom-nav-item i {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   LARGE PHONES (414px+) - iPhone Pro Max, Galaxy S23 Ultra
+   Comfortable, spacious
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 414px) and (max-width: 767px) {
+  
+  html {
+    font-size: 16px;
+  }
+  
+  /* Full-size elements */
+  nav h1 {
+    font-size: 1.25rem;
+  }
+  
+  nav p {
+    font-size: 0.7rem;
+  }
+  
+  /* Generous padding */
+  .bg-white.rounded-lg {
+    padding: 1.25rem !important;
+  }
+  
+  main.container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Show more chat icons */
+  #chatHeaderStar {
+    display: inline-flex !important;
+  }
+  
+  /* Full bottom nav */
+  .bottom-nav {
+    height: 64px;
+  }
+  
+  .bottom-nav-item {
+    font-size: 0.7rem;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   TABLETS (768px+) - iPad Mini, iPad
+   Desktop-like layout
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  
+  /* Reset mobile overrides */
+  html {
+    font-size: 16px;
+  }
+  
+  /* Show all elements */
+  #athAuthNavBtn {
+    font-size: 0.875rem !important;
+  }
+  
+  #athAuthNavBtn::before {
+    content: none;
+  }
+  
+  /* Show all chat icons */
+  #chatHeaderPhone,
+  #chatHeaderVideo,
+  #chatHeaderStar,
+  #chatHeaderGallery {
+    display: inline-flex !important;
+  }
+  
+  /* Show all composer buttons */
+  #lightningBtn,
+  #emojiPickerBtn {
+    display: inline-flex !important;
+  }
+  
+  /* Hide bottom nav on tablets */
+  .bottom-nav {
+    display: none !important;
+  }
+  
+  /* Standard spacing */
+  .bg-white.rounded-lg {
+    padding: 1.5rem !important;
+  }
+  
+  main.container {
+    padding: 1.5rem !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   LARGE TABLETS / DESKTOP (1024px+)
+   Full desktop experience
+   ---------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  
+  /* Generous spacing */
+  main.container {
+    padding: 2rem !important;
+  }
+  
+  .bg-white.rounded-lg {
+    padding: 2rem !important;
+  }
+}
+/* Fix chat header icon selectors - target by aria-label instead of ID */
+@media (max-width: 767px) {
+  /* Hide Phone and Video buttons on all mobile */
+  button[aria-label="Call"],
+  button[aria-label="Video call"] {
+    display: none !important;
+  }
+  
+  /* Hide Quick Replies (Lightning) and Emoji on all mobile */
+  button[aria-label="Quick replies"],
+  button[aria-label="Emoji picker"] {
+    display: none !important;
+  }
+}
+
+/* Show Gallery icon on 360px+ devices */
+@media (min-width: 360px) and (max-width: 767px) {
+  button[aria-label="View gallery"] {
+    display: inline-flex !important;
+  }
+}
+
+/* Show Star icon on 414px+ devices */
+@media (min-width: 414px) and (max-width: 767px) {
+  button[aria-label="View starred messages"] {
+    display: inline-flex !important;
+  }
+}

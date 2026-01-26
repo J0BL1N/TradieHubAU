@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Messages | AussieTradieHub</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -13,10 +13,10 @@
       darkMode: 'class',
     }
   </script>
-  <script src="/js/core/device-detect.js"></script>
+  <script src="../js/core/device-detect.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
-  <link rel="stylesheet" href="/css/main/style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <style>
@@ -35,28 +35,23 @@
   <!-- Mobile Menu -->
   <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
-          <a href="/index.html" class="block text-gray-700 dark:text-gray-200">Home</a>
-          <a href="/pages/browse-trades.html" class="block text-gray-700 dark:text-gray-200">Find Tradies</a>
-          <a href="/pages/browse-customers.html" class="block text-gray-700 dark:text-gray-200">Find Customers</a>
-          <a href="/pages/jobs.html" class="block text-gray-700 dark:text-gray-200">Job Board</a>
-          <a href="/pages/messages.html" class="block text-teal-600 dark:text-teal-400 font-semibold">Messages</a>
+          <a href="../index.html" class="block text-gray-700 dark:text-gray-200">Home</a>
+          <a href="browse-trades.html" class="block text-gray-700 dark:text-gray-200">Find Tradies</a>
+          <a href="browse-customers.html" class="block text-gray-700 dark:text-gray-200">Find Customers</a>
+          <a href="jobs.html" class="block text-gray-700 dark:text-gray-200">Job Board</a>
+          <a href="messages.html" class="block text-teal-600 dark:text-teal-400 font-semibold">Messages</a>
           <div class="border-t border-gray-200 dark:border-gray-700 pt-2">
-              <a href="/pages/my-profile.html" class="block text-gray-700 dark:text-gray-200">My Profile</a>
+              <a href="my-profile.html" class="block text-gray-700 dark:text-gray-200">My Profile</a>
           </div>
       </div>
   </div>
 
   <!-- Main Content -->
-  <div class="container mx-auto px-0 md:px-3 w-full flex flex-col">
+  <div class="container mx-auto px-0 md:px-3 w-full flex flex-col h-full flex-1 min-h-0">
     <!-- Page Header (Simplified for App Feel) -->
-    <div class="hidden md:flex items-center justify-between mb-2 px-4 md:px-0 mt-3">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400">All your communications in one place.</p>
-      </div>
-    </div>
 
-    <div id="athMessagesContainer" class="flex flex-col lg:flex-row gap-4 flex-1 ath-mobile-list-view relative h-[calc(100vh-80px)]">
+
+    <div id="athMessagesContainer" class="flex flex-col lg:flex-row gap-4 flex-1 ath-mobile-list-view relative min-h-0">
 
       <!-- Left Sidebar (Conversations) -->
       <aside class="lg:w-[280px] xl:w-[300px] flex-shrink-0 flex flex-col min-h-0 transition-colors duration-200 h-full">
@@ -339,20 +334,20 @@
         <div>
           <h3 class="font-bold text-lg mb-4">For Customers</h3>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="/pages/browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
-            <li><a href="/pages/jobs.html" class="hover:text-white transition">Post a Job</a></li>
-            <li><a href="/pages/browse-customers.html" class="hover:text-white transition">Browse Customers</a></li>
-            <li><a href="/pages/how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+            <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+            <li><a href="jobs.html" class="hover:text-white transition">Post a Job</a></li>
+            <li><a href="browse-customers.html" class="hover:text-white transition">Browse Customers</a></li>
+            <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
           </ul>
         </div>
 
         <div>
           <h3 class="font-bold text-lg mb-4">For Tradies</h3>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="/pages/my-profile.html?type=tradesman" class="hover:text-white transition">Create Profile</a></li>
-            <li><a href="/pages/jobs.html" class="hover:text-white transition">Find Jobs</a></li>
-            <li><a href="/pages/resources.html" class="hover:text-white transition">Resources</a></li>
-            <li><a href="/pages/trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+            <li><a href="my-profile.html?type=tradesman" class="hover:text-white transition">Create Profile</a></li>
+            <li><a href="jobs.html" class="hover:text-white transition">Find Jobs</a></li>
+            <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
+            <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
           </ul>
         </div>
 
@@ -379,10 +374,10 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
           <p class="text-gray-400 text-sm mb-4 md:mb-0">&copy; 2024 AussieTradieHub. All rights reserved.</p>
           <div class="flex space-x-6">
-            <a href="/pages/about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
-            <a href="/pages/terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-            <a href="/pages/privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-            <a href="/pages/cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+            <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+            <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+            <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+            <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
           </div>
         </div>
       </div>
@@ -494,39 +489,40 @@
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
-    <a href="/index.html" class="bottom-nav-item">
+    <a href="../index.html" class="bottom-nav-item">
       <i data-feather="home"></i>
       <span>Home</span>
     </a>
-    <a href="/pages/browse-trades.html" class="bottom-nav-item">
+    <a href="browse-trades.html" class="bottom-nav-item">
       <i data-feather="users"></i>
       <span>Tradies</span>
     </a>
-    <a href="/pages/browse-customers.html" class="bottom-nav-item">
+    <a href="browse-customers.html" class="bottom-nav-item">
       <i data-feather="user-check"></i>
       <span>Customers</span>
     </a>
-    <a href="/pages/jobs.html" class="bottom-nav-item">
+    <a href="jobs.html" class="bottom-nav-item">
       <i data-feather="briefcase"></i>
       <span>Jobs</span>
     </a>
-    <a href="/pages/messages.html" class="bottom-nav-item">
+    <a href="messages.html" class="bottom-nav-item">
       <i data-feather="message-square"></i>
       <span>Messages</span>
     </a>
-    <a href="/pages/my-profile.html" class="bottom-nav-item">
+    <a href="my-profile.html" class="bottom-nav-item">
       <i data-feather="user"></i>
       <span>Profile</span>
     </a>
   </nav>
   </main>
 
-  <script src="/js/core/data.js"></script>
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/components/nav-shell.js"></script>
-  <script src="/js/core/spa-router.js"></script>
-  <script src="/js/core/script.js"></script>
+  <script src="../js/core/data.js"></script>
+  <script type="module" src="../js/core/supabase-client.js"></script>
+  <script type="module" src="../js/core/auth.js"></script>
+  <script type="module" src="../js/core/db.js"></script>
+  <script src="../js/components/nav-shell.js"></script>
+  <script src="../js/core/spa-router.js"></script>
+  <script src="../js/core/script.js"></script>
   <script>
     (function () {
       if (typeof feather !== 'undefined') feather.replace();

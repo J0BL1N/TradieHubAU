@@ -1,0 +1,22 @@
+# System
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Project Backups/Trash
+rubbish/
+backups/
+tests/
+
+# Agent/AI
+.gemini/
+.agent/
+
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit API keys!)
+.env
+.env.local
+.env.*.local

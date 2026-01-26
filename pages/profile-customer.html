@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Customer Profile | AussieTradieHub</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="/css/main/style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -188,167 +188,14 @@
     </div>
   </main>
 
-  <script src="/js/core/data.js"></script>
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/script.js"></script>
-
-  <script>
-    // Load customer by querystring: profile-customer.html?id=michael-roberts
-    (function () {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get('id') || 'michael-roberts';
-
-      // If viewing your own profile (id=me), hydrate from current user data
-      if (id === 'me') {
-        try {
-          const raw = localStorage.getItem('athCurrentUser');
-          const u = raw ? JSON.parse(raw) : (window.CURRENT_USER_DEFAULT || null);
-          if (u) {
-            window.CUSTOMERS = window.CUSTOMERS || {};
-            window.CUSTOMERS.me = {
-              name: u.displayName || 'Me',
-              typeLabel: 'Customer',
-              typeColor: 'bg-blue-500',
-              location: (u.privacy && u.privacy.showLocation) ? `${u.location?.suburb || ''}${u.location?.state ? ', ' + u.location.state : ''}`.replace('undefined', '').replace(' ,', '').trim() : 'Hidden',
-              tagline: 'Your public customer profile preview',
-              rating: '5.0',
-              reviews: '',
-              image: (u.avatarDataUrl || u.avatar) || 'https://static.photos/people/320x240/301',
-              conversationId: 'me',
-              about: 'This is a preview of how customers will see your profile.'
-            };
-          }
-        } catch (e) { }
-      }
-
-      const c = (window.CUSTOMERS && window.CUSTOMERS[id]) ? window.CUSTOMERS[id] : null;
-      if (!c) return;
-
-      const $ = (x) => document.getElementById(x);
-
-      $('customerName').textContent = c.name || 'Customer';
-      $('customerMeta').textContent = `${c.location || ''}${c.tagline ? ' \u2022 ' + c.tagline : ''}`.trim();
-      $('customerRating').textContent = c.rating || '';
-      const rc = (Number.isFinite(Number(c.reviewCount)) ? Number(c.reviewCount) : (Array.isArray(c.reviews) ? c.reviews.length : 0));
-      $('customerReviews').textContent = `(${rc})`;
-      $('customerAbout').textContent = (window.ATHIntegrity ? window.ATHIntegrity.sanitizeText(c.about || '').text : (c.about || ''));
-
-      // Batch N1: render visible reviews list
-      try {
-        window.ATHRender?.renderReviewsInto(document.getElementById('customerReviewsList'), c, 'No reviews yet.', { id, role: 'customer' });
-      } catch (e) { }
-
-      // v0.018: render Active / Past jobs
-      try {
-        const jobsAll = (window.ATHJobs && typeof window.ATHJobs.getAllJobs === "function") ? window.ATHJobs.getAllJobs() : [];
-        const norm = (v) => String(v || "").trim().toLowerCase();
-        const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
-
-        const statusPill = (st) => {
-          const s = norm(st || 'open');
-          if (s === 'in_progress') return 'bg-amber-100 text-amber-800';
-          if (s === 'completed') return 'bg-emerald-100 text-emerald-800';
-          if (s === 'agreed') return 'bg-blue-100 text-blue-800';
-          return 'bg-gray-100 text-gray-800';
-        };
-
-        const renderJobs = (mountId, jobs, emptyText, opts) => {
-          const el = document.getElementById(mountId);
-          if (!el) return;
-          if (!jobs.length) {
-            el.innerHTML = `<div class="text-sm text-gray-500">${esc(emptyText)}</div>`;
-            return;
-          }
-          const showDetails = !!(opts && opts.showDetails);
-          el.innerHTML = jobs.map((job) => {
-            const catIds = Array.isArray(job.categories) ? job.categories : (typeof window.normalizeTradeIds === 'function' ? window.normalizeTradeIds(job.categories) : []);
-            const chips = (catIds || []).slice(0, 4).map((cid) => (
-              `<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">${esc(typeof window.tradeLabel === 'function' ? window.tradeLabel(cid) : String(cid))}</span>`
-            )).join('');
-            const st = norm(job.status || 'open');
-            return `
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <div class="font-bold text-gray-900">${esc(job.title || 'Job')}</div>
-                    <div class="mt-1 text-sm text-gray-600 flex items-center">
-                      <i data-feather="map-pin" class="w-4 h-4 mr-1"></i>
-                      <span>${esc(job.location || 'Unknown')}</span>
-                    </div>
-                  </div>
-                  <span class="${statusPill(st)} text-xs font-semibold px-3 py-1 rounded-full">${esc(st.replace('_', ' '))}</span>
-                </div>
-                <div class="mt-3 flex flex-wrap gap-2">${chips}</div>
-                ${showDetails ? `
-                <div class="mt-4 flex justify-end">
-                  <button type="button" data-ath-job-details="1" data-job-id="${esc(job.id)}" class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-                    <span class="inline-flex items-center">
-                      <i data-feather="eye" class="w-4 h-4 mr-2 text-gray-600"></i>
-                      View details
-                    </span>
-                  </button>
-                </div>` : ''}
-              </div>`;
-          }).join('');
-        };
-
-        const myId = String(id);
-        // v0.028: "Active" includes open/agreed/in_progress so customers see jobs they've posted that are still underway.
-        const activeStates = new Set(['open', 'agreed', 'in_progress']);
-        const active = jobsAll.filter((j) => String(j.customerId || '') === myId && activeStates.has(norm(j.status || 'open')));
-        const past = jobsAll.filter((j) => String(j.customerId || '') === myId && norm(j.status) === 'completed');
-
-        renderJobs('customerActiveJobsList', active, 'No active jobs yet.', { showDetails: true });
-        renderJobs('customerPastJobsList', past, 'No past jobs yet.');
-
-
-        // v0.0297: Customer booked-jobs calendar (commitments view)
-        try {
-          window.ATHCustomerBookings?.mountMiniCalendar(document.getElementById('customerBookedCalendar'), { customerId: myId });
-        } catch (e) { }
-        // View details (reuses shared ATHJobDetails modal; injected if missing)
-        const activeEl = document.getElementById('customerActiveJobsList');
-        if (activeEl && !activeEl.__athBound) {
-          activeEl.__athBound = true;
-          activeEl.addEventListener('click', (e) => {
-            const btn = e.target && e.target.closest ? e.target.closest('[data-ath-job-details]') : null;
-            if (!btn) return;
-            const jid = btn.getAttribute('data-job-id');
-            if (window.ATHJobDetails && typeof window.ATHJobDetails.open === 'function') {
-              window.ATHJobDetails.open(jid);
-            }
-          });
-        }
-
-        if (window.feather) feather.replace();
-      } catch (e) { }
-
-      // Batch N3: integrity banner
-      window.ATHIntegrity?.renderBanner(document.getElementById('athIntegrityBannerMountProfileCustomer'));
-
-      const img = $('customerImage');
-      if (img && c.image) {
-        img.src = c.image;
-        img.alt = c.name || 'Customer';
-      }
-
-      const badge = $('customerTypeBadge');
-      if (badge) {
-        badge.textContent = c.typeLabel || 'Customer';
-        badge.className = `absolute bottom-2 right-2 text-white text-xs font-semibold px-3 py-1 rounded-full ${c.typeColor || 'bg-blue-500'}`;
-      }
-
-      const msg = $('messageBtn');
-      if (msg) {
-        msg.href = `messages.html?conversation=${c.conversationId || id}`;
-      }
-
-      document.title = `${c.name} | AussieTradieHub`;
-
-      if (window.feather) feather.replace();
-    })();
-  </script>
+  <script src="../js/core/data.js"></script>
+  <script type="module" src="../js/core/supabase-client.js"></script>
+  <script type="module" src="../js/core/db.js"></script>
+  <script type="module" src="../js/core/auth.js"></script>
+  <script src="../js/components/nav-shell.js"></script>
+  <script src="../js/core/spa-router.js"></script>
+  <script src="../js/core/script.js"></script>
+  <script type="module" src="../js/pages/profile-customer.js"></script>
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
@@ -373,23 +220,7 @@
       <span>Profile</span>
     </a>
   </nav>
-  </main>
-
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/data.js"></script>
-  <script src="/js/components/nav-shell.js"></script>
-  <script src="/js/core/spa-router.js"></script>
-  <script src="/js/core/script.js"></script>
-  <script>
-    (function () {
-      if (typeof feather !== 'undefined') feather.replace();
-    })();
-  </script>
 </body>
-
-</html>
-
 
 
 

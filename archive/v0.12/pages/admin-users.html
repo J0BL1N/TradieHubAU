@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users | ATH Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+
+  <main id="athMain" class="container mx-auto px-4 py-8">
+    <!-- Admin Header -->
+    <nav class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50 mb-8 rounded-xl -mt-4 mx-[-1rem] lg:mx-0">
+        <div class="container mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <div class="bg-pink-600 p-1.5 rounded">
+            <i data-feather="users" class="w-5 h-5 text-white"></i>
+            </div>
+            <h1 class="font-bold text-lg tracking-tight">User Management</h1>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/pages/admin.html" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Back</a>
+        </div>
+        </div>
+    </nav>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-gray-900">All Users</h2>
+          <p class="text-xs text-gray-500">View and manage customer, tradie, and banned accounts.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="text" id="userSearch" placeholder="Search name or email..." class="border border-gray-200 text-sm rounded-lg px-3 py-2 w-48">
+          <select id="roleFilter" class="border border-gray-200 text-sm rounded-lg px-3 py-2">
+            <option value="all">All Roles</option>
+            <option value="customer">Customers</option>
+            <option value="tradie">Tradies</option>
+            <option value="banned">Banned</option>
+          </select>
+          <button id="refreshBtn" class="bg-gray-100 hover:bg-gray-200 p-2 rounded text-gray-600"><i data-feather="refresh-cw" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+            <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th class="px-6 py-3">User</th>
+                    <th class="px-6 py-3">Role</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Joined</th>
+                    <th class="px-6 py-3 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userList" class="divide-y divide-gray-100">
+                <tr><td colspan="5" class="p-8 text-center text-gray-500">Loading users...</td></tr>
+            </tbody>
+        </table>
+      </div>
+      
+      <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center text-xs text-gray-500">
+        <span id="userCount">Showing all users</span>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script type="module">
+    import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
+
+    let allUsers = [];
+    const listEl = document.getElementById('userList');
+    const searchInput = document.getElementById('userSearch');
+    const roleFilter = document.getElementById('roleFilter');
+
+    async function loadUsers() {
+      listEl.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">Loading users...</td></tr>';
+      
+      try {
+        const { data, error } = await supabase
+            .from('users')
+            .select(`*`)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        allUsers = data || [];
+        renderList();
+      } catch (err) {
+        console.error('Error fetching users:', err);
+        listEl.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Error loading users: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderList() {
+        const q = searchInput.value.toLowerCase();
+        const r = roleFilter.value;
+        
+        const filtered = allUsers.filter(u => {
+            const matchesSearch = (u.display_name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q);
+            const matchesRole = r === 'all' || u.role === r || (r === 'banned' && (u.role === 'banned' || u.banned));
+            return matchesSearch && matchesRole;
+        });
+
+        document.getElementById('userCount').textContent = `Showing ${filtered.length} users`;
+
+        if (filtered.length === 0) {
+            listEl.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-gray-500">No users found matching filters.</td></tr>';
+            return;
+        }
+
+        listEl.innerHTML = filtered.map(u => {
+            const isBanned = u.role === 'banned' || u.banned;
+            return `
+            <tr class="hover:bg-gray-50 bg-white group transition-colors">
+                <td class="px-6 py-4 font-medium text-gray-900">
+                     <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                            <img src="${u.avatar_url || 'https://ui-avatars.com/api/?name='+u.display_name}" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <div class="font-bold">${u.display_name || 'No Name'}</div>
+                            <div class="text-xs text-gray-500 font-normal">${u.email}</div>
+                        </div>
+                     </div>
+                </td>
+                <td class="px-6 py-4 text-gray-500 capitalize">
+                    <span class="px-2 py-1 rounded text-xs font-medium ${isBanned ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}">
+                        ${u.role || 'customer'}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex gap-1">
+                        ${u.verified 
+                            ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Verified</span>' 
+                            : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Unverified</span>'}
+                        ${isBanned
+                            ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">BANNED</span>' 
+                            : ''}
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-gray-500 text-xs">${new Date(u.created_at).toLocaleDateString()}</td>
+                <td class="px-6 py-4 text-right">
+                    ${!isBanned ? `
+                        <button onclick="window.banUser('${u.id}')" class="text-xs border border-red-200 bg-white hover:bg-red-50 text-red-600 px-3 py-1.5 rounded font-medium transition">Ban User</button>
+                    ` : `
+                        <button onclick="window.unbanUser('${u.id}')" class="text-xs border border-green-200 bg-white hover:bg-green-50 text-green-600 px-3 py-1.5 rounded font-medium transition">Unban User</button>
+                    `}
+                </td>
+            </tr>
+        `}).join('');
+        
+        if (typeof feather !== 'undefined') feather.replace();
+    }
+
+    // Actions
+    window.banUser = async (uid) => {
+        const reason = prompt('Reason for banning this user? (This will set their role to "banned")');
+        if (!reason) return;
+        
+        try {
+            const { error } = await supabase.from('users').update({ role: 'banned' }).eq('id', uid);
+            if (error) throw error;
+            
+            alert('User banned successfully.');
+            // Optimistic update
+            const u = allUsers.find(x => x.id === uid);
+            if(u) u.role = 'banned';
+            renderList();
+        } catch (e) {
+            alert('Error banning user: ' + e.message);
+        }
+    };
+
+    window.unbanUser = async (uid) => {
+        if(!confirm('Unban this user? They will be restored to "customer" role.')) return;
+        try {
+            const { error } = await supabase.from('users').update({ role: 'customer' }).eq('id', uid);
+            if (error) throw error;
+             
+            alert('User unbanned successfully.');
+            // Optimistic update
+            const u = allUsers.find(x => x.id === uid);
+            if(u) u.role = 'customer';
+            renderList();
+        } catch (e) {
+            alert('Error unbanning user: ' + e.message);
+        }
+    };
+
+    // Events
+    searchInput.addEventListener('input', renderList);
+    roleFilter.addEventListener('change', renderList);
+    document.getElementById('refreshBtn').addEventListener('click', loadUsers);
+
+    // Init
+    async function initAdminUsers() {
+        const { user } = await getCurrentUser();
+        if(!user || user.email !== 'jaydenln.work@gmail.com') {
+            window.location.href = '/index.html';
+            return;
+        }
+        loadUsers();
+    }
+    
+    initAdminUsers();
+  </script>
+</body>
+</html>

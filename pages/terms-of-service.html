@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terms of Service | AussieTradieHub</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="/css/main/style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="font-inter bg-gray-50">
@@ -123,9 +123,13 @@
     </div>
   </footer>
 
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/script.js"></script>
+  <script src="../js/core/data.js"></script>
+  <script type="module" src="../js/core/supabase-client.js"></script>
+  <script type="module" src="../js/core/db.js"></script>
+  <script type="module" src="../js/core/auth.js"></script>
+  <script src="../js/components/nav-shell.js"></script>
+  <script src="../js/core/spa-router.js"></script>
+  <script src="../js/core/script.js"></script>
   <script>
     // Mobile menu handled by script.js
     document.addEventListener('DOMContentLoaded', function () {

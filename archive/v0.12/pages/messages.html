@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages | AussieTradieHub</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="/js/core/device-detect.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+  <link rel="stylesheet" href="/css/main/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    .dark .dark-mode-icon { display: none; }
+    .dark .light-mode-icon { display: block; }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body class="font-inter bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col messages-page transition-colors duration-200">
+
+  <div id="athNavMount"></div>
+
+  <main id="athMain" class="flex-1 transition-all duration-300 flex flex-col relative w-full">
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="md:hidden hidden px-4 pb-4">
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
+          <a href="/index.html" class="block text-gray-700 dark:text-gray-200">Home</a>
+          <a href="/pages/browse-trades.html" class="block text-gray-700 dark:text-gray-200">Find Tradies</a>
+          <a href="/pages/browse-customers.html" class="block text-gray-700 dark:text-gray-200">Find Customers</a>
+          <a href="/pages/jobs.html" class="block text-gray-700 dark:text-gray-200">Job Board</a>
+          <a href="/pages/messages.html" class="block text-teal-600 dark:text-teal-400 font-semibold">Messages</a>
+          <div class="border-t border-gray-200 dark:border-gray-700 pt-2">
+              <a href="/pages/my-profile.html" class="block text-gray-700 dark:text-gray-200">My Profile</a>
+          </div>
+      </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-0 md:px-3 w-full flex flex-col">
+    <!-- Page Header (Simplified for App Feel) -->
+    <div class="hidden md:flex items-center justify-between mb-2 px-4 md:px-0 mt-3">
+      <div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
+        <p class="text-xs text-gray-500 dark:text-gray-400">All your communications in one place.</p>
+      </div>
+    </div>
+
+    <div id="athMessagesContainer" class="flex flex-col lg:flex-row gap-4 flex-1 ath-mobile-list-view relative h-[calc(100vh-80px)]">
+
+      <!-- Left Sidebar (Conversations) -->
+      <aside class="lg:w-[280px] xl:w-[300px] flex-shrink-0 flex flex-col min-h-0 transition-colors duration-200 h-full">
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4 transition-colors duration-200">
+          <div class="relative">
+            <i data-feather="search"
+              class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+            <input type="text" placeholder="Search conversations..." id="conversationsSearch"
+              class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex-1 overflow-hidden flex flex-col min-h-0 transition-colors duration-200">
+          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center">
+              <h2 class="font-bold text-gray-900 dark:text-white">Conversations</h2>
+              <span id="unreadCountLabel" class="text-sm text-gray-600 dark:text-gray-400">All read</span>
+            </div>
+          </div>
+
+          <!-- REQUIRED: id="conversationsList" -->
+          <div class="flex-1 overflow-y-auto min-h-0" id="conversationsList">
+            <!-- Rendered by script.js -->
+            <div id="conversationsEmpty" class="p-6 text-sm text-gray-500 dark:text-gray-400 hidden">No conversations yet.</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Chat (Primary) -->
+      <section class="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden h-full">
+        <!-- Empty state (shown when no conversation or not signed in) -->
+        <div id="athMessagesEmptyState"
+          class="hidden flex-1 min-h-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 flex items-center justify-center transition-colors duration-200 h-full">
+          <div class="max-w-md text-center">
+            <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center">
+              <i data-feather="message-square" class="w-6 h-6 text-teal-600 dark:text-teal-400"></i>
+            </div>
+            <h3 id="athMessagesEmptyTitle" class="text-lg font-bold text-gray-900 dark:text-white mb-2">No conversations yet</h3>
+            <p id="athMessagesEmptyBody" class="text-sm text-gray-600 dark:text-gray-400">Start a conversation from a job listing.</p>
+          </div>
+        </div>
+
+        <div id="athChatPane" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200 h-full">
+            <!-- Header (JS updates these IDs) -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 ath-chat-header">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <button id="chatBackBtn"
+                    class="md:hidden p-2 -ml-2 mr-1 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+                    <i data-feather="arrow-left" class="w-5 h-5"></i>
+                  </button>
+                  <div class="relative">
+                    <img id="chatAvatar" src="https://static.photos/people/320x240/301" alt="Avatar"
+                      class="w-10 h-10 rounded-full object-cover border-2 border-teal-100 dark:border-teal-900">
+                    <span id="chatOnlineDot"
+                      class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+                  </div>
+                  <div>
+                    <h3 id="chatName" class="font-bold text-gray-900 dark:text-white">Loading...</h3>
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400 ath-chat-meta">
+                      <span id="chatMeta">Details</span>
+                      <span class="mx-2">&bull;</span>
+                      <span id="chatStatus" class="text-green-600 dark:text-green-400">Online now</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-2 ath-chat-actions">
+                  <!-- v0.060: Message Search Button -->
+                  <button onclick="window.toggleMessageSearch()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300" type="button" aria-label="Search messages" title="Search in conversation">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                  </button>
+                  <!-- v0.050: View Starred Messages -->
+                  <button onclick="window.showStarredView()" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center space-x-1 transition-colors" type="button" aria-label="View starred messages">
+                    <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <span class="text-sm hidden sm:block text-gray-700 dark:text-gray-300">Starred</span>
+                    <span id="starredCountBadge" class="hidden bg-teal-600 text-white text-xs rounded-full px-2 py-0.5">0</span>
+                  </button>
+                  <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" type="button" aria-label="Call">
+                    <i data-feather="phone" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                  <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" type="button" aria-label="Video call">
+                    <i data-feather="video" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                  <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" type="button" aria-label="Info">
+                    <i data-feather="info" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                  <!-- v0.096: Gallery View Button -->
+                  <button onclick="window.openGallery()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" type="button" aria-label="Gallery" title="View Shared Media">
+                    <i data-feather="grid" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch N3: integrity banner -->
+            
+            <!-- v0.060: Message Search Bar -->
+            <div id="messageSearchBar" class="hidden px-4 py-3 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800">
+              <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4 text-amber-600 dark:text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input id="messageSearchInput" type="text" placeholder="Search messages..." 
+                       class="flex-1 px-3 py-1.5 text-sm border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
+                <span id="searchResultCounter" class="hidden text-xs text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap">0 of 0</span>
+                <button id="searchPrevBtn" onclick="window.prevSearchResult()" 
+                        class="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-800 rounded disabled:opacity-50 disabled:cursor-not-allowed text-amber-700 dark:text-amber-400" 
+                        title="Previous result">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                  </svg>
+                </button>
+                <button id="searchNextBtn" onclick="window.nextSearchResult()" 
+                        class="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-800 rounded disabled:opacity-50 disabled:cursor-not-allowed text-amber-700 dark:text-amber-400" 
+                        title="Next result">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+                <button onclick="window.toggleMessageSearch()" 
+                        class="p-1.5 hover:bg-amber-100 dark:hover:bg-amber-800 rounded text-amber-700 dark:text-amber-400" 
+                        title="Close search">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="athIntegrityBannerMountMessages" class="px-4 py-3 border-b border-gray-200 dark:border-gray-700"></div>
+
+            <!-- Messages render target -->
+            <div class="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900 min-h-0" id="chatScroll"></div>
+
+            <!-- Typing Indicator -->
+            <div id="typingIndicator" class="px-4 pb-2 hidden">
+              <div class="flex items-center space-x-2 text-gray-500 dark:text-gray-400 text-sm">
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                  <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                  <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                </div>
+                <span id="typingIndicatorText">typing...</span>
+              </div>
+            </div>
+
+            <!-- Message Input (Pinned to bottom) -->
+            <div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 relative">
+              <!-- Hidden file inputs -->
+              <input type="file" id="imageInput" accept="image/*" class="hidden" />
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.zip" class="hidden" />
+              
+              <!-- Emoji Picker Popup Container -->
+              <div id="emojiPickerContainer" class="absolute bottom-full left-0 mb-2"></div>
+              
+              <!-- v0.070: Voice Recording Indicator -->
+              <div id="voiceRecordingIndicator" class="hidden mb-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                    <span class="text-sm font-medium text-red-900 dark:text-red-300">Recording voice message</span>
+                    <span id="recordingTimer" class="text-sm text-red-700 dark:text-red-400 font-mono">0:00</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <button onclick="window.stopVoiceRecording()" 
+                            class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+                      Stop & Send
+                    </button>
+                    <button onclick="window.cancelVoiceRecording()" 
+                            class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-sm font-medium">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- v0.055: Template Picker Dropdown -->
+              <div id="templatePicker" class="hidden absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                <!-- Content populated by JavaScript -->
+              </div>
+              
+              <!-- v0.040: Reply Preview -->
+              <div id="replyPreview" class="hidden mb-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-2">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center">
+                      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                      </svg>
+                      <span>Replying to <span id="replyPreviewName"></span></span>
+                    </div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate" id="replyPreviewText"></div>
+                  </div>
+                  <button onclick="window.cancelReply()" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded ml-2 flex-shrink-0" aria-label="Cancel reply">
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="flex items-center space-x-2">
+                <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400" type="button" aria-label="More options" onclick="document.getElementById('fileInput').click()">
+                  <i data-feather="plus" class="w-5 h-5"></i>
+                </button>
+                <button class="hidden sm:block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400" type="button" aria-label="Attach file" onclick="document.getElementById('imageInput').click()">
+                  <i data-feather="paperclip" class="w-5 h-5"></i>
+                </button>
+                <!-- v0.100: Photo Set Button -->
+                <button class="hidden sm:block p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400" type="button" aria-label="Create Photo Set" title="Create Photo Set (Before/After)" onclick="window.openPhotoSetBuilder()">
+                  <i data-feather="layers" class="w-5 h-5"></i>
+                </button>
+                
+                <div class="flex-1 relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full px-1">
+                  <!-- v0.070: Voice Message Button -->
+                <button id="voiceMicBtn" onclick="window.voiceRecordingState.isRecording ? window.stopVoiceRecording() : window.startVoiceRecording()" 
+                        class="p-2 text-gray-400 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400" type="button" aria-label="Voice message" title="Send voice message">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                  </svg>
+                </button>
+                <!-- v0.055: Quick Replies Button -->
+                <button onclick="window.toggleTemplatePicker()" class="p-2 text-gray-400 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400" type="button" aria-label="Quick Replies" title="Quick Replies">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                </button>
+                <button class="p-2 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100" type="button" aria-label="Emoji" id="emojiPickerBtn">
+                    <i data-feather="smile" class="w-5 h-5"></i>
+                  </button>
+                  <input id="messageInput" type="text" placeholder="Type a message"
+                    class="flex-1 bg-transparent py-2.5 text-sm outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white">
+                </div>
+
+                <button id="sendButton" type="button"
+                  class="bg-teal-600 text-white p-2.5 rounded-full hover:bg-teal-700 transition-colors shadow-sm"
+                  aria-label="Send">
+                  <i data-feather="send" class="w-5 h-5"></i>
+                </button>
+              </div>
+
+              <div id="athMessageSanitizeNote" class="mt-2 text-xs text-amber-700 dark:text-amber-500 hidden"></div>
+            </div>
+            </div>
+      </section>
+
+      <!-- Context Panel (jobs + showcase) -->
+      <aside id="jobDetailsCard"
+        class="lg:w-[340px] xl:w-[360px] flex-shrink-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 flex flex-col min-h-0 overflow-hidden transition-colors duration-200 h-full">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-gray-900 dark:text-white">Context</h3>
+        </div>
+        <div id="athMessagesContextPanel" class="flex-1 min-h-0 overflow-y-auto pr-1"></div>
+      </aside>
+
+    </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 dark:bg-black text-white dark:text-gray-400 pt-12 pb-8 mt-auto">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center space-x-2 mb-4">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+              <i data-feather="tool" class="text-white w-6 h-6"></i>
+            </div>
+            <h2 class="text-xl font-bold">AussieTradieHub</h2>
+          </div>
+          <p class="text-gray-400">Connecting trusted tradies with customers across Australia with full transparency.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">For Customers</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="/pages/browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+            <li><a href="/pages/jobs.html" class="hover:text-white transition">Post a Job</a></li>
+            <li><a href="/pages/browse-customers.html" class="hover:text-white transition">Browse Customers</a></li>
+            <li><a href="/pages/how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">For Tradies</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="/pages/my-profile.html?type=tradesman" class="hover:text-white transition">Create Profile</a></li>
+            <li><a href="/pages/jobs.html" class="hover:text-white transition">Find Jobs</a></li>
+            <li><a href="/pages/resources.html" class="hover:text-white transition">Resources</a></li>
+            <li><a href="/pages/trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">Contact</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li class="flex items-center">
+              <i data-feather="mail" class="w-4 h-4 mr-2"></i>
+              support@aussietradiehub.au
+            </li>
+            <li class="flex items-center">
+              <i data-feather="phone" class="w-4 h-4 mr-2"></i>
+              1300 TRADIE (1300 872 343)
+            </li>
+            <li class="flex items-center">
+              <i data-feather="map-pin" class="w-4 h-4 mr-2"></i>
+              Sydney, Australia
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 pt-8">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-gray-400 text-sm mb-4 md:mb-0">&copy; 2024 AussieTradieHub. All rights reserved.</p>
+          <div class="flex space-x-6">
+            <a href="/pages/about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+            <a href="/pages/terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+            <a href="/pages/privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+            <a href="/pages/cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- IMPORTANT: data first, then script.js -->
+  <!-- v0.080: Image Preview Modal -->
+  <div id="imagePreviewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden w-full max-w-md mx-4 transform scale-95 transition-transform duration-200" id="previewPanel">
+      <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="font-bold text-gray-900 dark:text-white">Send Photo</h3>
+        <button onclick="window.closePreviewModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="bg-gray-100 dark:bg-gray-900 w-full h-64 flex items-center justify-center overflow-hidden">
+        <img id="previewImage" src="" class="max-w-full max-h-full object-contain" />
+      </div>
+      <div class="p-4 bg-white dark:bg-gray-800">
+        <div id="previewStats" class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-mono hidden"></div>
+        <input type="text" id="previewCaption" placeholder="Add a caption..." 
+               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" />
+        <div class="flex justify-end gap-2">
+          <button onclick="window.closePreviewModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">Cancel</button>
+          <button onclick="window.confirmSendImage()" class="px-4 py-2 bg-teal-600 text-white font-medium hover:bg-teal-700 rounded-lg shadow-sm transition flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v0.080: Lightbox Modal -->
+  <div id="lightboxModal" class="fixed inset-0 z-[60] bg-black/95 hidden flex items-center justify-center transition-opacity duration-200" onclick="window.closeLightbox()">
+    <button onclick="window.closeLightbox()" class="absolute top-4 right-4 text-white/70 hover:text-white p-2">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    </button>
+    <img id="lightboxImage" src="" class="max-w-[95vw] max-h-[95vh] object-contain shadow-2xl" onclick="event.stopPropagation()" />
+  </div>
+
+  <!-- v0.096: Gallery View Modal -->
+  <div id="galleryModal" class="fixed inset-0 z-[55] bg-white dark:bg-gray-900 hidden flex flex-col transition-opacity duration-200">
+    <!-- Header -->
+    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 shadow-sm">
+      <h3 class="font-bold text-gray-900 dark:text-white text-lg">Shared Media</h3>
+      <button onclick="window.closeGallery()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400">
+        <i data-feather="x" class="w-6 h-6"></i>
+      </button>
+    </div>
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-black/20">
+      <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <!-- Rendered by script.js -->
+      </div>
+      <div id="galleryEmpty" class="hidden flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 mt-20">
+        <i data-feather="image" class="w-12 h-12 mb-3 opacity-50"></i>
+        <p>No images shared yet.</p>
+      </div>
+    </div>
+  </div>
+  
+
+
+  <!-- v0.100: Photo Set Builder Modal -->
+  <div id="photoSetModal" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center transition-opacity duration-200">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <h3 class="font-bold text-gray-900 dark:text-white">Create Photo Set</h3>
+        <button onclick="window.closePhotoSetBuilder()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+          <i data-feather="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      
+      <div class="p-4 flex-1 overflow-y-auto">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add Photos</label>
+          <div class="flex gap-2">
+            <button onclick="document.getElementById('photoSetInput').click()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg flex items-center gap-2 transition">
+              <i data-feather="plus" class="w-4 h-4"></i> Add Images
+            </button>
+            <input type="file" id="photoSetInput" accept="image/*" multiple class="hidden" onchange="window.handlePhotoSetFiles(this.files)" />
+            <span id="photoSetCount" class="self-center text-sm text-gray-500 dark:text-gray-400">0 selected</span>
+          </div>
+        </div>
+
+        <div id="photoSetList" class="space-y-3 mb-4">
+          <!-- Rendered items: { thumb, labelDropdown, removeBtn } -->
+          <div class="text-center text-gray-400 dark:text-gray-500 py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+            No photos added yet.
+          </div>
+        </div>
+        
+        <div class="mb-2">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Set Caption</label>
+          <input type="text" id="photoSetCaption" placeholder="e.g. Bathroom Renovation Progress" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" />
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl flex justify-end gap-2">
+        <button onclick="window.closePhotoSetBuilder()" class="px-4 py-2 text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition">Cancel</button>
+        <button onclick="window.sendPhotoSet()" class="px-4 py-2 bg-teal-600 text-white font-medium hover:bg-teal-700 rounded-lg shadow-sm transition flex items-center">
+          <i data-feather="send" class="w-4 h-4 mr-2"></i> Send Set
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation (Mobile Only) -->
+  <nav class="bottom-nav">
+    <a href="/index.html" class="bottom-nav-item">
+      <i data-feather="home"></i>
+      <span>Home</span>
+    </a>
+    <a href="/pages/browse-trades.html" class="bottom-nav-item">
+      <i data-feather="users"></i>
+      <span>Tradies</span>
+    </a>
+    <a href="/pages/browse-customers.html" class="bottom-nav-item">
+      <i data-feather="user-check"></i>
+      <span>Customers</span>
+    </a>
+    <a href="/pages/jobs.html" class="bottom-nav-item">
+      <i data-feather="briefcase"></i>
+      <span>Jobs</span>
+    </a>
+    <a href="/pages/messages.html" class="bottom-nav-item">
+      <i data-feather="message-square"></i>
+      <span>Messages</span>
+    </a>
+    <a href="/pages/my-profile.html" class="bottom-nav-item">
+      <i data-feather="user"></i>
+      <span>Profile</span>
+    </a>
+  </nav>
+  </main>
+
+  <script src="/js/core/data.js"></script>
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script src="/js/components/nav-shell.js"></script>
+  <script src="/js/core/spa-router.js"></script>
+  <script src="/js/core/script.js"></script>
+  <script>
+    (function () {
+      if (typeof feather !== 'undefined') feather.replace();
+    })();
+  </script>
+</body>
+
+</html>
+
+
+
+
+

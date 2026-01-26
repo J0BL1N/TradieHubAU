@@ -5,11 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Profile | AussieTradieHub</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="/js/core/device-detect.js"></script>
+  <script src="../js/core/device-detect.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="/css/main/style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -35,23 +35,23 @@
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
 
-          <a href="/index.html" class="text-gray-700 hover:text-teal-600 transition">
+          <a href="../index.html" class="text-gray-700 hover:text-teal-600 transition">
             <i data-feather="home" class="inline-block w-3 h-3 mr-1"></i>Home
           </a>
 
-          <a href="/pages/browse-trades.html" class="text-gray-700 hover:text-teal-600 transition">
+          <a href="browse-trades.html" class="text-gray-700 hover:text-teal-600 transition">
             <i data-feather="users" class="inline-block w-3 h-3 mr-1"></i>Find Tradies
           </a>
 
-          <a href="/pages/browse-customers.html" class="text-gray-700 hover:text-teal-600 transition">
+          <a href="browse-customers.html" class="text-gray-700 hover:text-teal-600 transition">
             <i data-feather="user-check" class="inline-block w-3 h-3 mr-1"></i>Find Customers
           </a>
 
-          <a href="/pages/jobs.html" class="text-gray-700 hover:text-teal-600 transition">
+          <a href="jobs.html" class="text-gray-700 hover:text-teal-600 transition">
             <i data-feather="briefcase" class="inline-block w-3 h-3 mr-1"></i>Job Board
           </a>
 
-          <a href="/pages/messages.html" class="relative text-gray-700 hover:text-teal-600 transition">
+          <a href="messages.html" class="relative text-gray-700 hover:text-teal-600 transition">
             <i data-feather="message-square" class="inline-block w-3 h-3 mr-1"></i>Messages
           </a>
 
@@ -60,13 +60,11 @@
 
       <!-- User Actions -->
       <div class="flex items-center space-x-3">
-        <a href="/pages/my-profile.html"
+        <a href="my-profile.html"
           class="hidden md:inline-flex items-center space-x-1 px-3 py-1.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:opacity-90 transition text-sm">
           <i data-feather="user" class="w-3 h-3"></i>
           <span>My Profile</span>
         </a>
-
-
       </div>
     </div>
 
@@ -279,17 +277,17 @@
             <i data-feather="zap" class="w-4 h-4 text-teal-600"></i> Quick Actions
           </h3>
           <div class="mt-4 space-y-2">
-            <a href="/pages/messages.html"
+            <a href="messages.html"
               class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
               <span class="text-sm text-gray-800">Open Messages</span>
               <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
             </a>
-            <a href="/pages/jobs.html"
+            <a href="jobs.html"
               class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
               <span class="text-sm text-gray-800">Browse Jobs</span>
               <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
             </a>
-            <a href="/pages/post-job.html"
+            <a href="post-job.html"
               class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
               <span class="text-sm text-gray-800">Post a Job</span>
               <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
@@ -302,19 +300,20 @@
     </div>
   </main>
 
-  <!-- Supabase Client & Auth -->
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  
-  <script src="/js/core/data.js"></script>
-  <script src="/js/core/script.js"></script>
-  <script type="module">
-    import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
-    import db from '/js/core/db.js';
-    import { uploadAvatar } from '/js/api/storage-api.js';
-    import { uploadVerificationDocument, getVerificationStatus } from '/js/api/verification-api.js';
+  <script src="../js/core/data.js"></script>
+  <script type="module" src="../js/core/supabase-client.js"></script>
+  <script type="module" src="../js/core/auth.js"></script>
+  <script src="../js/components/nav-shell.js"></script>
+  <script src="../js/core/spa-router.js"></script>
+  <script src="../js/core/script.js"></script>
 
-    document.addEventListener('DOMContentLoaded', async () => {
+  <script type="module">
+    import { supabase, getCurrentUser } from '../js/core/supabase-client.js';
+    import { ATHDB as db } from '../js/core/db.js';
+    import { uploadAvatar } from '../js/api/storage-api.js';
+    import { uploadVerificationDocument, getVerificationStatus } from '../js/api/verification-api.js';
+
+    async function initProfilePage() {
       // Initialize icons
       if (typeof feather !== 'undefined') feather.replace();
       
@@ -341,7 +340,7 @@
         // Populate UI
         document.getElementById('mpName').textContent = profile.display_name || 'New User';
         document.getElementById('mpDisplayName').value = profile.display_name || '';
-        document.getElementById('mpEmail').value = profile.email || session.user.email;
+        document.getElementById('mpEmail').value = profile.email || user.email;
         document.getElementById('mpSuburb').value = profile.suburb || '';
         document.getElementById('mpState').value = profile.state || '';
         document.getElementById('mpPhone').value = profile.phone || '';
@@ -448,18 +447,12 @@
           feather.replace();
           
           try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${userId}-${Math.random()}.${fileExt}`;
-            const filePath = `${fileName}`;
-            
-            // Import upload function dynamically if needed or assume it's available
-            const { uploadAvatar } = await import('./supabase-client.js');
-            
-            const { url, error } = await uploadAvatar(userId, file);
+            const { url, error } = await uploadAvatar(file, userId);
             
             if (error) throw error;
              
              // Update profile immediately with new avatar URL
+             const { updateUserProfile } = await import('../js/core/db.js');
              await updateUserProfile(userId, { avatar_url: url });
              
              // Update UI
@@ -537,51 +530,19 @@
           feather.replace();
         });
       }
-    });
-  </script>
+    }
 
-  <!-- Bottom Navigation (Mobile Only) -->
-  <nav class="bottom-nav">
-    <a href="/index.html" class="bottom-nav-item">
-      <i data-feather="home"></i>
-      <span>Home</span>
-    </a>
-    <a href="/pages/browse-trades.html" class="bottom-nav-item">
-      <i data-feather="users"></i>
-      <span>Tradies</span>
-    </a>
-    <a href="/pages/browse-customers.html" class="bottom-nav-item">
-      <i data-feather="user-check"></i>
-      <span>Customers</span>
-    </a>
-    <a href="/pages/jobs.html" class="bottom-nav-item">
-      <i data-feather="briefcase"></i>
-      <span>Jobs</span>
-    </a>
-    <a href="/pages/messages.html" class="bottom-nav-item">
-      <i data-feather="message-square"></i>
-      <span>Messages</span>
-    </a>
-    <a href="/pages/my-profile.html" class="bottom-nav-item">
-      <i data-feather="user"></i>
-      <span>Profile</span>
-    </a>
-  </nav>
-  </main>
+    // Auto-init
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initProfilePage);
+    } else {
+        initProfilePage();
+    }
 
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/data.js"></script>
-  <script src="/js/components/nav-shell.js"></script>
-  <script src="/js/core/spa-router.js"></script>
-  <script src="/js/core/script.js"></script>
-  <script>
-    (function () {
-      if (typeof feather !== 'undefined') feather.replace();
-    })();
+    // Expose for SPA
+    window.initProfilePage = initProfilePage;
   </script>
 </body>
-
 </html>
 
 

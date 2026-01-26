@@ -5,10 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Post a Job | AussieTradieHub</title>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <link rel="stylesheet" href="/css/main/style.css" />
+  <link rel="stylesheet" href="../css/main/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -29,7 +29,7 @@
             <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Post a Job</h1>
             <p class="text-gray-600 mt-1">Create a job listing to get quotes from trusted tradies.</p>
           </div>
-          <a href="/pages/jobs.html" class="text-teal-600 hover:text-teal-700 font-medium">Back to Jobs</a>
+          <a href="jobs.html" class="text-teal-600 hover:text-teal-700 font-medium">Back to Jobs</a>
         </div>
 
         <form id="postJobForm" class="space-y-5">
@@ -101,9 +101,8 @@
           </div>
 
           <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p class="text-sm text-gray-700 font-medium">Demo mode</p>
-            <p class="text-sm text-gray-600 mt-1">This is a static prototype. Submitting will save your job in <span
-                class="font-mono">localStorage</span> and show it on the Jobs page.</p>
+            <p class="text-sm text-gray-700 font-medium">Live Database Mode</p>
+            <p class="text-sm text-gray-600 mt-1">Your job will be posted to the live AussieTradieHub board for all verified tradies to see.</p>
           </div>
 
           <div class="flex flex-col sm:flex-row gap-3">
@@ -142,19 +141,19 @@
         <div>
           <h3 class="font-bold text-lg mb-4">For Customers</h3>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="/pages/browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
-            <li><a href="/pages/jobs.html" class="hover:text-white transition">Browse Jobs</a></li>
-            <li><a href="/pages/how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+            <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+            <li><a href="jobs.html" class="hover:text-white transition">Browse Jobs</a></li>
+            <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
           </ul>
         </div>
 
         <div>
           <h3 class="font-bold text-lg mb-4">For Tradies</h3>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="/pages/browse-customers.html" class="hover:text-white transition">Find Customers</a></li>
-            <li><a href="/pages/my-profile.html" class="hover:text-white transition">Create Profile</a></li>
-            <li><a href="/pages/resources.html" class="hover:text-white transition">Resources</a></li>
-            <li><a href="/pages/trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+            <li><a href="browse-customers.html" class="hover:text-white transition">Find Customers</a></li>
+            <li><a href="my-profile.html" class="hover:text-white transition">Create Profile</a></li>
+            <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
+            <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
           </ul>
         </div>
 
@@ -174,47 +173,43 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
           <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2024 AussieTradieHub. All rights reserved.</p>
           <div class="flex space-x-6">
-            <a href="/pages/about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
-            <a href="/pages/terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-            <a href="/pages/privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-            <a href="/pages/cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+            <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+            <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+            <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+            <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
           </div>
         </div>
       </div>
     </div>
   </footer>
 
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/data.js"></script>
-  <script src="/js/core/script.js"></script>
-  <script>
+  <!-- Core Scripts -->
+  <script src="../js/core/data.js"></script>
+  <script type="module">
+    import { supabase, getCurrentUser } from '../js/core/supabase-client.js';
+    import { createJob } from '../js/api/jobs-api.js';
+    import { initAuth } from '../js/core/auth.js';
+    
+    // Expose helpers globally for the page script
+    window.ATH_getCurrentUser = getCurrentUser;
+    window.ATH_createJob = createJob;
+
     const STORAGE_KEY = 'athPostedJobs';
 
-  </script>
-  <script type="module">
-      import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
+    async function initPostJob() {
+      console.log('Post Job initializing...');
+      if (typeof feather !== 'undefined') feather.replace();
 
-      // Mobile menu handled by script.js (loaded separately)
-
-      document.getElementById('cancelBtn')?.addEventListener('click', function () {
-        window.location.href = '/pages/jobs.html';
-      });
-
-      document.addEventListener('DOMContentLoaded', async function () {
-        if (typeof feather !== 'undefined') feather.replace();
-
-        // 1. Check Authentication
-        const { user, error } = await getCurrentUser();
-        if (!user) {
-          alert('You must be logged in to post a job.');
-          window.location.href = '/index.html?action=login';
-          return;
-        }
+        // 0. Setup Basic UI Listeners (independent of auth)
+        document.getElementById('cancelBtn')?.addEventListener('click', function () {
+          if (window.ATHRouter) {
+              window.ATHRouter.navigateTo('jobs.html');
+          } else {
+              window.location.href = 'jobs.html';
+          }
+        });
 
         // Batch L: trade/category multi-picker
-        // We'll stick with window.TRADE_CATEGORIES from data.js for the UI for now
-        // to minimize UI breakage, but we could fetch from Supabase 'trades' table later.
         const hiddenCats = document.getElementById('athJobCategories');
         const toggleBtn = document.getElementById('athTradePickerToggle');
         const panel = document.getElementById('athTradePickerPanel');
@@ -288,121 +283,158 @@
           });
         }
 
-        toggleBtn?.addEventListener('click', () => {
+        // Close panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!panel?.contains(e.target) && !toggleBtn?.contains(e.target)) {
+                panel?.classList.add('hidden');
+            }
+        });
+
+        toggleBtn?.addEventListener('click', (e) => {
+          e.stopPropagation();
           panel?.classList.toggle('hidden');
           renderOptions();
         });
+        
         searchInput?.addEventListener('input', renderOptions);
+        searchInput?.addEventListener('click', (e) => e.stopPropagation());
 
         setSelected(selected);
         renderOptions();
+
+        // 1. Check Authentication (Do this AFTER setting up the UI)
+        let user = null;
+        try {
+            if (typeof window.ATH_getCurrentUser !== 'function') {
+                console.warn('ATH_getCurrentUser not available yet, waiting...');
+                // Optional: poll or wait
+            }
+            const result = await window.ATH_getCurrentUser?.();
+            user = result?.user;
+        } catch (authErr) {
+            console.error('Auth check failed:', authErr);
+        }
+
+        if (!user) {
+          alert('You must be logged in to post a job.');
+          if (window.ATHRouter) {
+              window.ATHRouter.navigateTo('../index.html?action=login');
+          } else {
+              window.location.href = '../index.html?action=login';
+          }
+          return;
+        }
+
+        // Form Submission logic follows...
 
         // Form Submission
         const form = document.getElementById('postJobForm');
         const errorEl = document.getElementById('formError');
 
-        form.addEventListener('submit', async function (e) {
-          e.preventDefault();
-          errorEl.classList.add('hidden'); // Reset error
-          
-          const submitBtn = form.querySelector('button[type="submit"]');
-          const originalBtnText = submitBtn.innerText;
-          submitBtn.disabled = true;
-          submitBtn.innerText = 'Posting...';
+        if (form && !form.dataset.athBound) {
+            form.dataset.athBound = '1';
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                errorEl.classList.add('hidden'); 
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerText;
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Posting...';
 
-          try {
-            const fd = new FormData(form);
-            const title = (fd.get('title') || '').toString().trim();
-            const categoriesRaw = (fd.get('categories') || '').toString().trim();
-            const categories = (categoriesRaw || (hiddenCats?.value || '')).split(',').map(s => s.trim()).filter(Boolean);
-            const state = (fd.get('state') || '').toString().trim();
-            const budget = (fd.get('budget') || '').toString().trim();
-            const date = (fd.get('date') || '').toString().trim();
-            const description = (fd.get('description') || '').toString().trim();
+                try {
+                    const fd = new FormData(form);
+                    const title = (fd.get('title') || '').toString().trim();
+                    const stateVal = (fd.get('state') || '').toString().trim();
+                    const budget = (fd.get('budget') || '').toString().trim();
+                    const date = (fd.get('date') || '').toString().trim();
+                    const description = (fd.get('description') || '').toString().trim();
+                    const categories = Array.from(selected);
 
-            if (!title || !state || !description || categories.length === 0) {
-              throw new Error('Please fill in the required fields (title, at least 1 trade/category, state, and description).');
-            }
+                    if (!title || !stateVal || !description || categories.length === 0) {
+                        throw new Error('Please fill in the required fields (title, at least 1 trade/category, state, and description).');
+                    }
 
-            // Insert into Supabase
-            const { data, error } = await supabase
-              .from('jobs')
-              .insert([{
-                customer_id: user.id,
-                title: title,
-                categories: categories,
-                location: state, // Using state as location for now
-                state: state,
-                budget_max: budget ? parseInt(budget) : null,
-                timeline: date ? `Preferred date: ${date}` : 'Flexible',
-                description: description,
-                status: 'open',
-                type: 'one-off', // Default
-                urgency: 'flexible' // Default
-              }])
-              .select();
+                    const jobData = {
+                        customer_id: user.id,
+                        title: title,
+                        categories: categories,
+                        location: stateVal,
+                        state: stateVal,
+                        budget_max: budget ? parseInt(budget) : null,
+                        timeline: date ? `Preferred date: ${date}` : 'Flexible',
+                        description: description,
+                        status: 'open',
+                        type: 'one-off',
+                        urgency: 'flexible'
+                    };
 
-            if (error) throw error;
+                    const { error: createError } = await window.ATH_createJob(jobData);
+                    if (createError) throw createError;
 
-            // Success
-            window.location.href = '/pages/jobs.html?posted=1';
+                    if (window.ATHRouter) {
+                        window.ATHRouter.navigateTo('jobs.html?posted=1');
+                    } else {
+                        window.location.href = 'jobs.html?posted=1';
+                    }
 
-          } catch (err) {
-            console.error('Error posting job:', err);
-            errorEl.textContent = err.message || 'An error occurred while posting the job. Please try again.';
-            errorEl.classList.remove('hidden');
-            
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalBtnText;
-          }
-        });
-      });
-    </script>
+                } catch (err) {
+                    console.error('Error posting job:', err);
+                    errorEl.textContent = err.message || 'An error occurred while posting the job.';
+                    errorEl.classList.remove('hidden');
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalBtnText;
+                }
+            });
+        }
+    }
+    
+    // Auto-init for direct load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPostJob);
+    } else {
+        initPostJob();
+    }
 
+    // Expose for SPA
+    window.initPostJob = initPostJob;
+  </script>
 
   <!-- Bottom Navigation (Mobile Only) -->
   <nav class="bottom-nav">
-    <a href="/index.html" class="bottom-nav-item">
+    <a href="../index.html" class="bottom-nav-item">
       <i data-feather="home"></i>
       <span>Home</span>
     </a>
-    <a href="/pages/browse-trades.html" class="bottom-nav-item">
+    <a href="browse-trades.html" class="bottom-nav-item">
       <i data-feather="users"></i>
       <span>Tradies</span>
     </a>
-    <a href="/pages/browse-customers.html" class="bottom-nav-item">
+    <a href="browse-customers.html" class="bottom-nav-item">
       <i data-feather="user-check"></i>
       <span>Customers</span>
     </a>
-    <a href="/pages/jobs.html" class="bottom-nav-item">
+    <a href="jobs.html" class="bottom-nav-item">
       <i data-feather="briefcase"></i>
       <span>Jobs</span>
     </a>
-    <a href="/pages/messages.html" class="bottom-nav-item">
+    <a href="messages.html" class="bottom-nav-item">
       <i data-feather="message-square"></i>
       <span>Messages</span>
     </a>
-    <a href="/pages/my-profile.html" class="bottom-nav-item">
+    <a href="my-profile.html" class="bottom-nav-item">
       <i data-feather="user"></i>
       <span>Profile</span>
     </a>
   </nav>
   </main>
 
-  <script type="module" src="/js/core/supabase-client.js"></script>
-  <script type="module" src="/js/core/auth.js"></script>
-  <script src="/js/core/data.js"></script>
-  <script src="/js/components/nav-shell.js"></script>
-  <script src="/js/core/spa-router.js"></script>
-  <script src="/js/core/script.js"></script>
-  <script>
-    (function () {
-      if (typeof feather !== 'undefined') feather.replace();
-    })();
-  </script>
+  <script src="../js/components/nav-shell.js"></script>
+  <script src="../js/core/spa-router.js"></script>
+  <script src="../js/core/script.js"></script>
 </body>
 
-</html>
 
 
 

@@ -321,135 +321,8 @@ window.ATHJobs = window.ATHJobs || (function () {
 // - Do not re-architect: reuse ATHJobs.getAllJobs() (seed + posted + overrides).
 // - Do not introduce new storage keys.
 // - Keep UI minimal and consistent with jobs.html modal.
-window.ATHJobDetails = window.ATHJobDetails || (function () {
-  const MODAL_ID = 'athJobModal';
-  const TITLE_ID = 'athJobModalTitle';
-  const BODY_ID = 'athJobModalBody';
-  const CLOSE_ID = 'athJobModalClose';
+// ATHJobDetails legacy removed (now handled by js/components/job-details-modal.js)
 
-  function escapeHtml(s) {
-    return String(s ?? '').replace(/[&<>"']/g, (ch) => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[ch]));
-  }
-
-  function money(n) {
-    const v = Number(n || 0);
-    if (!isFinite(v) || v <= 0) return '—';
-    try {
-      return v.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 });
-    } catch {
-      return `$${Math.round(v)}`;
-    }
-  }
-
-  function budgetLabel(job) {
-    const min = Number(job?.budgetMin || 0);
-    const max = Number(job?.budgetMax || 0);
-    if (max && min && max !== min) return `${money(min)} – ${money(max)}`;
-    if (max || min) return money(max || min);
-    return '—';
-  }
-
-  function ensureModal() {
-    let modal = document.getElementById(MODAL_ID);
-    if (modal) return modal;
-
-    // Inject a modal identical in structure to jobs.html.
-    const wrap = document.createElement('div');
-    wrap.innerHTML = `
-      <div id="${MODAL_ID}" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-200">
-          <div class="flex items-center justify-between p-5 border-b border-gray-200">
-            <h3 id="${TITLE_ID}" class="text-lg font-bold text-gray-900">Job</h3>
-            <button id="${CLOSE_ID}" class="p-2 rounded-lg hover:bg-gray-100" type="button" aria-label="Close">
-              <i data-feather="x" class="w-5 h-5 text-gray-700"></i>
-            </button>
-          </div>
-          <div id="${BODY_ID}" class="p-5"></div>
-        </div>
-      </div>`;
-    document.body.appendChild(wrap.firstElementChild);
-    modal = document.getElementById(MODAL_ID);
-
-    // Wire close behavior.
-    const closeBtn = document.getElementById(CLOSE_ID);
-    const close = () => {
-      modal?.classList.add('hidden');
-      document.body.classList.remove('overflow-hidden');
-    };
-    closeBtn?.addEventListener('click', close);
-    modal?.addEventListener('click', (e) => { if (e.target === modal) close(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-
-    if (typeof feather !== 'undefined') feather.replace();
-    return modal;
-  }
-
-  function open(jobId) {
-    const all = window.ATHJobs?.getAllJobs?.() || [];
-    const job = all.find(j => String(j?.id) === String(jobId));
-    if (!job) return;
-
-    const modal = ensureModal();
-    const titleEl = document.getElementById(TITLE_ID);
-    const bodyEl = document.getElementById(BODY_ID);
-    if (!modal || !titleEl || !bodyEl) return;
-
-    const catIds = Array.isArray(job.categories)
-      ? job.categories
-      : (typeof window.normalizeTradeIds === 'function' ? window.normalizeTradeIds(job.categories) : []);
-    const chips = (catIds || []).map((cid) => {
-      const label = (typeof window.tradeLabel === 'function') ? window.tradeLabel(cid) : String(cid || '');
-      return `<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-medium">${escapeHtml(label)}</span>`;
-    }).join('');
-
-    const timeline = String(job.timeline || 'Flexible');
-    const desc = window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function'
-      ? window.ATHIntegrity.sanitizeTextSync(job.description || '').text
-      : (job.description || '');
-    const st = String(job.status || 'open').replace('_', ' ');
-
-    titleEl.textContent = job.title || 'Job details';
-    bodyEl.innerHTML = `
-      <div class="space-y-4">
-        <div class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 inline-flex">Status: <span class="ml-1 font-semibold">${escapeHtml(st)}</span></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-            <p class="text-xs text-gray-500">Categories</p>
-            <div class="mt-1 flex flex-wrap gap-2">${chips || '<span class="text-xs text-gray-500">—</span>'}</div>
-          </div>
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-            <p class="text-xs text-gray-500">Location</p>
-            <p class="font-semibold text-gray-900">${escapeHtml(job.location || '—')}</p>
-          </div>
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-            <p class="text-xs text-gray-500">Budget</p>
-            <p class="font-semibold text-gray-900">${escapeHtml(budgetLabel(job))}</p>
-          </div>
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-            <p class="text-xs text-gray-500">Timeline</p>
-            <p class="font-semibold text-gray-900">${escapeHtml(timeline)}</p>
-          </div>
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-gray-900 mb-1">Description</p>
-          <p class="text-sm text-gray-700 whitespace-pre-line">${escapeHtml(desc)}</p>
-        </div>
-      </div>
-    `;
-
-    modal.classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-    if (typeof feather !== 'undefined') feather.replace();
-  }
-
-  return { open, ensureModal };
-})();
 
 // ----------------------------
 // Batch N3: Integrity (no direct contact until payment)
@@ -2058,6 +1931,13 @@ async function handleAuthSubmit() {
 // Messages Page
 // ----------------------------
 function initMessagesPage() {
+  // Fix BUG-003: Cleanup previous subscription if navigating back
+  if (window.ATH_activeMsgSub) {
+      console.log('🧹 Cleaning up previous message subscription');
+      try { window.ATH_activeMsgSub.unsubscribe(); } catch(e) { console.warn('Unsub failed', e); }
+      window.ATH_activeMsgSub = null;
+  }
+  
   const list = document.getElementById('conversationsList');
   const emptyEl = document.getElementById('conversationsEmpty');
   const searchInput = document.getElementById('conversationsSearch');
@@ -2270,35 +2150,31 @@ function initMessagesPage() {
       }
       
       try {
-        // Use increased limit here because we want to accept it for compression
-        const compressedData = await window.ATHImages.processImageFile(file, {
-          maxDim: 1600,
-          quality: 0.8,
-          maxBytes: 15 * 1024 * 1024 
-        });
-        
-        if (!compressedData) throw new Error('Compression failed');
-        
-        // Calculate savings
-        const originalBytes = file.size;
-        const compressedBytes = Math.round((compressedData.length * 3) / 4);
-        const savedPercent = Math.round((1 - compressedBytes/originalBytes) * 100);
-        
-        // UI Stats
+        if (!window.window.ATHStorage) throw new Error('Storage API not loaded');
+
+        // Show uploading state?
         const statsEl = document.getElementById('previewStats');
         if (statsEl) {
-           const origFmt = (originalBytes / 1024).toFixed(0) + 'KB';
-           const compFmt = (compressedBytes / 1024).toFixed(0) + 'KB';
-           statsEl.textContent = `Compressed: ${compFmt} (was ${origFmt}, saved ${savedPercent}%)`;
-           statsEl.classList.remove('hidden');
+             statsEl.textContent = 'Uploading...';
+             statsEl.classList.remove('hidden');
         }
 
+        const id = getConversationIdFromUrl() || getDefaultConversationId();
+        if (!id) throw new Error('No active conversation');
+
+        // Upload directly
+        const { url, path, error } = await window.ATHStorage.uploadChatAttachment(file, id);
+
+        if (error || !url) throw new Error('Upload failed');
+        
         const fileData = {
           type: type,
           name: file.name,
-          size: compressedBytes,
-          data: compressedData
+          size: file.size,
+          data: url, // Signed URL from storage
+          path: path // Store storage path for future reference
         };
+        
 
         // Show Preview
         window.pendingUpload = fileData;
@@ -2643,14 +2519,87 @@ function initMessagesPage() {
     chatScroll.parentElement.insertBefore(pinnedSection, chatScroll);
   }
 
-  let DATA = window.ATHStore.get(STORE_KEY, {});
-  if (!DATA || typeof DATA !== 'object') DATA = {};
-
-  // Seed conversations from window.CONVERSATIONS if empty (first load for this user)
-  if (Object.keys(DATA).length === 0 && window.CONVERSATIONS) {
-    DATA = JSON.parse(JSON.stringify(window.CONVERSATIONS)); // Deep clone
-    window.ATHStore.set(STORE_KEY, DATA);
+  let DATA = {};
+  
+  // Helper: DB to UI format
+  function dbMessageToUI(m) {
+     const isMe = m.sender_id === uid;
+     let attachments = null;
+     if (m.attachments) {
+         attachments = m.attachments; // Assume correct format
+     }
+     return {
+        ts: new Date(m.created_at).getTime(),
+        from: isMe ? 'me' : 'them',
+        text: m.text,
+        status: m.read ? 'read' : 'delivered',
+        time: new Date(m.created_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}),
+        attachment: attachments,
+        replyTo: null, // Future: fetch reply context
+        id: m.id
+     };
   }
+
+  // Initial Fetch
+  (async () => {
+      try {
+        const { data } = await window.ATHDB.getConversations(uid);
+        if (data) {
+          const newMap = {};
+          data.forEach(c => {
+             const user1 = Array.isArray(c.user1) ? c.user1[0] : c.user1;
+             const user2 = Array.isArray(c.user2) ? c.user2[0] : c.user2;
+             const other = c.user1_id === uid ? user2 : user1; 
+             const job = Array.isArray(c.job) ? c.job[0] : c.job;
+
+             newMap[c.id] = {
+                 id: c.id,
+                 name: other?.display_name || 'User',
+                 avatar: other?.avatar_url || '',
+                 meta: job?.title ? `Job: ${job.title}` : (other?.suburb || 'TradieHub User'),
+                 online: false, 
+                 messages: [],
+                 lastMessageAt: c.last_message_at
+             };
+          });
+          DATA = newMap;
+          console.log('✅ Conversations loaded:', Object.keys(DATA).length);
+          renderConversationList(searchInput?.value || '');
+          
+          // Trigger load if URL param exists
+          const urlId = getConversationIdFromUrl();
+          if (urlId && DATA[urlId]) {
+              load(urlId);
+          } else {
+                 // Load most recent
+                 const def = getDefaultConversationId();
+                 if (def) {
+                    load(def);
+                 } else {
+                    // No conversations at all - Show Empty State
+                    console.log('ℹ️ No conversations found. Showing empty state.');
+                    const chatPane = document.getElementById('athChatPane');
+                    const emptyState = document.getElementById('athMessagesEmptyState');
+                    const contextPanel = document.getElementById('jobDetailsCard');
+
+                    if (chatPane) {
+                        chatPane.classList.add('hidden');
+                        chatPane.style.display = 'none'; // Force hide
+                    }
+                    if (emptyState) {
+                        emptyState.classList.remove('hidden');
+                        emptyState.style.display = 'flex'; // Force show as flex
+                    }
+                    // Ensure context panel is visible
+                    if (contextPanel) {
+                        contextPanel.classList.remove('hidden');
+                        contextPanel.style.display = ''; // Reset
+                    }
+                 }
+          }
+        }
+      } catch(e) { console.error('Failed to load conversations', e); }
+  })();
 
   // v0.027c: Fix "undefined" bug — sanitizeText is async, but we need sync preview. 
   // We'll use a regex fallback here for the sidebar preview to keep it snappy.
@@ -2809,7 +2758,10 @@ function initMessagesPage() {
                     <span class="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">${escapeHtml(time)}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center leading-none mt-0.5">
+              <div class="flex justify-between items-center leading-none">
+                  <span class="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase tracking-tighter truncate opacity-80">${escapeHtml(c?.meta || '')}</span>
+              </div>
+              <div class="flex justify-between items-center leading-none mt-1">
                   <p class="text-xs text-gray-600 dark:text-gray-400 truncate pr-2 flex-1">${escapeHtml(preview)}</p>
                   <button onclick="event.stopPropagation(); window.deleteConversation('${escapeHtml(id)}')" 
                         class="md:invisible group-hover:visible p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all flex-shrink-0 ml-1" 
@@ -3583,12 +3535,12 @@ function initMessagesPage() {
     console.log('[DEBUG] Created mock conversation:', id);
   }
 
-  function load(id) {
-    // If the URL specifies a conversation that doesn't exist in this account yet,
-    // create an empty stub so "Contact" deep-links open the right thread.
-    if (id && !DATA[id]) ensureConversationExists(id);
+  let activeSubscription = null;
 
+  async function load(id) {
+    if (id && !DATA[id]) ensureConversationExists(id); // Keep fallback
     const actualId = DATA[id] ? id : getDefaultConversationId();
+    
     if (!actualId) {
       // No conversations at all
       renderConversationList(searchInput?.value || '');
@@ -3619,47 +3571,59 @@ function initMessagesPage() {
 
     const c = DATA[actualId];
 
-    // Mark read + persist active
+    // DB: Fetch & Subscribe
+    if (window.ATHDB) {
+        // Subscribe real-time
+        if (window.ATH_activeMsgSub) {
+            window.ATH_activeMsgSub.unsubscribe();
+            window.ATH_activeMsgSub = null;
+        }
+        
+        try {
+            const { data: msgs } = await window.ATHDB.getMessages(actualId);
+            if (msgs) {
+                DATA[actualId].messages = msgs.map(dbMessageToUI);
+            }
+            
+            
+            window.ATH_activeMsgSub = window.ATHDB.subscribeToMessages(actualId, (payload) => {
+                 const uiMsg = dbMessageToUI(payload);
+                 if (!DATA[actualId].messages.find(m => m.id === uiMsg.id)) {
+                     const isMe = uiMsg.from === 'me';
+                     if (!isMe) {
+                         // Play sound?
+                     }
+                     DATA[actualId].messages.push(uiMsg);
+                     if (localStorage.getItem(lastActiveKey) === actualId) {
+                        renderMessages(DATA[actualId]);
+                        if (chat) chat.scrollTop = chat.scrollHeight;
+                     } else {
+                         // Background update needed?
+                     }
+                 }
+            });
+        } catch(e) { console.error('Message load failed', e); }
+    }
+
     markRead(actualId);
     localStorage.setItem(lastActiveKey, actualId);
 
-    // Render
     setConversationIdInUrl(actualId);
     renderConversationList(searchInput?.value || '');
     setActiveRow(actualId);
     renderHeader(c);
     renderMessages(c);
     updateUnreadUI();
-
-    // v0.028: render right-side context panel for this conversation
     renderContextPanel(actualId);
     
-    // v0.035: Restore draft for this conversation
     if (input) {
       const draft = loadDraft(actualId);
       input.value = draft;
-      // Focus input if there's a draft
-      if (draft) {
-        setTimeout(() => input.focus(), 150);
-      }
+      if (draft) setTimeout(() => input.focus(), 150);
     }
     
-    // Force scroll to bottom after everything is rendered
-    setTimeout(() => {
-      if (chat) {
-        chat.scrollTop = chat.scrollHeight;
-      }
-    }, 100);
-    setTimeout(() => {
-      if (chat) {
-        chat.scrollTop = chat.scrollHeight;
-      }
-    }, 300);
-    setTimeout(() => {
-      if (chat) {
-        chat.scrollTop = chat.scrollHeight;
-      }
-    }, 600);
+    setTimeout(() => { if (chat) chat.scrollTop = chat.scrollHeight; }, 100);
+    setTimeout(() => { if (chat) chat.scrollTop = chat.scrollHeight; }, 300);
   }
 
   // ----------------------------
@@ -3862,19 +3826,18 @@ function initMessagesPage() {
   // ----------------------------
   // Send message
   // ----------------------------
-  function send() {
+  async function send() {
     const id = getConversationIdFromUrl() || getDefaultConversationId();
     if (!id || !DATA[id]) return;
 
     const text = (input?.value || '').trim();
     if (!text) return;
 
-    const now = Date.now();
-    // Block off-platform contact sharing until payment
+    // Integrity Check (keep existing logic)
     const scan = window.ATHIntegrity?.scanText ? window.ATHIntegrity.scanText(text) : { hasContact: false };
     if (scan?.hasContact) {
       window.ATHIntegrity?.setInlineNotice(document.getElementById('athMessageSanitizeNote'),
-        'Contact details (phone, email, or links) are locked until payment is confirmed. Please remove them.');
+        'Contact details are locked until payment. Please remove them.');
       setTimeout(() => window.ATHIntegrity?.setInlineNotice(document.getElementById('athMessageSanitizeNote'), ''), 3000);
       return;
     }
@@ -3882,69 +3845,42 @@ function initMessagesPage() {
     const sanitized = window.ATHIntegrity && typeof window.ATHIntegrity.sanitizeTextSync === 'function'
       ? window.ATHIntegrity.sanitizeTextSync(text)
       : { text, changed: false };
-    const newMessage = { 
-      from: 'me', 
-      time: 'Now', 
-      ts: now, 
-      text: sanitized.text,
-      status: 'sent' // New: track message status
-    };
-    
-    // v0.040: Add reply data if replying
-    if (currentReply) {
-      newMessage.replyTo = {
-        ts: currentReply.ts,
-        text: currentReply.text,
-        from: currentReply.from
-      };
-    }
-    
-    DATA[id].messages.push(newMessage);
-    window.ATHStore.set(STORE_KEY, DATA);
-    input.value = '';
-    
-    // v0.035: Clear draft after successful send
-    clearDraft(id);
-    
-    // v0.040: Clear reply after successful send
-    if (currentReply) {
-      window.cancelReply();
-    }
-
-    // Re-render chat + sidebar preview/time
-    renderMessages(DATA[id]);
-    renderConversationList(searchInput?.value || '');
-    setActiveRow(id);
-
-    // Simulate message status updates (delivered -> read)
-    setTimeout(() => {
-      newMessage.status = 'delivered';
-      window.ATHStore.set(STORE_KEY, DATA);
-      renderMessages(DATA[id]);
       
-      setTimeout(() => {
-        newMessage.status = 'read';
-        window.ATHStore.set(STORE_KEY, DATA);
-        renderMessages(DATA[id]);
-      }, 1500);
-    }, 500);
+    // UI Update (Optimistic)
+    input.value = '';
+    clearDraft(id);
+    if (currentReply) window.cancelReply();
+
+    // DB Call
+    if (window.ATHDB) {
+        try {
+            // NOTE: currentReply context is not yet waiting on Backend API support
+            // We just send text for now.
+            const { data, error } = await window.ATHDB.sendMessage(id, uid, sanitized.text);
+            
+            if (data) {
+                const uiMsg = dbMessageToUI(data);
+                DATA[id].messages.push(uiMsg);
+                renderMessages(DATA[id]);
+                renderConversationList(searchInput?.value || '');
+                setActiveRow(id);
+            } else {
+                alert('Failed to send message.');
+                input.value = text;
+            }
+        } catch(e) {
+            console.error('Send failed', e);
+            input.value = text;
+        }
+    }
   }
 
   function showTypingIndicator(name) {
-    const indicator = document.getElementById('typingIndicator');
-    const text = document.getElementById('typingIndicatorText');
-    if (indicator && text) {
-      text.textContent = `${name} is typing...`;
-      indicator.classList.remove('hidden');
-      chat.scrollTop = chat.scrollHeight;
-    }
+    // ... no-op or implement realtime typing later
   }
 
   function hideTypingIndicator() {
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) {
-      indicator.classList.add('hidden');
-    }
+     // ...
   }
 
   sendBtn?.addEventListener('click', send);
@@ -6347,6 +6283,76 @@ window.sendPhotoSet = function() {
   
   window.closePhotoSetBuilder();
 };
+
+// Router for Messages
+if (window.location.pathname.includes('messages.html')) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMessagesPage);
+  } else {
+    initMessagesPage();
+  }
+}
+
+// --- Global Helpers ---
+
+/**
+ * Global Contact User Handler
+ * Finds or creates a conversation with a user and redirects to messages
+ * @param {string} targetId - UUID of the user to contact
+ */
+window.ATH_ContactUser = async function(targetId) {
+    // 1. Check if user is logged in
+    if (typeof window.ATHAuth === 'undefined') {
+        alert('Authentication system not loaded.');
+        return;
+    }
+
+    const { user } = await window.ATHAuth.getCurrentUser();
+    if (!user) {
+        // Redirect to login or show alert
+        alert('Please sign in to contact users.');
+        // Optionally: window.ATHRouter.navigateTo('/pages/my-profile.html');
+        return;
+    }
+
+    if (user.id === targetId) {
+        alert('You cannot message yourself.');
+        return;
+    }
+
+    // 2. Find or Create conversation
+    if (typeof window.ATHDB === 'undefined') {
+        alert('Database system not loaded.');
+        return;
+    }
+
+    try {
+        // Show loading state/toast if available
+        console.log('Creating conversation with:', targetId);
+        
+        const { data: convo, error } = await window.ATHDB.getOrCreateConversation(user.id, targetId);
+        
+        if (error) throw error;
+        
+        if (convo && convo.id) {
+            // 3. Navigate to messages page with conversation ID
+            const messagesUrl = `/pages/messages.html?conversation=${convo.id}`;
+            if (window.ATHRouter) {
+                window.ATHRouter.navigateTo(messagesUrl);
+            } else {
+                window.location.href = messagesUrl;
+            }
+        }
+    } catch (err) {
+        console.error('Failed to create conversation:', err);
+        alert('Failed to start conversation. Please try again.');
+    }
+};
+
+// Ensure global access for SPA Router
+window.initMessagesPage = initMessagesPage;
+window.initJobsPage = typeof initJobsPage !== 'undefined' ? initJobsPage : undefined;
+window.initProfilePage = typeof initProfilePage !== 'undefined' ? initProfilePage : undefined;
 
 
 

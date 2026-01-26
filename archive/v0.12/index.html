@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AussieTradieHub | Find Trusted Local Tradies</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d9488">
+    <script src="js/core/device-detect.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/main/style.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dark .dark-mode-icon { display: none; }
+        .dark .light-mode-icon { display: block; }
+        .review-dot {
+            width: 18px;
+            height: 4px;
+            min-width: 18px;
+            min-height: 4px;
+            padding: 0;
+            line-height: 0;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 ath-home-page h-screen overflow-hidden flex flex-col">
+    <div id="athNavMount"></div>
+
+    <main id="athMain" class="flex-1 overflow-hidden relative flex flex-col">
+      <div id="homePageScroll" class="h-full overflow-y-auto w-full">
+
+    <!-- Hero Section -->
+    <div class="bg-white dark:bg-gray-800 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+            <div class="text-center max-w-3xl mx-auto">
+                <div class="mb-4">
+                    <span class="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 px-3 py-1 rounded-full text-xs font-semibold">
+                        <span class="w-2 h-2 bg-teal-500 rounded-full"></span>
+                        Australia's Trusted Tradie Network
+                    </span>
+                </div>
+                
+                <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                    Find local tradies you can actually trust
+                </h1>
+                
+                <p class="text-base text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto">
+                    Connect with verified professionals for any job. Post for free, get quotes, and hire with confidence.
+                </p>
+
+                <!-- Search Box -->
+                <form class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-md p-0 max-w-6xl mx-auto md:w-[120%] md:-mx-[10%]" onsubmit="const q = document.getElementById('homeSearchQuery').value.trim(); const loc = document.getElementById('homeSearchLocation').value.trim(); const params = new URLSearchParams(); if (q) params.set('q', q); if (loc) params.set('location', loc); const url = params.toString() ? `/pages/browse-trades.html?${params.toString()}` : '/pages/browse-trades.html'; window.location.href = url; return false;">
+                    <div class="flex flex-col md:flex-row gap-0.5">
+                        <div class="flex-1">
+                            <input id="homeSearchQuery" type="text" placeholder="What do you need done?" aria-label="Job description"
+                                   class="w-full h-9 px-3 py-0 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <div class="flex-1">
+                            <input id="homeSearchLocation" type="text" placeholder="Suburb or postcode" aria-label="Suburb or postcode"
+                                   class="w-full h-9 px-3 py-0 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
+                        <button type="submit"
+                                class="bg-teal-600 text-white px-6 h-9 rounded-lg font-semibold hover:bg-teal-700 whitespace-nowrap text-sm">
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="bg-gray-50 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700 py-6 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">12,500+</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300">Verified Tradies</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">50,000+</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300">Jobs Completed</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">4.8★</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300">Average Rating</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">24/7</div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300">Support Available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="py-12 bg-white dark:bg-gray-900 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Popular Categories</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Find the right expert for your job</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <a href="/pages/browse-trades.html?category=Plumber" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50">
+                        <i data-feather="droplet" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Plumbing</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">1,200+ pros</p>
+                </a>
+                
+                <a href="/pages/browse-trades.html?category=Electrician" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                    <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-900/50">
+                        <i data-feather="zap" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Electrical</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">850+ pros</p>
+                </a>
+                
+                <a href="/pages/browse-trades.html?category=Carpenter" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                    <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50">
+                        <i data-feather="home" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Carpentry</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">600+ pros</p>
+                </a>
+                
+                <a href="/pages/browse-trades.html?category=Landscaper" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 dark:group-hover:bg-green-900/50">
+                        <i data-feather="sun" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Landscaping</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">400+ pros</p>
+                </a>
+                
+                <a href="/pages/browse-trades.html?category=Painter" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50">
+                        <i data-feather="tool" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Painting</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">550+ pros</p>
+                </a>
+                
+                <a href="/pages/browse-trades.html" class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-teal-500 hover:shadow-lg transition text-center group">
+                    <div class="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-gray-200 dark:group-hover:bg-gray-600">
+                        <i data-feather="grid" class="w-6 h-6 text-gray-600 dark:text-gray-300"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">View All</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">20+ categories</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Section -->
+    <div class="bg-teal-600 py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="text-white">
+                    <div class="inline-block bg-teal-700 px-2.5 py-1 rounded-full text-xs font-semibold mb-3">
+                        VERIFIED & PROTECTED
+                    </div>
+                    <h2 class="text-2xl font-bold mb-4">Every tradie is verified by us</h2>
+                    <p class="text-teal-100 text-sm mb-6">
+                        We manually check every single ID, license, and ABN. No bots, no automation - just good old-fashioned due diligence.
+                    </p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-2">
+                            <i data-feather="check-circle" class="w-5 h-5 text-teal-300 flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-sm">Government ID Check</h4>
+                                <p class="text-teal-100 text-xs">Driver's license or passport verified</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i data-feather="check-circle" class="w-5 h-5 text-teal-300 flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-sm">ABN Validation</h4>
+                                <p class="text-teal-100 text-xs">Registered Australian business</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i data-feather="check-circle" class="w-5 h-5 text-teal-300 flex-shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-sm">Escrow Protection</h4>
+                                <p class="text-teal-100 text-xs">Money held 'til job is done</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-white rounded-xl p-4 shadow-xl relative overflow-hidden">
+                    <div id="reviewCarousel" class="transition-opacity duration-500">
+                        <!-- Review content will be inserted here by JavaScript -->
+                    </div>
+                    <div class="flex gap-1 justify-center mt-2">
+                        <button onclick="setReview(0)" class="review-dot w-1.5 h-0.5 rounded-full bg-gray-300 transition"></button>
+                        <button onclick="setReview(1)" class="review-dot w-1.5 h-0.5 rounded-full bg-gray-300 transition"></button>
+                        <button onclick="setReview(2)" class="review-dot w-1.5 h-0.5 rounded-full bg-gray-300 transition"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const reviews = [
+            {
+                name: "Mike Robertson",
+                initials: "MR",
+                location: "Sydney, NSW",
+                stars: 5,
+                text: "After being ripped off twice by cowboys from Facebook, finding TradieHub was a game-changer. The ID verification gave me confidence before they even showed up."
+            },
+            {
+                name: "Sarah Chen",
+                initials: "SC",
+                location: "Melbourne, VIC",
+                stars: 5,
+                text: "Finally found a reliable electrician through TradieHub. The escrow payment system meant I didn't have to pay until the job was completely done. Highly recommend!"
+            },
+            {
+                name: "David Wilson",
+                initials: "DW",
+                location: "Brisbane, QLD",
+                stars: 5,
+                text: "Used to be so stressful finding tradies. TradieHub's verification process is brilliant - no more dodgy contractors. Got my bathroom renovation done perfectly."
+            }
+        ];
+
+        let currentReview = 0;
+
+        function renderReview(index) {
+            const review = reviews[index];
+            const stars = Array(review.stars).fill('<i data-feather="star" class="w-4 h-4 fill-current"></i>').join('');
+            
+            document.getElementById('reviewCarousel').innerHTML = `
+                <div class="flex items-center gap-3 mb-4">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(review.initials)}&background=0d9488&color=fff" 
+                         class="w-12 h-12 rounded-full">
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-900">${review.name}</h4>
+                        <div class="flex text-yellow-400">
+                            ${stars}
+                        </div>
+                    </div>
+                </div>
+                <p class="text-gray-600 text-sm italic mb-4">
+                    "${review.text}"
+                </p>
+                <div class="text-xs text-gray-500">${review.location}</div>
+            `;
+            
+            feather.replace();
+            
+            // Update dots
+            document.querySelectorAll('.review-dot').forEach((dot, i) => {
+                dot.classList.toggle('bg-teal-600', i === index);
+                dot.classList.toggle('bg-gray-300', i !== index);
+            });
+        }
+
+        function setReview(index) {
+            currentReview = index;
+            renderReview(index);
+        }
+
+        let carouselInterval;
+
+        function nextReview() {
+            if (!document.getElementById('reviewCarousel')) {
+                clearInterval(carouselInterval);
+                return;
+            }
+            currentReview = (currentReview + 1) % reviews.length;
+            renderReview(currentReview);
+        }
+
+        // Auto-rotate every 5 seconds
+        carouselInterval = setInterval(nextReview, 5000);
+
+        // Initial render
+        renderReview(0);
+    </script>
+
+    <!-- How It Works -->
+    <div class="py-12 bg-white dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">How It Works</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Get your job done in three simple steps</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="search" class="w-8 h-8 text-teal-600 dark:text-teal-400"></i>
+                    </div>
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">1. Find Your Tradie</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Search by trade, location, and reviews. Every professional is ID verified.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="message-circle" class="w-8 h-8 text-teal-600 dark:text-teal-400"></i>
+                    </div>
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">2. Get Quotes</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Chat directly, discuss the job, and receive competitive quotes.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-feather="check-circle" class="w-8 h-8 text-teal-600 dark:text-teal-400"></i>
+                    </div>
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">3. Job Done Right</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Payment held securely until you're satisfied. Leave a review to help others.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Tradies -->
+    <div class="py-12 bg-gray-50 dark:bg-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Top-Rated Professionals</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Highly recommended by customers</p>
+                </div>
+                <a href="pages/browse-trades.html" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center gap-1">
+                    View All <i data-feather="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            <div class="grid md:grid-cols-3 gap-4" id="featuredTradies"></div>
+        </div>
+    </div>
+
+    <!-- Recent Jobs -->
+    <div class="py-12 bg-white dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Recent Job Posts</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Latest opportunities for tradies</p>
+                </div>
+                <a href="pages/jobs.html" class="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center gap-1">
+                    View All Jobs <i data-feather="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-semibold text-sm text-gray-900 dark:text-white">Kitchen Renovation</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Posted 2 hours ago</p>
+                        </div>
+                        <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-medium rounded">$8,000-$12,000</span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 mb-3">Complete kitchen renovation including new cabinets, benchtops, and appliances. Looking for qualified carpenter and electrician.</p>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <i data-feather="map-pin" class="w-3 h-3"></i> Bondi, NSW
+                        <span>•</span>
+                        <i data-feather="calendar" class="w-3 h-3"></i> Starts Feb 5
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-semibold text-sm text-gray-900 dark:text-white">Bathroom Plumbing Fix</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Posted 5 hours ago</p>
+                        </div>
+                        <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-medium rounded">$500-$800</span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 mb-3">Leaking shower and toilet need repair. Licensed plumber required urgently.</p>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <i data-feather="map-pin" class="w-3 h-3"></i> Parramatta, NSW
+                        <span>•</span>
+                        <i data-feather="calendar" class="w-3 h-3"></i> ASAP
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="py-10 bg-gray-50 dark:bg-gray-800 border-y border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i data-feather="shield" class="w-6 h-6 text-teal-600 dark:text-teal-400"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm text-gray-900 dark:text-white">ID Verified</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">100% Checked</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i data-feather="lock" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm text-gray-900 dark:text-white">Secure Payments</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Escrow Protected</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i data-feather="award" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm text-gray-900 dark:text-white">Licensed Pros</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">ABN Validated</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i data-feather="headphones" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-sm text-gray-900 dark:text-white">24/7 Support</div>
+                        <div class="text-xs text-gray-600 dark:text-gray-400">Always Here</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Download -->
+    <div class="py-12 bg-gradient-to-r from-teal-600 to-cyan-600">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-white">
+                <h2 class="text-2xl font-bold mb-2">Get the App (Coming Soon)</h2>
+                <p class="text-teal-100 text-sm mb-6">Manage jobs on the go with our mobile app</p>
+                <div class="flex items-center justify-center gap-4">
+                    <div class="bg-black/20 px-4 py-2 rounded-lg flex items-center gap-2 cursor-not-allowed opacity-60">
+                        <i data-feather="smartphone" class="w-5 h-5"></i>
+                        <div class="text-left">
+                            <div class="text-xs">Download on the</div>
+                            <div class="text-sm font-bold">App Store</div>
+                        </div>
+                    </div>
+                    <div class="bg-black/20 px-4 py-2 rounded-lg flex items-center gap-2 cursor-not-allowed opacity-60">
+                        <i data-feather="play" class="w-5 h-5"></i>
+                        <div class="text-left">
+                            <div class="text-xs">GET IT ON</div>
+                            <div class="text-sm font-bold">Google Play</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="py-12 bg-white dark:bg-gray-900">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Frequently Asked Questions</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Everything you need to know</p>
+            </div>
+            <div class="space-y-3">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <button onclick="toggleFAQ(0)" class="w-full px-4 py-3 text-left flex items-center justify-between">
+                        <span class="font-semibold text-sm text-gray-900 dark:text-white">How does payment work?</span>
+                        <i data-feather="chevron-down" class="w-5 h-5 text-gray-500 faq-icon transition-transform"></i>
+                    </button>
+                    <div class="faq-content hidden px-4 pb-3">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">We use an escrow system. Your payment is held securely until the job is completed to your satisfaction. This protects both you and the tradie.</p>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <button onclick="toggleFAQ(1)" class="w-full px-4 py-3 text-left flex items-center justify-between">
+                        <span class="font-semibold text-sm text-gray-900 dark:text-white">Are all tradies verified?</span>
+                        <i data-feather="chevron-down" class="w-5 h-5 text-gray-500 faq-icon transition-transform"></i>
+                    </button>
+                    <div class="faq-content hidden px-4 pb-3">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Yes! Every tradie on our platform has their government ID, license, and ABN manually verified by our team. No exceptions.</p>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <button onclick="toggleFAQ(2)" class="w-full px-4 py-3 text-left flex items-center justify-between">
+                        <span class="font-semibold text-sm text-gray-900 dark:text-white">How much does it cost?</span>
+                        <i data-feather="chevron-down" class="w-5 h-5 text-gray-500 faq-icon transition-transform"></i>
+                    </button>
+                    <div class="faq-content hidden px-4 pb-3">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Posting jobs and browsing tradies is completely free. We only charge a small service fee (5%) when a job is completed successfully.</p>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <button onclick="toggleFAQ(3)" class="w-full px-4 py-3 text-left flex items-center justify-between">
+                        <span class="font-semibold text-sm text-gray-900 dark:text-white">What if I'm not happy with the work?</span>
+                        <i data-feather="chevron-down" class="w-5 h-5 text-gray-500 faq-icon transition-transform"></i>
+                    </button>
+                    <div class="faq-content hidden px-4 pb-3">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Our dispute resolution team is here to help. Payment is only released when you approve the work, so you're always protected.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // FAQ Toggle
+        function toggleFAQ(index) {
+            const contents = document.querySelectorAll('.faq-content');
+            const icons = document.querySelectorAll('.faq-icon');
+            
+            contents[index].classList.toggle('hidden');
+            icons[index].classList.toggle('rotate-180');
+        }
+
+        // Featured Tradies
+        const featuredTradiesData = [
+            { name: "John Smith", trade: "Electrician", rating: "5.0", reviews: 127, image: "JS", location: "Sydney" },
+            { name: "Emma Brown", trade: "Plumber", rating: "4.9", reviews: 98, image: "EB", location: "Melbourne" },
+            { name: "Tom Wilson", trade: "Carpenter", rating: "5.0", reviews: 156, image: "TW", location: "Brisbane" }
+        ];
+
+        function renderFeaturedTradies() {
+            const container = document.getElementById('featuredTradies');
+            container.innerHTML = featuredTradiesData.map(t => `
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(t.image)}&background=0d9488&color=fff" 
+                             class="w-12 h-12 rounded-full">
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-sm text-gray-900 dark:text-white">${t.name}</h3>
+                            <p class="text-xs text-gray-600 dark:text-gray-300">${t.trade}</p>
+                        </div>
+                        <div class="flex items-center gap-1 text-yellow-500">
+                            <i data-feather="star" class="w-3.5 h-3.5 fill-current"></i>
+                            <span class="text-gray-900 dark:text-white font-semibold text-sm">${t.rating}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${t.reviews} reviews • ${t.location}</span>
+                        <a href="pages/browse-trades.html" class="text-teal-600 hover:text-teal-700 text-xs font-medium">View →</a>
+                    </div>
+                </div>
+            `).join('');
+            feather.replace();
+        }
+
+        window.addEventListener('load', () => {
+            renderFeaturedTradies();
+        });
+    </script>
+
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 dark:bg-black text-gray-400 dark:text-gray-500 py-12 border-t border-gray-800 dark:border-gray-900 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center">
+                            <i data-feather="tool" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <span class="text-white font-bold">AussieTradieHub</span>
+                    </div>
+                    <p class="text-sm">Australia's trusted platform for connecting customers with verified tradespeople.</p>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-4">For Customers</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/pages/post-job.html" class="hover:text-white">Post a Job</a></li>
+                        <li><a href="/pages/browse-trades.html" class="hover:text-white">Find Tradies</a></li>
+                        <li><a href="/pages/how-it-works.html" class="hover:text-white">How It Works</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-4">For Tradies</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/pages/my-profile.html" class="hover:text-white">Sign Up</a></li>
+                        <li><a href="/pages/jobs.html" class="hover:text-white">Browse Jobs</a></li>
+                        <li><a href="/pages/resources.html" class="hover:text-white">Resources</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-4">Company</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/pages/about-us.html" class="hover:text-white">About Us</a></li>
+                        <li><a href="/pages/trust-safety.html" class="hover:text-white">Trust & Safety</a></li>
+                        <li><a href="/pages/terms-of-service.html" class="hover:text-white">Terms</a></li>
+                        <li><a href="/pages/privacy-policy.html" class="hover:text-white">Privacy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center text-sm">
+                <p>&copy; 2026 AussieTradieHub Pty Ltd. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+
+    </div>
+    </main>
+
+    <script type="module" src="/js/core/supabase-client.js"></script>
+    <script type="module" src="/js/core/auth.js"></script>
+    <script src="/js/core/data.js"></script>
+    <script src="/js/components/nav-shell.js"></script>
+    <script src="/js/core/spa-router.js"></script>
+    <script src="/js/core/script.js"></script>
+    <script>
+        feather.replace();
+    </script>
+</body>
+</html>
+

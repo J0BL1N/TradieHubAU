@@ -1,0 +1,386 @@
+??<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Us | AussieTradieHub</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link rel="stylesheet" href="/css/main/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body class="font-inter bg-gray-50">
+
+  <!-- Main Navigation -->
+  <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
+        <a href="../index.html" class="flex items-center space-x-2">
+          <div
+            class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+            <i data-feather="tool" class="text-white w-6 h-6"></i>
+          </div>
+          <span class="text-xl font-bold text-gray-900">AussieTradieHub</span>
+        </a>
+
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="browse-trades.html" class="text-gray-700 hover:text-teal-600 font-medium transition">Find Tradies</a>
+          <a href="browse-customers.html" class="text-gray-700 hover:text-teal-600 font-medium transition">Find
+            Customers</a>
+          <a href="jobs.html" class="text-gray-700 hover:text-teal-600 font-medium transition">Jobs</a>
+          <a href="messages.html" class="text-gray-700 hover:text-teal-600 font-medium transition">Messages</a>
+          <a href="my-profile.html" class="text-gray-700 hover:text-teal-600 font-medium transition">My Profile</a>
+        </div>
+
+
+      </div>
+
+      <!-- Mobile Menu -->
+
+    </div>
+    </div>
+  </nav>
+
+  <main class="container mx-auto px-4 py-10">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+      <div class="flex items-start justify-between gap-6 flex-col md:flex-row">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">About AussieTradieHub</h1>
+          <p class="text-gray-600">A privacy-first marketplace that connects customers with tradies, with clearer job
+            accountability and less off-platform chaos.</p>
+        </div>
+        <div class="w-full md:w-auto">
+          <div class="flex items-center gap-2 bg-teal-50 border border-teal-100 text-teal-700 rounded-xl px-4 py-3">
+            <i data-feather="shield" class="w-5 h-5"></i>
+            <p class="text-sm font-medium">We only win when the job gets done.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="p-6 rounded-xl border border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900 mb-2">What is AussieTradieHub?</h2>
+          <p class="text-gray-600">AussieTradieHub is a marketplace where customers can post work and tradies can apply,
+            message, agree on terms, and complete jobs with a clear lifecycle and proof-of-completion.</p>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500">Built for</p>
+              <p class="font-semibold text-gray-900">Real trade jobs</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-400">Founded 2023 - 100% Australian owned</p>
+              <p class="font-semibold text-gray-900">Trust & clarity</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs text-gray-500">Optimised for</p>
+              <p class="font-semibold text-gray-900">Privacy-first contact</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="p-6 rounded-xl border border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900 mb-2">Why it exists</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div class="rounded-lg border border-gray-200 p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <i data-feather="user" class="w-4 h-4 text-teal-600"></i>
+                <h3 class="font-semibold text-gray-900">Customers</h3>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>- Reduce no-shows and mismatched expectations</li>
+                <li>- Keep comms organised in one place</li>
+                <li>- Clear job progress from agreed to completed</li>
+              </ul>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <i data-feather="tool" class="w-4 h-4 text-teal-600"></i>
+                <h3 class="font-semibold text-gray-900">Tradies</h3>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>- Less wasted time on fake or low-quality leads</li>
+                <li>- Clear scope and timeline before starting</li>
+                <li>- Proof-of-completion built into the workflow</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="mt-10 p-6 rounded-xl border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">How it works</h2>
+        <p class="text-gray-600 mb-6">Simple flow, clear job stages, and a completion process that protects both sides.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="p-4 rounded-xl border border-gray-200">
+            <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center mb-3"><i
+                data-feather="clipboard" class="w-5 h-5 text-teal-600"></i></div>
+            <h3 class="font-bold text-gray-900 mb-1">1) Post</h3>
+            <p class="text-gray-600 text-sm">Customers post a job with trade, suburb, and a clear description.</p>
+          </div>
+          <div class="p-4 rounded-xl border border-gray-200">
+            <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center mb-3"><i
+                data-feather="file-text" class="w-5 h-5 text-teal-600"></i></div>
+            <h3 class="font-bold text-gray-900 mb-1">2) Apply</h3>
+            <p class="text-gray-600 text-sm">Tradies apply with availability, experience, and a message.</p>
+          </div>
+          <div class="p-4 rounded-xl border border-gray-200">
+            <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center mb-3"><i
+                data-feather="handshake" class="w-5 h-5 text-teal-600"></i></div>
+            <h3 class="font-bold text-gray-900 mb-1">3) Agree</h3>
+            <p class="text-gray-600 text-sm">Once accepted, the job moves through agreed and in-progress stages.</p>
+          </div>
+          <div class="p-4 rounded-xl border border-gray-200">
+            <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center mb-3"><i
+                data-feather="check-circle" class="w-5 h-5 text-teal-600"></i></div>
+            <h3 class="font-bold text-gray-900 mb-1">4) Complete</h3>
+            <p class="text-gray-600 text-sm">Completion requires photos plus confirmation from both sides.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-10 p-6 rounded-xl border border-gray-200">
+        <div class="flex items-start justify-between flex-col md:flex-row gap-6">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Pricing (tier-based fees)</h2>
+            <p class="text-gray-600">No subscriptions. No paying for leads that go nowhere. Pricing scales fairly with
+              job value and is capped for big installs.</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <p class="text-sm text-gray-700 font-semibold">Principle:</p>
+            <p class="text-sm text-gray-600">You only pay when the job is actually completed.</p>
+          </div>
+        </div>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="min-w-full border border-gray-200 rounded-xl overflow-hidden">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left text-xs font-semibold text-gray-600 px-4 py-3">Job Value</th>
+                <th class="text-left text-xs font-semibold text-gray-600 px-4 py-3">Fee</th>
+                <th class="text-left text-xs font-semibold text-gray-600 px-4 py-3">Why it's better</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900">$0 - $500</td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900">$25 flat</td>
+                <td class="px-4 py-3 text-sm text-gray-600">Cheaper than a standard call-out lead fee.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900">$501 - $2,000</td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900">5%</td>
+                <td class="px-4 py-3 text-sm text-gray-600">You only pay when you actually get the job done.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900">$2,001 - $5,000</td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900">4%</td>
+                <td class="px-4 py-3 text-sm text-gray-600">Fees drop as the job gets bigger to protect profit.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900">$5,001 - $15,000</td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900">3%</td>
+                <td class="px-4 py-3 text-sm text-gray-600">Professional rates for professional installs.</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-sm text-gray-900">$15,001+</td>
+                <td class="px-4 py-3 text-sm font-semibold text-gray-900">Capped at $500</td>
+                <td class="px-4 py-3 text-sm text-gray-600">Massive jobs won't cost thousands in commissions.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mt-10 p-6 rounded-xl border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Trust & safety principles</h2>
+        <p class="text-gray-600">AussieTradieHub is designed to reduce off-platform leakage and keep jobs accountable.
+          Contact sharing is protected so work stays organised and transparent.</p>
+
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="rounded-xl border border-gray-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-feather="lock" class="w-4 h-4 text-teal-600"></i>
+              <h3 class="font-semibold text-gray-900">Privacy-first contact</h3>
+            </div>
+            <p class="text-sm text-gray-600">Contact details stay protected until the job workflow is ready for it.</p>
+          </div>
+          <div class="rounded-xl border border-gray-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-feather="activity" class="w-4 h-4 text-teal-600"></i>
+              <h3 class="font-semibold text-gray-900">Clear job lifecycle</h3>
+            </div>
+            <p class="text-sm text-gray-600">Jobs move through open -> agreed -> in progress -> completed.</p>
+          </div>
+          <div class="rounded-xl border border-gray-200 p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-feather="camera" class="w-4 h-4 text-teal-600"></i>
+              <h3 class="font-semibold text-gray-900">Proof of completion</h3>
+            </div>
+            <p class="text-sm text-gray-600">Completion photos plus dual confirmation reduce disputes and ghosting.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-10 p-6 rounded-xl border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Community & feedback</h2>
+        <p class="text-gray-600">We may run an optional community link for fast feedback and Q&A. It's never required,
+          and the site works fully without it.</p>
+        <div class="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <div class="flex items-start gap-3">
+            <i data-feather="message-circle" class="w-5 h-5 text-teal-600 mt-0.5"></i>
+            <div>
+              <p class="text-sm text-gray-900 font-semibold">Optional community link</p>
+              <p class="text-sm text-gray-600">You can join if you want quicker help or early feature updates.
+                Otherwise, ignore it.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-10 p-6 rounded-xl border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Vision</h2>
+        <p class="text-gray-600">AussieTradieHub is built to scale fairly: privacy-first by default, simple job
+          accountability, and a pricing model that makes sense for both customers and tradies.</p>
+        <p class="text-gray-600 mt-3">This page is a living summary of the project goals and can change as the platform
+          evolves.</p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white pt-12 pb-8 mt-12">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center space-x-2 mb-4">
+            <div
+              class="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center">
+              <i data-feather="tool" class="text-white w-6 h-6"></i>
+            </div>
+            <h2 class="text-xl font-bold">AussieTradieHub</h2>
+          </div>
+          <p class="text-gray-400">Connecting trusted tradies with customers across Australia with full transparency.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">For Customers</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="browse-trades.html" class="hover:text-white transition">Find Tradies</a></li>
+            <li><a href="jobs.html" class="hover:text-white transition">Post a Job</a></li>
+            <li><a href="browse-customers.html" class="hover:text-white transition">Browse Customers</a></li>
+            <li><a href="how-it-works.html" class="hover:text-white transition">How It Works</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">For Tradies</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="my-profile.html?type=tradesman" class="hover:text-white transition">Create Profile</a></li>
+            <li><a href="jobs.html" class="hover:text-white transition">Find Jobs</a></li>
+            <li><a href="resources.html" class="hover:text-white transition">Resources</a></li>
+            <li><a href="trust-safety.html" class="hover:text-white transition">Trust & Safety</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">Contact</h3>
+          <ul class="space-y-2 text-gray-400">
+            <li class="flex items-center">
+              <i data-feather="mail" class="w-4 h-4 mr-2"></i>
+              support@aussietradiehub.au
+            </li>
+            <li class="flex items-center">
+              <i data-feather="phone" class="w-4 h-4 mr-2"></i>
+              1300 TRADIE (1300 872 343)
+            </li>
+            <li class="flex items-center">
+              <i data-feather="map-pin" class="w-4 h-4 mr-2"></i>
+              Sydney, Australia
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 pt-8">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-gray-400 text-sm mb-4 md:mb-0">(c) 2024 AussieTradieHub. All rights reserved.</p>
+          <div class="flex flex-wrap gap-x-6 gap-y-2">
+            <a href="about-us.html" class="text-gray-400 hover:text-white transition">About Us</a>
+            <a href="terms-of-service.html" class="text-gray-400 hover:text-white transition">Terms of Service</a>
+            <a href="privacy-policy.html" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
+            <a href="cookie-policy.html" class="text-gray-400 hover:text-white transition">Cookie Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/core/data.js"></script>
+  <script type="module" src="/js/core/supabase-client.js"></script>
+  <script type="module" src="/js/core/auth.js"></script>
+  <script src="/js/core/script.js"></script>
+  <script>
+    document.getElementById('mobileMenuButton').addEventListener('click', function () {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof feather !== 'undefined') feather.replace();
+    });
+  </script>
+
+  <!-- Bottom Navigation (Mobile Only) -->
+  <nav class="bottom-nav">
+    <a href="../index.html" class="bottom-nav-item">
+      <i data-feather="home"></i>
+      <span>Home</span>
+    </a>
+    <a href="browse-trades.html" class="bottom-nav-item">
+      <i data-feather="users"></i>
+      <span>Tradies</span>
+    </a>
+    <a href="jobs.html" class="bottom-nav-item">
+      <i data-feather="briefcase"></i>
+      <span>Jobs</span>
+    </a>
+    <a href="messages.html" class="bottom-nav-item">
+      <i data-feather="message-square"></i>
+      <span>Messages</span>
+    </a>
+    <a href="my-profile.html" class="bottom-nav-item">
+      <i data-feather="user"></i>
+      <span>Profile</span>
+    </a>
+  </nav>
+  <script>
+    (function () {
+      var path = window.location.pathname.split('/').pop() || 'index.html';
+      var items = document.querySelectorAll('.bottom-nav-item');
+      items.forEach(function (item) {
+        var href = item.getAttribute('href').split('?')[0];
+        if (href === path.split('?')[0]) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+      if (typeof feather !== 'undefined') feather.replace();
+    })();
+  </script>
+</body>
+
+</html>
+
+
+
+

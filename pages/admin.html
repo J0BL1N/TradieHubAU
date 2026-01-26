@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | AussieTradieHub</title>
+    <link rel="icon" type="image/x-icon" href="../static/favicon.ico" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,7 +26,7 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     <span id="adminName" class="text-sm text-gray-400">Loading...</span>
-                    <button onclick="window.location.href='/index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
+                    <button onclick="window.location.href='../index.html'" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition">Exit</button>
                 </div>
             </div>
         </div>
@@ -133,23 +134,23 @@
                  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                      <h3 class="font-bold text-gray-800 mb-4">Admin Actions</h3>
                      <div class="space-y-2">
-                         <a href="/pages/admin-users.html" class="w-full flex items-center justify-between p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition text-sm text-pink-800 font-medium">
+                         <a href="admin-users.html" class="w-full flex items-center justify-between p-3 bg-pink-50 hover:bg-pink-100 rounded-lg transition text-sm text-pink-800 font-medium">
                             <span class="flex items-center gap-2"><i data-feather="users" class="w-4 h-4"></i> Manage Users</span>
                             <i data-feather="chevron-right" class="w-4 h-4"></i>
                         </a>
-                          <a href="/pages/admin-jobs.html" class="w-full flex items-center justify-between p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition text-sm text-indigo-800 font-medium">
+                          <a href="admin-jobs.html" class="w-full flex items-center justify-between p-3 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition text-sm text-indigo-800 font-medium">
                              <span class="flex items-center gap-2"><i data-feather="briefcase" class="w-4 h-4"></i> Manage Jobs</span>
                              <i data-feather="chevron-right" class="w-4 h-4"></i>
                          </a>
-                        <a href="/pages/admin-categories.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                        <a href="admin-categories.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
                             <span>Manage Categories</span>
                             <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
                         </a>
-                        <a href="/pages/admin-disputes.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                        <a href="admin-disputes.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
                             <span>Review Disputes</span>
                             <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
                         </a>
-                        <a href="/pages/admin-settings.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
+                        <a href="admin-settings.html" class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition text-sm">
                             <span>Platform Settings</span>
                             <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
                         </a>
@@ -187,14 +188,14 @@
         </div>
     </main>
 
-    <script type="module" src="/js/core/supabase-client.js"></script>
-    <script type="module" src="/js/core/auth.js"></script>
-    <script type="module" src="/js/api/verification-api.js"></script>
-    <script src="/js/components/nav-shell.js"></script>
-    <script src="/js/core/spa-router.js"></script>
+    <script type="module" src="../js/core/supabase-client.js"></script>
+    <script type="module" src="../js/core/auth.js"></script>
+    <script type="module" src="../js/api/verification-api.js"></script>
+    <script src="../js/components/nav-shell.js"></script>
+    <script src="../js/core/spa-router.js"></script>
     <script type="module">
-        import { supabase, getCurrentUser } from '/js/core/supabase-client.js';
-        import { adminApproveVerification } from '/js/api/verification-api.js';
+        import { supabase, getCurrentUser } from '../js/core/supabase-client.js';
+        import { adminApproveVerification } from '../js/api/verification-api.js';
 
         async function initAdmin() {
             if (typeof feather !== 'undefined') feather.replace();

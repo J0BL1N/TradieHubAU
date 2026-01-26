@@ -72,7 +72,8 @@ export async function searchTradies(filters = {}) {
     
     // Apply filters
     if (filters.state) {
-      query = query.eq('state', filters.state);
+      // Search both suburb and state for better UX
+      query = query.or(`suburb.ilike.%${filters.state}%,state.ilike.%${filters.state}%`);
     }
     
     if (filters.trades && filters.trades.length > 0) {
@@ -111,7 +112,7 @@ export async function searchCustomers(filters = {}) {
       .order('created_at', { ascending: false });
     
     if (filters.state) {
-      query = query.eq('state', filters.state);
+      query = query.or(`suburb.ilike.%${filters.state}%,state.ilike.%${filters.state}%`);
     }
     
     if (filters.search) {
@@ -143,7 +144,8 @@ export async function getJobs(filters = {}) {
       .from('jobs')
       .select(`
         *,
-        customer:users!customer_id(id, display_name, avatar_url, suburb, state)
+        customer:users!customer_id(id, display_name, avatar_url, suburb, state),
+        proposals:proposals(count)
       `)
       .order('created_at', { ascending: false });
     
@@ -177,6 +179,40 @@ export async function getJobs(filters = {}) {
   } catch (error) {
     console.error('❌ getJobs error:', error.message);
     return { data: [], error };
+  }
+}
+
+/**
+ * Get jobs for a specific tradie (via accepted proposals)
+ * @param {string} tradieId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getJobsForTradie(tradieId) {
+  try {
+    const { data: proposals, error: propError } = await supabase
+      .from('proposals')
+      .select('job_id, status')
+      .eq('tradie_id', tradieId)
+      .in('status', ['accepted', 'completed']); 
+      
+    if (propError) throw propError;
+    
+    if (!proposals || proposals.length === 0) return { data: [], error: null };
+    
+    const jobIds = proposals.map(p => p.job_id);
+    
+    const { data: jobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select('*')
+      .in('id', jobIds)
+      .order('created_at', { ascending: false });
+      
+    if (jobsError) throw jobsError;
+    
+    return { data: jobs, error: null };
+  } catch (err) {
+    console.error('❌ getJobsForTradie error:', err);
+    return { data: [], error: err };
   }
 }
 
@@ -238,8 +274,7 @@ export async function updateJob(jobId, updates) {
       .from('jobs')
       .update(updates)
       .eq('id', jobId)
-      .select()
-      .single();
+      .select();
     
     if (error) throw error;
     console.log('✅ Job updated:', jobId);
@@ -272,6 +307,111 @@ export async function deleteJob(jobId) {
 }
 
 // ============================================================================
+// PROPOSALS API
+// ============================================================================
+
+/**
+ * Get proposals for a specific job
+ * @param {string} jobId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getProposalsForJob(jobId) {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .select(`
+        *,
+        tradie:users!tradie_id(id, display_name, avatar_url, trades)
+      `)
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getProposalsForJob error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Get a single proposal by ID
+ * @param {string} proposalId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getProposalById(proposalId) {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .select(`
+        *,
+        job:jobs(*),
+        tradie:users!tradie_id(id, display_name, avatar_url, trades)
+      `)
+      .eq('id', proposalId)
+      .single();
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getProposalById error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Create a proposal (Quote)
+ * @param {object} proposalData - { job_id, tradie_id, price, cover_letter, status }
+ * @returns {Promise<{data, error}>}
+ */
+export async function createProposal(proposalData) {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .insert([proposalData])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    console.log('✅ Proposal created:', data.id);
+
+    // v0.103: Increment quotes_count on the job record
+    const { data: jobRecord } = await supabase.from('jobs').select('quotes_count').eq('id', proposalData.job_id).single();
+    if (jobRecord) {
+        await supabase.from('jobs').update({ quotes_count: (jobRecord.quotes_count || 0) + 1 }).eq('id', proposalData.job_id);
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ createProposal error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Update proposal status (e.g. 'accepted', 'rejected')
+ * @param {string} proposalId 
+ * @param {string} status 
+ * @returns {Promise<{data, error}>}
+ */
+export async function updateProposalStatus(proposalId, status) {
+  try {
+    const { data, error } = await supabase
+      .from('proposals')
+      .update({ status })
+      .eq('id', proposalId)
+      .select();
+    
+    if (error) throw error;
+    console.log('✅ Proposal status updated:', status);
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ updateProposalStatus error:', error.message);
+    return { data: null, error };
+  }
+}
+
+// ============================================================================
 // CONVERSATIONS & MESSAGES API
 // ============================================================================
 
@@ -287,7 +427,8 @@ export async function getConversations(userId) {
       .select(`
         *,
         user1:users!user1_id(id, display_name, avatar_url),
-        user2:users!user2_id(id, display_name, avatar_url)
+        user2:users!user2_id(id, display_name, avatar_url),
+        job:jobs(title)
       `)
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
       .order('last_message_at', { ascending: false, nullsFirst: false });
@@ -370,10 +511,12 @@ export async function getMessages(conversationId, limit = 100) {
  * Send a message
  * @param {string} conversationId - UUID of conversation
  * @param {string} senderId - UUID of sender
+ * @param {string} senderId - UUID of sender
  * @param {string} text - Message text
+ * @param {object} attachments - Optional attachment data
  * @returns {Promise<{data, error}>}
  */
-export async function sendMessage(conversationId, senderId, text) {
+export async function sendMessage(conversationId, senderId, text, attachments = null) {
   try {
     const { data, error } = await supabase
       .from('messages')
@@ -381,6 +524,7 @@ export async function sendMessage(conversationId, senderId, text) {
         conversation_id: conversationId,
         sender_id: senderId,
         text: text
+        // attachments: attachments // Column doesn't exist yet
       }])
       .select()
       .single();
@@ -535,10 +679,17 @@ export default {
   
   // Jobs
   getJobs,
+  getJobsForTradie,
   getJobById,
   createJob,
   updateJob,
   deleteJob,
+
+  // Proposals
+  getProposalsForJob,
+  getProposalById,
+  createProposal,
+  updateProposalStatus,
   
   // Conversations & Messages
   getConversations,
@@ -555,3 +706,31 @@ export default {
   // Utilities
   checkConnection
 };
+
+// Expose to window for non-module scripts
+if (typeof window !== 'undefined') {
+    window.ATHDB = {
+        getUserProfile,
+        updateUserProfile,
+        searchTradies,
+        searchCustomers,
+        getJobs,
+        getJobById,
+        createJob,
+        updateJob,
+        deleteJob,
+        getProposalsForJob,
+        getProposalById,
+        createProposal,
+        updateProposalStatus,
+        getConversations,
+        getOrCreateConversation,
+        getMessages,
+        sendMessage,
+        markMessageAsRead,
+        subscribeToMessages,
+        getReviewsForUser,
+        submitReview,
+        checkConnection
+    };
+}
