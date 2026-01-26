@@ -2524,17 +2524,15 @@ function initMessagesPage() {
   // Helper: DB to UI format
   function dbMessageToUI(m) {
      const isMe = m.sender_id === uid;
-     let attachments = null;
-     if (m.attachments) {
-         attachments = m.attachments; // Assume correct format
-     }
      return {
         ts: new Date(m.created_at).getTime(),
         from: isMe ? 'me' : 'them',
         text: m.text,
         status: m.read ? 'read' : 'delivered',
         time: new Date(m.created_at).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'}),
-        attachment: attachments,
+        attachment: m.attachments,
+        type: m.type || 'text',
+        meta: m.meta || {},
         replyTo: null, // Future: fetch reply context
         id: m.id
      };
@@ -2559,7 +2557,8 @@ function initMessagesPage() {
                  meta: job?.title ? `Job: ${job.title}` : (other?.suburb || 'TradieHub User'),
                  online: false, 
                  messages: [],
-                 lastMessageAt: c.last_message_at
+                 lastMessageAt: c.last_message_at,
+                 job_id: c.job_id
              };
           });
           DATA = newMap;
@@ -2971,6 +2970,169 @@ function initMessagesPage() {
       }
       
       
+      // v0.111: Variation Card Rendering
+      if (m.type === 'variation' && m.meta?.variation_id) {
+          const varId = m.meta.variation_id;
+          const amount = Number(m.meta.amount || 0).toFixed(2);
+          const title = m.meta.title || 'Variation Request';
+          const isRequest = m.from === 'me'; // Assuming tradie requests, but could differ. 
+          // Actually 'me' depends on who is viewing.
+          // If I sent it, I requested it.
+          
+          wrap.innerHTML = m.from === 'me'
+          ? `
+            <div class="flex flex-col items-end max-w-sm">
+                <div class="bg-white dark:bg-gray-800 border-2 border-amber-500 rounded-2xl p-4 shadow-md w-full">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 bg-amber-50 dark:bg-amber-900/40 rounded-full flex items-center justify-center">
+                            <i data-feather="git-commit" class="w-4 h-4 text-amber-600"></i>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Variation Request</span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-xs font-bold text-slate-900 dark:text-gray-200">${escapeHtml(title)}</div>
+                    </div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Extra Cost</div>
+                            <div class="text-xl font-black text-slate-900 dark:text-white">+$${amount}</div>
+                        </div>
+                    </div>
+                    <a href="ongoing-job.html?id=${m.meta.job_id}&variation=${varId}" class="block w-full py-2 bg-amber-500 text-white text-center text-xs font-bold rounded-xl hover:bg-amber-600 transition">
+                        View Details
+                    </a>
+                </div>
+                ${timeHtml}
+            </div>
+          `
+          : `
+            <div class="flex flex-col items-start max-w-sm">
+                <div class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm w-full">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 bg-amber-50 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <i data-feather="git-commit" class="w-4 h-4 text-amber-500"></i>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Variation Received</span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-xs font-bold text-slate-900 dark:text-gray-200">${escapeHtml(title)}</div>
+                    </div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Extra Cost</div>
+                            <div class="text-xl font-black text-slate-900 dark:text-white">+$${amount}</div>
+                        </div>
+                    </div>
+                    <a href="ongoing-job.html?id=${m.meta.job_id}&variation=${varId}" class="block w-full py-2 bg-slate-100 dark:bg-gray-700 text-slate-900 dark:text-white text-center text-xs font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-gray-600 transition">
+                        Review Request
+                    </a>
+                </div>
+                ${timeHtml}
+            </div>
+          `;
+          chat.appendChild(wrap);
+          if (typeof feather !== 'undefined') setTimeout(() => feather.replace(), 0);
+          return;
+      }
+
+      // v0.110: Invoice Card Rendering
+      if (m.type === 'invoice' && m.meta?.invoice_id) {
+          const invId = m.meta.invoice_id;
+          const total = Number(m.meta.total || 0).toFixed(2);
+          const dueDate = m.meta.due_date ? new Date(m.meta.due_date).toLocaleDateString() : 'on receipt';
+          
+          wrap.innerHTML = m.from === 'me'
+          ? `
+            <div class="flex flex-col items-end max-w-sm">
+                <div class="bg-white dark:bg-gray-800 border-2 border-teal-600 rounded-2xl p-4 shadow-md w-full">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 bg-teal-50 dark:bg-teal-900/40 rounded-full flex items-center justify-center">
+                            <i data-feather="file-text" class="w-4 h-4 text-teal-600"></i>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Invoice Sent</span>
+                    </div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Total Amount</div>
+                            <div class="text-xl font-black text-slate-900 dark:text-white">$${total}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Due Date</div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-gray-300">${dueDate}</div>
+                        </div>
+                    </div>
+                    <a href="ongoing-job.html?id=${m.meta.job_id}&invoice=${invId}" class="block w-full py-2 bg-teal-600 text-white text-center text-xs font-bold rounded-xl hover:bg-teal-700 transition">
+                        View Invoice Detail
+                    </a>
+                </div>
+                ${timeHtml}
+            </div>
+          `
+          : `
+            <div class="flex flex-col items-start max-w-sm">
+                <div class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm w-full">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-8 h-8 bg-slate-50 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <i data-feather="file-text" class="w-4 h-4 text-slate-500"></i>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Invoice Received</span>
+                    </div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Total Amount</div>
+                            <div class="text-xl font-black text-slate-900 dark:text-white">$${total}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase">Due Date</div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-gray-300">${dueDate}</div>
+                        </div>
+                    </div>
+                    <a href="ongoing-job.html?id=${m.meta.job_id}&invoice=${invId}" class="block w-full py-2 bg-slate-100 dark:bg-gray-700 text-slate-900 dark:text-white text-center text-xs font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-gray-600 transition">
+                        View & Pay Invoice
+                    </a>
+                </div>
+                ${timeHtml}
+            </div>
+          `;
+          chat.appendChild(wrap);
+          if (typeof feather !== 'undefined') setTimeout(() => feather.replace(), 0);
+          return;
+      }
+
+      // v0.110: System Message Rendering (Enhanced for Project Portal & Fallbacks)
+      const isAutoSystem = m.text?.includes('Quote accepted') || m.text?.includes('Job is now active');
+      if (m.type === 'system' || isAutoSystem) {
+          const sysWrap = document.createElement('div');
+          sysWrap.className = 'flex justify-center my-6';
+          
+          const jobId = m.meta?.job_id || DATA[c.id]?.job_id;
+
+          if (jobId) {
+              sysWrap.innerHTML = `
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-2xl p-5 shadow-xl border border-slate-700 max-w-sm w-full text-center">
+                    <div class="w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i data-feather="zap" class="w-6 h-6 text-teal-400"></i>
+                    </div>
+                    <h4 class="text-sm font-black uppercase tracking-tighter mb-1">Project Portal Active</h4>
+                    <p class="text-xs text-slate-400 mb-4">${escapeHtml(m.text)}</p>
+                    <a href="ongoing-job.html?id=${jobId}" class="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-lg shadow-teal-500/20">
+                        Open Project Workplace <i data-feather="arrow-right" class="w-3 h-3"></i>
+                    </a>
+                </div>
+              `;
+          } else {
+              sysWrap.innerHTML = `
+                <div class="bg-slate-100 dark:bg-gray-700/50 text-slate-600 dark:text-gray-300 text-[10px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-gray-600 flex items-center gap-2 font-bold uppercase tracking-wider">
+                   <i data-feather="info" class="w-3 h-3"></i>
+                   ${escapeHtml(m.text)}
+                </div>
+              `;
+          }
+          chat.appendChild(sysWrap);
+          if (typeof feather !== 'undefined') setTimeout(() => feather.replace(), 0);
+          return;
+      }
+
       // v0.100: Photo Set Rendering
       if (m.type === 'photoSet' && Array.isArray(m.photos)) {
         const photosHtml = m.photos.map((p, idx) => {
@@ -3162,22 +3324,32 @@ function initMessagesPage() {
   // ----------------------------
   function resolveCounterparty(convId) {
     const cid = String(convId || '').trim();
-    if (!cid) return { customerId: null, tradieId: null };
+    if (!cid) return { customerId: null, tradieId: null, jobId: null };
 
-    let tradieId = null;
-    let customerId = null;
+    // New: Use DATA if available
+    const c = DATA[cid];
+    if (c) {
+        // If we have a job_id in the conversation, let's use it
+        const jobId = c.job_id;
+        
+        // Try to find IDs from TRADIES/CUSTOMERS or from messages
+        let tradieId = null;
+        let customerId = null;
 
-    const tradies = window.TRADIES || {};
-    for (const [id, t] of Object.entries(tradies)) {
-      if (t && String(t.conversationId || '') === cid) { tradieId = String(id); break; }
+        const tradies = window.TRADIES || {};
+        for (const [id, t] of Object.entries(tradies)) {
+            if (t && String(t.conversationId || '') === cid) { tradieId = String(id); break; }
+        }
+
+        const customers = window.CUSTOMERS || {};
+        for (const [id, cust] of Object.entries(customers)) {
+            if (cust && String(cust.conversationId || '') === cid) { customerId = String(id); break; }
+        }
+
+        return { customerId, tradieId, jobId };
     }
 
-    const customers = window.CUSTOMERS || {};
-    for (const [id, c] of Object.entries(customers)) {
-      if (c && String(c.conversationId || '') === cid) { customerId = String(id); break; }
-    }
-
-    return { customerId, tradieId };
+    return { customerId: null, tradieId: null, jobId: null };
   }
 
   function readReviewsStorage() {
@@ -3216,212 +3388,97 @@ function initMessagesPage() {
     return 'bg-gray-100 text-gray-800';
   }
 
-  function renderContextPanel(convId) {
+  async function renderContextPanel(convId) {
     if (!contextMount) return;
+    if (!uid) return;
 
-    const resolved = resolveCounterparty(convId);
-    const hasCustomer = !!resolved.customerId;
-    const hasTradie = !!resolved.tradieId;
-
-    // If we can't resolve, keep the panel lightweight.
-    if (!hasCustomer && !hasTradie) {
+    if (!convId || convId === 'null') {
       contextMount.innerHTML = `
-        <div class="text-sm text-gray-600 dark:text-gray-400 italic">
+        <div class="text-xs text-gray-500 italic p-4 text-center">
           Select a conversation to see job context.
         </div>
       `;
       return;
     }
 
-    const modeKey = `athMsgContextMode:${uid}:${String(convId)}`;
-    let mode = localStorage.getItem(modeKey) || '';
-    if (mode !== 'customer' && mode !== 'tradie') {
-      // default
-      mode = hasCustomer && !hasTradie ? 'customer' : (!hasCustomer && hasTradie ? 'tradie' : 'customer');
+    // Codex Step 8: Fetch real linked job
+    let linkedJob = null;
+    if (window.ATHDB) {
+        const { data } = await window.ATHDB.getLinkedJobForConversation(convId);
+        linkedJob = data;
     }
+
+    const modeKey = `athMsgContextMode:${uid}:${String(convId)}`;
+    let mode = localStorage.getItem(modeKey) || 'customer';
 
     const jobsAll = window.ATHJobs?.getAllJobs?.() || [];
-    const customers = window.CUSTOMERS || {};
     const tradies = window.TRADIES || {};
 
-    const selectedKey = `athMsgSelectedJob:${uid}:${String(convId)}`;
-    const selectedJobId = localStorage.getItem(selectedKey) || '';
+    const renderLinkedJob = (job) => {
+        if (!job) return '';
+        
+        const pendingVars = (job.variations || []).filter(v => v.status === 'pending_customer').length;
+        const submittedInvs = (job.invoices || []).filter(i => i.status === 'submitted').length;
+        
+        return `
+            <div class="mb-6">
+                <div class="text-[10px] font-extrabold tracking-widest text-slate-400 uppercase mb-3">Linked Job</div>
+                <div class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-2xl p-4 shadow-sm">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="min-w-0">
+                            <h4 class="text-sm font-black text-slate-900 dark:text-white truncate">${escapeHtml(job.title)}</h4>
+                            <p class="text-[11px] text-slate-500 dark:text-gray-400">${escapeHtml(job.location || 'Australia')}</p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter bg-teal-100 text-teal-700 border border-teal-200">${job.assignment?.[0]?.status || job.status || 'active'}</span>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        ${pendingVars > 0 ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200">${pendingVars} VARIATION PENDING</span>` : ''}
+                        ${submittedInvs > 0 ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold border border-blue-200">${submittedInvs} INVOICE SUBMITTED</span>` : ''}
+                    </div>
 
-    const renderToggle = (dual) => {
-      if (!dual) return '';
-      const btnCls = (m) => (m === mode)
-        ? 'bg-teal-600 text-white border-teal-600'
-        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50';
-      return `
-        <div class="flex items-center gap-2 mb-4">
-          <button type="button" data-ctx-mode="customer" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border ${btnCls('customer')}">
-            Customer jobs
-          </button>
-          <button type="button" data-ctx-mode="tradie" class="flex-1 text-xs font-semibold px-3 py-2 rounded-lg border ${btnCls('tradie')}">
-            Tradie showcase
-          </button>
-        </div>
-      `;
+                    <a href="/jobs/${job.id}" class="w-full flex items-center justify-center gap-2 py-2.5 bg-white dark:bg-gray-800 border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-400 text-xs font-black rounded-xl hover:bg-teal-50 transition shadow-sm">
+                        <i data-feather="external-link" class="w-3.5 h-3.5"></i>
+                        Open Workspace
+                    </a>
+                </div>
+            </div>
+        `;
     };
 
-    function renderCustomerPanel() {
+    function renderCustomerPanelStub() {
+      const resolved = resolveCounterparty(convId);
       const cid = String(resolved.customerId);
-      const c = customers?.[cid];
-      const activeStates = new Set(['open', 'agreed', 'in_progress']);
-      const jobs = jobsAll
-        .filter(j => String(j?.customerId || '') === cid && activeStates.has(String(j?.status || 'open').toLowerCase()))
-        .sort((a, b) => Date.parse(b?.postedAt || b?.createdAt || '') - Date.parse(a?.postedAt || a?.createdAt || ''));
+      const activeStates = new Set(['open', 'agreed', 'in_progress', 'active']);
+      let jobs = jobsAll
+        .filter(j => (String(j?.customerId || '') === cid) && activeStates.has(String(j?.status || 'open').toLowerCase()))
+        .sort((a, b) => Date.parse(b?.postedAt || b?.createdAt || '') - Date.parse(a?.postedAt || a?.createdAt || ''))
+        .slice(0, 3);
 
-      const pick = (jobs.find(j => String(j.id) === String(selectedJobId)) || jobs[0] || null);
-      const chips = (job) => {
-        const ids = Array.isArray(job?.categories) ? job.categories : (typeof window.normalizeTradeIds === 'function' ? window.normalizeTradeIds(job?.categories) : []);
-        return (ids || []).slice(0, 4).map((cid2) => (
-          `<span class="inline-flex items-center px-2 py-1 rounded-full bg-teal-50 text-teal-700 text-[11px] font-semibold">${escapeHtml(typeof window.tradeLabel === 'function' ? window.tradeLabel(cid2) : String(cid2))}</span>`
-        )).join('');
-      };
-
-      const jobList = jobs.length ? `
-        <div class="space-y-2">
-          ${jobs.map((j) => {
-        const active = String(j.id) === String(pick?.id);
-        return `
-              <button type="button" data-ctx-job="${escapeHtml(String(j.id))}"
-                class="w-full text-left border rounded-xl px-3 py-2 hover:bg-gray-50 transition ${active ? 'border-teal-300 bg-teal-50' : 'border-gray-200 bg-white'}">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="min-w-0">
-                    <div class="text-sm font-bold text-gray-900 truncate">${escapeHtml(j.title || 'Job')}</div>
-                    <div class="text-xs text-gray-600 truncate">${escapeHtml(j.location || '—')}</div>
-                  </div>
-                  <span class="text-[11px] font-semibold px-2 py-1 rounded-full ${statusPillClass(j.status)}">${escapeHtml(String(j.status || 'open').replace('_', ' '))}</span>
+      return `
+        <div>
+          <div class="text-[10px] font-extrabold tracking-widest text-slate-400 uppercase mb-3">Other Hub Activities</div>
+          <div class="space-y-2">
+            ${jobs.map(j => `
+                <div class="p-3 border border-slate-100 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 flex justify-between items-center group cursor-pointer hover:border-teal-200">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-800 dark:text-gray-200 truncate">${escapeHtml(j.title)}</div>
+                        <div class="text-[10px] text-slate-400">${escapeHtml(j.location || 'VIC')}</div>
+                    </div>
+                    <i data-feather="chevron-right" class="w-4 h-4 text-slate-300 group-hover:text-teal-500 transition"></i>
                 </div>
-              </button>
-            `;
-      }).join('')}
-        </div>
-      ` : `<div class="text-sm text-gray-500">No active jobs yet.</div>`;
-
-      const details = pick ? `
-        <div class="mt-4 border-t pt-4">
-          <div class="flex items-start justify-between gap-2">
-            <div>
-              <div class="text-sm font-bold text-gray-900">${escapeHtml(pick.title || 'Job')}</div>
-              <div class="text-xs text-gray-600">${escapeHtml(pick.location || '—')}</div>
-            </div>
-            <span class="text-[11px] font-semibold px-2 py-1 rounded-full ${statusPillClass(pick.status)}">${escapeHtml(String(pick.status || 'open').replace('_', ' '))}</span>
+            `).join('')}
           </div>
-          <div class="mt-2 flex flex-wrap gap-2">${chips(pick)}</div>
-          <div class="mt-3 grid grid-cols-2 gap-2">
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <div class="text-[11px] text-gray-500">Budget</div>
-              <div class="text-sm font-semibold text-gray-900">${escapeHtml(String(pick.budgetMax || pick.budgetMin || 0) ? (typeof window.compactMoney === 'function' ? window.compactMoney(Number(pick.budgetMax || pick.budgetMin || 0)) : '$' + String(pick.budgetMax || pick.budgetMin || 0)) : '—')}</div>
-            </div>
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
-              <div class="text-[11px] text-gray-500">Timeline</div>
-              <div class="text-sm font-semibold text-gray-900">${escapeHtml(String(pick.timeline || 'Flexible'))}</div>
-            </div>
-          </div>
-
-          <div class="mt-3 flex flex-col gap-2">
-            <a href="jobs.html?job=${encodeURIComponent(String(pick.id))}" class="w-full text-center bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold py-2 px-3 rounded-xl hover:opacity-90 transition text-sm">
-              Open on Job Board
-            </a>
-            ${c ? `<a href="profile-customer.html?id=${encodeURIComponent(String(cid))}" class="w-full text-center bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-3 rounded-xl hover:bg-gray-50 transition text-sm">View customer profile</a>` : ''}
-          </div>
-        </div>
-      ` : '';
-
-      return `
-        <div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Active jobs from this customer</div>
-          ${jobList}
-          ${details}
         </div>
       `;
     }
 
-    function renderTradiePanel() {
-      const tid = String(resolved.tradieId);
-      const t = tradies?.[tid];
-      const jobs = jobsAll
-        .filter(j => String(j?.assignedTradieId || '') === tid && String(j?.status || '').toLowerCase() === 'completed')
-        .sort((a, b) => {
-          const sa = window.ATHJobs?.getJobState?.(a.id) || {};
-          const sb = window.ATHJobs?.getJobState?.(b.id) || {};
-          return Date.parse(sb.completedAt || b.completedAt || '') - Date.parse(sa.completedAt || a.completedAt || '');
-        })
-        .slice(0, 6);
-
-      const allReviews = readReviewsStorage().filter(r => String(r?.targetRole) === 'tradie' && String(r?.targetId) === tid && isReviewPublished(r));
-
-      const jobCards = jobs.length ? jobs.map((j) => {
-        const st = window.ATHJobs?.getJobState?.(j.id) || {};
-        const photos = getCompletionPhotosForJob(j.id).slice(0, 3);
-        const reviewsForJob = allReviews.filter(r => String(r?.jobId) === String(j.id)).slice(0, 2);
-        const photoGrid = photos.length ? `
-          <div class="mt-2 grid grid-cols-3 gap-2">
-            ${photos.map((src, idx) => `
-              <img src="${escapeHtml(src)}" alt="Completion photo ${idx + 1}" class="w-full h-16 object-cover rounded-lg border border-gray-200" />
-            `).join('')}
-          </div>
-        ` : `<div class="mt-2 text-xs text-gray-500 dark:text-gray-500 italic">No completion photos uploaded.</div>`;
-
-        const reviewsBlock = reviewsForJob.length ? `
-          <div class="mt-3 space-y-2">
-            ${reviewsForJob.map((r) => `
-              <div class="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
-                <div class="text-xs text-gray-600 dark:text-gray-400"><span class="font-semibold">${escapeHtml(String(r.stars || ''))}\u2605</span> \u2022 ${escapeHtml(new Date(Number(r.ts) || Date.now()).toLocaleDateString())}</div>
-                <div class="mt-1 text-sm text-gray-800 dark:text-gray-200">${escapeHtml(String(r.text || ''))}</div>
-              </div>
-            `).join('')}
-          </div>
-        ` : `<div class="mt-3 text-xs text-gray-500 dark:text-gray-500 italic">No published reviews for this job yet.</div>`;
-
-        return `
-          <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800 shadow-sm">
-            <div class="flex items-start justify-between gap-2">
-              <div>
-                <div class="text-sm font-bold text-gray-900 dark:text-white">${escapeHtml(j.title || 'Job')}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">Completed: ${escapeHtml(st.completedAt ? new Date(st.completedAt).toLocaleDateString() : (j.completedAt ? new Date(j.completedAt).toLocaleDateString() : '—'))}</div>
-              </div>
-              <span class="text-[11px] font-semibold px-2 py-1 rounded-full ${statusPillClass('completed')}">completed</span>
-            </div>
-            ${photoGrid}
-            ${reviewsBlock}
-          </div>
-        `;
-      }).join('') : `<div class="text-sm text-gray-500 dark:text-gray-500 p-4 text-center italic">No completed jobs to showcase yet.</div>`;
-
-      return `
-        <div>
-          <div class="text-xs text-gray-500 mb-2">Recently completed jobs from this tradie</div>
-          <div class="space-y-3">${jobCards}</div>
-          ${t ? `<div class="mt-4"><a href="profile-tradesman.html?id=${encodeURIComponent(String(tid))}" class="w-full block text-center bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-3 rounded-xl hover:bg-gray-50 transition text-sm">View tradie profile</a></div>` : ''}
+    contextMount.innerHTML = `
+        <div class="animate-fade-in">
+            ${renderLinkedJob(linkedJob)}
+            ${renderCustomerPanelStub()}
         </div>
-      `;
-    }
-
-    const dual = hasCustomer && hasTradie;
-    contextMount.innerHTML = `${renderToggle(dual)}${mode === 'tradie' ? renderTradiePanel() : renderCustomerPanel()}`;
-
-    // Wire toggle (dual)
-    contextMount.querySelectorAll('[data-ctx-mode]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const next = String(btn.getAttribute('data-ctx-mode') || 'customer');
-        if (next !== 'customer' && next !== 'tradie') return;
-        localStorage.setItem(modeKey, next);
-        renderContextPanel(convId);
-      });
-    });
-
-    // Wire job select (customer panel)
-    contextMount.querySelectorAll('[data-ctx-job]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const jid = String(btn.getAttribute('data-ctx-job') || '');
-        if (!jid) return;
-        localStorage.setItem(selectedKey, jid);
-        renderContextPanel(convId);
-      });
-    });
+    `;
 
     try { if (typeof feather !== 'undefined') feather.replace(); } catch { }
   }

@@ -39,7 +39,17 @@ window.ATHRouter = (function() {
         _transitioning = true;
         
         try {
-            const response = await fetch(url);
+            let fetchUrl = url;
+            
+            // Step 4: Virtual Route Mapping (/jobs/:id -> /pages/ongoing-job.html?id=:id)
+            const jobMatch = url.match(/^\/jobs\/([a-f0-9-]+)(\?.*)?$/i);
+            if (jobMatch) {
+                const jobId = jobMatch[1];
+                const existingParams = jobMatch[2] ? '&' + jobMatch[2].substring(1) : '';
+                fetchUrl = `/pages/ongoing-job.html?id=${jobId}${existingParams}`;
+            }
+
+            const response = await fetch(fetchUrl);
             if (!response.ok) throw new Error('Failed to load page');
             
             const html = await response.text();
@@ -181,6 +191,11 @@ window.ATHRouter = (function() {
         // My Profile Page
         if (typeof initProfilePage === 'function' && document.getElementById('mpName')) {
             initProfilePage();
+        }
+
+        // Ongoing Job Page
+        if (typeof initOngoingJobPage === 'function' && document.getElementById('jobHeader')) {
+            initOngoingJobPage();
         }
     }
 

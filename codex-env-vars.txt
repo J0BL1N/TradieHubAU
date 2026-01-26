@@ -1,0 +1,33 @@
+=== ENV VARS FOR SEED + VERIFY ===
+SUPABASE_URL=https://sbnthkwhygrrjjdyylgd.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_ainw6qIH2SUlwQ3SAzRLZQ_oIZKyygr
+# Database URL was not found in project files
+
+TEST_CUSTOMER_EMAIL=test@tradiehub.com
+TEST_CUSTOMER_PASSWORD=testpassword123
+
+TEST_TRADIE_EMAIL=tradie_test@tradiehub.com
+TEST_TRADIE_PASSWORD=TradieTest123!
+TEST_THIRD_EMAIL=third_test@tradiehub.com
+TEST_THIRD_PASSWORD=ThirdTest123!
+
+TEST_JOB_ID=c45910f2-6405-4f91-9bc9-1ecca4041a0f
+# Owner: neextlingo@gmail.com (Hidden from test@tradiehub.com via RLS)
+
+TEST_CONVERSATION_ID=NOT FOUND
+# Conversation creation for test users is blocked by RLS/Trigger issues.
+
+=== VERIFICATION STATUS ===
+1. Job Assignments:
+   - Fixture for TEST_JOB_ID: EXISTS.
+   - Verified by: 409 CONFLICT (Assignment already exists in system).
+   - Visibility: HIDDEN from 'test@tradiehub.com' due to RLS ownership mismatch.
+
+2. User Participation:
+   - Customer (test@tradiehub.com): Not in assignment (Job owned by 'neextlingo').
+   - Tradie (tradie_test@tradiehub.com): Assigned (inferred from conflict).
+
+=== RECOMMENDED ACTION ===
+1. Disable "Confirm Email" in Supabase to fix test user creation.
+2. Manually verify `job_assignments` in Table Editor for `c459...` to see participants.
+3. Access application as `test@tradiehub.com` to test RLS (should NOT see this job).

@@ -511,20 +511,21 @@ export async function getMessages(conversationId, limit = 100) {
  * Send a message
  * @param {string} conversationId - UUID of conversation
  * @param {string} senderId - UUID of sender
- * @param {string} senderId - UUID of sender
  * @param {string} text - Message text
- * @param {object} attachments - Optional attachment data
+ * @param {string} type - Message type (text, invoice, system)
+ * @param {object} meta - Metadata (invoice_id, job_id, etc.)
  * @returns {Promise<{data, error}>}
  */
-export async function sendMessage(conversationId, senderId, text, attachments = null) {
+export async function sendMessage(conversationId, senderId, text, type = 'text', meta = {}) {
   try {
     const { data, error } = await supabase
       .from('messages')
       .insert([{
         conversation_id: conversationId,
         sender_id: senderId,
-        text: text
-        // attachments: attachments // Column doesn't exist yet
+        text: text,
+        type: type,
+        meta: meta
       }])
       .select()
       .single();
@@ -647,6 +648,400 @@ export async function submitReview(reviewData) {
 }
 
 // ============================================================================
+// ONGOING JOBS & ASSIGNMENTS API
+// ============================================================================
+
+/**
+ * Update job assignment status
+ * @param {string} jobId 
+ * @param {string} status 
+ */
+export async function updateJobAssignmentStatus(jobId, status) {
+  try {
+    const { data, error } = await supabase
+      .from('job_assignments')
+      .update({ status })
+      .eq('job_id', jobId)
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ updateJobAssignmentStatus error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Create a job assignment record (marking job as active/assigned)
+ * @param {object} assignmentData - { job_id, customer_id, tradie_id, accepted_quote_id }
+ * @returns {Promise<{data, error}>}
+ */
+export async function createJobAssignment(assignmentData) {
+  try {
+    const { data, error } = await supabase
+      .from('job_assignments')
+      .upsert([assignmentData], { onConflict: 'job_id' })
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ createJobAssignment error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get job assignment by job ID
+ * @param {string} jobId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getJobAssignment(jobId) {
+  try {
+    const { data, error } = await supabase
+      .from('job_assignments')
+      .select(`
+        *,
+        customer:users!customer_id(id, display_name, avatar_url),
+        tradie:users!tradie_id(id, display_name, avatar_url),
+        quote:proposals!accepted_quote_id(*)
+      `)
+      .eq('job_id', jobId)
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getJobAssignment error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Upsert mapping between conversation and job
+ * @param {string} conversationId 
+ * @param {string} jobId 
+ */
+export async function upsertConversationJob(conversationId, jobId) {
+    try {
+        const { data, error } = await supabase
+            .from('conversation_jobs')
+            .upsert([{ conversation_id: conversationId, job_id: jobId }], { onConflict: 'conversation_id, job_id' })
+            .select()
+            .single();
+        if (error) throw error;
+        return { data, error: null };
+    } catch (error) {
+        console.error('❌ upsertConversationJob error:', error.message);
+        return { data: null, error };
+    }
+}
+
+/**
+ * Get linked job for a conversation
+ * @param {string} conversationId 
+ */
+export async function getLinkedJobForConversation(conversationId) {
+    try {
+        const { data, error } = await supabase
+            .from('conversation_jobs')
+            .select(`
+                job:jobs(
+                    *,
+                    assignment:job_assignments(*),
+                    invoices:invoices(status),
+                    variations:job_variations(status)
+                )
+            `)
+            .eq('conversation_id', conversationId)
+            .maybeSingle();
+        if (error) throw error;
+        return { data: data?.job, error: null };
+    } catch (error) {
+        console.error('❌ getLinkedJobForConversation error:', error.message);
+        return { data: null, error };
+    }
+}
+
+/**
+ * Get invoices for a specific job
+ * @param {string} jobId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getInvoicesForJob(jobId) {
+  try {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select(`
+        *,
+        items:invoice_items(*)
+      `)
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getInvoicesForJob error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Create a new invoice draft
+ * @param {object} invoiceData 
+ * @param {array} items 
+ * @returns {Promise<{data, error}>}
+ */
+export async function createInvoice(invoiceData, items = []) {
+  try {
+    const { data: invoice, error: invError } = await supabase
+      .from('invoices')
+      .insert([invoiceData])
+      .select()
+      .single();
+    
+    if (invError) throw invError;
+
+    if (items.length > 0) {
+      const itemsWithId = items.map(item => ({ ...item, invoice_id: invoice.id }));
+      const { error: itemError } = await supabase.from('invoice_items').insert(itemsWithId);
+      if (itemError) throw itemError;
+    }
+
+    return { data: invoice, error: null };
+  } catch (error) {
+    console.error('❌ createInvoice error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Update invoice and its items
+ * @param {string} invoiceId 
+ * @param {object} updates 
+ * @param {array} items 
+ * @returns {Promise<{data, error}>}
+ */
+export async function updateInvoice(invoiceId, updates = {}, items = []) {
+  try {
+    const { data: invoice, error: invError } = await supabase
+      .from('invoices')
+      .update(updates)
+      .eq('id', invoiceId)
+      .select()
+      .single();
+    
+    if (invError) throw invError;
+
+    if (items.length > 0) {
+      // For simplicity in MVP, we delete and re-insert items for drafts
+      if (invoice.status === 'draft') {
+        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+        const itemsWithId = items.map(item => ({ ...item, invoice_id: invoiceId }));
+        const { error: itemError } = await supabase.from('invoice_items').insert(itemsWithId);
+        if (itemError) throw itemError;
+      }
+    }
+
+    return { data: invoice, error: null };
+  } catch (error) {
+    console.error('❌ updateInvoice error:', error.message);
+    return { data: null, error };
+  }
+}
+
+// ============================================================================
+// JOB EVENTS API
+// ============================================================================
+
+/**
+ * Log a job event to the timeline
+ * @param {string} jobId 
+ * @param {string} type 
+ * @param {object} payload 
+ * @param {string} actorId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function logJobEvent(jobId, type, actorId, payload = {}) {
+  try {
+    const { data, error } = await supabase
+      .from('job_events')
+      .insert([{
+        job_id: jobId,
+        type,
+        actor_id: actorId,
+        payload
+      }]);
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ logJobEvent error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get timeline events for a job
+ * @param {string} jobId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getJobEvents(jobId) {
+  try {
+    const { data, error } = await supabase
+      .from('job_events')
+      .select('*')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getJobEvents error:', error.message);
+    return { data: [], error };
+  }
+}
+
+// ============================================================================
+// JOB VARIATIONS API
+// ============================================================================
+
+/**
+ * Get variations for a job
+ * @param {string} jobId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getVariationsForJob(jobId) {
+  try {
+    const { data, error } = await supabase
+      .from('job_variations')
+      .select('*')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getVariationsForJob error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Create a variation request
+ * @param {object} variationData - { job_id, tradie_id, customer_id, title, description, amount, time_impact_days }
+ * @returns {Promise<{data, error}>}
+ */
+export async function createVariation(variationData) {
+  try {
+    const { data, error } = await supabase
+      .from('job_variations')
+      .insert([variationData])
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ createVariation error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Update variation status
+ * @param {string} variationId 
+ * @param {string} status 
+ * @param {string} reason 
+ * @returns {Promise<{data, error}>}
+ */
+export async function updateVariationStatus(variationId, status, reason = null) {
+  try {
+    const updates = { status, decided_at: new Date().toISOString() };
+    if (reason) updates.decision_reason = reason;
+
+    const { data, error } = await supabase
+      .from('job_variations')
+      .update(updates)
+      .eq('id', variationId)
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ updateVariationStatus error:', error.message);
+    return { data: null, error };
+  }
+}
+
+// ============================================================================
+// DISPUTES API
+// ============================================================================
+
+/**
+ * Get disputes for a job (usually only one active)
+ * @param {string} jobId 
+ * @returns {Promise<{data, error}>}
+ */
+export async function getDisputesForJob(jobId) {
+  try {
+    const { data, error } = await supabase
+      .from('disputes')
+      .select('*')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ getDisputesForJob error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Create a dispute
+ * @param {object} disputeData - { job_id, opened_by, against_party, reason, description, evidence_urls }
+ * @returns {Promise<{data, error}>}
+ */
+export async function createDispute(disputeData) {
+  try {
+    const { data, error } = await supabase
+      .from('disputes')
+      .insert([disputeData])
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ createDispute error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Update dispute status
+ * @param {string} disputeId 
+ * @param {string} status 
+ * @param {string} resolutionNotes 
+ * @returns {Promise<{data, error}>}
+ */
+export async function updateDisputeStatus(disputeId, status, resolutionNotes = null) {
+  try {
+    const updates = { status };
+    if (status.startsWith('resolved')) updates.resolved_at = new Date().toISOString();
+    if (resolutionNotes) updates.resolution_notes = resolutionNotes;
+
+    const { data, error } = await supabase
+      .from('disputes')
+      .update(updates)
+      .eq('id', disputeId)
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ updateDisputeStatus error:', error.message);
+    return { data: null, error };
+  }
+}
+
+// ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
@@ -702,7 +1097,29 @@ export default {
   // Reviews
   getReviewsForUser,
   submitReview,
+
+  // Ongoing Jobs & Invoicing
+  createJobAssignment,
+  updateJobAssignmentStatus,
+  getJobAssignment,
+  upsertConversationJob,
+  getLinkedJobForConversation,
+  getInvoicesForJob,
+  createInvoice,
+  updateInvoice,
+  logJobEvent,
+  getJobEvents,
   
+  // Variations
+  getVariationsForJob,
+  createVariation,
+  updateVariationStatus,
+
+  // Disputes
+  getDisputesForJob,
+  createDispute,
+  updateDisputeStatus,
+
   // Utilities
   checkConnection
 };
@@ -731,6 +1148,22 @@ if (typeof window !== 'undefined') {
         subscribeToMessages,
         getReviewsForUser,
         submitReview,
+        createJobAssignment,
+        updateJobAssignmentStatus,
+        getJobAssignment,
+        upsertConversationJob,
+        getLinkedJobForConversation,
+        getInvoicesForJob,
+        createInvoice,
+        updateInvoice,
+        logJobEvent,
+        getJobEvents,
+        getVariationsForJob,
+        createVariation,
+        updateVariationStatus,
+        getDisputesForJob,
+        createDispute,
+        updateDisputeStatus,
         checkConnection
     };
 }

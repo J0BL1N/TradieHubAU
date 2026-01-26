@@ -1,0 +1,9 @@
+PASS/FAIL SUMMARY
+A) Database objects exist and match spec: FAIL
+B) RLS policies enforce participant-only access + status guards: FAIL
+C) Quote acceptance creates job_assignments + job_events + message meta.job_id: PASS
+D) /jobs/:jobId page works for both parties and blocks non-participants: FAIL
+E) Completion invoices flow (draft?submitted?approved/disputed, no paid language): FAIL
+F) Variations flow + message links + decline behavior: FAIL
+G) Disputes flow + job lock + events/messages: PARTIAL
+H) Messages sidebar context linked to job: PARTIAL

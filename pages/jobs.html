@@ -817,51 +817,156 @@
       container.innerHTML = paginatedJobs.map(j => {
         const name = j.customerName || j.customer?.display_name || 'Customer';
         const avatar = j.customer?.avatar_url || getAvatarUrl(name);
+        
+        // Tags
         const cats = j.categories || (j.category ? [j.category] : []);
         const catLabels = cats.map(c => {
             const co = (window.TRADE_CATEGORIES || []).find(x => x.id === c);
             return co ? co.label : c;
         });
 
+        // Price
         const budget = formatCurrency(j.budget_max || j.budgetMax || j.budget_min || j.budgetMin);
-        const urgencyClass = j.urgency === 'urgent'
-          ? 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-900/30'
-          : (j.urgency === 'week'
-            ? 'text-amber-600 bg-amber-50 dark:text-amber-300 dark:bg-amber-900/30'
-            : 'text-gray-600 bg-gray-50 dark:text-gray-300 dark:bg-gray-800');
 
+        // Status (Mock/logic because implied field)
+        const status = (j.status || 'open').toUpperCase();
+        const statusColor = status === 'OPEN' ? 'text-emerald-700 bg-emerald-50' 
+                          : status === 'FILLED' ? 'text-gray-700 bg-gray-100'
+                          : 'text-blue-700 bg-blue-50';
+
+        // Verified
+        const isVerified = j.customer?.verified || false;
+
+        // Photos (safe check)
+        const photoCount = j.photos_count || (j.photos ? j.photos.length : 0);
+
+        // Start Date
+        const startDate = j.start_date || j.startDate || 'ASAP';
+
+        // Distance (Mock/conditional)
+        const distance = j.distance ? `${j.distance}km` : null;
+
+        // Quotes
+        const quotesCount = j.proposals?.[0]?.count !== undefined ? j.proposals[0].count : (j.quotes_count || 0);
+
+        // Urgency Tag
+        const isUrgent = j.urgency === 'urgent';
+        
         return `
-          <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 hover:border-teal-400 transition cursor-pointer" onclick="window.openJobModal('${j.id}')">
-            <div class="flex gap-4">
-              <div class="flex-shrink-0">
-                <img src="${avatar}" class="w-12 h-12 rounded-full border-2 border-teal-500" alt="${name}">
+        <div class="w-full rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow transition cursor-pointer" onclick="window.openJobModal('${j.id}')">
+          <!-- Row 1: Avatar + Title + Price -->
+          <div class="flex items-start gap-3">
+            <div class="h-10 w-10 shrink-0 rounded-full bg-emerald-600 text-white flex items-center justify-center font-semibold overflow-hidden">
+               ${j.customer?.avatar_url ? `<img src="${j.customer.avatar_url}" class="w-full h-full object-cover">` : name.substring(0,2).toUpperCase()}
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="truncate text-base font-semibold text-slate-900 dark:text-white">
+                    ${j.title}
+                  </h3>
+
+                  <!-- Row 2: Tags + Status (compact) -->
+                  <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <!-- existing: trade tags -->
+                    ${catLabels.map(tag => `
+                       <span class="rounded-md bg-slate-100 dark:bg-gray-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-gray-300 uppercase">${tag}</span>
+                    `).join('')}
+                    
+                    <!-- existing: urgent tag -->
+                    ${isUrgent ? `
+                    <span class="rounded-md bg-rose-100 dark:bg-rose-900/30 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:text-rose-400">URGENT</span>
+                    ` : ''}
+
+                    <!-- NEW: status pill -->
+                    <span class="rounded-md px-2 py-0.5 text-xs font-semibold ${statusColor}">
+                      ${status}
+                    </span>
+
+                    <!-- NEW: verified badge (conditional) -->
+                    ${isVerified ? `
+                    <span class="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                      <!-- icon -->
+                      <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 2l3 4 5 1-3 4 1 5-6-2-6 2 1-5-3-4 5-1 3-4z" stroke="currentColor" stroke-width="2" />
+                      </svg>
+                      Verified
+                    </span>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <div class="shrink-0 text-right">
+                  <!-- existing: price -->
+                  <div class="text-sm font-bold text-emerald-700 dark:text-emerald-400">${budget}</div>
+
+                  <!-- NEW: primary CTA -->
+                  <button class="mt-2 inline-flex items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors" onclick="event.stopPropagation(); window.openJobModal('${j.id}')">
+                    View
+                  </button>
+                </div>
               </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-start mb-1">
-                  <h3 class="font-bold text-gray-900 dark:text-white truncate pr-4 text-sm md:text-base">${j.title}</h3>
-                  <span class="text-sm font-bold text-teal-600 whitespace-nowrap">${budget}</span>
-                </div>
-                
-                <div class="flex flex-wrap gap-2 mb-3">
-                  ${catLabels.map(cl => `<span class="text-[10px] bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">${cl}</span>`).join('')}
-                  <span class="text-[10px] ${urgencyClass} px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">${j.urgency}</span>
-                </div>
 
-                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">${j.description}</p>
+              <!-- Row 3: Meta (1 compact line, icons) -->
+              <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-gray-400">
+                <!-- existing: location -->
+                <span class="inline-flex items-center gap-1">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 21s7-5 7-11a7 7 0 10-14 0c0 6 7 11 7 11z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  ${j.location || j.state || 'Unknown'}
+                </span>
 
-                <div class="flex items-center justify-between mt-auto">
-                    <div class="flex items-center gap-3 text-[10px] text-gray-500">
-                        <span class="flex items-center gap-1"><i data-feather="map-pin" class="w-3 h-3"></i> ${j.location || j.state}</span>
-                        <span class="flex items-center gap-1"><i data-feather="calendar" class="w-3 h-3"></i> ${timeAgo(j.created_at || j.postedAt)}</span>
-                    </div>
-                    <div class="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                        <i data-feather="message-square" class="w-3 h-3"></i>
-                        ${j.proposals?.[0]?.count !== undefined ? j.proposals[0].count : (j.quotes_count || 0)} quotes
-                    </div>
-                </div>
+                <!-- existing: posted time -->
+                <span class="inline-flex items-center gap-1">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  ${timeAgo(j.created_at || j.postedAt)}
+                </span>
+
+                <!-- NEW: photos count (conditional) -->
+                ${photoCount > 0 ? `
+                <span class="inline-flex items-center gap-1">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 7h4l2-2h4l2 2h4v12H4V7z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 17a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  ${photoCount}
+                </span>
+                ` : ''}
+
+                <!-- NEW: start date (conditional) -->
+                ${startDate ? `
+                <span class="inline-flex items-center gap-1">
+                  <span class="font-semibold text-slate-600 dark:text-gray-300">Start:</span>
+                  ${startDate}
+                </span>
+                ` : ''}
+
+                <!-- NEW: distance (tradie-view only) -->
+                ${distance ? `
+                <span class="inline-flex items-center gap-1">
+                  <span class="font-semibold text-slate-600 dark:text-gray-300">Dist:</span>
+                  ${distance}
+                </span>
+                ` : ''}
+
+                <!-- existing: quotes count -->
+                <span class="inline-flex items-center gap-1">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 8h12M6 12h8M6 16h10" stroke="currentColor" stroke-width="2"/>
+                    <path d="M4 5h16v14H7l-3 3V5z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  ${quotesCount} quotes
+                </span>
               </div>
             </div>
           </div>
+        </div>
         `;
       }).join('');
     }

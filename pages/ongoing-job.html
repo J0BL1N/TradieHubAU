@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ongoing Job | AussieTradieHub</title>
+    <link rel="icon" type="image/x-icon" href="../static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <link rel="stylesheet" href="../css/main/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="font-inter bg-slate-50 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-200">
+    <div id="athNavMount"></div>
+
+    <main id="athMain" class="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Back Link & Header -->
+        <div class="mb-8">
+            <a href="messages.html" class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-teal-600 transition mb-4">
+                <i data-feather="arrow-left" class="w-4 h-4"></i>
+                Back to Messages
+            </a>
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div id="jobHeader">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span id="jobStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-teal-100 text-teal-700">ACTIVE JOB</span>
+                        <span id="jobIdDisplay" class="text-xs text-slate-400 font-mono">ID: ...</span>
+                    </div>
+                    <h1 id="jobTitle" class="text-3xl font-extrabold text-slate-900 dark:text-white">Loading Job...</h1>
+                </div>
+                <div id="globalActions" class="flex items-center gap-3">
+                    <!-- Dynamic buttons like "View Conversation" -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 12-column Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- LEFT COLUMN: Job Info (col-7) -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Participants Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-6 shadow-sm">
+                    <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase mb-4">Participants</h3>
+                    <div class="flex flex-wrap gap-6" id="jobParticipants">
+                        <!-- Customer & Tradie info -->
+                    </div>
+                </div>
+
+                <!-- Description Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-6 shadow-sm">
+                    <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase mb-4">Job Description</h3>
+                    <div id="jobDescription" class="text-slate-600 dark:text-gray-300 leading-relaxed">
+                        <!-- Job description content -->
+                    </div>
+                    <div id="jobRequirements" class="mt-6 flex flex-wrap gap-2">
+                        <!-- Requirements chips -->
+                    </div>
+                </div>
+
+                <!-- Dates & Location -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-6 shadow-sm">
+                        <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase mb-4">Project Dates</h3>
+                        <div class="space-y-3" id="jobDates">
+                            <!-- Start, target end, etc. -->
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 p-6 shadow-sm">
+                        <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase mb-4">Location</h3>
+                        <div id="jobLocation" class="flex items-start gap-2 text-slate-700 dark:text-gray-200">
+                            <i data-feather="map-pin" class="w-4 h-4 text-slate-400 mt-1"></i>
+                            <span id="jobLocationText">...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Workflow Tabs (col-5) -->
+            <div class="lg:col-span-5 flex flex-col h-[calc(100vh-12rem)] sticky top-8">
+                <!-- Tabs Header -->
+                <div class="bg-white dark:bg-gray-800 rounded-t-2xl border-x border-t border-slate-200 dark:border-gray-700 p-2 flex gap-1">
+                    <button onclick="switchTab('timeline')" id="tab-timeline" class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-50 dark:hover:bg-gray-700 transition text-slate-400">Timeline</button>
+                    <button onclick="switchTab('invoices')" id="tab-invoices" class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl bg-teal-50 dark:bg-teal-900/20 text-teal-600 transition">Invoices</button>
+                    <button onclick="switchTab('variations')" id="tab-variations" class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-50 dark:hover:bg-gray-700 transition text-slate-400">Variations</button>
+                    <button onclick="switchTab('disputes')" id="tab-disputes" class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-slate-50 dark:hover:bg-gray-700 transition text-slate-400 text-red-500">Disputes</button>
+                </div>
+
+                <!-- Tabs Content -->
+                <div class="bg-white dark:bg-gray-800 rounded-b-2xl border border-slate-200 dark:border-gray-700 p-0 flex-1 overflow-hidden relative shadow-sm">
+                    
+                    <!-- 1. TIMELINE -->
+                    <div id="view-timeline" class="tab-pane hidden absolute inset-0 overflow-y-auto p-6 space-y-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase">Activity Log</h3>
+                        </div>
+                        <div id="activityTimeline" class="space-y-6 relative border-l-2 border-slate-100 dark:border-gray-700 ml-3 pl-6">
+                            <!-- Events go here -->
+                        </div>
+                    </div>
+
+                    <!-- 2. INVOICES -->
+                    <div id="view-invoices" class="tab-pane absolute inset-0 overflow-y-auto p-6 space-y-6">
+                         <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase">Invoices & Releases</h3>
+                            <button id="btnCreateInvoice" onclick="openInvoiceModal()" class="hidden bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-teal-500/20 items-center gap-2">
+                                <i data-feather="plus" class="w-3.5 h-3.5"></i> New Invoice
+                            </button>
+                        </div>
+                        <div id="invoicesList" class="space-y-4 pb-20">
+                            <!-- Invoices go here -->
+                            <div class="text-center py-12">
+                                <div class="bg-slate-50 dark:bg-gray-900 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i data-feather="file-text" class="w-6 h-6 text-slate-300"></i>
+                                </div>
+                                <p class="text-sm text-slate-500 font-medium">No invoices created yet.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. VARIATIONS -->
+                    <div id="view-variations" class="tab-pane hidden absolute inset-0 overflow-y-auto p-6 space-y-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-[11px] font-extrabold tracking-widest text-slate-400 uppercase">Scope Variations</h3>
+                            <button id="btnRequestVariation" onclick="openVariationModal()" class="hidden bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-teal-500/20 items-center gap-2">
+                                <i data-feather="git-commit" class="w-3.5 h-3.5"></i> Request Variation
+                            </button>
+                        </div>
+                        
+                        <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-4 rounded-xl text-xs leading-relaxed mb-6 border border-blue-100 dark:border-blue-900/30">
+                            <strong>Note:</strong> Additional work requires approval. Declining a variation does not cancel the original job agreement.
+                        </div>
+
+                        <div id="variationsList" class="space-y-4">
+                            <!-- Variations go here -->
+                        </div>
+                    </div>
+
+                    <!-- 4. DISPUTES -->
+                    <div id="view-disputes" class="tab-pane hidden absolute inset-0 overflow-y-auto p-6 space-y-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-[11px] font-extrabold tracking-widest text-red-400 uppercase">Resolution Centre</h3>
+                            <button onclick="openDisputeModal()" class="border border-slate-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-gray-300 px-4 py-2 rounded-xl text-xs font-bold transition items-center gap-2">
+                                <i data-feather="alert-triangle" class="w-3.5 h-3.5"></i> Open Dispute
+                            </button>
+                        </div>
+                        <div id="disputesList" class="space-y-4">
+                            <!-- Disputes go here -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Variation Modal -->
+        <div id="variationModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="hideVariationModal()"></div>
+            <div class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+                <div class="p-6 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center bg-slate-50/30 dark:bg-gray-800/30">
+                    <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Request Variation</h2>
+                    <button onclick="hideVariationModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition">
+                        <i data-feather="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <form id="variationForm" onsubmit="submitVariation(event)" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Title</label>
+                        <input type="text" name="title" required class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" placeholder="e.g. Extra Power Point">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Additional Cost</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">$</span>
+                            <input type="number" name="amount" step="0.01" required class="w-full pl-8 pr-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Description & Reason</label>
+                        <textarea name="description" required rows="3" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" placeholder="Explain why this extra work is needed..."></textarea>
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="w-full py-3.5 rounded-2xl bg-teal-600 text-white font-bold text-sm hover:bg-teal-700 transition shadow-lg shadow-teal-500/20">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dispute Modal -->
+        <div id="disputeModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="hideDisputeModal()"></div>
+            <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+                <div class="p-6 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center bg-red-50 dark:bg-red-900/10">
+                    <h2 class="text-lg font-extrabold text-red-600 dark:text-red-400 flex items-center gap-2">
+                        <i data-feather="alert-triangle" class="w-5 h-5"></i> Open Dispute
+                    </h2>
+                    <button onclick="hideDisputeModal()" class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition text-red-500">
+                        <i data-feather="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <form id="disputeForm" onsubmit="submitDispute(event)" class="p-6 space-y-4">
+                    <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                        Opening a dispute will pause this job and alert our support team. Please try to resolve the issue with the other party first.
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Reason</label>
+                        <select name="reason" required class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-red-500 text-sm font-bold cursor-pointer">
+                            <option value="">Select a reason...</option>
+                            <option value="job_not_feasible">Job Not Feasible (Safety/Compliance)</option>
+                            <option value="scope_disagreement">Scope Disagreement</option>
+                            <option value="variation_disagreement">Variation Dispute</option>
+                            <option value="quality_issue">Quality of Work</option>
+                            <option value="payment_release_issue">Payment Release Issue</option>
+                            <option value="tradie_abandoned">Tradie Abandoned Job</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Description</label>
+                        <textarea name="description" required rows="4" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-red-500 text-sm font-medium" placeholder="Provide detailed context including dates and communications..."></textarea>
+                    </div>
+                    <div class="pt-2">
+                        <button type="submit" class="w-full py-3.5 rounded-2xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition shadow-lg shadow-red-500/20">Submit Case</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Invoice Editor Modal -->
+        <div id="invoiceModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/40" onclick="hideInvoiceModal()"></div>
+            <div class="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="p-6 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center bg-slate-50/30 dark:bg-gray-800/30">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white" id="invoiceModalTitle">New Invoice</h2>
+                        <div id="invoiceNumberDisplay" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Draft #---</div>
+                    </div>
+                    <button onclick="hideInvoiceModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition">
+                        <i data-feather="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800">
+                    <form id="invoiceForm" class="space-y-8">
+                        <!-- Basic Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Issue Date</label>
+                                <input type="date" id="invIssueDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 transition shadow-sm font-medium text-sm">
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">Due Date</label>
+                                    <select id="duePreset" class="text-[10px] font-bold text-teal-600 bg-transparent outline-none cursor-pointer" onchange="applyDuePreset(this.value)">
+                                        <option value="custom">Custom Date</option>
+                                        <option value="receipt">On Receipt</option>
+                                        <option value="7">7 Days</option>
+                                        <option value="14">14 Days</option>
+                                        <option value="30">30 Days</option>
+                                    </select>
+                                </div>
+                                <input type="date" id="invDueDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 transition shadow-sm font-medium text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Line Items -->
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">Line Items</label>
+                                <button type="button" onclick="addInvoiceItem()" class="flex items-center gap-1.5 text-xs font-bold text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 px-3 py-1.5 rounded-lg transition">
+                                    <i data-feather="plus" class="w-3.5 h-3.5"></i> Add Item
+                                </button>
+                            </div>
+                            <div id="invoiceItemsList" class="space-y-3">
+                                <!-- Line items rendered by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Totals & Options -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 border-t border-slate-100 dark:border-gray-700">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-900/50 rounded-2xl border border-slate-100 dark:border-gray-700">
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-900 dark:text-white">Collect GST</div>
+                                        <div class="text-[10px] text-slate-400 font-medium tracking-wide">Add 10% Goods & Services Tax</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="gstToggle" class="sr-only peer" onchange="updateInvoiceTotal()">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
+
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Accompanying Message</label>
+                                    <textarea id="invMessage" rows="2" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 placeholder:text-slate-400 text-sm font-medium resize-none shadow-sm" placeholder="Message to send with invoice..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-900 dark:bg-slate-950 p-6 rounded-2xl shadow-xl shadow-slate-200 dark:shadow-none text-white flex flex-col justify-between">
+                                <div class="space-y-3">
+                                    <div class="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        <span>Subtotal</span>
+                                        <span id="invoiceSubtotalDisplay">$0.00</span>
+                                    </div>
+                                    <div id="gstRow" class="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest hidden">
+                                        <span>GST (10%)</span>
+                                        <span id="invoiceGstDisplay">$0.00</span>
+                                    </div>
+                                </div>
+                                <div class="pt-4 mt-4 border-t border-slate-800 flex justify-between items-end">
+                                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Total Amount Due</div>
+                                    <div id="invoiceTotal" class="text-3xl font-black text-teal-400 tracking-tighter">$0.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Sections -->
+                        <div class="pt-4">
+                            <button type="button" onclick="toggleAdvanced()" class="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition">
+                                <i id="advIcon" data-feather="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200"></i> Advanced Project Notes (Optional)
+                            </button>
+                            
+                            <div id="advancedSection" class="hidden mt-6 space-y-6 animate-in slide-in-from-top-4 duration-300">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Inclusions</label>
+                                        <textarea id="invInclusions" rows="3" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" placeholder="What's included in this quote..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Exclusions</label>
+                                        <textarea id="invExclusions" rows="3" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" placeholder="What's specifically excluded..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Warranty Notes</label>
+                                        <textarea id="invWarranty" rows="3" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" placeholder="Warranty details..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Payment Terms</label>
+                                        <textarea id="invTerms" rows="3" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" placeholder="Payment terms and conditions..."></textarea>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-2">Internal Notes</label>
+                                    <textarea id="invNotes" rows="2" class="w-full px-4 py-3 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" placeholder="Generic notes for buyer..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="p-6 border-t border-slate-100 dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <button onclick="hideInvoiceModal()" class="w-full md:w-auto px-6 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-200 transition">Discard Changes</button>
+                    <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                        <button id="btnSaveInvoice" class="w-full md:w-auto px-8 py-3 rounded-2xl text-sm font-bold bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-gray-600 transition shadow-sm">Save Draft</button>
+                        <button id="btnSendInvoice" class="w-full md:w-auto px-10 py-3 rounded-2xl text-sm font-black bg-teal-600 text-white hover:bg-teal-700 transition shadow-xl shadow-teal-600/20 flex items-center justify-center gap-2 uppercase tracking-wider">
+                            Send Invoice <i data-feather="send" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/core/data.js"></script>
+    <script type="module" src="../js/core/supabase-client.js"></script>
+    <script type="module" src="../js/core/auth.js"></script>
+    <script type="module" src="../js/core/db.js"></script>
+    <script src="../js/components/nav-shell.js"></script>
+    <script src="../js/core/spa-router.js"></script>
+    <script type="module" src="../js/pages/ongoing-job.js"></script>
+</body>
+</html>

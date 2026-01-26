@@ -1,5 +1,5 @@
 
-import { getProposalById, updateJob, updateProposalStatus, getOrCreateConversation, sendMessage } from '../core/db.js';
+import { getProposalById, updateJob, updateProposalStatus, getOrCreateConversation, sendMessage, createJobAssignment, logJobEvent } from '../core/db.js';
 
 /**
  * Checkout Page Controller
@@ -121,7 +121,32 @@ async function initCheckout() {
                 console.log('💬 Initializing conversation...');
                 const { data: conv, error: cErr } = await getOrCreateConversation(job.customer_id, tradie.id, job.id);
                 if (!cErr && conv) {
-                    // Send first automated message
+                    // 3-0. Map Conversation to Job (Codex Step 3)
+                    await window.ATHDB.upsertConversationJob(conv.id, job.id);
+
+                    // 3a. Create Job Assignment
+                    console.log('📝 Creating job assignment...');
+                    const { error: assignErr } = await createJobAssignment({
+                        job_id: job.id,
+                        customer_id: job.customer_id,
+                        tradie_id: tradie.id,
+                        accepted_quote_id: proposalId,
+                        status: 'active'
+                    });
+                    if (assignErr) throw assignErr;
+
+                    // 3b. Log Activity Event
+                    const { error: eventErr } = await logJobEvent(job.id, 'quote_accepted', job.customer_id, {
+                        price: proposal.price,
+                        tradie_name: tradie.display_name
+                    });
+                    if (eventErr) throw eventErr;
+
+                    // 3c. Send system message
+                    const { error: sysErr } = await sendMessage(conv.id, job.customer_id, "Quote accepted. Job is now active.", 'system', { job_id: job.id });
+                    if (sysErr) throw sysErr;
+
+                    // 3d. Send user welcome message
                     const welcomeMsg = `Hi ${tradie.display_name}! I've just accepted your quote and paid for the job: "${job.title}". Looking forward to getting this started!`;
                     await sendMessage(conv.id, job.customer_id, welcomeMsg);
                 }
