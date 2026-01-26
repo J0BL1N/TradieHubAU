@@ -1167,3 +1167,36 @@ if (typeof window !== 'undefined') {
         checkConnection
     };
 }
+
+// Attach to window for legacy compatibility (index.html, etc.)
+window.ATHDB = {
+  getUserProfile,
+  updateUserProfile,
+  searchTradies,
+  searchCustomers,
+  getJobs,
+  getJobsForTradie,
+  getJobById,
+  createJob,
+  updateJob,
+  deleteJob,
+  getProposalsForJob,
+  getProposalById,
+  createProposal,
+  updateProposalStatus,
+  getConversations,
+  getOrCreateConversation,
+  getMessages,
+  sendMessage,
+  markMessageAsRead,
+  subscribeToMessages,
+  getReviewsForUser,
+  submitReview,
+  updateJobAssignmentStatus,
+  createJobAssignment,
+  getJobAssignment,
+  upsertConversationJob,
+  getLinkedJobForConversation,
+  getInvoicesForJob,
+  createInvoice
+};

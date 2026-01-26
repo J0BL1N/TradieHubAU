@@ -1,0 +1,58 @@
+Summary
+Total bugs found: 6
+Total bugs fixed: 6
+Bugs deferred: 0
+
+Bug List
+Bug ID: 1
+File(s) affected: pages/my-profile.html, js/core/script.js
+Description: My Profile used both legacy localStorage init and Supabase profile loader, causing inconsistent data and conflicting edit/save behavior.
+Root cause: initMyProfilePage() always ran on DOMContentLoaded and did not align with Supabase-backed profile state.
+Fix applied: Added a Supabase mode guard to skip legacy init and implemented full Supabase-driven form state management in the page module.
+Risk level: Medium
+
+Bug ID: 2
+File(s) affected: pages/my-profile.html
+Description: Several profile fields (postcode, privacy settings, ABN/license masking) and public profile links were not populated or updated.
+Root cause: Inline module only populated a subset of fields and never set public profile link targets.
+Fix applied: Populated all relevant fields, added masking for ABN, and set public profile links based on role.
+Risk level: Low
+
+Bug ID: 3
+File(s) affected: pages/my-profile.html
+Description: Edit mode was not functional for Supabase-backed profiles (fields remained disabled and trade picker was inert).
+Root cause: Inline module lacked edit/cancel handlers and trade picker logic; legacy script was disabled for Supabase mode.
+Fix applied: Added edit/cancel toggles, enabled/disabled fields correctly, and implemented trade picker logic using existing trade catalog data.
+Risk level: Medium
+
+Bug ID: 4
+File(s) affected: js/pages/profile-customer.js
+Description: Customer profile job lists only showed open jobs and missed in-progress/completed jobs.
+Root cause: getJobs() defaults to status='open' when no status filter is provided.
+Fix applied: Queried jobs directly via Supabase for the customer ID without forcing a status filter.
+Risk level: Medium
+
+Bug ID: 5
+File(s) affected: js/pages/profile-customer.js
+Description: Customer profile initialized twice and message button could remain stuck on "Loading..." after errors; customer meta/review count not updated.
+Root cause: Duplicate init block and no try/finally to restore button content; missing DOM updates.
+Fix applied: Added init guard, restored button content on error, and populated meta/review count elements.
+Risk level: Low
+
+Bug ID: 6
+File(s) affected: js/pages/profile-tradesman.js
+Description: Verified badge appeared for unverified tradies and trades chips never rendered.
+Root cause: No check against profile.verified and no rendering for trades array.
+Fix applied: Toggled verified badge based on profile.verified and rendered trades chips when available.
+Risk level: Low
+
+Known Limitations
+- Public profile job visibility may still be limited by RLS; if jobs are not visible to non-participants, job lists will be empty by design.
+- Trade labels may appear as raw IDs if stored as IDs without a display mapping.
+- Verification UI in My Profile only updates on initial load; role changes during the session do not re-evaluate verification status.
+
+Files Modified
+- pages/my-profile.html
+- js/core/script.js
+- js/pages/profile-customer.js
+- js/pages/profile-tradesman.js

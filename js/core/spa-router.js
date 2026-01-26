@@ -49,7 +49,10 @@ window.ATHRouter = (function() {
                 fetchUrl = `/pages/ongoing-job.html?id=${jobId}${existingParams}`;
             }
 
-            const response = await fetch(fetchUrl);
+            // Cache-busting for HTML templates during dev/debugging
+            const cacheBuster = `v=${Date.now()}`;
+            const separator = fetchUrl.includes('?') ? '&' : '?';
+            const response = await fetch(fetchUrl + separator + cacheBuster);
             if (!response.ok) throw new Error('Failed to load page');
             
             const html = await response.text();

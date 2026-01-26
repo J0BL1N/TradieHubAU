@@ -4070,6 +4070,7 @@ function escapeHtml(str) {
 function initMyProfilePage() {
   const root = document.getElementById('mpName');
   if (!root) return; // not on my-profile
+  if (window.__ATH_SUPABASE_PROFILE__) return;
 
   // v0.026a: My Profile is private to signed-in users (prototype auth layer).
   if (!requireAuthOnPage({ onMissing: 'overlay' })) return;

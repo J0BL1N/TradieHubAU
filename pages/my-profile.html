@@ -127,11 +127,11 @@
           </h3>
           <p class="text-sm text-gray-600 mt-1">Choose how you use the platform.</p>
           <div class="mt-4 grid grid-cols-3 gap-2" id="mpRoleSwitch">
-            <button data-role="customer"
+            <button data-role="customer" type="button"
               class="mpRoleBtn px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50">Customer</button>
-            <button data-role="tradie"
+            <button data-role="tradie" type="button"
               class="mpRoleBtn px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50">Tradie</button>
-            <button data-role="dual"
+            <button data-role="dual" type="button"
               class="mpRoleBtn px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50">Dual</button>
           </div>
           <div class="mt-3 text-xs text-gray-500">Tradies can still hire other tradies (subcontracting) in Dual/Tradie
@@ -146,17 +146,18 @@
           <div class="mt-4 grid md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm text-gray-600">Display name</label>
-              <input id="mpDisplayName" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2" disabled />
+              <input id="mpDisplayName" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input" disabled />
             </div>
             <div>
               <label class="text-sm text-gray-600">Avatar</label>
               <div class="mt-1 flex flex-wrap items-center gap-2">
                 <button id="mpAvatarPickBtn" type="button"
-                  class="px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50" disabled>Upload
+                  class="px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 hidden mp-edit-mode" disabled>Upload
                   image</button>
                 <button id="mpAvatarRemoveBtn" type="button"
-                  class="px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50" disabled>Remove</button>
-                <span id="mpAvatarHint" class="text-xs text-gray-500">(Saved locally for this prototype)</span>
+                  class="px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 hidden mp-edit-mode" disabled>Remove</button>
+                <span id="mpAvatarHint" class="text-xs text-gray-500 hidden mp-edit-mode">(Saved to Supabase)</span>
+                <span class="text-xs text-gray-500 mp-view-mode">Click Edit to change.</span>
               </div>
               <input id="mpAvatarFile" type="file" accept="image/*" class="hidden" />
               <div class="mt-1 text-xs text-gray-500">Contact details stay private and are shared only after payment
@@ -164,51 +165,30 @@
             </div>
             <div>
               <label class="text-sm text-gray-600">Suburb</label>
-              <input id="mpSuburb" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2" disabled />
+              <input id="mpSuburb" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input" disabled />
             </div>
             <div class="grid grid-cols-2 gap-2 ath-profile-location-grid">
               <div>
                 <label class="text-sm text-gray-600">State</label>
-                <input id="mpState" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2" disabled />
+                <input id="mpState" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input" disabled />
               </div>
               <div>
                 <label class="text-sm text-gray-600">Postcode</label>
-                <input id="mpPostcode" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2" disabled />
+                <input id="mpPostcode" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input" disabled />
               </div>
             </div>
             <div>
               <label class="text-sm text-gray-600">Phone (private)</label>
               <div class="text-xs text-gray-500">Shared only after payment through the platform.</div>
-              <input id="mpPhone" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2" disabled />
+              <input id="mpPhone" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input" disabled />
             </div>
             <div>
               <label class="text-sm text-gray-600">Email (private)</label>
               <div class="text-xs text-gray-500">Shared only after payment through the platform.</div>
-              <input id="mpEmail" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2" disabled />
+              <input id="mpEmail" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input" disabled />
             </div>
-
-            <!-- Batch L: Tradie multi-trade picker -->
-            <div id="mpTradesSection" class="md:col-span-2">
-              <label class="text-sm text-gray-600">Trades (Tradie mode)</label>
-              <div class="text-xs text-gray-500">Choose one or more trades to show on your profile (no direct contact
-                details are ever shown).</div>
-              <input type="hidden" id="mpTrades" value="">
-              <div class="mt-2 border border-gray-200 rounded-xl bg-white">
-                <button type="button" id="mpTradesToggle"
-                  class="w-full px-3 py-2 flex items-center justify-between text-left" disabled>
-                  <span class="text-sm text-gray-700 font-medium">Select trades</span>
-                  <span class="text-xs text-gray-500" id="mpTradesCount">0 selected</span>
-                </button>
-                <div id="mpTradesPanel" class="hidden border-t border-gray-200">
-                  <div class="p-3">
-                    <input id="mpTradesSearch" type="text" placeholder="Search trades..."
-                      class="w-full px-3 py-2 border border-gray-200 rounded-lg" disabled />
-                    <div id="mpTradesOptions" class="mt-3 max-h-56 overflow-auto space-y-2"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-2 flex flex-wrap gap-2" id="mpTradesSelected"></div>
-            </div>
+            
+             <!-- Batch L: Tradie multi-trade picker (Future Enhancement) -->
           </div>
         </section>
       </div>
@@ -225,12 +205,12 @@
           <div class="mt-4 grid md:grid-cols-2 gap-3">
             <label class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-3 py-2">
               <span class="text-sm text-gray-700">Show suburb/state publicly</span>
-              <input id="mpShowLocation" type="checkbox" class="h-4 w-4" disabled />
+              <input id="mpShowLocation" type="checkbox" class="h-4 w-4 mp-input" disabled />
             </label>
 
             <div class="border border-gray-200 rounded-lg px-3 py-2">
               <label class="text-sm text-gray-700">Address reveal rule</label>
-              <select id="mpAddressRule" class="mt-1 w-full border border-gray-200 rounded-lg px-2 py-2" disabled>
+              <select id="mpAddressRule" class="mt-1 w-full border border-gray-200 rounded-lg px-2 py-2 mp-input" disabled>
                 <option value="never">Never</option>
                 <option value="afterAccepted">After job accepted</option>
                 <option value="afterJobStarts">After job starts</option>
@@ -241,13 +221,13 @@
           <div class="mt-4 grid md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm text-gray-600">ABN (stored privately)</label>
-              <input id="mpAbn" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2"
+              <input id="mpAbn" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input"
                 placeholder="Not shown publicly" disabled />
               <div class="mt-1 text-xs text-gray-500">Public display: <span id="mpAbnMasked">—</span></div>
             </div>
             <div>
               <label class="text-sm text-gray-600">License / ID (stored privately)</label>
-              <input id="mpLicense" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2"
+              <input id="mpLicense" class="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 mp-input"
                 placeholder="Not shown publicly" disabled />
                 
               <!-- Phase 3B: Identity Verification UI -->
@@ -271,27 +251,16 @@
           </div>
         </section>
 
-        <!-- Quick links -->
-        <section class="border border-gray-200 rounded-xl p-5">
+        <!-- My Jobs (New Section) -->
+        <section class="border border-gray-200 rounded-xl p-5 bg-white">
           <h3 class="font-semibold text-gray-900 flex items-center gap-2">
-            <i data-feather="zap" class="w-4 h-4 text-teal-600"></i> Quick Actions
+            <i data-feather="briefcase" class="w-4 h-4 text-teal-600"></i> My Jobs
           </h3>
-          <div class="mt-4 space-y-2">
-            <a href="messages.html"
-              class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
-              <span class="text-sm text-gray-800">Open Messages</span>
-              <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
-            </a>
-            <a href="jobs.html"
-              class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
-              <span class="text-sm text-gray-800">Browse Jobs</span>
-              <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
-            </a>
-            <a href="post-job.html"
-              class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
-              <span class="text-sm text-gray-800">Post a Job</span>
-              <i data-feather="chevron-right" class="w-4 h-4 text-gray-400"></i>
-            </a>
+          <div class="mt-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto" id="mpMyJobsList">
+             <!-- Populated by JS -->
+          </div>
+          <div class="mt-3 pt-3 border-t border-gray-100 text-center">
+             <a href="jobs.html" class="text-xs text-teal-600 hover:text-teal-700 font-medium">Browse All Jobs &rarr;</a>
           </div>
         </section>
       </div>
@@ -306,244 +275,8 @@
   <script src="../js/components/nav-shell.js"></script>
   <script src="../js/core/spa-router.js"></script>
   <script src="../js/core/script.js"></script>
-
-  <script type="module">
-    import { supabase, getCurrentUser } from '../js/core/supabase-client.js';
-    import { ATHDB as db } from '../js/core/db.js';
-    import { uploadAvatar } from '../js/api/storage-api.js';
-    import { uploadVerificationDocument, getVerificationStatus } from '../js/api/verification-api.js';
-
-    async function initProfilePage() {
-      // Initialize icons
-      if (typeof feather !== 'undefined') feather.replace();
-      
-      // Wait for auth to initialize
-      const { user } = await getCurrentUser();
-      
-      if (!user) {
-        console.log('Not signed in');
-        return;
-      }
-      
-      const userId = user.id;
-      console.log('?? Loading profile for:', userId);
-      
-      // Load profile
-      const { data: profile, error } = await db.getUserProfile(userId);
-      
-      if (error) {
-        console.error('? Failed to load profile:', error);
-        return;
-      }
-      
-      if (profile) {
-        // Populate UI
-        document.getElementById('mpName').textContent = profile.display_name || 'New User';
-        document.getElementById('mpDisplayName').value = profile.display_name || '';
-        document.getElementById('mpEmail').value = profile.email || user.email;
-        document.getElementById('mpSuburb').value = profile.suburb || '';
-        document.getElementById('mpState').value = profile.state || '';
-        document.getElementById('mpPhone').value = profile.phone || '';
-        
-        // Role badge
-        const role = profile.role || 'customer';
-        const roleBadge = document.getElementById('mpRoleBadge');
-        if (roleBadge) {
-          roleBadge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-          // Highlight active role button
-          document.querySelectorAll('.mpRoleBtn').forEach(btn => {
-            if (btn.dataset.role === role) {
-              btn.classList.add('bg-teal-50', 'text-teal-700', 'border-teal-200', 'font-medium');
-            } else {
-              btn.classList.remove('bg-teal-50', 'text-teal-700', 'border-teal-200', 'font-medium');
-            }
-          });
-        }
-        
-        // Avatar
-        if (profile.avatar_url) {
-          document.getElementById('mpAvatar').src = profile.avatar_url;
-        } else {
-          // Default avatar
-          document.getElementById('mpAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.display_name)}&background=0d9488&color=fff`;
-        }
-
-        // --- Phase 3B: Identity Verification Logic ---
-        const verifSection = document.getElementById('mpVerificationSection');
-        if (verifSection) {
-            // Show verification section only for tradies/dual
-            if (['tradie', 'dual'].includes(profile.role)) {
-                verifSection.classList.remove('hidden');
-                
-                // Fetch status
-                const { status, error: vError } = await getVerificationStatus(userId);
-                
-                const statusEl = document.getElementById('mpVerificationStatus');
-                const actionEl = document.getElementById('mpVerifyAction');
-                const pendingEl = document.getElementById('mpVerifyPending');
-                
-                if (status === 'approved') {
-                    statusEl.textContent = 'Verified';
-                    statusEl.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
-                    document.getElementById('mpVerifiedBadge')?.classList.remove('hidden');
-                } else if (status === 'pending') {
-                    statusEl.textContent = 'Pending';
-                    statusEl.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
-                    pendingEl.classList.remove('hidden');
-                } else {
-                    statusEl.textContent = 'Unverified';
-                    actionEl.classList.remove('hidden');
-                }
-                
-                // Handle Upload
-                const verifyBtn = document.getElementById('mpVerifyBtn');
-                const verifyInput = document.getElementById('mpVerifyInput');
-                
-                if (verifyBtn && verifyInput) {
-                    verifyBtn.addEventListener('click', () => verifyInput.click());
-                    verifyInput.addEventListener('change', async (e) => {
-                        if (!e.target.files || e.target.files.length === 0) return;
-                        
-                        const file = e.target.files[0];
-                        verifyBtn.disabled = true;
-                        verifyBtn.textContent = 'Uploading...';
-                        
-                        const { verification, error } = await uploadVerificationDocument(file, 'license');
-                        
-                        if (error) {
-                            console.error('Verification upload failed:', error);
-                            alert('Failed to upload document. Please try again.');
-                            verifyBtn.disabled = false;
-                            verifyBtn.textContent = 'Verify Identity';
-                        } else {
-                             // Update UI to pending
-                             actionEl.classList.add('hidden');
-                             pendingEl.classList.remove('hidden');
-                             statusEl.textContent = 'Pending';
-                             statusEl.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
-                             
-                             if (window.ATHToast) window.ATHToast.show({ type: 'success', message: 'Document submitted for review' });
-                        }
-                    });
-                }
-            }
-        }
-      }
-      
-      // Avatar Upload Handle
-      const avatarInput = document.getElementById('mpAvatarFile');
-      const avatarPickBtn = document.getElementById('mpAvatarPickBtn');
-      const avatarRemoveBtn = document.getElementById('mpAvatarRemoveBtn');
-      
-      if (avatarPickBtn && avatarInput) {
-        avatarPickBtn.addEventListener('click', () => avatarInput.click());
-        
-        avatarInput.addEventListener('change', async (e) => {
-          if (!e.target.files || e.target.files.length === 0) return;
-          
-          const file = e.target.files[0];
-          avatarPickBtn.disabled = true;
-          avatarPickBtn.textContent = 'Uploading...';
-          feather.replace();
-          
-          try {
-            const { url, error } = await uploadAvatar(file, userId);
-            
-            if (error) throw error;
-             
-             // Update profile immediately with new avatar URL
-             const { updateUserProfile } = await import('../js/core/db.js');
-             await updateUserProfile(userId, { avatar_url: url });
-             
-             // Update UI
-             document.getElementById('mpAvatar').src = url;
-             console.log('? Avatar uploaded:', url);
-             
-          } catch (uploadError) {
-            console.error('? Upload failed:', uploadError);
-            alert('Failed to upload avatar.');
-          } finally {
-            avatarPickBtn.disabled = false;
-            avatarPickBtn.textContent = 'Upload image';
-          }
-        });
-      }
-
-      // Handle Save
-      const saveBtn = document.getElementById('mpSaveBtn');
-      if (saveBtn) {
-        saveBtn.addEventListener('click', async () => {
-          const updates = {
-            display_name: document.getElementById('mpDisplayName').value,
-            suburb: document.getElementById('mpSuburb').value,
-            state: document.getElementById('mpState').value,
-            postcode: document.getElementById('mpPostcode').value,
-            phone: document.getElementById('mpPhone').value,
-            abn: document.getElementById('mpAbn')?.value || null,
-            license_number: document.getElementById('mpLicense')?.value || null, // DB column is license_number
-            show_location: document.getElementById('mpShowLocation')?.checked || false,
-            address_rule: document.getElementById('mpAddressRule')?.value || 'afterAccepted',
-            updated_at: new Date().toISOString()
-          };
-          
-          // Get selected role from role buttons
-          const activeRoleBtn = document.querySelector('.mpRoleBtn.bg-teal-50');
-          if (activeRoleBtn) {
-            updates.role = activeRoleBtn.dataset.role;
-          }
-          
-          // Get selected trades (if applicable)
-          const tradesInput = document.getElementById('mpTrades');
-          if (tradesInput && tradesInput.value) {
-            try {
-              updates.trades = JSON.parse(tradesInput.value);
-            } catch (e) {
-              updates.trades = [];
-            }
-          }
-          
-          saveBtn.disabled = true;
-          saveBtn.innerHTML = '<i class="animate-spin" data-feather="loader"></i> Saving...';
-          feather.replace();
-          
-          const { error: updateError } = await db.updateUserProfile(userId, updates);
-          
-          if (updateError) {
-            console.error('? Save failed:', updateError);
-            alert('Failed to save profile changes.');
-          } else {
-            console.log('? Profile updated');
-            // Update display name immediately
-            document.getElementById('mpName').textContent = updates.display_name;
-            
-            // Show toast/feedback
-            if (window.ATHToast) {
-              window.ATHToast.show({ type: 'success', message: 'Profile saved successfully!' });
-            }
-            
-            // Exit edit mode
-            document.getElementById('mpCancelBtn').click();
-          }
-          
-          saveBtn.disabled = false;
-          saveBtn.innerHTML = '<i data-feather="save"></i> Save';
-          feather.replace();
-        });
-      }
-    }
-
-    // Auto-init
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initProfilePage);
-    } else {
-        initProfilePage();
-    }
-
-    // Expose for SPA
-    window.initProfilePage = initProfilePage;
-  </script>
+  
+  <!-- New Profile Logic -->
+  <script type="module" src="../js/pages/my-profile.js"></script>
 </body>
 </html>
-
-
-
