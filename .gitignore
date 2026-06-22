@@ -12,6 +12,7 @@ tests/
 archive/env-backups/
 pre-flatten-backup/
 *.zip
+tatus --short
 
 # Agent/AI
 .gemini/
@@ -40,3 +41,14 @@ archive/index.html.backup
 walkthrough.md
 # Local auth/dev notes that may contain secrets
 docs/local-dev-auth.md
+
+# Legacy project junk not committed
+ai/
+db/
+notes/
+reports/
+scripts/
+static/
+temp/
+*layout_backup**/
+archive/unused/

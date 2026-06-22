@@ -1,7 +1,0 @@
-{
-  "name": "tradie-hub-au",
-  "version": "0.12.0",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.91.0"
-  }
-}
