@@ -1468,7 +1468,7 @@ export default function Jobs() {
                                   if (error) {
                                     showToast(error.message, 'error');
                                   } else {
-                                    showToast("Mock Payment Processed! Funds are now securely held by TradieHubAU.", 'success');
+                                    showToast("Payment Funded! Funds are now securely held by TradieHubAU.", 'success');
                                     setSelectedJob(prev => prev ? { ...prev, status: 'payment_held' } : null);
                                     fetchJobLifecycleDetails(selectedJob.id);
                                     loadJobs();

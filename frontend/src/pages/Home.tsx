@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function Home() {
+  // TODO: Seed realistic demo jobs owned by a registered customer test account for development testing.
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
@@ -43,7 +44,7 @@ export default function Home() {
       initials: "SC",
       location: "Melbourne, VIC",
       stars: 5,
-      text: "Finally found a reliable electrician through TradieHubAU. The escrow payment system meant I didn't have to pay until the job was completely done. Highly recommend!"
+      text: "Finally found a reliable electrician through TradieHubAU. The secure job payment system meant I didn't have to pay until the job was completely done. Highly recommend!"
     },
     {
       name: "David Wilson",
@@ -93,7 +94,7 @@ export default function Home() {
   const faqs = [
     {
       q: "How does payment work?",
-      a: "We use an escrow system. Your payment is held securely until the job is completed to your satisfaction. This protects both you and the tradie."
+      a: "We use a secure job payment system. Your payment is funded securely and held until the job is completed to your satisfaction. This protects both you and the tradie."
     },
     {
       q: "Are all tradies verified?",
@@ -184,20 +185,20 @@ export default function Home() {
       <section className="bg-card border-y border-border py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center max-w-6xl mx-auto px-4">
           <div className="space-y-1">
-            <div className="text-3xl font-extrabold text-foreground tracking-tight">12,500+</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Verified Tradies</div>
+            <div className="text-2xl font-extrabold text-foreground tracking-tight">South East Melbourne</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Launch Region</div>
           </div>
           <div className="space-y-1">
-            <div className="text-3xl font-extrabold text-foreground tracking-tight">50,000+</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Jobs Completed</div>
+            <div className="text-2xl font-extrabold text-foreground tracking-tight">ID + Trade Checks</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Verification</div>
           </div>
           <div className="space-y-1">
-            <div className="text-3xl font-extrabold text-foreground tracking-tight">4.8★</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Average Rating</div>
+            <div className="text-2xl font-extrabold text-foreground tracking-tight">Protected Payments</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Job Security</div>
           </div>
           <div className="space-y-1">
-            <div className="text-3xl font-extrabold text-foreground tracking-tight">24/7</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Support Available</div>
+            <div className="text-2xl font-extrabold text-foreground tracking-tight">Beta Support</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Manual Aussie Team</div>
           </div>
         </div>
       </section>
@@ -255,8 +256,8 @@ export default function Home() {
               <li className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-sm">Escrow Protection</h4>
-                  <p className="text-primary-foreground/75 text-xs font-semibold mt-0.5">Funds held securely in escrow until work is approved</p>
+                  <h4 className="font-bold text-sm">Protected Payments</h4>
+                  <p className="text-primary-foreground/75 text-xs font-semibold mt-0.5">Payment is funded securely and only released after completion</p>
                 </div>
               </li>
             </ul>
@@ -332,7 +333,7 @@ export default function Home() {
             </div>
             <h3 className="font-bold text-lg text-foreground">3. Job Done Right</h3>
             <p className="text-sm text-muted-foreground font-medium leading-relaxed">
-              Payment is held securely in escrow and only released once you are fully satisfied with the job.
+              Payment is funded securely and only released after completion.
             </p>
           </div>
         </div>
@@ -342,8 +343,8 @@ export default function Home() {
       <section className="space-y-6">
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Top-Rated Professionals</h2>
-            <p className="text-sm text-muted-foreground font-medium mt-0.5">Highly recommended by customers</p>
+            <h2 className="text-2xl font-bold text-foreground">Verified Tradies Coming Soon</h2>
+            <p className="text-sm text-muted-foreground font-medium mt-0.5">Example preview profiles for development</p>
           </div>
           <Link to="/browse-tradies" className="text-primary hover:text-primary/95 text-sm font-bold flex items-center gap-1">
             View All <ArrowRight className="w-4 h-4" />
@@ -381,8 +382,8 @@ export default function Home() {
       <section className="space-y-6">
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Recent Job Posts</h2>
-            <p className="text-sm text-muted-foreground font-medium mt-0.5">Latest opportunities for tradies</p>
+            <h2 className="text-2xl font-bold text-foreground">Example Local Jobs</h2>
+            <p className="text-sm text-muted-foreground font-medium mt-0.5">Development test listings</p>
           </div>
           <Link to="/jobs" className="text-primary hover:text-primary/95 text-sm font-bold flex items-center gap-1">
             View All Jobs <ArrowRight className="w-4 h-4" />
@@ -431,7 +432,7 @@ export default function Home() {
             </div>
             <div>
               <div className="font-bold text-sm text-foreground">Secure Payments</div>
-              <div className="text-xs text-muted-foreground font-medium mt-0.5">Protected escrow hold</div>
+              <div className="text-xs text-muted-foreground font-medium mt-0.5">Payment held until completion</div>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -448,8 +449,8 @@ export default function Home() {
               <Headphones className="w-6 h-6" />
             </div>
             <div>
-              <div className="font-bold text-sm text-foreground">24/7 Support</div>
-              <div className="text-xs text-muted-foreground font-medium mt-0.5">Local Aussie team help</div>
+              <div className="font-bold text-sm text-foreground">Beta Support</div>
+              <div className="text-xs text-muted-foreground font-medium mt-0.5">Manual Aussie team help</div>
             </div>
           </div>
         </div>
@@ -460,7 +461,8 @@ export default function Home() {
         <div className="space-y-6 max-w-2xl mx-auto relative z-10">
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">Get the App (Coming Soon)</h2>
           <p className="text-base text-primary-foreground/85 font-medium max-w-lg mx-auto">
-            Manage your jobs, quotes, verification uploads, and escrow payouts on the go with our dedicated mobile app.
+            Manage your jobs, quotes, verification uploads, and protected payments from one place.
+            For now, TradieHubAU works as a mobile-friendly web app while we prepare the dedicated app experience.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <div className="bg-white/10 border border-white/20 px-5 py-2.5 rounded-xl flex items-center gap-3 cursor-not-allowed opacity-60">

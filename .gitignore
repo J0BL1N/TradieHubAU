@@ -52,3 +52,7 @@ static/
 temp/
 *layout_backup**/
 archive/unused/
+
+# Local archive only
+archive/
+
