@@ -3,11 +3,15 @@
 Thumbs.db
 .vscode/
 .idea/
+*.log
 
 # Project Backups/Trash
 rubbish/
 backups/
 tests/
+archive/env-backups/
+pre-flatten-backup/
+*.zip
 
 # Agent/AI
 .gemini/
@@ -15,8 +19,24 @@ tests/
 
 # Dependencies
 node_modules/
+dist/
 
 # Environment variables (NEVER commit API keys!)
 .env
+.env.*
+*.env
+*.env.*
 .env.local
 .env.*.local
+
+# Legacy archived prototype site
+archive/legacy-static-aussietradiehub/
+
+# Local/archive junk not committed
+Skills/
+archive/tests-old/
+archive/pages/
+archive/index.html.backup
+walkthrough.md
+# Local auth/dev notes that may contain secrets
+docs/local-dev-auth.md
