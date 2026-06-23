@@ -1,6 +1,6 @@
 # TradieHubAU Roadmap
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Progress Snapshot
 
@@ -14,7 +14,8 @@ Approved/completed:
 
 Current focus:
 
-* v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow
+* v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow (awaiting manual review)
+* v0.0.13 Admin dashboard polish
 
 Next major focus:
 
@@ -145,18 +146,46 @@ Later:
 
 # v0.0.13 — Admin Dashboard Polish
 
-* [ ] Improve admin dashboard layout and readability
-* [ ] Improve Active Whitelisted Tradies table
-* [ ] Improve pending tradie verification review flow
+## In Progress / Implementation Complete — Awaiting Manual Review
+
+* [ ] v0.0.13 — Admin dashboard polish
+
+  * Status: implementation complete, awaiting manual review
+
+### v0.0.13 Completed Implementation Items
+
+* [x] Replaced all native `alert()` and `confirm()` dialogs with in-page toast notifications and confirmation modals
+* [x] Fixed structural bug — Disputes queue moved out of Whitelisted Tradies card to its own top-level section
+* [x] Added 4th stats tile — Active Disputes count (red highlight when > 0)
+* [x] Stats grid updated from 3 columns to 4
+* [x] Customer dispute evidence photos (uploaded to Supabase Storage) now display as thumbnails in dispute cards
+* [x] Dispute cards improved — show Job Ref ID, dispute date, payment held chip, status badge
+* [x] Document type labels now format all underscores correctly (e.g. "Contractor License" not "contractor_license")
+* [x] Role column added to Identity Verifications queue
+* [x] Empty states improved with icons and clearer descriptions across all 4 sections
+* [x] `getDisputedJobs()` updated to include `attachments` in job_issues select
+* [x] Pending approval count badges added to each queue header
+* [x] Locale-aware date formatting (en-AU) for all timestamps
+
+### v0.0.13 Manual Review Items
+
+* [ ] Confirm admin dashboard loads at /admin for is_admin user
+* [ ] Confirm 4 stats tiles display correctly
+* [ ] Confirm Disputes section is its own card (not nested in Whitelisted Tradies)
+* [ ] Confirm native browser alert/confirm dialogs no longer appear
+* [ ] Confirm toast notifications appear for approve/reject/suspend actions
+* [ ] Confirm in-page confirmation modal appears for Suspend Tradie and Revoke ID actions
+* [ ] Confirm dispute evidence thumbnails display when attachments exist
+* [ ] Confirm document type labels display correctly
+* [ ] Confirm no user-facing "escrow" wording
+
+---
+
+### v0.0.13 Items Still Pending (future)
+
 * [ ] Improve customer/user management visibility
-* [ ] Improve disputes queue
-* [ ] Show useful admin-only IDs/reference numbers
-* [ ] Add better empty states
-* [ ] Add safer admin action confirmations
-* [ ] Review suspend/revoke/whitelist actions
 * [ ] Ensure admin-only sensitive data is not exposed elsewhere
 * [ ] Keep private verification documents admin-only
-* [ ] Confirm user-facing copy avoids “escrow”
 
 ---
 

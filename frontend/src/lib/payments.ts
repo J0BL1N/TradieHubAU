@@ -249,7 +249,7 @@ export async function getDisputedJobs() {
       *,
       customer:users!customer_id(id, display_name, email),
       payments!inner(amount, platform_fee, payee:users!payee_id(id, display_name, email)),
-      job_issues!job_issues_job_id_fkey(id, description, status, created_at)
+      job_issues!job_issues_job_id_fkey(id, description, status, attachments, created_at)
     `)
     .eq('status', 'disputed');
 

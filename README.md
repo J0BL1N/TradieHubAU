@@ -26,9 +26,18 @@ For the full detailed roadmap, see: [docs/ROADMAP.md](docs/ROADMAP.md)
   * Guest public browsing
   * My Jobs status filtering
 
+* [ ] v0.0.13 — Admin dashboard polish *(implementation-complete, awaiting manual review)*
+
+  * Replaced browser alert/confirm dialogs with in-page toast + confirm modals
+  * Fixed disputes section structure (now its own top-level card)
+  * Added Active Disputes stats tile
+  * Customer dispute evidence photos visible in dispute cards
+  * Improved dispute card layout (job ref, date, status badge)
+  * Fixed document type label formatting
+  * Role column added to identity verification queue
+
 ### Next
 
-* [ ] v0.0.13 — Admin dashboard polish
 * [ ] v0.0.14 — Full manual customer/tradie/admin test run
 * [ ] v0.0.15 — Security/RLS/storage audit
 * [ ] v0.1.0 — Controlled local beta prep
