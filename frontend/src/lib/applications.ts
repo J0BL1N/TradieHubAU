@@ -100,7 +100,7 @@ export async function getMyApplications() {
 export async function getApplicationsForJob(jobId: string) {
   const { data, error } = await supabase
     .from('applications')
-    .select('*, tradie:users!tradie_id(id, display_name, email, abn, license_number)')
+    .select('*, tradie:users!tradie_id(id, display_name, email, phone, abn, license_number)')
     .eq('job_id', jobId)
     .order('created_at', { ascending: false });
 

@@ -568,6 +568,9 @@ export default function Admin() {
                           <td className="p-4 pl-6">
                             <div className="font-bold text-foreground">{item.display_name}</div>
                             <div className="text-xs text-muted-foreground font-medium">{item.email}</div>
+                            <div className="text-[10px] text-muted-foreground/75 font-semibold mt-0.5">
+                              UUID: <span className="font-mono text-blue-500/80">{item.id || 'unavailable'}</span>
+                            </div>
                           </td>
                           <td className="p-4 text-xs font-semibold">
                             <div className="text-foreground"><span className="text-muted-foreground">ABN:</span> {item.abn || 'N/A'}</div>

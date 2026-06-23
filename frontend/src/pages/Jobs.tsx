@@ -10,7 +10,7 @@ import {
   Search, MapPin, DollarSign, Briefcase, AlertTriangle,
   SlidersHorizontal, X, Clock, User, Filter, RefreshCw,
   Bookmark, BookmarkCheck, Send, CheckCircle, AlertCircle,
-  FileText, Loader2
+  FileText, Loader2, Lock, Upload, Mail, Phone
 } from 'lucide-react';
 import { 
   acceptQuote, submitCompletionProof, raiseJobIssue, approveJobCompletion, 
@@ -325,8 +325,34 @@ export default function Jobs() {
 
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [reviewModalJob, setReviewModalJob] = useState<Job | null>(null);
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [completionModalJob, setCompletionModalJob] = useState<Job | null>(null);
+  const [proofImageUrls, setProofImageUrls] = useState<string[]>([]);
+
+  // Prevent body scroll when details or other modals are open
+  useEffect(() => {
+    if (selectedJob || reviewModalJob || completionModalJob || applyJob) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedJob, reviewModalJob, completionModalJob, applyJob]);
+
+  // Escape key close for details modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedJob) {
+        setSelectedJob(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedJob]);
 
   // Filter States
   const [searchText, setSearchText] = useState('');
@@ -402,6 +428,31 @@ export default function Jobs() {
       setJobIssues([]);
     }
   }, [selectedJob, fetchJobLifecycleDetails]);
+  
+  // Fetch signed URLs for completion proofs
+  useEffect(() => {
+    if (jobProofs && jobProofs.length > 0 && jobProofs[0].attachments && jobProofs[0].attachments.length > 0) {
+      const getUrls = async () => {
+        const urls: string[] = [];
+        for (const path of jobProofs[0].attachments) {
+          try {
+            const { data, error } = await supabase.storage
+              .from('completion_proofs')
+              .createSignedUrl(path, 3600);
+            if (!error && data?.signedUrl) {
+              urls.push(data.signedUrl);
+            }
+          } catch (e) {
+            console.error('Error generating signed URL:', e);
+          }
+        }
+        setProofImageUrls(urls);
+      };
+      getUrls();
+    } else {
+      setProofImageUrls([]);
+    }
+  }, [jobProofs]);
 
   // Force refetch tab items when activeTab changes
   useEffect(() => {
@@ -443,19 +494,23 @@ export default function Jobs() {
         if (fetchErr) throw fetchErr;
         setJobs(data);
       } else if (activeTab === 'my_jobs') {
-        if (!user) throw new Error('Not authenticated');
+        if (!user) {
+          setJobs([]);
+          setLoading(false);
+          return;
+        }
         
         // 1. Fetch customer owned jobs (with their applications list)
         const { data: customerJobs, error: custErr } = await supabase
           .from('jobs')
-          .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state), applications(id, status, tradie_id)')
+          .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state, email, phone), applications(id, status, tradie_id)')
           .eq('customer_id', user.id);
         if (custErr) throw custErr;
 
         // 2. Fetch jobs where user has applied (with their application details)
         const { data: tradieJobs, error: tradieErr } = await supabase
           .from('jobs')
-          .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state), applications!inner(id, status, tradie_id)')
+          .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state, email, phone), applications!inner(id, status, tradie_id)')
           .eq('applications.tradie_id', user.id);
         if (tradieErr) throw tradieErr;
 
@@ -578,25 +633,12 @@ export default function Jobs() {
     }
     
     if (activeTab === 'my_jobs' && myJobsStatusFilter !== 'all') {
-      const isOwner = job.customer_id === user?.id;
-      const hasApps = job.applications && job.applications.length > 0;
-      const hasApplied = myApplications.has(job.id) && myApplications.get(job.id)?.status !== 'withdrawn';
-
       switch (myJobsStatusFilter) {
-        case 'open_posted':
-          if (!(isOwner && job.status === 'open' && !hasApps)) return false;
-          break;
-        case 'quotes_received':
-          if (!(isOwner && job.status === 'open' && hasApps)) return false;
-          break;
-        case 'quote_submitted':
-          if (!(!isOwner && job.status === 'open' && hasApplied)) return false;
+        case 'open':
+          if (job.status !== 'open') return false;
           break;
         case 'awaiting_payment':
           if (job.status !== 'accepted') return false;
-          break;
-        case 'payment_funded':
-          if (job.status !== 'payment_held') return false;
           break;
         case 'contract_active':
           if (job.status !== 'payment_held') return false;
@@ -609,6 +651,9 @@ export default function Jobs() {
           break;
         case 'completed':
           if (job.status !== 'completed') return false;
+          break;
+        case 'cancelled':
+          if (job.status !== 'cancelled') return false;
           break;
         default:
           break;
@@ -708,16 +753,14 @@ export default function Jobs() {
             onChange={(e) => setMyJobsStatusFilter(e.target.value)}
             className="w-full px-3 py-2 border rounded-xl bg-background outline-none text-sm focus:border-primary/50 transition-all font-medium cursor-pointer"
           >
-            <option value="all">All My Jobs</option>
-            <option value="open_posted">Open / Posted</option>
-            <option value="quotes_received">Quotes Received</option>
-            <option value="quote_submitted">Quote Submitted</option>
+            <option value="all">All Statuses</option>
+            <option value="open">Open</option>
             <option value="awaiting_payment">Quote Accepted — Awaiting Payment</option>
-            <option value="payment_funded">Payment Funded</option>
-            <option value="contract_active">Contract Active</option>
-            <option value="completion_review">Completion Review</option>
+            <option value="contract_active">Payment Funded — Contract Active</option>
+            <option value="completion_review">Under Review</option>
             <option value="disputed">Disputed</option>
             <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
       )}
@@ -806,6 +849,39 @@ export default function Jobs() {
       )}
       {showSuccess && <ApplicationSuccessModal onClose={() => setShowSuccess(false)} />}
 
+      {completionModalJob && (
+        <SubmitCompletionModal
+          job={completionModalJob}
+          onClose={() => setCompletionModalJob(null)}
+          onSuccess={() => {
+            setCompletionModalJob(null);
+            showToast("Completion proof submitted! Customer has 72 hours to review.", 'success');
+            if (selectedJob && selectedJob.id === completionModalJob.id) {
+              setSelectedJob(prev => prev ? { ...prev, status: 'completed_pending_review' } : null);
+              fetchJobLifecycleDetails(selectedJob.id);
+            }
+            loadJobs();
+          }}
+        />
+      )}
+
+      {reviewModalJob && (
+        <ReviewCompletionModal
+          job={reviewModalJob}
+          onClose={() => setReviewModalJob(null)}
+          onSuccess={(newStatus) => {
+            setReviewModalJob(null);
+            if (selectedJob && selectedJob.id === reviewModalJob.id) {
+              setSelectedJob(prev => prev ? { ...prev, status: newStatus } : null);
+              fetchJobLifecycleDetails(reviewModalJob.id);
+            }
+            loadJobs();
+          }}
+          showToast={showToast}
+          setModalConfirmConfig={setModalConfirmConfig}
+        />
+      )}
+
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight">Active Jobs Board</h1>
@@ -815,22 +891,20 @@ export default function Jobs() {
       </div>
 
       {/* Tabs */}
-      {user && (
-        <div className="flex border-b border-border gap-6 text-sm font-extrabold pb-1">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`pb-3 transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-md ${activeTab === 'all' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          >
-            Open Jobs
-          </button>
-          <button
-            onClick={() => setActiveTab('my_jobs')}
-            className={`pb-3 transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-md ${activeTab === 'my_jobs' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-          >
-            My Jobs
-          </button>
-        </div>
-      )}
+      <div className="flex border-b border-border gap-6 text-sm font-extrabold pb-1">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`pb-3 transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-md ${activeTab === 'all' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+        >
+          Open Jobs
+        </button>
+        <button
+          onClick={() => setActiveTab('my_jobs')}
+          className={`pb-3 transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-md ${activeTab === 'my_jobs' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+        >
+          My Jobs
+        </button>
+      </div>
 
       {/* Stats Counter Bar */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -883,12 +957,17 @@ export default function Jobs() {
                 className="lg:hidden p-2 border rounded-xl hover:bg-muted text-muted-foreground flex items-center gap-1.5 text-xs font-bold">
                 <SlidersHorizontal className="h-4 w-4" /> Filters
               </button>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border rounded-xl bg-background outline-none text-xs font-bold text-muted-foreground focus:border-primary/50 cursor-pointer">
-                <option value="recent">Most Recent</option>
-                <option value="highest">Highest Budget</option>
-                <option value="urgent">Urgent First</option>
-              </select>
+              {activeTab === 'all' && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-foreground/75 whitespace-nowrap">Sort by:</span>
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-2 border rounded-xl bg-background outline-none text-xs font-bold text-foreground/80 focus:border-primary/50 cursor-pointer">
+                    <option value="recent">Most Recent</option>
+                    <option value="highest">Highest Budget</option>
+                    <option value="urgent">Urgent First</option>
+                  </select>
+                </div>
+              )}
               <button onClick={loadJobs} className="p-2 border rounded-xl hover:bg-muted text-muted-foreground" title="Refresh jobs">
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -906,7 +985,7 @@ export default function Jobs() {
           )}
 
           {/* Verification nudge for unverified users */}
-          {user && !isVerifiedTradie && (
+          {activeTab === 'all' && user && !isVerifiedTradie && (
             <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm font-semibold">
               <span className="text-muted-foreground">You are logged in as a Customer. To quote or apply on jobs, please submit your trade verification details.</span>
               <Link to="/profile" className="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm whitespace-nowrap">
@@ -915,8 +994,19 @@ export default function Jobs() {
             </div>
           )}
 
-          {/* Loading / Error / Empty */}
-          {loading ? (
+          {/* Loading / Error / Empty / Guest My Jobs */}
+          {activeTab === 'my_jobs' && !user ? (
+            <div className="p-12 bg-card border rounded-2xl text-center space-y-4 max-w-md mx-auto w-full">
+              <Lock className="h-12 w-12 text-primary mx-auto" />
+              <h3 className="text-xl font-bold text-foreground">Sign in to view My Jobs</h3>
+              <p className="text-sm text-foreground/75 leading-relaxed">
+                Track your posted jobs, active quotes, variations, and payouts by signing in to your account.
+              </p>
+              <Link to="/login" className="inline-block bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-sm active:scale-95">
+                Sign In
+              </Link>
+            </div>
+          ) : loading ? (
             <div className="flex flex-col items-center justify-center p-12 bg-card border rounded-2xl gap-4">
               <RefreshCw className="h-8 w-8 text-primary animate-spin" />
               <p className="text-sm font-semibold text-muted-foreground">Connecting to Supabase...</p>
@@ -976,32 +1066,32 @@ export default function Jobs() {
                           </span>
                         )}
                         {job.status === 'accepted' && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 uppercase tracking-wider border border-amber-500/25">
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 uppercase tracking-wider border border-amber-500/30">
                             Quote Accepted — Awaiting Payment
                           </span>
                         )}
                         {job.status === 'payment_held' && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-green-500/10 text-green-600 uppercase tracking-wider border border-green-500/25">
-                            Contract Active
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-green-500/10 text-green-800 uppercase tracking-wider border border-green-500/30">
+                            Payment Funded — Contract Active
                           </span>
                         )}
                         {job.status === 'completed_pending_review' && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-500 uppercase tracking-wider border border-blue-500/25">
-                            Completed — Pending Review
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-800 uppercase tracking-wider border border-blue-500/30">
+                            Under Review
                           </span>
                         )}
                         {job.status === 'disputed' && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 uppercase tracking-wider border border-red-500/25">
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-red-500/10 text-red-800 uppercase tracking-wider border border-red-500/30">
                             Disputed
                           </span>
                         )}
                         {job.status === 'completed' && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 uppercase tracking-wider border border-emerald-500/25">
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-800 uppercase tracking-wider border border-emerald-500/30">
                             Completed & Released
                           </span>
                         )}
                         {job.status === 'cancelled' && (
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-500/10 text-gray-500 uppercase tracking-wider border border-gray-500/25">
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md bg-gray-500/10 text-gray-800 uppercase tracking-wider border border-gray-500/30">
                             Cancelled
                           </span>
                         )}
@@ -1029,27 +1119,32 @@ export default function Jobs() {
 
                     {/* Action Buttons */}
                     <div className="shrink-0 flex flex-row md:flex-col items-center gap-2 md:self-center">
-                      {/* Save button — only shown to logged-in users */}
-                      {user && (
-                        <button
-                          onClick={(e) => handleToggleSave(job.id, e)}
-                          disabled={isSaving}
-                          title={isSaved ? 'Unsave job' : 'Save job'}
-                          className={`p-2.5 rounded-xl border transition-all ${
-                            isSaved
-                              ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
-                              : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-                          } ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
-                        >
-                          {isSaving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isSaved ? (
-                            <BookmarkCheck className="h-4 w-4" />
-                          ) : (
-                            <Bookmark className="h-4 w-4" />
-                          )}
-                        </button>
-                      )}
+                      {/* Save button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!user) {
+                            showToast("Please sign in to save jobs.", 'error');
+                            return;
+                          }
+                          handleToggleSave(job.id, e);
+                        }}
+                        disabled={isSaving}
+                        title={isSaved ? 'Unsave job' : 'Save job'}
+                        className={`p-2.5 rounded-xl border transition-all ${
+                          isSaved
+                            ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
+                            : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                        } ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
+                      >
+                        {isSaving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : isSaved ? (
+                          <BookmarkCheck className="h-4 w-4" />
+                        ) : (
+                          <Bookmark className="h-4 w-4" />
+                        )}
+                      </button>
 
                       <button
                         onClick={() => setSelectedJob(job)}
@@ -1058,15 +1153,11 @@ export default function Jobs() {
                         Details
                       </button>
 
-                      {user ? (
-                        (() => {
-                          const app = myApplications.get(job.id);
-                          const isApplied = app && app.status !== 'withdrawn';
-                          const isAcceptedTradie = app && app.status === 'accepted';
-                          const isOwner = job.customer_id === user.id;
-
-                          if (isOwner) {
-                            if (job.status === 'open') {
+                      {job.status === 'open' ? (
+                        user ? (
+                          (() => {
+                            const isOwner = job.customer_id === user.id;
+                            if (isOwner) {
                               const appsCount = job.applications?.length || 0;
                               if (appsCount > 0) {
                                 return (
@@ -1087,70 +1178,61 @@ export default function Jobs() {
                                 </button>
                               );
                             }
-                            if (job.status === 'accepted') {
+
+                            // Customers cannot apply to jobs
+                            if (profile?.role === 'customer') {
+                              return null;
+                            }
+
+                            const app = myApplications.get(job.id);
+                            const isApplied = app && app.status !== 'withdrawn';
+                            if (isApplied) {
                               return (
                                 <button
                                   disabled
-                                  className="text-sm font-bold px-4 py-2.5 rounded-xl bg-amber-500 text-amber-950 cursor-default whitespace-nowrap"
+                                  className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-500/10 text-green-600 border border-green-500/20 cursor-default whitespace-nowrap"
                                 >
-                                  Accepted — Awaiting Payment
-                                </button>
-                              );
-                            }
-                            if (['payment_held', 'completed_pending_review', 'disputed'].includes(job.status)) {
-                              return (
-                                <button
-                                  disabled
-                                  className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 text-white cursor-default whitespace-nowrap"
-                                >
-                                  Contract Active
-                                </button>
-                              );
-                            }
-                            if (job.status === 'completed') {
-                              return (
-                                <button
-                                  disabled
-                                  className="text-sm font-bold px-4 py-2.5 rounded-xl bg-emerald-600 text-white cursor-default whitespace-nowrap"
-                                >
-                                  Completed ✓
-                                </button>
-                              );
-                            }
-                          } else {
-                            if (job.status === 'open') {
-                              if (isApplied) {
-                                return (
-                                  <button
-                                    disabled
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-500/10 text-green-600 border border-green-500/20 cursor-default whitespace-nowrap"
-                                  >
-                                    Applied ✓
-                                  </button>
-                                );
-                              }
-                              return (
-                                <button
-                                  onClick={() => {
-                                    if (!isVerifiedTradie) {
-                                      showToast("Verification Required: Only verified tradies can quote on jobs. Please visit your Profile to submit your verification details.", 'error');
-                                      return;
-                                    }
-                                    handleOpenApply(job);
-                                  }}
-                                  className={`text-sm font-bold px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap ${
-                                    !isVerifiedTradie
-                                      ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
-                                      : 'bg-primary text-primary-foreground hover:bg-primary/95'
-                                  }`}
-                                >
-                                  Apply
+                                  Applied ✓
                                 </button>
                               );
                             }
 
-                            if (job.status === 'accepted') {
-                              if (isAcceptedTradie) {
+                            return (
+                              <button
+                                onClick={() => {
+                                  if (!isVerifiedTradie) {
+                                    showToast("Verification Required: Only verified tradies can quote on jobs. Please visit your Profile to submit your verification details.", 'error');
+                                    return;
+                                  }
+                                  handleOpenApply(job);
+                                }}
+                                className={`text-sm font-bold px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap ${
+                                  !isVerifiedTradie
+                                    ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
+                                    : 'bg-primary text-primary-foreground hover:bg-primary/95'
+                                }`}
+                              >
+                                Apply
+                              </button>
+                            );
+                          })()
+                        ) : (
+                          <Link
+                            to="/login"
+                            className="bg-primary text-primary-foreground text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md whitespace-nowrap"
+                          >
+                            Apply
+                          </Link>
+                        )
+                      ) : (
+                        user ? (
+                          (() => {
+                            const isOwner = job.customer_id === user.id;
+                            const app = myApplications.get(job.id);
+                            const isAcceptedTradie = app && app.status === 'accepted';
+
+                            if (isOwner) {
+                              if (job.status === 'accepted') {
                                 return (
                                   <button
                                     disabled
@@ -1160,8 +1242,17 @@ export default function Jobs() {
                                   </button>
                                 );
                               }
-                            } else if (['payment_held', 'completed_pending_review', 'disputed'].includes(job.status)) {
-                              if (isAcceptedTradie) {
+                              if (job.status === 'completed_pending_review') {
+                                return (
+                                  <button
+                                    onClick={() => setReviewModalJob(job)}
+                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-nowrap"
+                                  >
+                                    Review Completion
+                                  </button>
+                                );
+                              }
+                              if (['payment_held', 'disputed'].includes(job.status)) {
                                 return (
                                   <button
                                     disabled
@@ -1171,8 +1262,7 @@ export default function Jobs() {
                                   </button>
                                 );
                               }
-                            } else if (job.status === 'completed') {
-                              if (isAcceptedTradie) {
+                              if (job.status === 'completed') {
                                 return (
                                   <button
                                     disabled
@@ -1182,25 +1272,67 @@ export default function Jobs() {
                                   </button>
                                 );
                               }
+                            } else {
+                              if (isAcceptedTradie) {
+                                if (job.status === 'accepted') {
+                                  return (
+                                    <button
+                                      disabled
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-amber-500 text-amber-950 cursor-default whitespace-nowrap"
+                                    >
+                                      Accepted — Awaiting Payment
+                                    </button>
+                                  );
+                                }
+                                if (job.status === 'payment_held') {
+                                  return (
+                                    <button
+                                      onClick={() => setCompletionModalJob(job)}
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white transition-all shadow-md active:scale-95 whitespace-nowrap"
+                                    >
+                                      Submit Completion
+                                    </button>
+                                  );
+                                }
+                                if (['completed_pending_review', 'disputed'].includes(job.status)) {
+                                  return (
+                                    <button
+                                      disabled
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 text-white cursor-default whitespace-nowrap"
+                                    >
+                                      Contract Active
+                                    </button>
+                                  );
+                                }
+                                if (job.status === 'completed') {
+                                  return (
+                                    <button
+                                      disabled
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-emerald-600 text-white cursor-default whitespace-nowrap"
+                                    >
+                                      Completed ✓
+                                    </button>
+                                  );
+                                }
+                              }
                             }
-                          }
-
-                          return (
-                            <button
-                              disabled
-                              className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-400 cursor-default whitespace-nowrap"
-                            >
-                              Closed
-                            </button>
-                          );
-                        })()
-                      ) : (
-                        <Link
-                          to="/login"
-                          className="bg-primary text-primary-foreground text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md whitespace-nowrap"
-                        >
-                          Apply
-                        </Link>
+                            return (
+                              <button
+                                disabled
+                                className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-600 cursor-default whitespace-nowrap"
+                              >
+                                Closed
+                              </button>
+                            );
+                          })()
+                        ) : (
+                          <button
+                            disabled
+                            className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-400 cursor-default whitespace-nowrap"
+                          >
+                            Closed
+                          </button>
+                        )
                       )}
                     </div>
                   </div>
@@ -1232,8 +1364,14 @@ export default function Jobs() {
 
       {/* Job Detail Modal */}
       {selectedJob && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+        <div 
+          onClick={() => setSelectedJob(null)}
+          className="fixed inset-x-0 bottom-0 top-16 bg-background/80 backdrop-blur-sm z-30 flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-card border border-border w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(90vh-4rem)]"
+          >
             <div className="p-6 border-b flex items-start justify-between gap-4">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1255,25 +1393,25 @@ export default function Jobs() {
 
             <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm font-medium">
               <div className="space-y-2">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Job Description</h4>
-                <p className="text-foreground leading-relaxed whitespace-pre-wrap">{selectedJob.description}</p>
+                <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Job Description</h4>
+                <p className="text-foreground/90 leading-relaxed font-medium whitespace-pre-wrap">{selectedJob.description}</p>
               </div>
               <div className="grid grid-cols-2 gap-6 bg-muted/20 border p-5 rounded-2xl">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Location</span>
-                  <p className="text-foreground font-bold flex items-center gap-1.5 mt-0.5"><MapPin className="h-4 w-4 text-muted-foreground" />{selectedJob.location}</p>
+                  <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Location</span>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><MapPin className="h-4 w-4 text-foreground/60" />{selectedJob.location}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Est. Budget</span>
-                  <p className="text-foreground font-bold flex items-center gap-1.5 mt-0.5"><DollarSign className="h-4 w-4 text-muted-foreground" />{formatBudget(selectedJob.budget_min, selectedJob.budget_max)}</p>
+                  <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Est. Budget</span>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><DollarSign className="h-4 w-4 text-foreground/60" />{formatBudget(selectedJob.budget_min, selectedJob.budget_max)}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Job Type</span>
-                  <p className="text-foreground font-bold flex items-center gap-1.5 mt-0.5"><Briefcase className="h-4 w-4 text-muted-foreground" />{selectedJob.type || 'Standard'}</p>
+                  <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Job Type</span>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><Briefcase className="h-4 w-4 text-foreground/60" />{selectedJob.type || 'Standard'}</p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Timeline</span>
-                  <p className="text-foreground font-bold flex items-center gap-1.5 mt-0.5"><Clock className="h-4 w-4 text-muted-foreground" />{selectedJob.timeline || 'Flexible'}</p>
+                  <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Timeline</span>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><Clock className="h-4 w-4 text-foreground/60" />{selectedJob.timeline || 'Flexible'}</p>
                 </div>
               </div>
               {selectedJob.customer && (
@@ -1299,52 +1437,240 @@ export default function Jobs() {
                     <>
                       {lifecycleError && (
                         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2.5">
-                          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                           <span>{lifecycleError}</span>
                         </div>
                       )}
-                      {/* 1. Payment Status Bar / Steps */}
+
+                      {/* Contact Details Card */}
+                      {(() => {
+                        const isCustomerOwner = selectedJob.customer_id === user?.id;
+                        const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
+                        if (!isCustomerOwner && !isContractedTradie) return null;
+
+                        const acceptedApp = jobApplications.find((app) => app.status === 'accepted');
+                        const otherUser = isCustomerOwner ? acceptedApp?.tradie : (isContractedTradie ? selectedJob.customer : null);
+                        
+                        return (
+                          <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Contact Information</h4>
+                            {['payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? (
+                              <div className="p-4 border border-primary/20 bg-primary/5 rounded-2xl space-y-2.5">
+                                <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
+                                  <User className="h-5 w-5 text-primary" /> Contact Details Unlocked
+                                </h4>
+                                <div className="space-y-2 text-sm text-foreground/85 pl-7 font-medium">
+                                  <p className="flex items-center gap-2">
+                                    <Mail className="h-4 w-4 text-foreground/60" />
+                                    <span className="text-foreground select-all">{otherUser?.email || 'No email provided'}</span>
+                                  </p>
+                                  <p className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4 text-foreground/60" />
+                                    <span className="text-foreground select-all">{otherUser?.phone || 'No phone provided'}</span>
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-2">
+                                <h4 className="text-sm font-extrabold text-amber-800 flex items-center gap-2">
+                                  <Lock className="h-5 w-5 text-amber-600" /> Contact Details Locked
+                                </h4>
+                                <p className="text-sm text-foreground/75 leading-relaxed pl-7 font-medium">
+                                  Contact details (email and phone number) will be unlocked here once the customer has funded the secure job payment.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Completion Proof Details Card */}
+                      {(() => {
+                        const isCustomerOwner = selectedJob.customer_id === user?.id;
+                        const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
+                        if ((isCustomerOwner || isContractedTradie) && jobProofs.length > 0) {
+                          return (
+                            <div className="space-y-4">
+                              <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Completion Proof Submission</h4>
+                              <div className="p-4 bg-muted/20 border rounded-2xl space-y-3">
+                                <p className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Submitted by Tradie:</p>
+                                <p className="text-sm text-foreground/90 leading-relaxed italic font-medium bg-background border p-3 rounded-xl">"{jobProofs[0].description}"</p>
+                                
+                                <ReviewCountdown deadline={jobProofs[0].auto_release_at} />
+                                
+                                {proofImageUrls.length > 0 && (
+                                  <div className="space-y-2 pt-1">
+                                    <p className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Attached Proof Photos:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {proofImageUrls.map((url, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="relative h-20 w-20 border rounded-xl overflow-hidden hover:opacity-85 transition-all shadow-sm flex items-center justify-center bg-background"
+                                        >
+                                          <img src={url} alt={`Proof ${idx + 1}`} className="h-full w-full object-cover" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                <p className="text-xs font-semibold text-foreground/60 border-t pt-2 mt-2">
+                                  Auto-release deadline: {new Date(jobProofs[0].auto_release_at).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
+                      {/* 1. Protected Payment Status Bar / Steps */}
                       {selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (
                         <div className="space-y-4">
-                          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Protected Payment Status</h4>
-                          
-                          {/* Step Progress Visual */}
-                          <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-bold">
-                            <div className={`p-2 rounded-xl border ${selectedJob.status === 'accepted' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                          <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
+
+                          <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold">
+                            <div className={`p-2 rounded-xl border ${['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
                               1. Accepted
                             </div>
-                            <div className={`p-2 rounded-xl border ${selectedJob.status === 'payment_held' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
-                              2. Payment Funded
+                            <div className={`p-2 rounded-xl border ${['payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                              2. Funded
                             </div>
-                            <div className={`p-2 rounded-xl border ${selectedJob.status === 'completed_pending_review' || selectedJob.status === 'disputed' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                            <div className={`p-2 rounded-xl border ${['completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
                               3. Review
                             </div>
-                            <div className={`p-2 rounded-xl border ${selectedJob.status === 'completed' ? 'bg-green-500/10 border-green-500/30 text-green-600' : 'bg-muted border-transparent text-muted-foreground'}`}>
-                              4. Completed
+                            <div className={`p-2 rounded-xl border ${['completed'].includes(selectedJob.status) ? 'bg-green-500/10 border-green-500/30 text-green-600' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                              4. Released
                             </div>
                           </div>
 
-                          <div className="p-4 bg-muted/30 border rounded-2xl space-y-2 font-semibold">
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="text-muted-foreground">Contract Amount:</span>
-                              <span className="text-foreground">{formatCentsToAud(jobPayment.amount)}</span>
+                          {/* Informative Status Banners */}
+                          {user && (
+                            <div className="space-y-4">
+                              {/* 1. Contracted Tradie Banners */}
+                              {jobPayment.payee_id === user.id && (
+                                <>
+                                  {selectedJob.status === 'accepted' && (
+                                    <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-2">
+                                      <h4 className="text-sm font-extrabold text-amber-800 flex items-center gap-2">
+                                        <Clock className="h-5 w-5 text-amber-600" /> Protected Payment Pending
+                                      </h4>
+                                      <p className="text-sm text-foreground/75 leading-relaxed font-medium">
+                                        Your quote has been accepted! Please wait for the customer to fund the contract. You will be authorized to start work once the secure job payment is funded. Do not begin work until payment is funded.
+                                      </p>
+                                    </div>
+                                  )}
+                                  {selectedJob.status === 'payment_held' && (
+                                    <div className="p-4 border border-green-500/25 bg-green-500/10 rounded-2xl space-y-2">
+                                      <h4 className="text-sm font-extrabold text-green-800 flex items-center gap-2">
+                                        <CheckCircle className="h-5 w-5 text-green-600" /> Contract Active (Payment Funded)
+                                      </h4>
+                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                        The secure job payment has been funded by the customer and is held until completion. You are authorized to begin work! Submit your completion proof below when the job is done.
+                                      </p>
+                                    </div>
+                                  )}
+                                  {selectedJob.status === 'completed_pending_review' && (
+                                    <div className="p-4 border border-blue-500/25 bg-blue-500/10 rounded-2xl space-y-2">
+                                      <h4 className="text-sm font-extrabold text-blue-800 flex items-center gap-2">
+                                        <Clock className="h-5 w-5 text-blue-600" /> Completion Under Review
+                                      </h4>
+                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                        You have submitted completion proof. The customer has been notified and has 72 hours to review the work and release the payment. If no action is taken, funds will auto-release.
+                                      </p>
+                                    </div>
+                                  )}
+                                  {selectedJob.status === 'completed' && (
+                                    <div className="p-4 border border-emerald-500/25 bg-emerald-500/10 rounded-2xl space-y-2">
+                                      <h4 className="text-sm font-extrabold text-emerald-800 flex items-center gap-2">
+                                        <CheckCircle className="h-5 w-5 text-emerald-600" /> Payment Released
+                                      </h4>
+                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                        The secure job payment has been successfully released to your account. Thank you for completing this work on TradieHubAU!
+                                      </p>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {/* 2. Customer Banners */}
+                              {selectedJob.customer_id === user.id && (
+                                <>
+                                  {selectedJob.status === 'payment_held' && (
+                                    <div className="p-4 border border-green-500/25 bg-green-500/10 rounded-2xl space-y-2">
+                                      <h4 className="text-sm font-extrabold text-green-800 flex items-center gap-2">
+                                        <CheckCircle className="h-5 w-5 text-green-600" /> Contract Active (Payment Funded)
+                                      </h4>
+                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                        The protected payment is funded and held securely by TradieHubAU. The tradie has been authorized to begin work. Once they complete the work, they will submit proof for your review.
+                                      </p>
+                                    </div>
+                                  )}
+                                  {selectedJob.status === 'completed' && (
+                                    <div className="p-4 border border-emerald-500/25 bg-emerald-500/10 rounded-2xl space-y-2">
+                                      <h4 className="text-sm font-extrabold text-emerald-800 flex items-center gap-2">
+                                        <CheckCircle className="h-5 w-5 text-emerald-600" /> Job Completed & Released
+                                      </h4>
+                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                        This job is completed and the secure payment has been successfully released to the tradie. Thank you for hiring on TradieHubAU!
+                                      </p>
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
+                          )}
+
+                          <div className="p-4 bg-muted/30 border rounded-2xl space-y-2.5 text-sm">
+                            <div className="flex justify-between items-center">
+                              <span className="text-foreground/70 font-medium">Contract Amount:</span>
+                              <span className="text-foreground font-bold">{formatCentsToAud(jobPayment.amount)}</span>
+                            </div>
+
+                            {(() => {
+                              // TODO: GST handling should be reviewed with an Australian accountant before real payments.
+                              // Depending on structure, GST may apply to platform fees and/or taxable job supplies once registered.
+                              const isFunded = ['held', 'held_in_escrow', 'released'].includes(jobPayment.status);
+                              const isReleased = jobPayment.status === 'released';
+                              const payoutCents = jobPayment.amount - jobPayment.platform_fee;
+                              return (
+                                <>
+                                  <div className="flex justify-between items-center text-xs">
+                                    <span className="text-foreground/70 font-medium">
+                                      {isFunded ? 'Platform Fee:' : 'Expected Platform Fee:'}
+                                    </span>
+                                    <span className="text-foreground/90 font-semibold">{formatCentsToAud(jobPayment.platform_fee)}</span>
+                                  </div>
+
+                                  <div className="flex justify-between items-center text-xs border-b pb-2 mb-2">
+                                    <span className="text-foreground/70 font-medium">
+                                      {isReleased ? 'Released Tradie Payout:' : (isFunded ? 'Expected Tradie Payout:' : 'Estimated Tradie Payout:')}
+                                    </span>
+                                    <span className="text-primary font-bold">{formatCentsToAud(payoutCents)}</span>
+                                  </div>
+                                </>
+                              );
+                            })()}
+
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-muted-foreground">Payment Status:</span>
-                              <span className={`uppercase text-[10px] px-2 py-0.5 rounded font-extrabold ${
-                                jobPayment.status === 'held' ? 'bg-amber-500/10 text-amber-500' :
-                                jobPayment.status === 'released' ? 'bg-green-500/10 text-green-600' :
-                                jobPayment.status === 'refunded' ? 'bg-red-500/10 text-red-500' : 'bg-secondary text-secondary-foreground'
+                              <span className="text-foreground/70 font-medium">Payment Status:</span>
+                              <span className={`uppercase text-[10px] px-2.5 py-0.5 rounded font-semibold border ${
+                                ['held', 'held_in_escrow'].includes(jobPayment.status) ? 'bg-amber-500/10 text-amber-800 border-amber-500/30' :
+                                jobPayment.status === 'released' ? 'bg-green-500/10 text-green-800 border-green-500/30' :
+                                jobPayment.status === 'refunded' ? 'bg-red-500/10 text-red-800 border-red-500/30' : 'bg-secondary text-secondary-foreground border-transparent'
                               }`}>
-                                {jobPayment.status === 'held' ? 'payment funded' : jobPayment.status}
+                                {['held', 'held_in_escrow'].includes(jobPayment.status) ? 'payment funded' : jobPayment.status === 'released' ? 'payment released' : jobPayment.status}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center text-xs border-t pt-2 mt-2">
-                              <span className="text-muted-foreground">Contract Status:</span>
-                              <span className="text-foreground">
+
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-foreground/70 font-medium">Contract Status:</span>
+                              <span className="text-foreground/95 font-medium">
                                 {selectedJob.status === 'accepted' ? 'Quote Accepted — Awaiting Payment' :
-                                 selectedJob.status === 'payment_held' ? 'Contract Active' :
-                                 selectedJob.status === 'completed_pending_review' ? 'Completed — Pending Review' :
+                                 selectedJob.status === 'payment_held' ? 'Contract Active (Payment Funded)' :
+                                 selectedJob.status === 'completed_pending_review' ? 'Under Review (Completion Submitted)' :
                                  selectedJob.status === 'disputed' ? 'Disputed' :
                                  selectedJob.status === 'completed' ? 'Completed & Released' : selectedJob.status}
                               </span>
@@ -1352,21 +1678,28 @@ export default function Jobs() {
 
                             {jobLedger.length > 0 && (
                               <div className="border-t pt-3 mt-3 space-y-2">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Transaction Ledger</span>
+                                <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block">Transaction Ledger</span>
                                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                                  {jobLedger.map((l) => (
-                                    <div key={l.id} className="flex justify-between items-center text-xs font-semibold bg-background border p-2 rounded-xl">
-                                      <div className="space-y-0.5">
-                                        <span className={`capitalize text-[9px] px-1.5 py-0.5 rounded font-extrabold ${
-                                          l.transaction_type === 'charge' ? 'bg-blue-500/10 text-blue-500' :
-                                          l.transaction_type === 'payout' ? 'bg-green-500/10 text-green-600' :
-                                          l.transaction_type === 'fee' ? 'bg-orange-500/10 text-orange-600' : 'bg-red-500/10 text-red-500'
-                                        }`}>{l.transaction_type}</span>
-                                        <span className="text-[10px] text-muted-foreground ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
+                                  {jobLedger.map((l) => {
+                                    let label = l.transaction_type;
+                                    if (l.transaction_type === 'charge') label = 'Deposit Charge';
+                                    if (l.transaction_type === 'fee') label = 'Platform Fee';
+                                    if (l.transaction_type === 'payout') label = 'Tradie Payout';
+                                    if (l.transaction_type === 'refund') label = 'Customer Refund';
+                                    return (
+                                      <div key={l.id} className="flex justify-between items-center text-xs font-medium bg-background border p-2 rounded-xl">
+                                        <div className="space-y-0.5">
+                                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
+                                            l.transaction_type === 'charge' ? 'bg-blue-500/10 text-blue-800 border-blue-500/20' :
+                                            l.transaction_type === 'payout' ? 'bg-green-500/10 text-green-800 border-green-500/20' :
+                                            l.transaction_type === 'fee' ? 'bg-orange-500/10 text-orange-800 border-orange-500/20' : 'bg-red-500/10 text-red-800 border-red-500/20'
+                                          }`}>{label}</span>
+                                          <span className="text-[10px] text-foreground/60 ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <span className="font-bold text-foreground">{formatCentsToAud(l.amount_cents)}</span>
                                       </div>
-                                      <span className="font-bold text-foreground">{formatCentsToAud(l.amount_cents)}</span>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -1426,12 +1759,33 @@ export default function Jobs() {
                                       >
                                         Accepted — Awaiting Payment
                                       </button>
+                                    ) : selectedJob.status === 'completed_pending_review' ? (
+                                      <button
+                                        disabled
+                                        className="w-full bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                      >
+                                        Under Review
+                                      </button>
+                                    ) : selectedJob.status === 'disputed' ? (
+                                      <button
+                                        disabled
+                                        className="w-full bg-red-500 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                      >
+                                        Disputed
+                                      </button>
+                                    ) : selectedJob.status === 'completed' ? (
+                                      <button
+                                        disabled
+                                        className="w-full bg-emerald-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                      >
+                                        Completed ✓
+                                      </button>
                                     ) : (
                                       <button
                                         disabled
                                         className="w-full bg-green-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
                                       >
-                                        Contract Active
+                                        Contract Active (Payment Funded)
                                       </button>
                                     )
                                   ) : (
@@ -1449,26 +1803,26 @@ export default function Jobs() {
                         </div>
                       )}
 
-                      {/* 3. Customer Actions: Payment Funding Simulation */}
+                      {/* 3. Customer Actions: Protected Payment Funding Simulation */}
                       {selectedJob.customer_id === user.id && selectedJob.status === 'accepted' && jobPayment && (
                         <div className="p-5 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-3 font-semibold">
                           <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                            <DollarSign className="h-5 w-5 text-amber-500" /> Secure Payment Required — Fund Contract
+                            <DollarSign className="h-5 w-5 text-amber-500" /> Protected Payment Required — Fund Contract
                           </h4>
                           <p className="text-xs text-muted-foreground leading-relaxed">
-                            Please fund this contract to proceed. Funds will be held securely in the TradieHubAU platform and only released after the job is completed or verified by you.
+                            Please fund this contract to proceed. This secure job payment will be held until completion and only released after the work is completed and approved by you.
                           </p>
                           <button
                             onClick={() => {
                               setModalConfirmConfig({
                                 title: "Fund Contract Payment",
-                                message: "Are you sure you want to simulate funding this contract?",
+                                message: "Are you sure you want to simulate funding this secure job payment?",
                                 onConfirm: async () => {
                                   const { error } = await simulatePaymentFunding(selectedJob.id);
                                   if (error) {
                                     showToast(error.message, 'error');
                                   } else {
-                                    showToast("Payment Funded! Funds are now securely held by TradieHubAU.", 'success');
+                                    showToast("Protected payment funded! Payment is held until completion.", 'success');
                                     setSelectedJob(prev => prev ? { ...prev, status: 'payment_held' } : null);
                                     fetchJobLifecycleDetails(selectedJob.id);
                                     loadJobs();
@@ -1478,7 +1832,7 @@ export default function Jobs() {
                             }}
                             className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-xs py-3 rounded-xl transition-all shadow-md active:scale-95"
                           >
-                            Simulate Secure Payment Funding
+                            Simulate Protected Payment Funding
                           </button>
                         </div>
                       )}
@@ -1486,6 +1840,40 @@ export default function Jobs() {
                       {/* 4. Tradie Actions: Variation Requests and Completion Proof Submissions */}
                       {jobPayment && jobPayment.payee_id === user.id && (
                         <div className="space-y-6">
+                          {/* Guard messaging for unavailable actions */}
+                          {selectedJob.status === 'accepted' && (
+                            <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-xl text-xs font-bold flex items-start gap-2.5">
+                              <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                              <span>Completion proof can be submitted once the protected payment is funded.</span>
+                            </div>
+                          )}
+
+                          {selectedJob.status === 'completed_pending_review' && (
+                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 text-blue-600 rounded-xl text-xs font-bold space-y-1">
+                              <div className="flex items-start gap-2.5">
+                                <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                                <span>The customer is reviewing the submitted completion proof.</span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground pl-7 font-medium leading-relaxed">
+                                The customer has 72 hours to raise an issue before payment release.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedJob.status === 'disputed' && (
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-bold flex items-start gap-2.5">
+                              <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                              <span>This job is currently disputed and awaiting admin review.</span>
+                            </div>
+                          )}
+
+                          {selectedJob.status === 'completed' && (
+                            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-xl text-xs font-bold flex items-start gap-2.5">
+                              <CheckCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                              <span>This job is marked as completed and the secure payment has been released to your account.</span>
+                            </div>
+                          )}
+
                           {/* Variations form for contracted tradie */}
                           {selectedJob.status === 'payment_held' && (
                             <div className="p-5 bg-card border rounded-2xl space-y-4 font-semibold">
@@ -1534,137 +1922,24 @@ export default function Jobs() {
                               </div>
                             </div>
                           )}
-
-                          {/* Completion Proof Form for contracted tradie */}
-                          {selectedJob.status === 'payment_held' && (
-                            <div className="p-5 bg-card border rounded-2xl space-y-4 font-semibold">
-                              <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5"><CheckCircle className="h-4 w-4 text-green-500" /> Submit Completion Proof</h4>
-                              <p className="text-xs text-muted-foreground leading-relaxed">Upload details when you have finished the work. This triggers the customer's 7-day review timer.</p>
-                              <div className="space-y-3">
-                                <textarea
-                                  placeholder="Describe the completed work..."
-                                  rows={3}
-                                  id="proofDesc"
-                                  className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs focus:border-primary/50"
-                                ></textarea>
-                                <button
-                                  onClick={() => {
-                                    const desc = (document.getElementById('proofDesc') as HTMLTextAreaElement).value;
-                                    if (!desc) {
-                                      showToast("Please write a brief description of the completed work.", 'error');
-                                      return;
-                                    }
-                                    const mockAttachments = ['users/' + user.id + '/completion_photo_1.png'];
-                                    setModalConfirmConfig({
-                                      title: "Submit Completion Proof",
-                                      message: "Are you sure you want to submit completion proof and start the review clock?",
-                                      onConfirm: async () => {
-                                        const { error } = await submitCompletionProof(selectedJob.id, desc, mockAttachments);
-                                        if (error) {
-                                          showToast(error.message, 'error');
-                                        } else {
-                                          showToast("Completion proof submitted! Customer has 7 days to review.", 'success');
-                                          setSelectedJob(prev => prev ? { ...prev, status: 'completed_pending_review' } : null);
-                                          fetchJobLifecycleDetails(selectedJob.id);
-                                          loadJobs();
-                                        }
-                                      }
-                                    });
-                                  }}
-                                  className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-black text-xs py-2.5 rounded-xl transition-all shadow active:scale-95"
-                                >
-                                  Submit Completion & Start Review Clock
-                                </button>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       )}
 
-                      {/* 5. Customer Review of Completion Proof & Dispute raising */}
+                      {/* 5. Customer Review of Completion Proof & Dispute raising - Lightweight summary only */}
                       {selectedJob.customer_id === user.id && selectedJob.status === 'completed_pending_review' && (
                         <div className="space-y-4">
-                          <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5"><CheckCircle className="h-4 w-4 text-green-500" /> Review Completion Proof</h4>
-                          {jobProofs.length > 0 && (
-                            <div className="p-4 bg-muted/20 border rounded-2xl space-y-3 font-semibold">
-                              <p className="text-xs text-foreground">Submitted by Tradie:</p>
-                              <p className="text-xs text-foreground/80 leading-relaxed italic font-medium">"{jobProofs[0].description}"</p>
-                              <p className="text-[10px] text-muted-foreground">Auto-release countdown finishes: {new Date(jobProofs[0].auto_release_at).toLocaleString()}</p>
+                          <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                            <CheckCircle className="h-4 w-4 text-green-500" /> Completion Review
+                          </h4>
+                          
+                          <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl space-y-2 text-xs font-semibold">
+                            <div className="flex items-center gap-2 text-blue-600 font-bold">
+                              <Clock className="h-4.5 w-4.5 text-blue-500" />
+                              <span>Completion proof submitted — under customer review.</span>
                             </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <button
-                              onClick={() => {
-                                setModalConfirmConfig({
-                                  title: "Approve Completion & Release Funds",
-                                  message: "Are you sure you want to approve the work and release the payment? This action is permanent.",
-                                  onConfirm: async () => {
-                                    const { error } = await approveJobCompletion(selectedJob.id);
-                                    if (error) {
-                                      showToast(error.message, 'error');
-                                    } else {
-                                      showToast("Job approved! Payment released successfully.", 'success');
-                                      setSelectedJob(prev => prev ? { ...prev, status: 'completed' } : null);
-                                      fetchJobLifecycleDetails(selectedJob.id);
-                                      loadJobs();
-                                    }
-                                  }
-                                });
-                              }}
-                              className="bg-primary hover:bg-primary/95 text-primary-foreground font-black text-xs py-3 rounded-xl transition-all shadow-md active:scale-95"
-                            >
-                              Approve Completion
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                const issueArea = document.getElementById('issueBlock');
-                                if (issueArea) {
-                                  issueArea.classList.toggle('hidden');
-                                }
-                              }}
-                              className="bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/15 font-black text-xs py-3 rounded-xl transition-all shadow active:scale-95"
-                            >
-                              Raise an Issue / Dispute
-                            </button>
-                          </div>
-
-                          <div id="issueBlock" className="hidden p-4 bg-red-500/5 border border-red-500/10 rounded-2xl space-y-3 font-semibold">
-                            <label className="text-xs font-bold text-red-500 uppercase tracking-wider">Describe the issue / dispute details</label>
-                            <textarea
-                              placeholder="Describe what parts of the agreement were not met..."
-                              rows={3}
-                              id="issueText"
-                              className="w-full bg-background border border-red-500/20 rounded-xl px-3 py-2 outline-none text-xs focus:border-red-500"
-                            ></textarea>
-                            <button
-                              onClick={() => {
-                                const reason = (document.getElementById('issueText') as HTMLTextAreaElement).value;
-                                if (!reason) {
-                                  showToast("Please enter a description of the issue.", 'error');
-                                  return;
-                                }
-                                setModalConfirmConfig({
-                                  title: "Raise Dispute",
-                                  message: "Are you sure you want to raise a dispute for this job? An administrator will review it.",
-                                  onConfirm: async () => {
-                                    const { error } = await raiseJobIssue(selectedJob.id, reason);
-                                    if (error) {
-                                      showToast(error.message, 'error');
-                                    } else {
-                                      showToast("Dispute raised! The admin team will review and contact you.", 'success');
-                                      setSelectedJob(prev => prev ? { ...prev, status: 'disputed' } : null);
-                                      fetchJobLifecycleDetails(selectedJob.id);
-                                      loadJobs();
-                                    }
-                                  }
-                                });
-                              }}
-                              className="w-full bg-red-500 hover:bg-red-600 text-white font-black text-xs py-2 rounded-xl transition-all shadow active:scale-95"
-                            >
-                              Submit Dispute Request
-                            </button>
+                            <p className="text-muted-foreground leading-relaxed text-[11px] font-medium">
+                              Use the <strong className="text-foreground">Review Completion</strong> button on the job card in your active list to approve the work or raise an issue.
+                            </p>
                           </div>
                         </div>
                       )}
@@ -1716,13 +1991,13 @@ export default function Jobs() {
                                       onClick={() => {
                                         setModalConfirmConfig({
                                           title: "Approve Variation",
-                                          message: "Approve this variation of " + formatCentsToAud(v.amount_cents) + "? The variation will then require funding payment.",
+                                          message: "Approve this variation of " + formatCentsToAud(v.amount_cents) + "? The variation will then require protected funding payment.",
                                           onConfirm: async () => {
                                             const { error } = await approveVariation(v.id);
                                             if (error) {
                                               showToast(error.message, 'error');
                                             } else {
-                                              showToast("Variation approved! It is now awaiting funding payment.", 'success');
+                                              showToast("Variation approved! Awaiting secure job payment.", 'success');
                                               fetchJobLifecycleDetails(selectedJob.id);
                                             }
                                           }
@@ -1756,13 +2031,13 @@ export default function Jobs() {
                                     onClick={() => {
                                       setModalConfirmConfig({
                                         title: "Fund Variation",
-                                        message: "Simulate funding this approved variation of " + formatCentsToAud(v.amount_cents) + "?",
+                                        message: "Simulate protected funding for this approved variation of " + formatCentsToAud(v.amount_cents) + "?",
                                         onConfirm: async () => {
                                           const { error } = await simulateVariationFunding(v.id);
                                           if (error) {
                                             showToast(error.message, 'error');
                                           } else {
-                                            showToast("Variation payment funded successfully!", 'success');
+                                            showToast("Variation protected payment funded successfully!", 'success');
                                             fetchJobLifecycleDetails(selectedJob.id);
                                           }
                                         }
@@ -1804,33 +2079,37 @@ export default function Jobs() {
                 <button onClick={() => setSelectedJob(null)} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
                   Close
                 </button>
-                {user ? (
-                  <button
-                    onClick={() => {
-                      if (!isVerifiedTradie) {
-                        showToast("Verification Required: Only verified tradies can quote on jobs. Please visit your Profile to submit your verification details.", 'error');
-                        return;
-                      }
-                      handleOpenApply(selectedJob);
-                    }}
-                    disabled={myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'}
-                    className={`font-bold px-6 py-2.5 rounded-xl transition-all shadow-md text-sm active:scale-95 ${
-                      myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'
-                        ? 'bg-green-500/10 text-green-600 border border-green-500/20 cursor-default'
-                        : !isVerifiedTradie
-                        ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
-                        : 'bg-primary text-primary-foreground hover:bg-primary/95'
-                    }`}
-                  >
-                    {myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'
-                      ? 'Already Applied ✓'
-                      : 'Apply for Job'}
-                  </button>
-                ) : (
-                  <Link to="/login" state={{ from: { pathname: '/jobs' } }}
-                    className="bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-sm">
-                    Sign In to Apply
-                  </Link>
+                {selectedJob.status === 'open' && (
+                  user ? (
+                    profile?.role !== 'customer' ? (
+                      <button
+                        onClick={() => {
+                          if (!isVerifiedTradie) {
+                            showToast("Verification Required: Only verified tradies can quote on jobs. Please visit your Profile to submit your verification details.", 'error');
+                            return;
+                          }
+                          handleOpenApply(selectedJob);
+                        }}
+                        disabled={myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'}
+                        className={`font-bold px-6 py-2.5 rounded-xl transition-all shadow-md text-sm active:scale-95 ${
+                          myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'
+                            ? 'bg-green-500/10 text-green-600 border border-green-500/20 cursor-default'
+                            : !isVerifiedTradie
+                            ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/95'
+                        }`}
+                      >
+                        {myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'
+                          ? 'Already Applied ✓'
+                          : 'Apply for Job'}
+                      </button>
+                    ) : null
+                  ) : (
+                    <Link to="/login" state={{ from: { pathname: '/jobs' } }}
+                      className="bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-sm">
+                      Sign In to Apply
+                    </Link>
+                  )
                 )}
               </div>
             </div>
@@ -1883,6 +2162,547 @@ export default function Jobs() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Live Review Countdown Timer ─────────────────────────────────────────────
+
+function ReviewCountdown({ deadline }: { deadline: string }) {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(deadline) - +new Date();
+      if (difference <= 0) {
+        setTimeLeft('Review window expired');
+        setIsExpired(true);
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+
+      const dStr = days > 0 ? `${days}d ` : '';
+      const hStr = hours > 0 ? `${hours}h ` : '0h ';
+      const mStr = `${minutes}m`;
+
+      setTimeLeft(`Review window ends in: ${dStr}${hStr}${mStr}`);
+      setIsExpired(false);
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 60000); // update every minute
+
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  return (
+    <div className={`p-3.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+      isExpired 
+        ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+        : 'bg-amber-500/10 border-amber-500/20 text-amber-900'
+    }`}>
+      <Clock className="h-4.5 w-4.5 shrink-0" />
+      <div className="space-y-0.5">
+        <span>{timeLeft}</span>
+        {!isExpired && <p className="text-[10px] text-foreground/60 font-medium">Approve or dispute before the timer ends.</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Submit Completion Proof Modal ──────────────────────────────────────────
+
+interface SubmitCompletionModalProps {
+  job: Job;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function SubmitCompletionModal({ job, onClose, onSuccess }: SubmitCompletionModalProps) {
+  const { user } = useAuth();
+  const [description, setDescription] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Handle selected images
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+    const files = Array.from(e.target.files || []);
+    const validFiles: File[] = [];
+    const newPreviews: string[] = [];
+
+    for (const file of files) {
+      // 1. Require common image formats
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+        setError('Only image files (jpeg, jpg, png, webp) are allowed.');
+        return;
+      }
+      // 2. Limit size to 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be under 5MB.');
+        return;
+      }
+      validFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    }
+
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    setPreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  // Remove selected image
+  const removeFile = (index: number) => {
+    URL.revokeObjectURL(previews[index]);
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!user) {
+      setError('You must be logged in.');
+      return;
+    }
+
+    // Client-side validation: require both notes and at least one image
+    if (!description.trim()) {
+      setError('Completion notes are required.');
+      return;
+    }
+    if (selectedFiles.length === 0) {
+      setError('At least one proof photo is required.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const uploadedPaths: string[] = [];
+      for (const file of selectedFiles) {
+        const fileExt = file.name.split('.').pop();
+        const randomStr = Math.random().toString(36).substring(2, 10);
+        const filePath = `jobs/${job.id}/${user.id}/${Date.now()}_${randomStr}.${fileExt}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from('completion_proofs')
+          .upload(filePath, file);
+
+        if (uploadErr) {
+          throw new Error(`Failed to upload ${file.name}: ${uploadErr.message}`);
+        }
+        uploadedPaths.push(filePath);
+      }
+
+      // Call submitCompletionProof RPC
+      const { error: rpcErr } = await submitCompletionProof(job.id, description.trim(), uploadedPaths);
+      if (rpcErr) {
+        throw rpcErr;
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to submit completion proof.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="p-6 border-b flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-extrabold text-foreground">Submit Completion Proof</h3>
+            <p className="text-sm text-muted-foreground font-semibold mt-0.5 line-clamp-1">{job.title}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg border hover:bg-muted text-muted-foreground shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Description */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Completion Notes / Details <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              rows={4}
+              placeholder="Describe the completed work, materials used, or any final details for the customer..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-medium leading-relaxed transition-all resize-none"
+              required
+            />
+          </div>
+
+          {/* File Upload */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-foreground uppercase tracking-wider block">
+              Proof Photos <span className="text-red-400">*</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-3 rounded-xl hover:bg-secondary/80 transition-all border text-xs cursor-pointer select-none">
+                <Upload className="h-4 w-4" /> Choose Photos
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+              <span className="text-xs text-muted-foreground font-semibold">
+                JPEG, PNG, WEBP (Max 5MB each)
+              </span>
+            </div>
+
+            {/* Selected File Previews */}
+            {previews.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 pt-2">
+                {previews.map((url, index) => (
+                  <div key={index} className="relative h-20 w-20 border rounded-xl overflow-hidden group">
+                    <img src={url} alt="Preview" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 bg-primary/5 border border-primary/10 text-primary rounded-xl text-xs font-semibold leading-relaxed flex items-start gap-2.5">
+            <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5 text-primary" />
+            <span>Submitting completion proof starts the customer's 7-day review timer. The protected payment will release automatically if no dispute is raised.</span>
+          </div>
+        </form>
+
+        <div className="p-6 border-t flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="bg-primary text-primary-foreground font-black px-6 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
+          >
+            {submitting ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</>
+            ) : (
+              'Submit Completion & Start Review Clock'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Review Completion Proof Modal ──────────────────────────────────────────
+
+interface ReviewCompletionModalProps {
+  job: Job;
+  onClose: () => void;
+  onSuccess: (newStatus: 'completed' | 'disputed') => void;
+  showToast: (text: string, type?: 'success' | 'error') => void;
+  setModalConfirmConfig: any;
+}
+
+function ReviewCompletionModal({
+  job,
+  onClose,
+  onSuccess,
+  showToast,
+  setModalConfirmConfig
+}: ReviewCompletionModalProps) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [jobPayment, setJobPayment] = useState<any>(null);
+  const [jobProofs, setJobProofs] = useState<any[]>([]);
+  const [proofImageUrls, setProofImageUrls] = useState<string[]>([]);
+  const [showDisputeBlock, setShowDisputeBlock] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
+
+  // Local helper to format AUD cents
+  const formatCentsToAud = (cents: number) => {
+    return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
+  };
+
+  // Escape key listener to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data: pData, error: pErr } = await getPaymentForJob(job.id);
+        if (pErr) throw pErr;
+        setJobPayment(pData);
+
+        const { data: prData, error: prErr } = await getCompletionProofsForJob(job.id);
+        if (prErr) throw prErr;
+        setJobProofs(prData || []);
+
+        if (prData && prData.length > 0 && prData[0].attachments && prData[0].attachments.length > 0) {
+          const urls: string[] = [];
+          for (const path of prData[0].attachments) {
+            try {
+              const { data, error: sErr } = await supabase.storage
+                .from('completion_proofs')
+                .createSignedUrl(path, 3600);
+              if (!sErr && data?.signedUrl) {
+                urls.push(data.signedUrl);
+              }
+            } catch (e) {
+              console.error('Error generating signed URL:', e);
+            }
+          }
+          setProofImageUrls(urls);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || 'Failed to load completion details.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [job.id]);
+
+  if (loading) {
+    return (
+      <div 
+        onClick={onClose} 
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()} 
+          className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl p-8 text-center space-y-4"
+        >
+          <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-muted-foreground">Loading completion proof details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !jobPayment || jobProofs.length === 0) {
+    return (
+      <div 
+        onClick={onClose} 
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()} 
+          className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl p-6 space-y-4"
+        >
+          <div className="flex items-start gap-3 text-red-500">
+            <AlertTriangle className="h-6 w-6 shrink-0" />
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Failed to load details</h3>
+              <p className="text-sm font-medium mt-1">{error || 'Completion proof data not found.'}</p>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button 
+              onClick={onClose} 
+              className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const proof = jobProofs[0];
+
+  return (
+    <div 
+      onClick={onClose} 
+      className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()} 
+        className="bg-card border border-slate-200 w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 max-h-[90vh]"
+      >
+        {/* Modal Header */}
+        <div className="p-6 border-b border-slate-200 flex items-start justify-between gap-4 shrink-0 bg-slate-50">
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900">Review Completion Proof</h3>
+            <p className="text-sm text-slate-500 font-semibold mt-0.5 line-clamp-1">{job.title}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Modal Content Scrollable Area */}
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 min-h-0">
+          
+          {/* Live countdown timer */}
+          <ReviewCountdown deadline={proof.auto_release_at} />
+
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Submitted by Tradie:</p>
+            <p className="text-sm text-slate-800 leading-relaxed italic font-medium bg-white border border-slate-200 p-3 rounded-xl">
+              "{proof.description}"
+            </p>
+
+            {proofImageUrls.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attached Proof Photos:</p>
+                <div className="flex flex-wrap gap-2">
+                  {proofImageUrls.map((url, idx) => (
+                    <a
+                      key={idx}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative h-20 w-20 border border-slate-200 rounded-xl overflow-hidden hover:opacity-85 transition-all shadow-sm flex items-center justify-center bg-white"
+                    >
+                      <img src={url} alt={`Proof ${idx + 1}`} className="h-full w-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-xs font-semibold text-slate-500 border-t border-slate-200 pt-2 mt-2">
+              Auto-release deadline: {new Date(proof.auto_release_at).toLocaleString()}
+            </p>
+          </div>
+
+          {/* Calmer Instruction Notice Card */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold leading-relaxed flex items-start gap-2.5">
+            <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5 text-slate-500" />
+            <span className="text-slate-700">
+              Please review the completed work carefully. You can approve and release the secure job payment of <span className="font-bold text-slate-900">{formatCentsToAud(jobPayment.amount)}</span> to the tradie, or raise an issue to dispute the completion if expectations were not met.
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => {
+                setModalConfirmConfig({
+                  title: "Approve Completion & Release Funds",
+                  message: `Are you sure you want to approve the work and release the secure job payment of ${formatCentsToAud(jobPayment.amount)} to the tradie? This action will payout the funds and cannot be undone.`,
+                  onConfirm: async () => {
+                    const { error: appErr } = await approveJobCompletion(job.id);
+                    if (appErr) {
+                      showToast(appErr.message, 'error');
+                    } else {
+                      showToast("Job approved! Protected payment released successfully.", 'success');
+                      onSuccess('completed');
+                    }
+                  }
+                });
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white font-black text-xs py-3 rounded-xl transition-all shadow-md active:scale-95 text-center flex items-center justify-center cursor-pointer"
+            >
+              Approve Work & Release Payment
+            </button>
+            
+            <button
+              onClick={() => setShowDisputeBlock(!showDisputeBlock)}
+              className="bg-red-50 hover:bg-red-100/80 text-red-600 border border-red-200 font-black text-xs py-3 rounded-xl transition-all shadow active:scale-95 text-center flex items-center justify-center cursor-pointer"
+            >
+              Dispute Work Completion
+            </button>
+          </div>
+
+          {/* Dispute block */}
+          {showDisputeBlock && (
+            <div className="p-4 bg-red-50/50 border border-red-200 rounded-2xl space-y-3 font-semibold animate-in slide-in-from-top-2 duration-200">
+              <label className="text-xs font-bold text-red-600 uppercase tracking-wider block">Describe the issue / dispute details</label>
+              <textarea
+                placeholder="Describe what parts of the agreement were not met and provide details of the issue..."
+                rows={3}
+                value={disputeReason}
+                onChange={(e) => setDisputeReason(e.target.value)}
+                className="w-full bg-white border border-red-200 rounded-xl px-3 py-2 outline-none text-xs focus:border-red-500 font-medium text-slate-800"
+              />
+              <button
+                onClick={() => {
+                  if (!disputeReason.trim()) {
+                    showToast("Please enter a description of the issue.", 'error');
+                    return;
+                  }
+                  setModalConfirmConfig({
+                    title: "Initiate Dispute Request",
+                    message: "Are you sure you want to raise a dispute for this job? The secure payment will remain locked while our administration team reviews the case.",
+                    onConfirm: async () => {
+                      const { error: dispErr } = await raiseJobIssue(job.id, disputeReason.trim());
+                      if (dispErr) {
+                        showToast(dispErr.message, 'error');
+                      } else {
+                        showToast("Dispute raised! The admin team will review and contact you.", 'success');
+                        onSuccess('disputed');
+                      }
+                    }
+                  });
+                }}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 rounded-xl transition-all shadow active:scale-95 cursor-pointer"
+              >
+                Initiate Official Dispute
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-6 border-t border-slate-200 flex items-center justify-end gap-3 shrink-0 bg-slate-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

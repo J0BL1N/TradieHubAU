@@ -6,6 +6,8 @@ export interface Customer {
   avatar_url: string | null;
   suburb: string | null;
   state: string | null;
+  email?: string;
+  phone?: string;
 }
 
 export interface Job {

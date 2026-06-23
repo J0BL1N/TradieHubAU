@@ -1,0 +1,467 @@
+# TradieHubAU Roadmap
+
+Last updated: 2026-06-23
+
+## Progress Snapshot
+
+TradieHubAU is currently in the local MVP build stage.
+
+Approved/completed:
+
+* v0.0.11 Jobs UX final polish
+* Admin UUID display hotfix
+* Job modal overlay hotfix
+
+Current focus:
+
+* v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow
+
+Next major focus:
+
+* v0.0.13 Admin dashboard polish
+* v0.0.14 Full manual customer/tradie/admin test run
+* v0.0.15 Security/RLS/storage audit
+
+Later:
+
+* Real payment provider integration
+* Finance/accounting dashboard
+* GST/accountant export readiness
+* Controlled beta launch
+
+---
+
+# v0.0.x — Local MVP Foundation
+
+## Completed / Approved
+
+* [x] v0.0.10 — Project structure cleanup
+
+  * Active app confirmed under `F:\TradieHubAU\frontend`
+  * Active Supabase folder confirmed under `F:\TradieHubAU\supabase`
+  * Old/static folders should not be used for active development
+  * VS Code Go Live should not be used for the active React/Vite app
+
+* [x] v0.0.11 — Jobs UX final polish
+
+  * Cleaned up job status wording
+  * Improved job status badges
+  * Improved job list action gating
+  * Customers cannot apply to jobs
+  * Tradies can only apply to open jobs
+  * Accepted/funded/completed/disputed states display more clearly
+  * Removed user-facing “escrow” wording
+  * Added safer wording such as protected payment, secure job payment, payment funded, payment held until completion
+  * Added safer wording such as protected payment, secure job payment, payment funded, payment held until completion, or payment release
+
+* [x] Hotfix — Admin UUID display
+
+  * Active Whitelisted Tradies table displays each tradie’s user UUID
+  * UUID appears under email address as `UUID: <uuid>`
+  * Confirmed UUID matches Supabase `public.users.id`
+
+* [x] Hotfix — Job Details modal overlay behavior
+
+  * Modal overlay now intentionally starts below the header/nav
+  * Header/nav remains visible
+  * Page content below header is dimmed/blurred
+  * Clicking outside modal closes it
+  * Escape closes modal
+  * Body scroll lock works
+
+---
+
+## In Progress / Awaiting Manual Review
+
+* [ ] v0.0.12 — Completion + dispute flow polish
+
+  * Status: implementation mostly complete, still awaiting final manual approval
+  * Do not mark approved until the user confirms final review passes
+
+### v0.0.12 Completed Implementation Items
+
+* [x] Completion proof form moved out of Job Details modal
+* [x] Dedicated `Submit Completion` action added for accepted tradie
+* [x] `Submit Completion` button visible only on funded/contract-active jobs
+* [x] Completion proof modal supports notes/details
+* [x] Completion proof modal supports image uploads
+* [x] Image uploads support JPEG, JPG, PNG, WEBP
+* [x] File size validation added
+* [x] Image previews/filenames shown
+* [x] Supabase Storage bucket `completion_proofs` added
+* [x] Completion proof images upload successfully to storage
+* [x] Signed proof preview URLs added where needed
+* [x] Ambiguous SQL `status` reference fixed in completion/variation functions
+* [x] Contact details gated until protected payment is funded
+* [x] Accepted-but-unfunded jobs show locked contact details
+* [x] Accepted-but-unfunded jobs warn tradies not to start work yet
+* [x] Payment funded jobs unlock contact details for job owner and accepted tradie only
+* [x] Private contact details hidden from guests, unrelated customers, and wrong tradies
+* [x] Platform fee and tradie payout breakdown added
+* [x] Ledger labels improved: Deposit Charge, Platform Fee, Tradie Payout, Customer Refund
+* [x] Customer review timer changed from 7 days to 72 hours
+* [x] 72-hour review countdown component added
+* [x] Under Review badge shortened to `Under Review`
+* [x] Guest Open Jobs browsing fixed
+* [x] Guests no longer see full-page “Not authenticated” error on Open Jobs
+* [x] My Jobs has friendlier sign-in prompt for guests
+* [x] My Jobs status filtering added
+* [x] Sort dropdown kept for Open Jobs and hidden/less prominent on My Jobs
+* [x] GST was not added to payment math
+* [x] GST/accounting TODO comment added for future review
+* [x] Dev documentation added for second tradie test account
+
+### v0.0.12 Still Awaiting / Current Final Adjustment
+
+* [ ] Move customer `Review Completion Proof` workflow out of the Job Details modal (Implementation complete, awaiting manual review)
+
+  * Add separate `Review Completion` button near `Details`
+  * Only visible to job owner/customer when status is `completed_pending_review`
+  * Dedicated Review Completion modal should contain:
+
+    * proof notes/details
+    * proof image previews
+    * 72-hour countdown
+    * approve work and release payment action
+    * dispute work completion action
+    * dispute details textarea
+    * initiate official dispute action
+  * Job Details modal should show only a lightweight summary for under-review jobs
+
+### v0.0.12 Manual Review Items Still Needed
+
+* [ ] Confirm `Review Completion` modal opens correctly
+* [ ] Confirm approval still releases payment correctly
+* [ ] Confirm dispute still moves job to disputed/admin review correctly
+* [ ] Confirm countdown appears for both customer and accepted tradie
+* [ ] Confirm wrong tradie cannot see `Submit Completion`
+* [ ] Confirm wrong tradie cannot upload completion proof
+* [ ] Confirm wrong tradie cannot see private contact details
+* [ ] Confirm no user-facing “escrow” wording remains
+* [ ] Confirm no GST is added to payment math
+* [ ] Confirm completed jobs appear correctly in past/completed areas
+
+---
+
+# v0.0.13 — Admin Dashboard Polish
+
+* [ ] Improve admin dashboard layout and readability
+* [ ] Improve Active Whitelisted Tradies table
+* [ ] Improve pending tradie verification review flow
+* [ ] Improve customer/user management visibility
+* [ ] Improve disputes queue
+* [ ] Show useful admin-only IDs/reference numbers
+* [ ] Add better empty states
+* [ ] Add safer admin action confirmations
+* [ ] Review suspend/revoke/whitelist actions
+* [ ] Ensure admin-only sensitive data is not exposed elsewhere
+* [ ] Keep private verification documents admin-only
+* [ ] Confirm user-facing copy avoids “escrow”
+
+---
+
+# v0.0.14 — Full Manual Customer/Tradie/Admin Test Run
+
+* [ ] Create customer test account
+* [ ] Create second customer test account
+* [ ] Create primary tradie test account
+* [ ] Create second tradie test account
+* [ ] Create admin account
+* [ ] Test customer signup/login
+* [ ] Test tradie signup/login
+* [ ] Test tradie verification/whitelist/admin approval
+* [ ] Test unverified tradie cannot quote/apply
+* [ ] Test suspended tradie cannot quote/apply
+* [ ] Test customer creates job
+* [ ] Test tradie submits quote
+* [ ] Test customer accepts quote
+* [ ] Test contact details stay locked before payment funding
+* [ ] Test protected payment funding simulation
+* [ ] Test contact details unlock after payment funding
+* [ ] Test accepted tradie submits completion proof with images
+* [ ] Test wrong tradie cannot submit proof
+* [ ] Test customer reviews proof
+* [ ] Test customer approves work and payment release
+* [ ] Test dispute flow
+* [ ] Test admin dispute visibility
+* [ ] Test completed job state
+* [ ] Test cancelled job state if supported
+* [ ] Test guest browsing
+* [ ] Test guest save/apply gating
+* [ ] Test mobile/responsive layout manually
+* [ ] Test no user-facing “escrow” wording remains
+
+---
+
+# v0.0.15 — Security, RLS, Storage, and Privacy Audit
+
+* [ ] Audit Supabase RLS policies for `users`
+* [ ] Audit Supabase RLS policies for `jobs`
+* [ ] Audit Supabase RLS policies for `quotes/applications`
+* [ ] Audit Supabase RLS policies for `payments`
+* [ ] Audit Supabase RLS policies for `completion_proofs`
+* [ ] Audit Supabase Storage policies for `completion_proofs`
+* [ ] Confirm guests only see public-safe job data
+* [ ] Confirm customers only see their own private data
+* [ ] Confirm tradies only see appropriate private data after payment funding
+* [ ] Confirm wrong tradies cannot access private proof/contact data
+* [ ] Confirm admin-only data is admin-only
+* [ ] Confirm verification documents are protected
+* [ ] Confirm no service-role keys exist in frontend
+* [ ] Confirm no secrets are committed
+* [ ] Confirm `.env` files are ignored
+* [ ] Confirm protected payment actions cannot be spoofed client-side
+* [ ] Confirm completion/dispute/approval RPCs enforce authorization server-side
+* [ ] Confirm storage uploads are path-restricted
+* [ ] Confirm signed URL access is controlled
+
+---
+
+# v0.1.0 — Controlled Local Beta Prep
+
+* [ ] Finalize local beta user roles
+* [ ] Finalize South East Melbourne / outer south-east Melbourne service area messaging
+* [ ] Add region gate or waitlist if needed
+* [ ] Add beta disclaimer copy
+* [ ] Add basic Terms of Service placeholder
+* [ ] Add Privacy Policy placeholder
+* [ ] Add Contact Support page/details
+* [ ] Add safer protected payment explanation page/section
+* [ ] Add trust and safety explainer
+* [ ] Add dispute process explainer
+* [ ] Add tradie verification explainer
+* [ ] Add customer verification explainer
+* [ ] Add job reference IDs/public IDs
+* [ ] Add simple invoice/reference foundation
+* [ ] Prepare test data for beta demo
+* [ ] Prepare deployment checklist
+* [ ] Prepare manual QA checklist
+* [ ] Prepare rollback checklist
+
+---
+
+# v0.2.x — Real Payments Foundation
+
+* [ ] Choose payment provider
+* [ ] Confirm legal/payment structure
+* [ ] Confirm whether platform is agent/marketplace/principal
+* [ ] Confirm protected payment language with legal/accounting advice
+* [ ] Add real payment intent creation
+* [ ] Add real payment status webhooks
+* [ ] Add real payout tracking
+* [ ] Add refunds support
+* [ ] Add dispute/chargeback handling foundation
+* [ ] Add payment provider fee tracking
+* [ ] Add payment ledger hardening
+* [ ] Add idempotency for payment operations
+* [ ] Add payment audit logs
+* [ ] Add production-safe webhook verification
+* [ ] Add payment failure states
+* [ ] Add retry/cancel flows
+* [ ] Add user-facing payment receipts
+
+---
+
+# v0.3.x — Admin → Finance & Accounting
+
+* [ ] Add admin-only Finance & Accounting dashboard
+* [ ] Add date range selector
+
+  * This month
+  * This quarter
+  * Financial year
+  * Calendar year
+  * Custom range
+* [ ] Track gross job volume
+* [ ] Track platform fee revenue
+* [ ] Track net platform income
+* [ ] Track tradie payouts
+* [ ] Track pending payouts
+* [ ] Track released payouts
+* [ ] Track held/protected payments
+* [ ] Track refunds
+* [ ] Track dispute reversals
+* [ ] Track payment processor fees
+* [ ] Add manual expense entry
+* [ ] Add expense categories
+
+  * hosting
+  * domain
+  * software
+  * ads/marketing
+  * accounting
+  * legal
+  * insurance
+  * miscellaneous
+* [ ] Add receipt/invoice upload for expenses
+* [ ] Add monthly summary
+* [ ] Add yearly summary
+* [ ] Add financial year summary
+* [ ] Add CSV export for accountant
+* [ ] Add PDF summary export for accountant
+* [ ] Add transaction ledger export
+* [ ] Add platform fee report export
+* [ ] Add tradie payout report export
+* [ ] Add expenses report export
+* [ ] Add tax-time summary pack
+
+---
+
+# v0.3.x — GST / Accountant Export Readiness
+
+* [ ] Confirm GST registration requirements with accountant
+* [ ] Confirm GST turnover tracking rules
+* [ ] Confirm whether GST applies to platform fee only or full job supply
+* [ ] Confirm invoice/tax invoice requirements
+* [ ] Add GST-ready fields to payment ledger
+* [ ] Add GST collected tracking if applicable
+* [ ] Add GST payable estimate if applicable
+* [ ] Add GST on platform fee support if required
+* [ ] Add GST on full job payment support only if legally required
+* [ ] Add BAS summary export if needed
+* [ ] Add tax invoice generation if needed
+* [ ] Add ABN/GST registration details to business settings
+* [ ] Add accountant review checklist
+* [ ] Do not enable GST charging until confirmed legally/accounting-wise
+
+---
+
+# v0.4.x — Messaging and Contact Controls
+
+* [ ] Improve in-platform messages
+* [ ] Gate direct contact details until protected payment is funded
+* [ ] Add customer/tradie message thread per job
+* [ ] Add direct customer/tradie chat thread per job
+* [ ] Add system messages for quote accepted/payment funded/completion submitted/dispute opened
+* [ ] Add message moderation/audit hooks if needed
+* [ ] Add report conversation feature if needed
+* [ ] Keep emails/phone numbers hidden before funding
+* [ ] Consider masked relay contact later
+
+---
+
+# v0.5.x — Trust, Verification, and Safety
+
+* [ ] Improve tradie verification workflow
+* [ ] Add ABN validation support
+* [ ] Add licence validation support
+* [ ] Add insurance document review support
+* [ ] Add customer ID verification workflow
+* [ ] Add admin verification queue improvements
+* [ ] Add verification expiry reminders
+* [ ] Add credential status flags (suspended, active, expired)
+* [ ] Add audit history for admin verification actions
+* [ ] Add fraud/risk flags
+* [ ] Add safer onboarding copy
+
+---
+
+# v0.6.x — Reviews and Reputation
+
+* [ ] Add post-completion customer review
+* [ ] Add tradie rating
+* [ ] Add customer rating if desired
+* [ ] Add review moderation
+* [ ] Add completed job count
+* [ ] Add verified badge display
+* [ ] Add profile reputation summary
+* [ ] Prevent reviews before job completion
+* [ ] Prevent reviews from unrelated users
+
+---
+
+# v0.7.x — Notifications
+
+* [ ] Email notification foundation
+* [ ] Quote received notification
+* [ ] Quote accepted notification
+* [ ] Payment funded notification
+* [ ] Completion proof submitted notification
+* [ ] Review window countdown reminder
+* [ ] Dispute opened notification
+* [ ] Payment released notification
+* [ ] Admin dispute notification
+* [ ] Notification preferences
+
+---
+
+# v0.8.x — Public Site / Marketing
+
+* [ ] Landing page polish
+* [ ] How it works page
+* [ ] Customer explainer
+* [ ] Tradie explainer
+* [ ] Protected payment explainer
+* [ ] Trust and safety page
+* [ ] Region availability page
+* [ ] FAQ
+* [ ] Contact page
+* [ ] SEO basics
+* [ ] Mobile polish
+* [ ] Performance pass
+
+---
+
+# 1.0 — Production Launch Readiness
+
+* [ ] Legal review complete
+* [ ] Accounting/GST review complete
+* [ ] Payment provider production approved
+* [ ] Privacy policy finalized
+* [ ] Terms finalized
+* [ ] Dispute policy finalized
+* [ ] Refund policy finalized
+* [ ] Verification policy finalized
+* [ ] Security audit complete
+* [ ] RLS audit complete
+* [ ] Storage audit complete
+* [ ] Backup/restore process documented
+* [ ] Monitoring/logging added
+* [ ] Error reporting added
+* [ ] Production environment variables secured
+* [ ] Production database migration plan confirmed
+* [ ] Beta users tested successfully
+* [ ] Admin operating procedures documented
+* [ ] Launch checklist complete
+
+---
+
+# Development Rules
+
+* Do not work on archived/static/old folders.
+* Active frontend: `F:\TradieHubAU\frontend`
+* Active Supabase folder: `F:\TradieHubAU\supabase`
+* Do not use VS Code Go Live for this app.
+* Use `npm run dev` for local frontend.
+* Use Supabase CLI/local Supabase for local backend work.
+* Do not perform subjective visual/manual browser approval as the IDE.
+* The user manually approves visual/UX behavior.
+* Avoid the word “escrow” in user-facing copy.
+* Use safer wording:
+
+  * protected payment
+  * secure job payment
+  * payment funded
+  * payment held until completion
+  * payment release
+* Do not add real payment processing until the real payments foundation task.
+* Do not add GST charging until accountant/legal structure is confirmed.
+* Do not commit secrets.
+* Do not commit `.env` files.
+* Do not place service-role keys in frontend code.
+* Do not mark implementation-complete work as approved unless the user explicitly approves it.
+
+Git requirements:
+
+* Update this roadmap before any GitHub push.
+* Check off only user-approved work.
+* Keep in-progress work unchecked or clearly marked as awaiting manual review.
+* Run `npm run build` before final commit where frontend code changes exist.
+* Include the roadmap update in the commit.
+* In the final report, include:
+
+  * roadmap file changed
+  * which roadmap items were checked off
+  * build result
+  * commit message used or recommended
+  * whether changes were committed/pushed or only prepared
