@@ -47,7 +47,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** The security-definer RPC funds a supplied job without checking job ownership, admin status, or an approved local-test actor. No explicit revoke/grant or pending-state guard is committed.
 * **Risk:** A caller with a job UUID can spoof funding, unlock lifecycle/contact behaviour, and create duplicate charge ledger entries. PostgreSQL functions are executable by `PUBLIC` unless privileges are tightened.
 * **Recommended fix:** Revoke `PUBLIC`/`anon`, authorize only the required authenticated actor, require the expected pending state, and make ledger insertion idempotent. Disable simulation before production.
-* **State:** Deferred; RPC rewrite required.
+* **State:** Fixed in migration [021_secure_simulate_payment_funding_rpc.sql](file:///F:/TradieHubAU/supabase/migrations/021_secure_simulate_payment_funding_rpc.sql) (pending live Supabase verification).
 
 ### C-04 — Payment rows can be inserted directly by clients
 
