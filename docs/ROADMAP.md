@@ -233,6 +233,8 @@ Later:
 
 ### v0.0.14 Manual Review Items
 
+> v0.0.14 can only be approved for local MVP/simulated payment dispute management. Real payment settlement tests are deferred to v0.2.x Real Payments Foundation.
+
 * [ ] Confirm ongoing and completed cases appear in the correct list sections
 * [ ] Confirm each list entry shows job, parties, disputed date, amount, status, and Open Case action
 * [ ] Confirm direct case URLs enforce the admin guard
@@ -360,6 +362,22 @@ Later:
 * [ ] Add payment failure states
 * [ ] Add retry/cancel flows
 * [ ] Add user-facing payment receipts
+
+## Backburner QA — Test Once Real Payments Work
+
+* [ ] Test real customer charge / protected payment funding
+* [ ] Test real payment held state from provider/webhook
+* [ ] Test real payment release to contractor
+* [ ] Test real contractor payout tracking
+* [ ] Test real full customer refund
+* [ ] Test real manual split settlement
+* [ ] Test payment provider fee tracking
+* [ ] Test exact ledger reconciliation after release/refund/split
+* [ ] Test failed payment states
+* [ ] Test webhook retry/idempotency handling
+* [ ] Test dispute resolution against real payment provider records
+* [ ] Test chargeback/payment provider dispute scenario if supported
+* [ ] Test receipts/invoices after real payment actions
 
 ---
 
