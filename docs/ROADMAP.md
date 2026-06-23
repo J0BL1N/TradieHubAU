@@ -288,6 +288,10 @@ Later:
 
 Status: **In progress / unapproved.** Source audit findings are documented in [`docs/SECURITY_AUDIT_v0.0.16.md`](SECURITY_AUDIT_v0.0.16.md). Critical/high remediation and live Supabase verification remain outstanding.
 
+### Completed Remediation Items
+
+* [x] C-01: Redefined `protect_user_fields()` and attached it as `BEFORE INSERT OR UPDATE` trigger on `public.users` to block unauthorized client edits of privileged fields in migration `019_protect_user_fields_trigger.sql` (pending live Supabase verification).
+
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
 * [ ] Audit Supabase RLS policies for `quotes/applications`

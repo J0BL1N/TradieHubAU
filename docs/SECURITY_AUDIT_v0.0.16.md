@@ -31,7 +31,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** The migrations define `protect_user_fields()` but never create a trigger that invokes it. The self-update policy allows an authenticated user to update their own row without column restrictions.
 * **Risk:** A user can attempt to set `is_admin`, `role`, verification flags, or Stripe/provider identifiers. Successful admin escalation compromises admin policies and security-definer admin RPCs.
 * **Recommended fix:** Add a reviewed `BEFORE INSERT OR UPDATE` trigger protecting every privilege, verification, and provider-managed field. Restrict ordinary profile changes to an allowlist.
-* **State:** Deferred; migration and live regression testing required.
+* **State:** Fixed in migration [019_protect_user_fields_trigger.sql](file:///F:/TradieHubAU/supabase/migrations/019_protect_user_fields_trigger.sql) (pending live Supabase verification).
 
 ### C-02 — Proof/dispute RLS has an outer-column shadowing error
 
