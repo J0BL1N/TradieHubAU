@@ -22,7 +22,7 @@
     --secondary-foreground: 220.9 39.3% 11%;
 
     --muted: 213 33% 96%;
-    --muted-foreground: 215 16.3% 46.9%;
+    --muted-foreground: 215 16.3% 42%;
 
     --accent: 24.6 95% 96%; /* Softer orange tint */
     --accent-foreground: 24.6 95% 53.1%;
@@ -54,7 +54,7 @@
     --secondary-foreground: 210 20% 98%;
 
     --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
+    --muted-foreground: 217.9 10.6% 70%;
 
     --accent: 215 27.9% 16.9%;
     --accent-foreground: 210 20% 98%;
@@ -76,6 +76,40 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+/*
+ * Readability baseline
+ *
+ * Preserve the existing type hierarchy and component dimensions while making
+ * compact labels, metadata, badges, tables, and helper copy readable on desktop.
+ */
+@layer utilities {
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-\[11px\] {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .text-xs {
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+
+  .text-sm {
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+  }
+
+  .text-muted-foreground\/50,
+  .text-muted-foreground\/60,
+  .text-muted-foreground\/70,
+  .text-muted-foreground\/75 {
+    color: hsl(var(--muted-foreground) / 0.9);
   }
 }
 
