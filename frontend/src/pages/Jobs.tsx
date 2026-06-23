@@ -2119,7 +2119,7 @@ export default function Jobs() {
 
       {/* Confirmation Modal */}
       {modalConfirmConfig && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
           <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-xl p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground">{modalConfirmConfig.title}</h3>
             <p className="text-sm text-muted-foreground font-semibold leading-relaxed">{modalConfirmConfig.message}</p>
@@ -2147,7 +2147,7 @@ export default function Jobs() {
 
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-5 right-5 z-[80] animate-in slide-in-from-bottom-5 duration-300">
           <div className={`p-4 rounded-xl border shadow-lg flex items-center gap-2.5 max-w-md font-bold text-xs ${
             toastMessage.type === 'success'
               ? 'bg-green-500/10 border-green-500/20 text-green-600'
@@ -2184,17 +2184,19 @@ function ReviewCountdown({ deadline }: { deadline: string }) {
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
 
       const dStr = days > 0 ? `${days}d ` : '';
-      const hStr = hours > 0 ? `${hours}h ` : '0h ';
-      const mStr = `${minutes}m`;
+      const hStr = `${hours}h `;
+      const mStr = `${String(minutes).padStart(2, '0')}m `;
+      const sStr = `${String(seconds).padStart(2, '0')}s`;
 
-      setTimeLeft(`Review window ends in: ${dStr}${hStr}${mStr}`);
+      setTimeLeft(`Review window ends in: ${dStr}${hStr}${mStr}${sStr}`);
       setIsExpired(false);
     };
 
     calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 60000); // update every minute
+    const interval = setInterval(calculateTimeLeft, 1000); // update every second
 
     return () => clearInterval(interval);
   }, [deadline]);
@@ -2203,12 +2205,12 @@ function ReviewCountdown({ deadline }: { deadline: string }) {
     <div className={`p-3.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
       isExpired 
         ? 'bg-red-500/10 border-red-500/20 text-red-500' 
-        : 'bg-amber-500/10 border-amber-500/20 text-amber-900'
+        : 'bg-blue-50/50 border-blue-200 text-blue-950'
     }`}>
-      <Clock className="h-4.5 w-4.5 shrink-0" />
+      <Clock className={`h-4.5 w-4.5 shrink-0 ${isExpired ? 'text-red-500' : 'text-blue-500'}`} />
       <div className="space-y-0.5">
-        <span>{timeLeft}</span>
-        {!isExpired && <p className="text-[10px] text-foreground/60 font-medium">Approve or dispute before the timer ends.</p>}
+        <span className={isExpired ? 'text-red-600' : 'text-slate-900 font-bold'}>{timeLeft}</span>
+        {!isExpired && <p className="text-[10px] text-blue-800/80 font-medium">Approve or dispute before the timer ends.</p>}
       </div>
     </div>
   );
@@ -2447,6 +2449,7 @@ function ReviewCompletionModal({
   showToast,
   setModalConfirmConfig
 }: ReviewCompletionModalProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [jobPayment, setJobPayment] = useState<any>(null);
@@ -2454,22 +2457,64 @@ function ReviewCompletionModal({
   const [proofImageUrls, setProofImageUrls] = useState<string[]>([]);
   const [showDisputeBlock, setShowDisputeBlock] = useState(false);
   const [disputeReason, setDisputeReason] = useState('');
+  const [disputeFiles, setDisputeFiles] = useState<File[]>([]);
+  const [disputePreviews, setDisputePreviews] = useState<string[]>([]);
+  const [disputeUploading, setDisputeUploading] = useState(false);
+  const [disputeError, setDisputeError] = useState<string | null>(null);
 
   // Local helper to format AUD cents
   const formatCentsToAud = (cents: number) => {
     return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
   };
 
-  // Escape key listener to close modal
+  // Handle selected image files for disputes
+  const handleDisputeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDisputeError(null);
+    const files = Array.from(e.target.files || []);
+    const validFiles: File[] = [];
+    const newPreviews: string[] = [];
+
+    for (const file of files) {
+      if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+        setDisputeError('Only image files (jpeg, jpg, png, webp) are allowed.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setDisputeError('File size must be under 5MB.');
+        return;
+      }
+      validFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    }
+
+    setDisputeFiles(prev => [...prev, ...validFiles]);
+    setDisputePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  // Remove selected image file
+  const removeDisputeFile = (index: number) => {
+    URL.revokeObjectURL(disputePreviews[index]);
+    setDisputeFiles(prev => prev.filter((_, i) => i !== index));
+    setDisputePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      disputePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [disputePreviews]);
+
+  // Escape key listener to close modal (disabled when uploading)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !disputeUploading) {
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, disputeUploading]);
 
   useEffect(() => {
     async function loadData() {
@@ -2513,7 +2558,7 @@ function ReviewCompletionModal({
   if (loading) {
     return (
       <div 
-        onClick={onClose} 
+        onClick={() => { if (!disputeUploading) onClose(); }} 
         className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
       >
         <div 
@@ -2530,7 +2575,7 @@ function ReviewCompletionModal({
   if (error || !jobPayment || jobProofs.length === 0) {
     return (
       <div 
-        onClick={onClose} 
+        onClick={() => { if (!disputeUploading) onClose(); }} 
         className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
       >
         <div 
@@ -2561,7 +2606,7 @@ function ReviewCompletionModal({
 
   return (
     <div 
-      onClick={onClose} 
+      onClick={() => { if (!disputeUploading) onClose(); }} 
       className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
     >
       <div 
@@ -2574,7 +2619,11 @@ function ReviewCompletionModal({
             <h3 className="text-xl font-extrabold text-slate-900">Review Completion Proof</h3>
             <p className="text-sm text-slate-500 font-semibold mt-0.5 line-clamp-1">{job.title}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 shrink-0">
+          <button 
+            onClick={onClose} 
+            disabled={disputeUploading}
+            className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500 shrink-0 disabled:opacity-50"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -2594,6 +2643,7 @@ function ReviewCompletionModal({
             {proofImageUrls.length > 0 && (
               <div className="space-y-2 pt-1">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Attached Proof Photos:</p>
+                {/* TODO: Implement proof image gallery/lightbox viewer for multiple completion/dispute images */}
                 <div className="flex flex-wrap gap-2">
                   {proofImageUrls.map((url, idx) => (
                     <a
@@ -2625,6 +2675,7 @@ function ReviewCompletionModal({
           {/* Action buttons */}
           <div className="grid grid-cols-2 gap-4">
             <button
+              disabled={disputeUploading}
               onClick={() => {
                 setModalConfirmConfig({
                   title: "Approve Completion & Release Funds",
@@ -2640,14 +2691,15 @@ function ReviewCompletionModal({
                   }
                 });
               }}
-              className="bg-green-600 hover:bg-green-700 text-white font-black text-xs py-3 rounded-xl transition-all shadow-md active:scale-95 text-center flex items-center justify-center cursor-pointer"
+              className="bg-green-600 hover:bg-green-700 text-white font-black text-xs py-3 rounded-xl transition-all shadow-md active:scale-95 text-center flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
               Approve Work & Release Payment
             </button>
             
             <button
+              disabled={disputeUploading}
               onClick={() => setShowDisputeBlock(!showDisputeBlock)}
-              className="bg-red-50 hover:bg-red-100/80 text-red-600 border border-red-200 font-black text-xs py-3 rounded-xl transition-all shadow active:scale-95 text-center flex items-center justify-center cursor-pointer"
+              className="bg-red-50 hover:bg-red-100/80 text-red-600 border border-red-200 font-black text-xs py-3 rounded-xl transition-all shadow active:scale-95 text-center flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
               Dispute Work Completion
             </button>
@@ -2663,8 +2715,54 @@ function ReviewCompletionModal({
                 value={disputeReason}
                 onChange={(e) => setDisputeReason(e.target.value)}
                 className="w-full bg-white border border-red-200 rounded-xl px-3 py-2 outline-none text-xs focus:border-red-500 font-medium text-slate-800"
+                disabled={disputeUploading}
               />
+
+              {/* Dispute Image Evidence Upload */}
+              <div className="space-y-2 pt-1 border-t border-red-100">
+                <label className="text-[11px] font-bold text-red-600 uppercase tracking-wider block">
+                  Evidence Photos (Optional)
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold px-3 py-2 rounded-xl hover:border-slate-300 transition-all border text-xs cursor-pointer select-none">
+                    <Upload className="h-3.5 w-3.5" /> Choose Photos
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleDisputeFileChange}
+                      className="hidden"
+                      disabled={disputeUploading}
+                    />
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-semibold">
+                    JPEG, PNG, WEBP (Max 5MB each)
+                  </span>
+                </div>
+                {disputeError && (
+                  <p className="text-[11px] font-bold text-red-500">{disputeError}</p>
+                )}
+                {disputePreviews.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {disputePreviews.map((url, index) => (
+                      <div key={index} className="relative h-16 w-16 border border-slate-200 rounded-xl overflow-hidden group bg-white shadow-sm">
+                        <img src={url} alt="Dispute Preview" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeDisputeFile(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-md hover:bg-red-600 transition-colors"
+                          disabled={disputeUploading}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
+                disabled={disputeUploading}
                 onClick={() => {
                   if (!disputeReason.trim()) {
                     showToast("Please enter a description of the issue.", 'error');
@@ -2674,19 +2772,52 @@ function ReviewCompletionModal({
                     title: "Initiate Dispute Request",
                     message: "Are you sure you want to raise a dispute for this job? The secure payment will remain locked while our administration team reviews the case.",
                     onConfirm: async () => {
-                      const { error: dispErr } = await raiseJobIssue(job.id, disputeReason.trim());
-                      if (dispErr) {
-                        showToast(dispErr.message, 'error');
-                      } else {
+                      if (!user) {
+                        showToast("You must be logged in to raise a dispute.", 'error');
+                        return;
+                      }
+                      setDisputeUploading(true);
+                      setDisputeError(null);
+                      try {
+                        const uploadedPaths: string[] = [];
+                        for (const file of disputeFiles) {
+                          const fileExt = file.name.split('.').pop();
+                          const randomStr = Math.random().toString(36).substring(2, 10);
+                          const filePath = `disputes/${job.id}/${user.id}/${Date.now()}_${randomStr}.${fileExt}`;
+
+                          const { error: uploadErr } = await supabase.storage
+                            .from('completion_proofs')
+                            .upload(filePath, file);
+
+                          if (uploadErr) {
+                            throw new Error(`Failed to upload ${file.name}: ${uploadErr.message}`);
+                          }
+                          uploadedPaths.push(filePath);
+                        }
+
+                        const { error: dispErr } = await raiseJobIssue(job.id, disputeReason.trim(), uploadedPaths);
+                        if (dispErr) {
+                          throw dispErr;
+                        }
                         showToast("Dispute raised! The admin team will review and contact you.", 'success');
                         onSuccess('disputed');
+                      } catch (err: any) {
+                        console.error(err);
+                        showToast(err.message || "Failed to initiate dispute.", 'error');
+                        setDisputeError(err.message || "Failed to initiate dispute.");
+                      } finally {
+                        setDisputeUploading(false);
                       }
                     }
                   });
                 }}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 rounded-xl transition-all shadow active:scale-95 cursor-pointer"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 rounded-xl transition-all shadow active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
-                Initiate Official Dispute
+                {disputeUploading ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting Dispute...</>
+                ) : (
+                  'Initiate Official Dispute'
+                )}
               </button>
             </div>
           )}
@@ -2697,7 +2828,8 @@ function ReviewCompletionModal({
           <button
             type="button"
             onClick={onClose}
-            className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm cursor-pointer"
+            disabled={disputeUploading}
+            className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm cursor-pointer disabled:opacity-50"
           >
             Cancel
           </button>

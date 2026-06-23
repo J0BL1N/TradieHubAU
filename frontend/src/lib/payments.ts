@@ -55,6 +55,7 @@ export interface JobIssue {
   proof_id: string | null;
   raised_by: string;
   description: string;
+  attachments?: string[];
   status: 'open' | 'resolved_payout' | 'resolved_refund' | 'resolved_split';
   created_at: string;
   resolved_at: string | null;
@@ -90,10 +91,11 @@ export async function submitCompletionProof(jobId: string, description: string, 
 /**
  * Customer raises a dispute/issue within the 7-day review window.
  */
-export async function raiseJobIssue(jobId: string, description: string) {
+export async function raiseJobIssue(jobId: string, description: string, attachments: string[] = []) {
   const { data, error } = await supabase.rpc('raise_job_issue', {
     p_job_id: jobId,
-    p_description: description
+    p_description: description,
+    p_attachments: attachments
   });
   return { data, error };
 }
