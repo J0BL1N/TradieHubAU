@@ -25,6 +25,8 @@ Status: **In progress — awaiting manual testing**
 
 Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 
+Known automated evidence: recent production builds passed after the v0.0.14 dispute pages, global readability, Supabase refetch, and focused dispute audit changes. Build success supports implementation confidence but does not replace the manual browser statuses below.
+
 ## Test accounts setup
 
 | ID | Test item | Related account/role | Status | Tester notes | Bug/follow-up task |
@@ -76,7 +78,7 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 | VER-03 | Approve identity verification and confirm the account status updates. | Admin / Customer 1 | Not tested |  |  |
 | VER-04 | Approve the tradie credential and whitelist the tradie. | Admin / Tradie 1 | Not tested |  |  |
 | VER-05 | Reject a verification with notes and confirm the result is shown correctly. | Admin / test account | Not tested |  |  |
-| VER-06 | Confirm whitelisted tradie UUID text is present and readable in the admin directory. | Admin | Not tested |  |  |
+| VER-06 | Confirm whitelisted tradie UUID text is present and readable in the admin directory. | Admin | Pass | Confirmed by user report: Admin UUID display hotfix approved. |  |
 
 ## Protected payment simulation/contact gating
 
@@ -88,6 +90,7 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 | PAY-04 | Confirm contact details unlock only for the job owner and accepted tradie after funding. | Customer 1 / Tradie 1 | Not tested |  |  |
 | PAY-05 | Confirm Customer 2 and Tradie 2 cannot see the funded job's private contact details. | Customer 2 / Tradie 2 | Not tested |  |  |
 | PAY-06 | Confirm the platform fee and contractor payout breakdown use the simulated funded amount correctly. | Customer 1 / Tradie 1 | Not tested |  |  |
+| PAY-07 | Confirm GST is not added to local simulated payment calculations. | Customer / Tradie / Admin | Pass | Confirmed by user report. Real-money tax/accounting verification remains outside this local MVP test. | Deferred real-money verification to v0.2.x Real Payments Foundation. |
 
 ## Completion proof flow
 
@@ -98,6 +101,7 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 | PROOF-03 | Confirm completion notes and signed image previews load for authorised users. | Customer 1 / Tradie 1 | Not tested |  |  |
 | PROOF-04 | Confirm the wrong tradie cannot submit completion proof. | Tradie 2 | Not tested |  |  |
 | PROOF-05 | Confirm unsupported or oversized proof uploads are rejected safely. | Tradie 1 | Not tested |  |  |
+| PROOF-06 | Confirm supported completion proof images upload successfully. | Tradie 1 | Pass | Confirmed by user report. Full accepted-tradie flow and authorised refresh checks remain separate tests. |  |
 
 ## Customer review flow
 
@@ -105,8 +109,9 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 |---|---|---|---|---|---|
 | REVIEW-01 | Open the dedicated Review Completion workflow and inspect proof notes/images. | Customer 1 | Not tested |  |  |
 | REVIEW-02 | Confirm the 72-hour review countdown appears for the customer and accepted tradie. | Customer 1 / Tradie 1 | Not tested |  |  |
-| REVIEW-03 | Approve completed work and confirm simulated payment release/completed job state. | Customer 1 | Not tested |  |  |
+| REVIEW-03 | Approve completed work and confirm simulated payment release/completed job state. | Customer 1 | Pass | Confirmed by user report: Approve Work & Release Payment works in the simulated-payment flow. | Deferred real-money verification to v0.2.x Real Payments Foundation. |
 | REVIEW-04 | Confirm unrelated users cannot approve or review the completion. | Customer 2 / Tradie 2 | Not tested |  |  |
+| REVIEW-05 | Confirm the review countdown updates every second without flashing. | Customer 1 / Tradie 1 | Pass | Confirmed by user report. Role visibility remains covered by REVIEW-02. |  |
 
 ## Dispute flow
 
@@ -117,19 +122,24 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 | DSP-03 | Confirm the job remains disputed and the simulated protected payment remains held for review. | Customer 1 / Tradie 1 | Not tested |  |  |
 | DSP-04 | Confirm unrelated users cannot access private complaint/evidence details. | Customer 2 / Tradie 2 | Not tested |  |  |
 | DSP-05 | If supported locally, resolve separate cases through full contractor release, full customer refund, and manual split; verify resulting completed/cancelled states. | Admin / Customer 1 / Tradie 1 | Not tested |  |  |
+| DSP-06 | Confirm a valid dispute can be submitted without the previous submit blocker. | Customer 1 | Pass | Confirmed by user report: dispute submit blocker fixed. Full dispute lifecycle remains covered by DSP-01–DSP-05. |  |
 
 ## Admin dispute case management
 
 | ID | Test item | Related account/role | Status | Tester notes | Bug/follow-up task |
 |---|---|---|---|---|---|
 | ADM-DSP-01 | Confirm Active Disputes count/summary and Manage Disputes link work on `/admin`. | Admin | Not tested |  |  |
-| ADM-DSP-02 | Confirm `/admin/disputes` separates ongoing and completed/resolved cases correctly. | Admin | Not tested |  |  |
+| ADM-DSP-02 | Confirm `/admin/disputes` separates ongoing and completed/resolved cases correctly. | Admin | Not tested | Confirmed by Codex implementation/build report; route and status selection were audited/fixed but still need manual browser verification. |  |
 | ADM-DSP-03 | Confirm each list entry shows job title/ref, customer, contractor, disputed date, amount, status, and correct Open Case link. | Admin | Not tested |  |  |
-| ADM-DSP-04 | Confirm `/admin/disputes/:jobId` shows the complete case file, complaint, proof, evidence, payment details, and current internal note. | Admin | Not tested |  |  |
-| ADM-DSP-05 | Save Request More Evidence and confirm only the internal note changes; the case stays open and no notification is claimed. | Admin | Not tested |  |  |
-| ADM-DSP-06 | Save Escalate / Keep Under Review and confirm the case remains open. | Admin | Not tested |  |  |
-| ADM-DSP-07 | Confirm resolved cases show their resolution status and cannot reopen the resolution console. | Admin | Not tested |  |  |
+| ADM-DSP-04 | Confirm `/admin/disputes/:jobId` shows the complete case file, complaint, proof, evidence, payment details, and current internal note. | Admin | Not tested | Confirmed by Codex implementation/build report; direct route is wired but the complete live case and note persistence still need manual browser verification. |  |
+| ADM-DSP-05 | Save Request More Evidence and confirm only the internal note changes; the case stays open and no notification is claimed. | Admin | Not tested | Confirmed by Codex implementation/audit report; still needs manual save-and-refresh verification. |  |
+| ADM-DSP-06 | Save Escalate / Keep Under Review and confirm the case remains open. | Admin | Not tested | Confirmed by Codex implementation/audit report; still needs manual save-and-refresh verification. |  |
+| ADM-DSP-07 | Confirm resolved cases show their resolution status and cannot reopen the resolution console. | Admin | Not tested | Confirmed by Codex implementation/audit report; still needs manual browser and post-refresh verification. |  |
 | ADM-DSP-08 | Open a missing/invalid case URL and confirm the not-found state is safe. | Admin | Not tested |  |  |
+| ADM-DSP-09 | Confirm admin notes are required before a dispute resolution action can be confirmed. | Admin | Pass | Confirmed by screenshot. |  |
+| ADM-DSP-10 | Confirm the Contractor label and contractor details display in the dispute case file. | Admin | Pass | Confirmed by screenshot. |  |
+| ADM-DSP-11 | Confirm the payment breakdown displays in the dispute case file. | Admin | Pass | Confirmed by screenshot. Real-money settlement verification remains deferred. | Deferred real-money verification to v0.2.x Real Payments Foundation. |
+| ADM-DSP-12 | Confirm completion proof and customer evidence sections exist in the dispute case file. | Admin | Pass | Confirmed by screenshot. Signed image refresh/authorisation remains a separate manual test. |  |
 
 ## Guest browsing/gating
 
@@ -162,15 +172,16 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 
 | ID | Test item | Related account/role | Status | Tester notes | Bug/follow-up task |
 |---|---|---|---|---|---|
-| REG-01 | Confirm My Jobs tab/status filtering and Open Jobs sorting/filtering still work. | Customer 1 / Tradie 1 | Not tested |  |  |
-| REG-02 | Confirm Job Details overlay starts below the visible header, closes outside/Escape, and restores body scrolling. | Customer 1 / Tradie 1 | Not tested |  |  |
+| REG-01 | Confirm My Jobs tab/status filtering and Open Jobs sorting/filtering still work. | Customer 1 / Tradie 1 | Pass | Confirmed by user approval of v0.0.11 Jobs UX final polish. |  |
+| REG-02 | Confirm Job Details overlay starts below the visible header, closes outside/Escape, and restores body scrolling. | Customer 1 / Tradie 1 | Pass | Confirmed by user report: Job modal overlay behavior hotfix approved. |  |
 | REG-03 | Confirm admin toast/confirmation UI replaces native browser alert/confirm dialogs. | Admin | Not tested |  |  |
 | REG-04 | Confirm the Admin dashboard four stats tiles and verification/whitelist queues still load after returning to the tab. | Admin | Not tested |  |  |
-| REG-05 | Confirm the dispute resolution console has five actions, dollar-based manual split fields, and a correct preview. | Admin | Not tested |  |  |
+| REG-05 | Confirm the dispute slider is absent and the resolution console shows five actions, dollar-based manual split fields, and a resolution preview. | Admin | Pass | Confirmed by screenshot. |  |
 | REG-06 | Confirm customer/contractor identity, contact, UUID, metadata, badge, and helper text remain readable without obvious clipping. | All roles | Not tested |  |  |
 | REG-07 | Confirm same-user session recovery does not blank the app, sign-out clears access, and account switching changes permissions. | Customer 1 / Tradie 1 / Admin | Not tested |  |  |
 | REG-08 | Confirm Jobs loads once normally on first navigation and manual refresh still works. | Guest / Customer / Tradie | Not tested |  |  |
 | REG-09 | Confirm completed jobs appear in completed/past areas and cancelled jobs display correctly where supported. | Customer 1 / Tradie 1 | Not tested |  |  |
+| REG-10 | Confirm the global readability polish improves small text, labels, UUIDs, metadata, badges, and helper copy at the reviewed desktop layout. | All roles | Pass | Confirmed by screenshot after the `index.css` readability polish. Mobile clipping remains Not tested under MOB-04. |  |
 
 ## Test run outcome
 
@@ -180,4 +191,3 @@ Allowed statuses: `Not tested` / `Pass` / `Fail` / `Blocked`
 | Blocking bugs |  |
 | Follow-up tasks created |  |
 | User approval decision | Awaiting manual testing — not approved |
-
