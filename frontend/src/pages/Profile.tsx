@@ -4,6 +4,7 @@ import { useAuth } from '../components/AuthProvider';
 import { supabase } from '../lib/supabase';
 import {
   getUserProfile,
+  getPublicUserProfile,
   updateUserProfile,
   submitVerification
 } from '../lib/users';
@@ -109,7 +110,9 @@ export default function Profile() {
     if (!targetId) return;
     setProfileLoading(true);
     setError(null);
-    const { data, error: profileErr } = await getUserProfile(targetId);
+    const { data, error: profileErr } = isSelf
+      ? await getUserProfile(targetId)
+      : await getPublicUserProfile(targetId);
     if (profileErr) {
       setError(profileErr.message || 'Failed to load profile.');
     } else if (data) {
@@ -127,7 +130,7 @@ export default function Profile() {
       setLicenseNumber(data.license_number || '');
     }
     setProfileLoading(false);
-  }, [targetId]);
+  }, [targetId, isSelf]);
 
   // Load bookmark state for this profile
   const checkSavedState = useCallback(async () => {
@@ -543,7 +546,7 @@ export default function Profile() {
               <span className="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-secondary text-secondary-foreground">
                 {roleLabel} Role
               </span>
-              {targetProfile.is_admin && (
+              {isSelf && targetProfile.is_admin && (
                 <span className="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
                   Staff Admin
                 </span>
@@ -558,14 +561,18 @@ export default function Profile() {
           </div>
 
           <div className="border-t w-full pt-4 space-y-3 text-left text-sm text-muted-foreground font-semibold">
-            <div className="flex items-center gap-2.5">
-              <Mail className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
-              <span className="truncate">{targetProfile.email}</span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <Phone className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
-              <span>{targetProfile.phone || 'No phone added'}</span>
-            </div>
+            {isSelf && (
+              <>
+                <div className="flex items-center gap-2.5">
+                  <Mail className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
+                  <span className="truncate">{targetProfile.email}</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Phone className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
+                  <span>{targetProfile.phone || 'No phone added'}</span>
+                </div>
+              </>
+            )}
             <div className="flex items-center gap-2.5">
               <MapPin className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
               <span>{displayLocation}</span>

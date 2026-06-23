@@ -1,5 +1,23 @@
 import { supabase } from './supabase';
 
+const PUBLIC_PROFILE_SELECT = [
+  'id',
+  'role',
+  'display_name',
+  'avatar_url',
+  'suburb',
+  'state',
+  'trades',
+  'abn',
+  'license_number',
+  'verified',
+  'identity_verified',
+  'tradie_verified',
+  'show_location',
+  'created_at',
+  'updated_at',
+].join(', ');
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -64,7 +82,7 @@ export async function fetchTradies(filters: SearchTradiesFilters = {}) {
   try {
     let query = supabase
       .from('users')
-      .select('*')
+      .select(PUBLIC_PROFILE_SELECT)
       .in('role', ['tradie', 'dual'])
       .order('created_at', { ascending: false });
 
@@ -87,7 +105,7 @@ export async function fetchTradies(filters: SearchTradiesFilters = {}) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return { data: (data as UserProfile[]) || [], error: null };
+    return { data: (data as unknown as UserProfile[]) || [], error: null };
   } catch (error: any) {
     console.error('❌ fetchTradies error:', error.message);
     return { data: [], error };
@@ -101,7 +119,7 @@ export async function fetchCustomers(filters: SearchCustomersFilters = {}) {
   try {
     let query = supabase
       .from('users')
-      .select('*')
+      .select(PUBLIC_PROFILE_SELECT)
       .in('role', ['customer', 'dual'])
       .order('created_at', { ascending: false });
 
@@ -116,7 +134,7 @@ export async function fetchCustomers(filters: SearchCustomersFilters = {}) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return { data: (data as UserProfile[]) || [], error: null };
+    return { data: (data as unknown as UserProfile[]) || [], error: null };
   } catch (error: any) {
     console.error('❌ fetchCustomers error:', error.message);
     return { data: [], error };
@@ -138,6 +156,26 @@ export async function getUserProfile(userId: string) {
     return { data: data as UserProfile | null, error: null };
   } catch (error: any) {
     console.error('❌ getUserProfile error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Fetch only fields intended for another user's public profile.
+ * Database RLS must remain the authoritative privacy boundary.
+ */
+export async function getPublicUserProfile(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select(PUBLIC_PROFILE_SELECT)
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return { data: data as unknown as UserProfile | null, error: null };
+  } catch (error: any) {
+    console.error('❌ getPublicUserProfile error:', error.message);
     return { data: null, error };
   }
 }

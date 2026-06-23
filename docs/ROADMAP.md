@@ -14,6 +14,7 @@ Approved/completed:
 
 Current focus:
 
+* v0.0.16 Security, RLS, Storage, and Privacy Audit (in progress — remediation and live Supabase verification outstanding)
 * v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow (awaiting manual review)
 * v0.0.13 Admin dashboard polish
 * v0.0.14 Admin Dispute Case Management (implementation complete, awaiting manual review)
@@ -22,7 +23,7 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.16 Security/RLS/storage audit
+* v0.1.0 Controlled Local Beta Prep, after security findings are remediated and manually verified
 
 Later:
 
@@ -284,6 +285,8 @@ Later:
 ---
 
 # v0.0.16 — Security, RLS, Storage, and Privacy Audit
+
+Status: **In progress / unapproved.** Source audit findings are documented in [`docs/SECURITY_AUDIT_v0.0.16.md`](SECURITY_AUDIT_v0.0.16.md). Critical/high remediation and live Supabase verification remain outstanding.
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
