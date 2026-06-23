@@ -9,6 +9,8 @@ import BrowseCustomers from './pages/BrowseCustomers';
 import Messages from './pages/Messages';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import AdminDisputes from './pages/AdminDisputes';
+import AdminDisputeCase from './pages/AdminDisputeCase';
 import Auth from './pages/Auth';
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="profile/:id" element={<Profile />} />
             <Route path="admin" element={<Admin />} />
+            <Route path="admin/disputes" element={<AdminDisputes />} />
+            <Route path="admin/disputes/:jobId" element={<AdminDisputeCase />} />
             <Route path="login" element={<Auth />} />
           </Route>
         </Routes>

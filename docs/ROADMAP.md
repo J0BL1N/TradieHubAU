@@ -16,12 +16,13 @@ Current focus:
 
 * v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow (awaiting manual review)
 * v0.0.13 Admin dashboard polish
+* v0.0.14 Admin Dispute Case Management (implementation complete, awaiting manual review)
 
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.14 Full manual customer/tradie/admin test run
-* v0.0.15 Security/RLS/storage audit
+* v0.0.15 Full manual customer/tradie/admin test run
+* v0.0.16 Security/RLS/storage audit
 
 Later:
 
@@ -211,7 +212,36 @@ Later:
 ---
 
 
-# v0.0.14 — Full Manual Customer/Tradie/Admin Test Run
+# v0.0.14 — Admin Dispute Case Management
+
+## Implementation Complete — Awaiting Manual Review
+
+* [ ] v0.0.14 — Admin Dispute Case Management
+
+  * Status: implementation complete, awaiting manual review; do not mark approved yet
+
+### v0.0.14 Completed Implementation Items
+
+* [x] Added `Manage Disputes` link from the Admin dashboard Active Job Disputes area
+* [x] Added `/admin/disputes` with ongoing and completed/resolved sections
+* [x] Added `/admin/disputes/:jobId` full dispute case page
+* [x] Reused the full case-file and resolution console UI on the dedicated case page
+* [x] Added visible internal case notes/history using the existing `job_issues.admin_notes` field
+* [x] Clarified that soft actions save an internal note only and do not notify either party
+* [x] Kept completed dispute case files read-only
+* [x] No schema migration required
+
+### v0.0.14 Manual Review Items
+
+* [ ] Confirm ongoing and completed cases appear in the correct list sections
+* [ ] Confirm each list entry shows job, parties, disputed date, amount, status, and Open Case action
+* [ ] Confirm direct case URLs enforce the admin guard
+* [ ] Confirm existing and newly saved admin notes appear on the case page
+* [ ] Confirm completed cases cannot reopen the resolution console
+
+---
+
+# v0.0.15 — Full Manual Customer/Tradie/Admin Test Run
 
 * [ ] Create customer test account
 * [ ] Create second customer test account
@@ -244,7 +274,7 @@ Later:
 
 ---
 
-# v0.0.15 — Security, RLS, Storage, and Privacy Audit
+# v0.0.16 — Security, RLS, Storage, and Privacy Audit
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
@@ -288,6 +318,16 @@ Later:
 * [ ] Prepare deployment checklist
 * [ ] Prepare manual QA checklist
 * [ ] Prepare rollback checklist
+
+---
+
+# v0.1.x — Admin Dispute Operations
+
+* [ ] Add an append-only dispute action/audit log with actor and action timestamps
+* [ ] Preserve every admin note instead of overwriting the single `job_issues.admin_notes` value
+* [ ] Add explicit case action types for evidence requests and internal escalation
+* [ ] Add customer/contractor dispute notifications only after a real notification delivery system exists
+* [ ] Show notification delivery state and failures in the admin case history
 
 ---
 

@@ -63,6 +63,20 @@ export interface JobIssue {
   admin_notes: string | null;
 }
 
+const DISPUTE_CASE_SELECT = `
+  *,
+  customer:users!customer_id(id, display_name, email, phone, identity_verified, tradie_verified),
+  payments!inner(
+    id,
+    amount,
+    platform_fee,
+    status,
+    payee:users!payee_id(id, display_name, email, phone, abn, license_number, tradie_verified, identity_verified)
+  ),
+  job_issues!job_issues_job_id_fkey(id, description, status, attachments, created_at, resolved_at, resolved_by, admin_notes),
+  job_completion_proofs!job_completion_proofs_job_id_fkey(id, description, attachments, created_at)
+`;
+
 // ─── RPC Operations ──────────────────────────────────────────────────────────
 
 /**
@@ -246,22 +260,46 @@ export async function getLedgerForPayment(paymentId: string) {
 export async function getDisputedJobs() {
   const { data, error } = await supabase
     .from('jobs')
-    .select(`
-      *,
-      customer:users!customer_id(id, display_name, email, phone, identity_verified, tradie_verified),
-      payments!inner(
-        id,
-        amount,
-        platform_fee,
-        status,
-        payee:users!payee_id(id, display_name, email, phone, abn, license_number, tradie_verified, identity_verified)
-      ),
-      job_issues!job_issues_job_id_fkey(id, description, status, attachments, created_at, admin_notes),
-      job_completion_proofs!job_completion_proofs_job_id_fkey(id, description, attachments, created_at)
-    `)
+    .select(DISPUTE_CASE_SELECT)
     .eq('status', 'disputed')
     .order('updated_at', { ascending: false });
 
   return { data: data || [], error };
+}
+
+/** Fetches every job that has a dispute issue, including resolved cases. */
+export async function getAllDisputeJobs() {
+  const { data: issues, error: issuesError } = await supabase
+    .from('job_issues')
+    .select('job_id')
+    .order('created_at', { ascending: false });
+
+  if (issuesError) return { data: [], error: issuesError };
+
+  const jobIds = [...new Set((issues || []).map(issue => issue.job_id))];
+  if (jobIds.length === 0) return { data: [], error: null };
+
+  const { data, error } = await supabase
+    .from('jobs')
+    .select(DISPUTE_CASE_SELECT)
+    .in('id', jobIds)
+    .order('updated_at', { ascending: false });
+
+  return { data: data || [], error };
+}
+
+/** Fetches one dispute case by job id. */
+export async function getDisputeJob(jobId: string) {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select(DISPUTE_CASE_SELECT)
+    .eq('id', jobId)
+    .maybeSingle();
+
+  if (!error && data && (!data.job_issues || data.job_issues.length === 0)) {
+    return { data: null, error: null };
+  }
+
+  return { data, error };
 }
 

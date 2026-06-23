@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import {
   getPendingVerifications, approveIdentityVerification, approveTradieProfile,
@@ -21,7 +22,7 @@ interface ToastMessage {
   type: 'success' | 'error';
 }
 
-interface ConfirmConfig {
+export interface ConfirmConfig {
   title: string;
   message: string;
   onConfirm: () => void;
@@ -116,7 +117,7 @@ interface DisputeCaseFileProps {
   showConfirm: (config: ConfirmConfig) => void;
 }
 
-function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: DisputeCaseFileProps) {
+export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: DisputeCaseFileProps) {
   const payment = Array.isArray(dispute.payments) ? dispute.payments[0] : dispute.payments;
   const issue = dispute.job_issues?.[0];
   const proof = dispute.job_completion_proofs?.[0];
@@ -214,10 +215,13 @@ function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: Disput
     }
 
     const actionLabel = actionMeta?.label || selectedAction;
+    const isSoftAction = selectedAction === 'request_evidence' || selectedAction === 'escalate';
     showConfirm({
       title: 'Confirm Dispute Resolution',
-      message: `You are about to apply: "${actionLabel}". This will update the job status and payment records. This action cannot be undone.`,
-      confirmLabel: 'Confirm Resolution',
+      message: isSoftAction
+        ? `You are about to apply: "${actionLabel}". This saves an internal admin case note only. The dispute remains open and no party notification is sent.`
+        : `You are about to apply: "${actionLabel}". This will update the job status and payment records. This action cannot be undone.`,
+      confirmLabel: isSoftAction ? 'Save Internal Note' : 'Confirm Resolution',
       isDanger: selectedAction === 'refund_customer' || selectedAction === 'release_contractor' || selectedAction === 'manual_split',
       onConfirm: async () => {
         setSubmitting(true);
@@ -241,14 +245,15 @@ function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: Disput
             if (error) throw error;
             showToast(
               selectedAction === 'request_evidence'
-                ? 'Dispute kept under review. Admin notes saved. Contact parties for more evidence.'
-                : 'Dispute escalated. Admin notes saved.',
+                ? 'Internal admin case note saved. The dispute remains open; no notification was sent.'
+                : 'Internal escalation note saved. The dispute remains open; no notification was sent.',
               'success'
             );
             setShowResolution(false);
             setSelectedAction(null);
             setAdminNotes('');
             setSubmitting(false);
+            onResolved();
             return;
           }
           showToast('Dispute resolved. Payment records updated.', 'success');
@@ -448,7 +453,37 @@ function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: Disput
           )}
 
           {/* ── Resolution Console ─────────────────────────────────────────── */}
-          {!showResolution ? (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+              <FileText className="h-3.5 w-3.5" /> Case Notes / History
+            </div>
+            <div className="p-4 bg-muted/10 border border-border rounded-xl">
+              {issue?.admin_notes ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-wider">Latest internal admin case note</span>
+                    {issue.resolved_at && (
+                      <span className="text-[10px] font-semibold text-muted-foreground">
+                        Resolved {new Date(issue.resolved_at).toLocaleString('en-AU')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground font-medium whitespace-pre-wrap">{issue.admin_notes}</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold">
+                    Internal record only. The current schema stores one latest note and does not record a full action timeline or party notifications.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground font-semibold">No internal admin case note has been saved.</p>
+              )}
+            </div>
+          </div>
+
+          {dispute.status !== 'disputed' ? (
+            <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl text-xs font-semibold text-green-700">
+              This dispute is completed. Resolution actions are read-only.
+            </div>
+          ) : !showResolution ? (
             <button
               onClick={() => setShowResolution(true)}
               className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-primary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition shadow active:scale-95 flex items-center gap-2"
@@ -1244,11 +1279,19 @@ export default function Admin() {
                   Review disputed jobs and resolve secure payments between parties using the case-file console.
                 </p>
               </div>
-              {disputedJobs.length > 0 && (
-                <span className="text-xs font-black bg-red-500/10 text-red-600 border border-red-500/20 px-3 py-1 rounded-full">
-                  {disputedJobs.length} active
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {disputedJobs.length > 0 && (
+                  <span className="text-xs font-black bg-red-500/10 text-red-600 border border-red-500/20 px-3 py-1 rounded-full">
+                    {disputedJobs.length} active
+                  </span>
+                )}
+                <Link
+                  to="/admin/disputes"
+                  className="bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2 rounded-xl text-xs transition shadow-sm"
+                >
+                  Manage Disputes
+                </Link>
+              </div>
             </div>
 
             {disputedJobs.length === 0 ? (
@@ -1262,16 +1305,8 @@ export default function Admin() {
                 </p>
               </div>
             ) : (
-              <div>
-                {disputedJobs.map((dispute) => (
-                  <DisputeCaseFile
-                    key={dispute.id}
-                    dispute={dispute}
-                    onResolved={loadData}
-                    showToast={showToast}
-                    showConfirm={showConfirm}
-                  />
-                ))}
+              <div className="p-6 text-sm text-muted-foreground font-semibold">
+                {disputedJobs.length} active {disputedJobs.length === 1 ? 'case is' : 'cases are'} ready for review in the dispute management area.
               </div>
             )}
           </div>
