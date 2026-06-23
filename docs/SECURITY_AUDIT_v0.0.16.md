@@ -55,7 +55,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** An authenticated payer can insert a payment while choosing job, payee, amount, status, and provider identifiers.
 * **Risk:** A client can forge payment/contract relationships, reserve a job's unique payment row to block legitimate acceptance, or create records that grant downstream access.
 * **Recommended fix:** Drop direct client INSERT and create payments only inside a validated quote-acceptance RPC or verified provider webhook.
-* **State:** Deferred; migration required.
+* **State:** Fixed in migration [022_block_direct_client_payment_inserts.sql](file:///F:/TradieHubAU/supabase/migrations/022_block_direct_client_payment_inserts.sql) (pending live Supabase verification).
 
 ### C-05 — Release payout Edge Function lacks actor authorization
 

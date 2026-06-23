@@ -293,6 +293,7 @@ Status: **In progress / unapproved.** Source audit findings are documented in [`
 * [x] C-01: Redefined `protect_user_fields()` and attached it as `BEFORE INSERT OR UPDATE` trigger on `public.users` to block unauthorized client edits of privileged fields in migration `019_protect_user_fields_trigger.sql` (pending live Supabase verification).
 * [x] C-02: Replaced SELECT policies on `public.job_completion_proofs` and `public.job_issues` to use explicit aliases and correct outer column references in migration `020_fix_proof_dispute_rls_shadowing.sql` (pending live Supabase verification).
 * [x] C-03: Re-defined and secured `public.simulate_payment_funding` RPC to validate authentication, check customer/admin permissions, enforce expected state transitions, implement idempotent safety, and restrict execute permissions to authenticated users in migration `021_secure_simulate_payment_funding_rpc.sql` (pending live Supabase verification).
+* [x] C-04: Dropped direct client INSERT policy on `public.payments` table in migration `022_block_direct_client_payment_inserts.sql` to prevent client-side payment forgery, forcing payment creation exclusively through trusted database RPC functions (pending live Supabase verification).
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
