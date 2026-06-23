@@ -17,11 +17,11 @@ Current focus:
 * v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow (awaiting manual review)
 * v0.0.13 Admin dashboard polish
 * v0.0.14 Admin Dispute Case Management (implementation complete, awaiting manual review)
+* v0.0.15 Full manual customer/tradie/admin test run (in progress — awaiting manual testing)
 
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.15 Full manual customer/tradie/admin test run
 * v0.0.16 Security/RLS/storage audit
 
 Later:
@@ -244,6 +244,13 @@ Later:
 ---
 
 # v0.0.15 — Full Manual Customer/Tradie/Admin Test Run
+
+## In Progress — Awaiting Manual Testing
+
+* [ ] v0.0.15 — Full manual customer/tradie/admin test run
+
+  * Status: checklist prepared; manual browser testing has not been completed or approved
+  * QA checklist: [`docs/QA_v0.0.15_MANUAL_TEST_RUN.md`](QA_v0.0.15_MANUAL_TEST_RUN.md)
 
 * [ ] Create customer test account
 * [ ] Create second customer test account
