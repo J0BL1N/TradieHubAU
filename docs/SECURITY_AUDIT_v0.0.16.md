@@ -39,7 +39,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Both contain `SELECT payee_id FROM public.payments WHERE job_id = job_id`. Both unqualified names resolve to the payment row, making the condition effectively true for every payment.
 * **Risk:** A payee on any payment may be able to read proof and dispute rows for unrelated jobs, including complaint text, evidence paths, resolution data, and admin notes.
 * **Recommended fix:** Replace the policies using aliases and explicit correlation to the outer proof/issue job ID. Add wrong-tradie SQL tests.
-* **State:** Deferred; migration required. Narrower storage policies do not prevent database row disclosure.
+* **State:** Fixed in migration [020_fix_proof_dispute_rls_shadowing.sql](file:///F:/TradieHubAU/supabase/migrations/020_fix_proof_dispute_rls_shadowing.sql) (pending live Supabase verification).
 
 ### C-03 — Simulated funding RPC has no caller authorization or idempotency guard
 
