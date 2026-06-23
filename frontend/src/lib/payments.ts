@@ -73,7 +73,7 @@ const DISPUTE_CASE_SELECT = `
     status,
     payee:users!payee_id(id, display_name, email, phone, abn, license_number, tradie_verified, identity_verified)
   ),
-  job_issues!job_issues_job_id_fkey(id, description, status, attachments, created_at, resolved_at, resolved_by, admin_notes),
+  job_issues!job_issues_job_id_fkey(id, proof_id, description, status, attachments, created_at, resolved_at, resolved_by, admin_notes),
   job_completion_proofs!job_completion_proofs_job_id_fkey(id, description, attachments, created_at)
 `;
 

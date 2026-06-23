@@ -119,9 +119,17 @@ interface DisputeCaseFileProps {
 
 export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: DisputeCaseFileProps) {
   const payment = Array.isArray(dispute.payments) ? dispute.payments[0] : dispute.payments;
-  const issue = dispute.job_issues?.[0];
-  const proof = dispute.job_completion_proofs?.[0];
+  const issues = Array.isArray(dispute.job_issues) ? dispute.job_issues : [];
+  const newestIssues = [...issues].sort((a: any, b: any) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  const issue = newestIssues.find((candidate: any) => candidate.status === 'open') || newestIssues[0];
+  const proofs = Array.isArray(dispute.job_completion_proofs) ? dispute.job_completion_proofs : [];
+  const proof = proofs.find((candidate: any) => candidate.id === issue?.proof_id)
+    || [...proofs].sort((a: any, b: any) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
   const contractor = payment?.payee;
+  const isOngoing = dispute.status === 'disputed' && issue?.status === 'open';
+  const caseStatus = isOngoing
+    ? 'Disputed'
+    : issue?.status?.replace(/_/g, ' ') || dispute.status?.replace(/_/g, ' ') || 'Resolved';
 
   // Section expand states
   const [expanded, setExpanded] = useState(true);
@@ -237,12 +245,15 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
             if (error) throw error;
           } else if (selectedAction === 'request_evidence' || selectedAction === 'escalate') {
             // Soft action: update the issue admin_notes only — job stays in 'disputed'
-            const { error } = await supabase
+            const { data: updatedIssue, error } = await supabase
               .from('job_issues')
               .update({ admin_notes: adminNotes.trim() })
-              .eq('job_id', dispute.id)
-              .eq('status', 'open');
+              .eq('id', issue.id)
+              .eq('status', 'open')
+              .select('id')
+              .maybeSingle();
             if (error) throw error;
+            if (!updatedIssue) throw new Error('This dispute is no longer open. Refresh the case before adding notes.');
             showToast(
               selectedAction === 'request_evidence'
                 ? 'Internal admin case note saved. The dispute remains open; no notification was sent.'
@@ -276,7 +287,11 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-black text-sm text-foreground leading-tight">{dispute.title}</span>
-            <span className="text-[10px] font-black bg-red-500/10 text-red-600 border border-red-500/15 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">Disputed</span>
+            <span className={`text-[10px] font-black border px-2 py-0.5 rounded uppercase tracking-wider shrink-0 ${
+              isOngoing
+                ? 'bg-red-500/10 text-red-600 border-red-500/15'
+                : 'bg-green-500/10 text-green-700 border-green-500/20'
+            }`}>{caseStatus}</span>
           </div>
           <div className="text-[10px] font-bold text-muted-foreground mt-0.5 flex flex-wrap gap-3">
             <span>Ref: <span className="font-mono text-foreground">{formatJobRef(dispute.id)}</span></span>
@@ -479,7 +494,7 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
             </div>
           </div>
 
-          {dispute.status !== 'disputed' ? (
+          {!isOngoing ? (
             <div className="p-4 bg-green-500/5 border border-green-500/20 rounded-xl text-xs font-semibold text-green-700">
               This dispute is completed. Resolution actions are read-only.
             </div>

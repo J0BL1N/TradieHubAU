@@ -14,7 +14,8 @@ function formatAUD(cents = 0): string {
 
 function getPrimaryIssue(dispute: any) {
   const issues = dispute.job_issues || [];
-  return issues.find((issue: any) => issue.status === 'open') || issues[0];
+  const newestIssues = [...issues].sort((a: any, b: any) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  return newestIssues.find((issue: any) => issue.status === 'open') || newestIssues[0];
 }
 
 function DisputeList({ disputes, emptyText }: { disputes: any[]; emptyText: string }) {
