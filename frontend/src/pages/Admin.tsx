@@ -1,11 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../components/AuthProvider';
-import { getPendingVerifications, approveIdentityVerification, approveTradieProfile, approveDocumentOnly, rejectVerification, suspendTradieProfile, suspendIdentityVerification } from '../lib/users';
+import {
+  getPendingVerifications, approveIdentityVerification, approveTradieProfile,
+  approveDocumentOnly, rejectVerification, suspendTradieProfile, suspendIdentityVerification
+} from '../lib/users';
 import type { VerificationRecord, UserProfile } from '../lib/users';
 import { supabase } from '../lib/supabase';
 import {
   ShieldCheck, UserCheck, ShieldAlert, Award, Loader2, AlertTriangle,
-  Check, FileText, CheckCircle, AlertCircle, X, Image as ImageIcon
+  Check, FileText, CheckCircle, AlertCircle, X, Image as ImageIcon,
+  ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
+  Camera, TrendingUp, DollarSign
 } from 'lucide-react';
 import { getDisputedJobs, resolveDispute } from '../lib/payments';
 
@@ -24,6 +29,19 @@ interface ConfirmConfig {
   isDanger?: boolean;
 }
 
+type ResolutionAction =
+  | 'release_contractor'
+  | 'refund_customer'
+  | 'manual_split'
+  | 'request_evidence'
+  | 'escalate'
+  | null;
+
+interface ManualSplitAmounts {
+  contractorPayout: string;
+  customerRefund: string;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatDocumentType(raw: string): string {
@@ -36,6 +54,588 @@ function formatJobRef(id: string): string {
 
 function formatAUD(cents: number): string {
   return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
+}
+
+function parseDollarInput(val: string): number {
+  const parsed = parseFloat(val.replace(/[^0-9.]/g, ''));
+  return isNaN(parsed) ? 0 : Math.round(parsed * 100);
+}
+
+// ─── Resolution action meta ───────────────────────────────────────────────────
+
+const RESOLUTION_ACTIONS: {
+  id: ResolutionAction;
+  label: string;
+  description: string;
+  color: string;
+  finalStatus: string;
+}[] = [
+  {
+    id: 'release_contractor',
+    label: 'Release full payment to contractor',
+    description: 'Work was completed satisfactorily. Release the full secured payment to the contractor.',
+    color: 'border-green-500/40 bg-green-500/5 text-green-700',
+    finalStatus: 'Completed',
+  },
+  {
+    id: 'refund_customer',
+    label: 'Refund customer in full',
+    description: 'Work was not completed or was unsatisfactory. Refund the full amount to the customer.',
+    color: 'border-blue-500/40 bg-blue-500/5 text-blue-700',
+    finalStatus: 'Cancelled / Refunded',
+  },
+  {
+    id: 'manual_split',
+    label: 'Manual split',
+    description: 'Partial work was completed. Specify exact dollar amounts for contractor and customer.',
+    color: 'border-amber-500/40 bg-amber-500/5 text-amber-700',
+    finalStatus: 'Completed (Split)',
+  },
+  {
+    id: 'request_evidence',
+    label: 'Request more evidence',
+    description: 'More information is needed before a decision can be made. Add notes and keep under review.',
+    color: 'border-purple-500/40 bg-purple-500/5 text-purple-700',
+    finalStatus: 'Disputed (Under Review)',
+  },
+  {
+    id: 'escalate',
+    label: 'Escalate / keep under review',
+    description: 'This dispute requires further internal review. Add notes and escalate for follow-up.',
+    color: 'border-slate-500/40 bg-slate-500/5 text-slate-700',
+    finalStatus: 'Disputed (Escalated)',
+  },
+];
+
+// ─── Sub-component: Dispute Case File ────────────────────────────────────────
+
+interface DisputeCaseFileProps {
+  dispute: any;
+  onResolved: () => void;
+  showToast: (text: string, type?: 'success' | 'error') => void;
+  showConfirm: (config: ConfirmConfig) => void;
+}
+
+function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }: DisputeCaseFileProps) {
+  const payment = Array.isArray(dispute.payments) ? dispute.payments[0] : dispute.payments;
+  const issue = dispute.job_issues?.[0];
+  const proof = dispute.job_completion_proofs?.[0];
+  const contractor = payment?.payee;
+
+  // Section expand states
+  const [expanded, setExpanded] = useState(true);
+  const [showResolution, setShowResolution] = useState(false);
+
+  // Resolution state
+  const [selectedAction, setSelectedAction] = useState<ResolutionAction>(null);
+  const [adminNotes, setAdminNotes] = useState('');
+  const [manualSplit, setManualSplit] = useState<ManualSplitAmounts>({ contractorPayout: '', customerRefund: '' });
+  const [submitting, setSubmitting] = useState(false);
+
+  // Evidence/proof image URLs
+  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
+  const [proofUrls, setProofUrls] = useState<string[]>([]);
+  const [urlsLoading, setUrlsLoading] = useState(false);
+
+  // Load signed URLs for evidence and proof images
+  useEffect(() => {
+    const loadUrls = async () => {
+      setUrlsLoading(true);
+      const fetchSignedUrls = async (paths: string[]) => {
+        const urls: string[] = [];
+        for (const path of paths || []) {
+          try {
+            const { data, error } = await supabase.storage
+              .from('completion_proofs')
+              .createSignedUrl(path, 3600);
+            if (!error && data?.signedUrl) urls.push(data.signedUrl);
+          } catch { /* skip */ }
+        }
+        return urls;
+      };
+
+      const [ev, pr] = await Promise.all([
+        fetchSignedUrls(issue?.attachments || []),
+        fetchSignedUrls(proof?.attachments || []),
+      ]);
+      setEvidenceUrls(ev);
+      setProofUrls(pr);
+      setUrlsLoading(false);
+    };
+    loadUrls();
+  }, [issue, proof]);
+
+  // Compute preview amounts
+  const totalCents = payment?.amount || 0;
+  const platformFeeCents = payment?.platform_fee || 0;
+
+  const getPreview = () => {
+    if (!selectedAction) return null;
+    if (selectedAction === 'release_contractor') {
+      const payout = totalCents - platformFeeCents;
+      return { contractor: payout, customer: 0, platform: platformFeeCents, split: 100 };
+    }
+    if (selectedAction === 'refund_customer') {
+      return { contractor: 0, customer: totalCents, platform: 0, split: 0 };
+    }
+    if (selectedAction === 'manual_split') {
+      const contractorCents = parseDollarInput(manualSplit.contractorPayout);
+      const customerCents = parseDollarInput(manualSplit.customerRefund);
+      const platformCents = Math.max(0, totalCents - contractorCents - customerCents);
+      // Derive split% from contractor payout relative to (total - fee)
+      const netAfterFee = totalCents - platformFeeCents;
+      const split = netAfterFee > 0 ? Math.round((contractorCents / netAfterFee) * 100) : 0;
+      return { contractor: contractorCents, customer: customerCents, platform: platformCents, split: Math.max(0, Math.min(100, split)) };
+    }
+    return null;
+  };
+
+  const preview = getPreview();
+
+  const validateManualSplit = (): string | null => {
+    const c = parseDollarInput(manualSplit.contractorPayout);
+    const r = parseDollarInput(manualSplit.customerRefund);
+    if (c < 0 || r < 0) return 'Amounts cannot be negative.';
+    if (c + r > totalCents) return `Total payout ($${((c + r) / 100).toFixed(2)}) exceeds the payment held (${formatAUD(totalCents)}).`;
+    if (c + r === 0) return 'At least one amount must be greater than $0.';
+    return null;
+  };
+
+  const actionMeta = RESOLUTION_ACTIONS.find(a => a.id === selectedAction);
+
+  const handleConfirmResolution = () => {
+    if (!adminNotes.trim()) {
+      showToast('Please add admin notes/findings before confirming.', 'error');
+      return;
+    }
+    if (selectedAction === 'manual_split') {
+      const err = validateManualSplit();
+      if (err) { showToast(err, 'error'); return; }
+    }
+
+    const actionLabel = actionMeta?.label || selectedAction;
+    showConfirm({
+      title: 'Confirm Dispute Resolution',
+      message: `You are about to apply: "${actionLabel}". This will update the job status and payment records. This action cannot be undone.`,
+      confirmLabel: 'Confirm Resolution',
+      isDanger: selectedAction === 'refund_customer' || selectedAction === 'release_contractor' || selectedAction === 'manual_split',
+      onConfirm: async () => {
+        setSubmitting(true);
+        try {
+          if (selectedAction === 'release_contractor') {
+            const { error } = await resolveDispute(dispute.id, adminNotes.trim(), 100);
+            if (error) throw error;
+          } else if (selectedAction === 'refund_customer') {
+            const { error } = await resolveDispute(dispute.id, adminNotes.trim(), 0);
+            if (error) throw error;
+          } else if (selectedAction === 'manual_split' && preview) {
+            const { error } = await resolveDispute(dispute.id, adminNotes.trim(), preview.split);
+            if (error) throw error;
+          } else if (selectedAction === 'request_evidence' || selectedAction === 'escalate') {
+            // Soft action: update the issue admin_notes only — job stays in 'disputed'
+            const { error } = await supabase
+              .from('job_issues')
+              .update({ admin_notes: adminNotes.trim() })
+              .eq('job_id', dispute.id)
+              .eq('status', 'open');
+            if (error) throw error;
+            showToast(
+              selectedAction === 'request_evidence'
+                ? 'Dispute kept under review. Admin notes saved. Contact parties for more evidence.'
+                : 'Dispute escalated. Admin notes saved.',
+              'success'
+            );
+            setShowResolution(false);
+            setSelectedAction(null);
+            setAdminNotes('');
+            setSubmitting(false);
+            return;
+          }
+          showToast('Dispute resolved. Payment records updated.', 'success');
+          onResolved();
+        } catch (err: any) {
+          showToast(err.message || 'Failed to resolve dispute.', 'error');
+        }
+        setSubmitting(false);
+      }
+    });
+  };
+
+  return (
+    <div className="border-b last:border-b-0">
+      {/* Case Header — always visible */}
+      <div
+        className="p-5 flex items-start justify-between gap-4 cursor-pointer hover:bg-muted/5 transition-colors"
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-black text-sm text-foreground leading-tight">{dispute.title}</span>
+            <span className="text-[10px] font-black bg-red-500/10 text-red-600 border border-red-500/15 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">Disputed</span>
+          </div>
+          <div className="text-[10px] font-bold text-muted-foreground mt-0.5 flex flex-wrap gap-3">
+            <span>Ref: <span className="font-mono text-foreground">{formatJobRef(dispute.id)}</span></span>
+            {issue?.created_at && (
+              <span>Disputed: <span className="text-foreground">{new Date(issue.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span></span>
+            )}
+            {payment && (
+              <span>Payment held: <span className="text-foreground font-black">{formatAUD(payment.amount)}</span></span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {payment && (
+            <span className="hidden sm:block text-sm font-black text-foreground bg-red-500/5 border border-red-500/10 px-3 py-1 rounded-lg">
+              {formatAUD(payment.amount)} held
+            </span>
+          )}
+          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </div>
+      </div>
+
+      {/* Case Body */}
+      {expanded && (
+        <div className="px-5 pb-6 space-y-5">
+
+          {/* ── Row: Customer + Contractor ─────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Customer */}
+            <div className="p-4 bg-muted/10 border border-border rounded-xl space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                <User className="h-3.5 w-3.5" /> Customer
+              </div>
+              <div className="space-y-0.5">
+                <p className="font-bold text-sm text-foreground">{dispute.customer?.display_name || '—'}</p>
+                <p className="text-xs text-muted-foreground font-medium">{dispute.customer?.email || '—'}</p>
+                {dispute.customer?.phone && <p className="text-xs text-muted-foreground font-medium">{dispute.customer.phone}</p>}
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {dispute.customer?.identity_verified && (
+                    <span className="text-[10px] font-black bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded">ID Verified ✓</span>
+                  )}
+                </div>
+                {dispute.customer?.id && (
+                  <p className="text-[10px] font-mono text-muted-foreground/60 pt-1 break-all">{dispute.customer.id}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Contractor */}
+            <div className="p-4 bg-muted/10 border border-border rounded-xl space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                <Briefcase className="h-3.5 w-3.5" /> Contractor
+              </div>
+              {contractor ? (
+                <div className="space-y-0.5">
+                  <p className="font-bold text-sm text-foreground">{contractor.display_name || '—'}</p>
+                  <p className="text-xs text-muted-foreground font-medium">{contractor.email || '—'}</p>
+                  {contractor.phone && <p className="text-xs text-muted-foreground font-medium">{contractor.phone}</p>}
+                  {contractor.abn && <p className="text-xs text-muted-foreground font-medium">ABN: {contractor.abn}</p>}
+                  {contractor.license_number && <p className="text-xs text-muted-foreground font-medium">Licence: {contractor.license_number}</p>}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {contractor.tradie_verified && (
+                      <span className="text-[10px] font-black bg-green-500/10 text-green-600 px-2 py-0.5 rounded">Whitelisted ✓</span>
+                    )}
+                    {contractor.identity_verified && (
+                      <span className="text-[10px] font-black bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded">ID Verified ✓</span>
+                    )}
+                  </div>
+                  {contractor.id && (
+                    <p className="text-[10px] font-mono text-muted-foreground/60 pt-1 break-all">{contractor.id}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground font-semibold italic">No contractor linked to payment record.</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Customer Complaint ─────────────────────────────────────────── */}
+          {issue && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                <MessageSquare className="h-3.5 w-3.5" /> Customer Complaint
+              </div>
+              <div className="p-3.5 bg-red-500/5 border border-red-500/10 rounded-xl">
+                <p className="text-sm text-foreground leading-relaxed font-medium italic">"{issue.description}"</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Completion Proof ───────────────────────────────────────────── */}
+          {proof && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                <Camera className="h-3.5 w-3.5" /> Completion Proof (submitted by contractor)
+              </div>
+              <div className="p-3.5 bg-muted/10 border border-border rounded-xl space-y-2">
+                <p className="text-xs font-semibold text-foreground leading-relaxed">{proof.description || 'No notes provided.'}</p>
+                {proof.created_at && (
+                  <p className="text-[10px] text-muted-foreground font-semibold">
+                    Submitted: {new Date(proof.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+                {urlsLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading proof images...
+                  </div>
+                ) : proofUrls.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {proofUrls.map((url, idx) => (
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer"
+                        className="h-20 w-20 border border-border rounded-xl overflow-hidden hover:opacity-80 transition-opacity shadow-sm bg-muted shrink-0"
+                      >
+                        <img src={url} alt={`Proof ${idx + 1}`} className="h-full w-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                ) : proof.attachments?.length > 0 ? (
+                  <p className="text-xs text-muted-foreground font-semibold italic">Proof images could not be loaded.</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground font-semibold italic">No proof images were uploaded.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Customer Dispute Evidence ──────────────────────────────────── */}
+          {issue?.attachments?.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                <ImageIcon className="h-3.5 w-3.5" /> Customer Evidence Photos ({issue.attachments.length})
+              </div>
+              {urlsLoading ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading evidence images...
+                </div>
+              ) : evidenceUrls.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {evidenceUrls.map((url, idx) => (
+                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer"
+                      className="h-20 w-20 border border-border rounded-xl overflow-hidden hover:opacity-80 transition-opacity shadow-sm bg-muted shrink-0"
+                    >
+                      <img src={url} alt={`Evidence ${idx + 1}`} className="h-full w-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground font-semibold">Evidence images could not be loaded.</p>
+              )}
+            </div>
+          )}
+
+          {/* ── Payment Breakdown ──────────────────────────────────────────── */}
+          {payment && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                <CreditCard className="h-3.5 w-3.5" /> Payment Breakdown
+              </div>
+              <div className="grid grid-cols-3 gap-2 bg-muted/10 border border-border p-4 rounded-xl text-xs font-semibold">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase block font-bold">Total Held</span>
+                  <span className="text-sm font-black text-foreground">{formatAUD(payment.amount)}</span>
+                </div>
+                <div className="space-y-1 border-l pl-3">
+                  <span className="text-[10px] text-muted-foreground uppercase block font-bold">Platform Fee</span>
+                  <span className="text-sm font-black text-primary">{formatAUD(payment.platform_fee)}</span>
+                </div>
+                <div className="space-y-1 border-l pl-3">
+                  <span className="text-[10px] text-muted-foreground uppercase block font-bold">Contractor Net</span>
+                  <span className="text-sm font-black text-green-600">{formatAUD(payment.amount - payment.platform_fee)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Resolution Console ─────────────────────────────────────────── */}
+          {!showResolution ? (
+            <button
+              onClick={() => setShowResolution(true)}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-primary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition shadow active:scale-95 flex items-center gap-2"
+            >
+              <DollarSign className="h-4 w-4" /> Open Resolution Console
+            </button>
+          ) : (
+            <div className="border border-border rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 bg-muted/10 border-b flex items-center justify-between">
+                <h5 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" /> Resolution Console
+                </h5>
+                <button
+                  onClick={() => { setShowResolution(false); setSelectedAction(null); setAdminNotes(''); }}
+                  className="p-1 rounded-lg hover:bg-muted text-muted-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-5">
+
+                {/* Action selection */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">
+                    Resolution Decision
+                  </label>
+                  <div className="space-y-2">
+                    {RESOLUTION_ACTIONS.map(action => (
+                      <button
+                        key={action.id!}
+                        onClick={() => setSelectedAction(action.id)}
+                        className={`w-full text-left p-3.5 rounded-xl border-2 transition-all text-xs font-semibold ${
+                          selectedAction === action.id
+                            ? action.color + ' shadow-sm'
+                            : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-muted/10'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`h-4 w-4 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center ${
+                            selectedAction === action.id ? 'border-current' : 'border-muted-foreground/40'
+                          }`}>
+                            {selectedAction === action.id && <div className="h-2 w-2 rounded-full bg-current" />}
+                          </div>
+                          <div>
+                            <p className="font-bold text-[13px]">{action.label}</p>
+                            <p className="text-[11px] opacity-80 mt-0.5 font-medium">{action.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Manual split dollar fields */}
+                {selectedAction === 'manual_split' && payment && (
+                  <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-3">
+                    <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider">
+                      Manual Split — Payment held: {formatAUD(totalCents)}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">
+                          Contractor Payout ($)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">$</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={manualSplit.contractorPayout}
+                            onChange={e => setManualSplit(s => ({ ...s, contractorPayout: e.target.value }))}
+                            className="w-full pl-7 pr-3 py-2 text-sm font-bold bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-foreground"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase block">
+                          Customer Refund ($)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">$</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={manualSplit.customerRefund}
+                            onChange={e => setManualSplit(s => ({ ...s, customerRefund: e.target.value }))}
+                            className="w-full pl-7 pr-3 py-2 text-sm font-bold bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-foreground"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-semibold">
+                      Platform fee retained = Total held − Contractor payout − Customer refund. Must not exceed {formatAUD(totalCents)}.
+                    </p>
+                  </div>
+                )}
+
+                {/* Resolution Preview */}
+                {selectedAction && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">
+                      Resolution Preview
+                    </label>
+                    <div className="p-4 bg-muted/10 border border-border rounded-xl space-y-3">
+                      {preview ? (
+                        <>
+                          <div className="grid grid-cols-3 gap-3 text-xs">
+                            <div className="space-y-1 text-center">
+                              <p className="text-[10px] text-muted-foreground uppercase font-bold">Customer receives</p>
+                              <p className="text-base font-black text-blue-600">{formatAUD(preview.customer)}</p>
+                            </div>
+                            <div className="space-y-1 text-center border-x border-border">
+                              <p className="text-[10px] text-muted-foreground uppercase font-bold">Contractor receives</p>
+                              <p className="text-base font-black text-green-600">{formatAUD(preview.contractor)}</p>
+                            </div>
+                            <div className="space-y-1 text-center">
+                              <p className="text-[10px] text-muted-foreground uppercase font-bold">Platform keeps</p>
+                              <p className="text-base font-black text-primary">{formatAUD(preview.platform)}</p>
+                            </div>
+                          </div>
+                          <div className="pt-1 border-t border-border">
+                            <p className="text-[10px] text-muted-foreground font-semibold">
+                              Final job status: <span className="font-black text-foreground">{actionMeta?.finalStatus}</span>
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-2">
+                          <p className="text-xs text-muted-foreground font-semibold">
+                            Final job status: <span className="font-black text-foreground">{actionMeta?.finalStatus}</span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/70 font-medium mt-0.5">
+                            No payment transfer will occur — dispute remains open.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Admin Notes */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">
+                    Admin Notes / Findings <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    placeholder="State the reasoning, evidence reviewed, findings, and decision rationale..."
+                    value={adminNotes}
+                    onChange={e => setAdminNotes(e.target.value)}
+                    rows={3}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs font-semibold focus:border-primary/50 resize-none text-foreground"
+                  />
+                  <p className="text-[10px] text-muted-foreground font-semibold">
+                    Required. These notes will be saved to the dispute record.
+                  </p>
+                </div>
+
+                {/* Confirm button */}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={handleConfirmResolution}
+                    disabled={submitting || !selectedAction || !adminNotes.trim()}
+                    className="bg-primary hover:bg-primary/95 text-primary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition shadow active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {submitting ? 'Processing...' : 'Confirm Resolution'}
+                  </button>
+                  <button
+                    onClick={() => { setShowResolution(false); setSelectedAction(null); setAdminNotes(''); }}
+                    className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Admin Page ───────────────────────────────────────────────────────────────
@@ -51,18 +651,10 @@ export default function Admin() {
   const [whitelistedTradiesList, setWhitelistedTradiesList] = useState<UserProfile[]>([]);
   const [disputedJobs, setDisputedJobs] = useState<any[]>([]);
 
-  // Action state
+  // Verification action state
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState('');
-  const [resolvingDisputeId, setResolvingDisputeId] = useState<string | null>(null);
-  const [resolutionText, setResolutionText] = useState('');
-  const [splitPercentage, setSplitPercentage] = useState<number>(50);
-  const [disputeActionLoading, setDisputeActionLoading] = useState(false);
-
-  // Evidence images per dispute (keyed by job id)
-  const [evidenceUrls, setEvidenceUrls] = useState<Record<string, string[]>>({});
-  const [evidenceLoading, setEvidenceLoading] = useState<Record<string, boolean>>({});
 
   // Toast + Confirm modal state
   const [toastMessage, setToastMessage] = useState<ToastMessage | null>(null);
@@ -88,26 +680,22 @@ export default function Admin() {
     setError(null);
 
     try {
-      // 1. Pending verifications
       const { data: list, error: fetchErr } = await getPendingVerifications();
       if (fetchErr) throw fetchErr;
       setVerifications(list);
 
-      // 2. Total tradies count
       const { count: tradiesCount } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
         .in('role', ['tradie', 'dual']);
       if (tradiesCount !== null) setTotalTradies(tradiesCount);
 
-      // 3. Whitelisted tradies count
       const { count: verifiedCount } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('tradie_verified', true);
       if (verifiedCount !== null) setVerifiedTradies(verifiedCount);
 
-      // 4. Whitelisted tradies list
       const { data: whitelistedList } = await supabase
         .from('users')
         .select('*')
@@ -115,7 +703,6 @@ export default function Admin() {
         .order('display_name', { ascending: true });
       if (whitelistedList) setWhitelistedTradiesList(whitelistedList as UserProfile[]);
 
-      // 5. Active disputes
       const { data: disputesList } = await getDisputedJobs();
       if (disputesList) setDisputedJobs(disputesList);
     } catch (err: any) {
@@ -129,43 +716,14 @@ export default function Admin() {
     if (profile) loadData();
   }, [profile, loadData]);
 
-  // ─── Load evidence images for a dispute ───────────────────────────────────
-
-  const loadEvidenceUrls = useCallback(async (jobId: string, attachments: string[]) => {
-    if (!attachments || attachments.length === 0) return;
-    setEvidenceLoading(prev => ({ ...prev, [jobId]: true }));
-    const urls: string[] = [];
-    for (const path of attachments) {
-      try {
-        const { data, error: sErr } = await supabase.storage
-          .from('completion_proofs')
-          .createSignedUrl(path, 3600);
-        if (!sErr && data?.signedUrl) urls.push(data.signedUrl);
-      } catch (e) {
-        console.error('Evidence URL error:', e);
-      }
-    }
-    setEvidenceUrls(prev => ({ ...prev, [jobId]: urls }));
-    setEvidenceLoading(prev => ({ ...prev, [jobId]: false }));
-  }, []);
-
-  useEffect(() => {
-    for (const job of disputedJobs) {
-      const issue = job.job_issues?.[0];
-      if (issue?.attachments?.length > 0 && !evidenceUrls[job.id]) {
-        loadEvidenceUrls(job.id, issue.attachments);
-      }
-    }
-  }, [disputedJobs, loadEvidenceUrls, evidenceUrls]);
-
-  // ─── Action Handlers ───────────────────────────────────────────────────────
+  // ─── Verification handlers ─────────────────────────────────────────────────
 
   const handleApproveIdentity = async (id: string) => {
     setActionLoadingId(id);
     const { error: err } = await approveIdentityVerification(id);
     setActionLoadingId(null);
     if (err) showToast(err.message || 'Failed to approve identity verification.', 'error');
-    else { showToast('Identity verification approved successfully.', 'success'); loadData(); }
+    else { showToast('Identity verification approved.', 'success'); loadData(); }
   };
 
   const handleApproveDocumentOnly = async (id: string) => {
@@ -173,7 +731,7 @@ export default function Admin() {
     const { error: err } = await approveDocumentOnly(id);
     setActionLoadingId(null);
     if (err) showToast(err.message || 'Failed to approve document.', 'error');
-    else { showToast('Document approved successfully.', 'success'); loadData(); }
+    else { showToast('Document approved.', 'success'); loadData(); }
   };
 
   const handleWhitelistTradie = async (userId: string) => {
@@ -185,10 +743,7 @@ export default function Admin() {
   };
 
   const handleRejectSubmit = async (id: string) => {
-    if (!rejectNotes.trim()) {
-      showToast('Please specify rejection notes.', 'error');
-      return;
-    }
+    if (!rejectNotes.trim()) { showToast('Please specify rejection notes.', 'error'); return; }
     setActionLoadingId(id);
     const { error: err } = await rejectVerification(id, rejectNotes.trim());
     setActionLoadingId(null);
@@ -209,7 +764,7 @@ export default function Admin() {
         const { error: err } = await suspendTradieProfile(userId);
         setActionLoadingId(null);
         if (err) showToast(err.message || 'Failed to suspend tradie.', 'error');
-        else { showToast('Tradie profile suspended successfully.', 'success'); loadData(); }
+        else { showToast('Tradie profile suspended.', 'success'); loadData(); }
       }
     });
   };
@@ -230,24 +785,6 @@ export default function Admin() {
     });
   };
 
-  const handleResolveDispute = async (jobId: string) => {
-    if (!resolutionText.trim()) {
-      showToast('Please enter resolution notes.', 'error');
-      return;
-    }
-    setDisputeActionLoading(true);
-    const { error: err } = await resolveDispute(jobId, resolutionText.trim(), splitPercentage);
-    setDisputeActionLoading(false);
-    if (err) showToast(err.message || 'Failed to resolve dispute.', 'error');
-    else {
-      showToast('Dispute resolved successfully. Payments have been processed.', 'success');
-      setResolvingDisputeId(null);
-      setResolutionText('');
-      setSplitPercentage(50);
-      loadData();
-    }
-  };
-
   const handleViewFile = async (documentUrl: string) => {
     try {
       const { data, error: signedUrlErr } = await supabase.storage
@@ -260,7 +797,7 @@ export default function Admin() {
     }
   };
 
-  // ─── Loading / Access Guard ────────────────────────────────────────────────
+  // ─── Auth guards ───────────────────────────────────────────────────────────
 
   if (authLoading) {
     return (
@@ -287,7 +824,7 @@ export default function Admin() {
     );
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Derived data ──────────────────────────────────────────────────────────
 
   const identityVerifications = verifications.filter(v =>
     ['drivers_license', 'passport', 'proof_of_age', 'other_identity'].includes(v.document_type)
@@ -295,6 +832,8 @@ export default function Admin() {
   const tradieApplications = verifications.filter(v =>
     ['contractor_license', 'insurance', 'trade_certificate', 'other_trade_credential'].includes(v.document_type)
   );
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-8">
@@ -452,12 +991,7 @@ export default function Admin() {
                                   className="w-full text-xs p-2 border rounded-lg bg-background outline-none font-medium text-foreground focus:border-primary/50 resize-none"
                                 />
                                 <div className="flex justify-end gap-1.5">
-                                  <button
-                                    onClick={() => setRejectingId(null)}
-                                    className="px-2 py-1 border rounded-md text-[10px] font-bold text-muted-foreground hover:bg-muted"
-                                  >
-                                    Cancel
-                                  </button>
+                                  <button onClick={() => setRejectingId(null)} className="px-2 py-1 border rounded-md text-[10px] font-bold text-muted-foreground hover:bg-muted">Cancel</button>
                                   <button
                                     onClick={() => handleRejectSubmit(item.id)}
                                     disabled={isActionLoading}
@@ -541,9 +1075,7 @@ export default function Admin() {
                             <div className="font-bold text-foreground">{item.user?.display_name || 'Unknown User'}</div>
                             <div className="text-xs text-muted-foreground font-medium">{item.user?.email}</div>
                             {isAlreadyWhitelisted && (
-                              <span className="inline-flex items-center text-[10px] font-bold bg-green-500/15 text-green-600 px-2 py-0.5 rounded mt-1.5">
-                                Whitelisted ✓
-                              </span>
+                              <span className="inline-flex items-center text-[10px] font-bold bg-green-500/15 text-green-600 px-2 py-0.5 rounded mt-1.5">Whitelisted ✓</span>
                             )}
                           </td>
                           <td className="p-4 text-xs font-semibold">
@@ -555,10 +1087,7 @@ export default function Admin() {
                             <div className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded w-fit font-bold mb-1.5">
                               {formatDocumentType(item.document_type)}
                             </div>
-                            <button
-                              onClick={() => handleViewFile(item.document_url)}
-                              className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 focus:outline-none"
-                            >
+                            <button onClick={() => handleViewFile(item.document_url)} className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 focus:outline-none">
                               <FileText className="h-3.5 w-3.5" /> View Upload
                             </button>
                           </td>
@@ -577,12 +1106,7 @@ export default function Admin() {
                                   className="w-full text-xs p-2 border rounded-lg bg-background outline-none font-medium text-foreground focus:border-primary/50 resize-none"
                                 />
                                 <div className="flex justify-end gap-1.5">
-                                  <button
-                                    onClick={() => setRejectingId(null)}
-                                    className="px-2 py-1 border rounded-md text-[10px] font-bold text-muted-foreground hover:bg-muted"
-                                  >
-                                    Cancel
-                                  </button>
+                                  <button onClick={() => setRejectingId(null)} className="px-2 py-1 border rounded-md text-[10px] font-bold text-muted-foreground hover:bg-muted">Cancel</button>
                                   <button
                                     onClick={() => handleRejectSubmit(item.id)}
                                     disabled={isActionLoading}
@@ -672,17 +1196,11 @@ export default function Admin() {
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col gap-1 text-[10px] font-extrabold uppercase tracking-wide">
-                              <span className="text-green-600 bg-green-500/10 px-2 py-0.5 rounded w-fit">
-                                Whitelisted ✓
-                              </span>
+                              <span className="text-green-600 bg-green-500/10 px-2 py-0.5 rounded w-fit">Whitelisted ✓</span>
                               {item.identity_verified ? (
-                                <span className="text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded w-fit">
-                                  Identity Verified ✓
-                                </span>
+                                <span className="text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded w-fit">Identity Verified ✓</span>
                               ) : (
-                                <span className="text-red-500 bg-red-500/10 px-2 py-0.5 rounded w-fit">
-                                  Identity Pending ⚠
-                                </span>
+                                <span className="text-red-500 bg-red-500/10 px-2 py-0.5 rounded w-fit">Identity Pending ⚠</span>
                               )}
                             </div>
                           </td>
@@ -722,7 +1240,9 @@ export default function Admin() {
                 <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-red-500" /> Active Job Disputes
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5 font-medium">Review disputed jobs and release or split secure payments between parties.</p>
+                <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                  Review disputed jobs and resolve secure payments between parties using the case-file console.
+                </p>
               </div>
               {disputedJobs.length > 0 && (
                 <span className="text-xs font-black bg-red-500/10 text-red-600 border border-red-500/20 px-3 py-1 rounded-full">
@@ -742,167 +1262,16 @@ export default function Admin() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y">
-                {disputedJobs.map((dispute) => {
-                  const payment = dispute.payments?.[0];
-                  const issue = dispute.job_issues?.[0];
-                  const isResolving = resolvingDisputeId === dispute.id;
-                  const jobEvidenceUrls = evidenceUrls[dispute.id] || [];
-                  const isEvidenceLoading = evidenceLoading[dispute.id];
-
-                  return (
-                    <div key={dispute.id} className="p-6 space-y-4">
-                      {/* Dispute Header */}
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-extrabold text-base text-foreground leading-tight">{dispute.title}</h4>
-                            <span className="text-[10px] font-black bg-red-500/10 text-red-600 border border-red-500/15 px-2 py-0.5 rounded uppercase tracking-wider">Disputed</span>
-                          </div>
-                          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                            Job Ref: <span className="font-mono text-foreground">{formatJobRef(dispute.id)}</span>
-                            {issue?.created_at && (
-                              <span className="ml-3">
-                                Disputed: <span className="text-foreground">{new Date(issue.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs font-semibold text-muted-foreground space-y-0.5 pt-1">
-                            <div>Customer: <span className="text-foreground">{dispute.customer?.display_name} — {dispute.customer?.email}</span></div>
-                            <div>Contractor: <span className="text-foreground">{payment?.payee?.display_name} — {payment?.payee?.email}</span></div>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          {payment && (
-                            <div className="bg-red-500/5 border border-red-500/10 rounded-xl px-4 py-2.5 text-center">
-                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Payment Held</p>
-                              <p className="text-lg font-black text-foreground">{formatAUD(payment.amount)}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Customer Complaint */}
-                      {issue && (
-                        <div className="p-3.5 bg-red-500/5 border border-red-500/10 rounded-xl space-y-1">
-                          <span className="font-bold text-red-500 block uppercase text-[10px] tracking-wider">Customer Complaint:</span>
-                          <p className="text-sm text-foreground leading-relaxed font-medium italic">"{issue.description}"</p>
-                        </div>
-                      )}
-
-                      {/* Customer Evidence Photos */}
-                      {issue?.attachments?.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                            <ImageIcon className="h-3.5 w-3.5" /> Customer Evidence Photos ({issue.attachments.length})
-                          </p>
-                          {isEvidenceLoading ? (
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground font-semibold">
-                              <Loader2 className="h-4 w-4 animate-spin" /> Loading evidence images...
-                            </div>
-                          ) : jobEvidenceUrls.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {jobEvidenceUrls.map((url, idx) => (
-                                <a
-                                  key={idx}
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="h-20 w-20 border border-border rounded-xl overflow-hidden hover:opacity-80 transition-opacity shadow-sm bg-muted flex items-center justify-center shrink-0"
-                                >
-                                  <img src={url} alt={`Evidence ${idx + 1}`} className="h-full w-full object-cover" />
-                                </a>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground font-semibold">Evidence images could not be loaded.</p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Resolution Tool */}
-                      {isResolving ? (
-                        <div className="p-5 bg-muted/20 border rounded-2xl space-y-4">
-                          <h5 className="font-extrabold text-foreground text-sm">Dispute Resolution Tool</h5>
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Resolution Verdict Notes</label>
-                            <textarea
-                              placeholder="State the reason/findings for the resolution..."
-                              value={resolutionText}
-                              onChange={(e) => setResolutionText(e.target.value)}
-                              className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs font-semibold focus:border-primary/50 resize-none"
-                              rows={3}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase">
-                              <span>Payout Split</span>
-                              <span className="text-primary font-extrabold">{splitPercentage}% to Tradie / {100 - splitPercentage}% to Customer</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={splitPercentage}
-                              onChange={(e) => setSplitPercentage(parseInt(e.target.value))}
-                              className="w-full accent-primary cursor-pointer"
-                            />
-                            {payment && (
-                              <div className="grid grid-cols-3 gap-2 bg-background border p-3 rounded-xl text-[10px] font-semibold text-left mt-2">
-                                <div className="space-y-1">
-                                  <span className="text-muted-foreground uppercase block">Customer Refund</span>
-                                  <span className="text-sm font-black text-blue-500">
-                                    {formatAUD(Math.round((payment.amount * (100 - splitPercentage)) / 100))}
-                                  </span>
-                                </div>
-                                <div className="space-y-1 border-l pl-2">
-                                  <span className="text-muted-foreground uppercase block">Tradie Payout</span>
-                                  <span className="text-sm font-black text-green-600">
-                                    {formatAUD(Math.round(((payment.amount - payment.platform_fee) * splitPercentage) / 100))}
-                                  </span>
-                                </div>
-                                <div className="space-y-1 border-l pl-2">
-                                  <span className="text-muted-foreground uppercase block">Fee Retained</span>
-                                  <span className="text-sm font-black text-primary">
-                                    {formatAUD(Math.round((payment.platform_fee * splitPercentage) / 100))}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-2 pt-1">
-                            <button
-                              onClick={() => handleResolveDispute(dispute.id)}
-                              disabled={disputeActionLoading}
-                              className="bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2 rounded-xl text-xs transition shadow active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
-                            >
-                              {disputeActionLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                              {disputeActionLoading ? 'Processing...' : 'Confirm Resolution'}
-                            </button>
-                            <button
-                              onClick={() => setResolvingDisputeId(null)}
-                              disabled={disputeActionLoading}
-                              className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-4 py-2 rounded-xl text-xs transition"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setResolvingDisputeId(dispute.id);
-                            setResolutionText('');
-                            setSplitPercentage(50);
-                          }}
-                          className="bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2 rounded-xl text-xs transition shadow active:scale-95"
-                        >
-                          Resolve Dispute
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+              <div>
+                {disputedJobs.map((dispute) => (
+                  <DisputeCaseFile
+                    key={dispute.id}
+                    dispute={dispute}
+                    onResolved={loadData}
+                    showToast={showToast}
+                    showConfirm={showConfirm}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -916,10 +1285,7 @@ export default function Admin() {
           <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-start justify-between gap-3">
               <h3 className="text-lg font-bold text-foreground">{confirmConfig.title}</h3>
-              <button
-                onClick={() => setConfirmConfig(null)}
-                className="p-1 rounded-lg hover:bg-muted text-muted-foreground shrink-0"
-              >
+              <button onClick={() => setConfirmConfig(null)} className="p-1 rounded-lg hover:bg-muted text-muted-foreground shrink-0">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -958,8 +1324,8 @@ export default function Admin() {
               : 'bg-red-500/10 border-red-500/20 text-red-500'
           }`}>
             {toastMessage.type === 'success'
-              ? <CheckCircle className="h-4.5 w-4.5 shrink-0" />
-              : <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+              ? <CheckCircle className="h-4 w-4 shrink-0" />
+              : <AlertCircle className="h-4 w-4 shrink-0" />
             }
             <span>{toastMessage.text}</span>
           </div>

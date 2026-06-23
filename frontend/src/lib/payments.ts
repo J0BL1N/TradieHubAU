@@ -240,18 +240,28 @@ export async function getLedgerForPayment(paymentId: string) {
 }
 
 /**
- * Admin Panel Dispute Query: Gets all jobs in disputed status with related dispute/payment details.
+ * Admin Panel Dispute Query: Gets all jobs in disputed status with full case file data.
+ * Includes contractor profile (via payments.payee_id), completion proof, and dispute evidence.
  */
 export async function getDisputedJobs() {
   const { data, error } = await supabase
     .from('jobs')
     .select(`
       *,
-      customer:users!customer_id(id, display_name, email),
-      payments!inner(amount, platform_fee, payee:users!payee_id(id, display_name, email)),
-      job_issues!job_issues_job_id_fkey(id, description, status, attachments, created_at)
+      customer:users!customer_id(id, display_name, email, phone, identity_verified, tradie_verified),
+      payments!inner(
+        id,
+        amount,
+        platform_fee,
+        status,
+        payee:users!payee_id(id, display_name, email, phone, abn, license_number, tradie_verified, identity_verified)
+      ),
+      job_issues!job_issues_job_id_fkey(id, description, status, attachments, created_at, admin_notes),
+      job_completion_proofs!job_completion_proofs_job_id_fkey(id, description, attachments, created_at)
     `)
-    .eq('status', 'disputed');
+    .eq('status', 'disputed')
+    .order('updated_at', { ascending: false });
 
   return { data: data || [], error };
 }
+

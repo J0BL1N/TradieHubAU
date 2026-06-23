@@ -166,6 +166,18 @@ Later:
 * [x] `getDisputedJobs()` updated to include `attachments` in job_issues select
 * [x] Pending approval count badges added to each queue header
 * [x] Locale-aware date formatting (en-AU) for all timestamps
+* [x] **Replaced slider-style dispute resolution with professional case-file resolution console**
+  * Slider UI removed entirely
+  * 5 clear resolution actions: Release to Contractor, Refund Customer, Manual Split, Request More Evidence, Escalate
+  * Manual split uses dollar-amount input fields — no slider
+  * Resolution preview shows Customer receives / Contractor receives / Platform keeps + Final status
+  * Required admin notes / findings textarea before confirming
+  * Confirmation modal before applying any financial resolution
+  * "Request More Evidence" and "Escalate" are soft actions — save admin notes to job_issues without changing job/payment status
+* [x] Fixed blank Contractor display — expanded `getDisputedJobs()` payee join to include full profile fields (phone, ABN, licence, whitelist/identity status)
+* [x] Dispute case file shows: Job Summary, Customer Details, Contractor Details, Customer Complaint, Completion Proof (notes + images), Customer Evidence Photos, Payment Breakdown, Resolution Console
+* [x] Dispute case file is collapsible (click header to expand/collapse)
+* [x] Completion proofs fetched alongside disputes in one query
 
 ### v0.0.13 Manual Review Items
 
@@ -175,7 +187,16 @@ Later:
 * [ ] Confirm native browser alert/confirm dialogs no longer appear
 * [ ] Confirm toast notifications appear for approve/reject/suspend actions
 * [ ] Confirm in-page confirmation modal appears for Suspend Tradie and Revoke ID actions
-* [ ] Confirm dispute evidence thumbnails display when attachments exist
+* [ ] Confirm dispute case file shows customer and contractor details
+* [ ] Confirm contractor name/email is NOT blank in dispute cards
+* [ ] Confirm slider is gone — 5 action buttons appear instead
+* [ ] Confirm manual split shows dollar input fields
+* [ ] Confirm resolution preview shows correct amounts before confirming
+* [ ] Confirm completion proof notes and images display in dispute case
+* [ ] Confirm customer dispute evidence thumbnails display
+* [ ] Confirm admin notes are required before confirming resolution
+* [ ] Confirm confirmation modal appears before resolution is applied
+* [ ] Confirm "Request More Evidence" and "Escalate" save notes but do not resolve the dispute
 * [ ] Confirm document type labels display correctly
 * [ ] Confirm no user-facing "escrow" wording
 
@@ -188,6 +209,7 @@ Later:
 * [ ] Keep private verification documents admin-only
 
 ---
+
 
 # v0.0.14 — Full Manual Customer/Tradie/Admin Test Run
 
