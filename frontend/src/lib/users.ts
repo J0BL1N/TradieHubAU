@@ -81,7 +81,7 @@ export interface SearchCustomersFilters {
 export async function fetchTradies(filters: SearchTradiesFilters = {}) {
   try {
     let query = supabase
-      .from('users')
+      .from('public_profiles')
       .select(PUBLIC_PROFILE_SELECT)
       .in('role', ['tradie', 'dual'])
       .order('created_at', { ascending: false });
@@ -118,7 +118,7 @@ export async function fetchTradies(filters: SearchTradiesFilters = {}) {
 export async function fetchCustomers(filters: SearchCustomersFilters = {}) {
   try {
     let query = supabase
-      .from('users')
+      .from('public_profiles')
       .select(PUBLIC_PROFILE_SELECT)
       .in('role', ['customer', 'dual'])
       .order('created_at', { ascending: false });
@@ -167,7 +167,7 @@ export async function getUserProfile(userId: string) {
 export async function getPublicUserProfile(userId: string) {
   try {
     const { data, error } = await supabase
-      .from('users')
+      .from('public_profiles')
       .select(PUBLIC_PROFILE_SELECT)
       .eq('id', userId)
       .maybeSingle();

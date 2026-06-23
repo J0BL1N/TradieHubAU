@@ -157,7 +157,7 @@ export default function Profile() {
           rating,
           text,
           submitted_at,
-          reviewer:users!reviewer_id(display_name, avatar_url)
+          reviewer:public_profiles!reviewer_id(display_name, avatar_url)
         `)
         .eq('reviewee_id', targetId)
         .eq('unlocked', true)

@@ -48,7 +48,7 @@ export async function fetchJobs(filters: GetJobsFilters = {}) {
       .from('jobs')
       .select(`
         *,
-        customer:users!customer_id(id, display_name, avatar_url, suburb, state)
+        customer:public_profiles!customer_id(id, display_name, avatar_url, suburb, state)
       `)
       .order('created_at', { ascending: false });
 

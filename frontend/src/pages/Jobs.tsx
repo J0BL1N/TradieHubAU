@@ -503,14 +503,14 @@ export default function Jobs() {
         // 1. Fetch customer owned jobs (with their applications list)
         const { data: customerJobs, error: custErr } = await supabase
           .from('jobs')
-          .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state, email, phone), applications(id, status, tradie_id)')
+          .select('*, customer:public_profiles!customer_id(id, display_name, avatar_url, suburb, state), applications(id, status, tradie_id)')
           .eq('customer_id', userId);
         if (custErr) throw custErr;
 
         // 2. Fetch jobs where user has applied (with their application details)
         const { data: tradieJobs, error: tradieErr } = await supabase
           .from('jobs')
-          .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state, email, phone), applications!inner(id, status, tradie_id)')
+          .select('*, customer:public_profiles!customer_id(id, display_name, avatar_url, suburb, state), applications!inner(id, status, tradie_id)')
           .eq('applications.tradie_id', userId);
         if (tradieErr) throw tradieErr;
 
@@ -1448,8 +1448,7 @@ export default function Jobs() {
                         const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
                         if (!isCustomerOwner && !isContractedTradie) return null;
 
-                        const acceptedApp = jobApplications.find((app) => app.status === 'accepted');
-                        const otherUser = isCustomerOwner ? acceptedApp?.tradie : (isContractedTradie ? selectedJob.customer : null);
+                        const otherUser = isCustomerOwner ? jobPayment?.payee : (isContractedTradie ? jobPayment?.payer : null);
                         
                         return (
                           <div className="space-y-4">

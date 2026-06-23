@@ -187,10 +187,10 @@ export async function resolveDispute(jobId: string, resolution: string, splitPer
 export async function getPaymentForJob(jobId: string) {
   const { data, error } = await supabase
     .from('payments')
-    .select('*')
+    .select('*, payee:users!payee_id(id, display_name, email, phone, avatar_url, suburb, state), payer:users!payer_id(id, display_name, email, phone, avatar_url, suburb, state)')
     .eq('job_id', jobId)
     .maybeSingle();
-  return { data: data as Payment | null, error };
+  return { data: data as any, error };
 }
 
 /**
