@@ -283,6 +283,7 @@ const categoryOptions = [
 
 export default function Jobs() {
   const { user, profile } = useAuth();
+  const userId = user?.id;
   const [searchParams, setSearchParams] = useSearchParams();
 
   const isVerifiedTradie = !!(profile?.role && ['tradie', 'dual'].includes(profile.role) && profile.tradie_verified);
@@ -404,7 +405,7 @@ export default function Jobs() {
       const { data: iData } = await getIssuesForJob(jobId);
       setJobIssues(iData);
 
-      const isOwner = selectedJob?.customer_id === user?.id;
+      const isOwner = selectedJob?.customer_id === userId;
       if (isOwner) {
         const { data: appData } = await getApplicationsForJob(jobId);
         setJobApplications(appData);
@@ -414,7 +415,7 @@ export default function Jobs() {
     } finally {
       setLoadingLifecycle(false);
     }
-  }, [user, selectedJob]);
+  }, [userId, selectedJob]);
 
   useEffect(() => {
     if (selectedJob) {
@@ -454,10 +455,9 @@ export default function Jobs() {
     }
   }, [jobProofs]);
 
-  // Force refetch tab items when activeTab changes
+  // Reset the local status filter when switching tabs. loadJobs reacts to activeTab separately.
   useEffect(() => {
     setMyJobsStatusFilter('all');
-    loadJobs();
   }, [activeTab]);
 
   // Sync query parameter from homepage
@@ -494,7 +494,7 @@ export default function Jobs() {
         if (fetchErr) throw fetchErr;
         setJobs(data);
       } else if (activeTab === 'my_jobs') {
-        if (!user) {
+        if (!userId) {
           setJobs([]);
           setLoading(false);
           return;
@@ -504,14 +504,14 @@ export default function Jobs() {
         const { data: customerJobs, error: custErr } = await supabase
           .from('jobs')
           .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state, email, phone), applications(id, status, tradie_id)')
-          .eq('customer_id', user.id);
+          .eq('customer_id', userId);
         if (custErr) throw custErr;
 
         // 2. Fetch jobs where user has applied (with their application details)
         const { data: tradieJobs, error: tradieErr } = await supabase
           .from('jobs')
           .select('*, customer:users!customer_id(id, display_name, avatar_url, suburb, state, email, phone), applications!inner(id, status, tradie_id)')
-          .eq('applications.tradie_id', user.id);
+          .eq('applications.tradie_id', userId);
         if (tradieErr) throw tradieErr;
 
         // Merge and de-duplicate by job.id
@@ -525,18 +525,18 @@ export default function Jobs() {
     } finally {
       setLoading(false);
     }
-  }, [user, activeTab]);
+  }, [userId, activeTab]);
 
   // ─── Load saved job IDs for logged-in user ──────────────────────────────────
   const loadSavedState = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     const ids = await getSavedItemIds('job');
     setSavedJobIds(ids);
-  }, [user]);
+  }, [userId]);
 
   // ─── Load user's existing applications ─────────────────────────────────────
   const loadApplications = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     try {
       const { data, error } = await getMyApplications();
       if (error) {
@@ -553,7 +553,7 @@ export default function Jobs() {
     } catch (e) {
       console.error('Unexpected error loading applications:', e);
     }
-  }, [user]);
+  }, [userId]);
 
   useEffect(() => {
     loadJobs();

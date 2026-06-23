@@ -331,6 +331,16 @@ Later:
 
 ---
 
+# v0.1.x — Frontend Data Performance and Caching
+
+* [ ] Add memory-only frontend query caching for safe server-state reuse
+* [ ] Cache signed image URLs only below their expiry time
+* [ ] Add precise query invalidation after jobs, applications, payments, verification, and dispute mutations
+* [ ] Clear all private cached data on sign-out or authenticated user change
+* [ ] Do not persist private, admin, contact, verification, dispute, or signed-URL data to browser storage
+
+---
+
 # v0.2.x — Real Payments Foundation
 
 * [ ] Choose payment provider

@@ -677,6 +677,7 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
 
 export default function Admin() {
   const { user, profile, loading: authLoading } = useAuth();
+  const isAdmin = profile?.is_admin === true;
 
   // Data state
   const [verifications, setVerifications] = useState<VerificationRecord[]>([]);
@@ -710,46 +711,51 @@ export default function Admin() {
   // ─── Data loading ──────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!profile?.is_admin) return;
+    if (!isAdmin) return;
     setLoading(true);
     setError(null);
 
     try {
-      const { data: list, error: fetchErr } = await getPendingVerifications();
+      const [
+        { data: list, error: fetchErr },
+        { count: tradiesCount },
+        { count: verifiedCount },
+        { data: whitelistedList },
+        { data: disputesList },
+      ] = await Promise.all([
+        getPendingVerifications(),
+        supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true })
+          .in('role', ['tradie', 'dual']),
+        supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true })
+          .eq('tradie_verified', true),
+        supabase
+          .from('users')
+          .select('*')
+          .eq('tradie_verified', true)
+          .order('display_name', { ascending: true }),
+        getDisputedJobs(),
+      ]);
+
       if (fetchErr) throw fetchErr;
       setVerifications(list);
-
-      const { count: tradiesCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .in('role', ['tradie', 'dual']);
       if (tradiesCount !== null) setTotalTradies(tradiesCount);
-
-      const { count: verifiedCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .eq('tradie_verified', true);
       if (verifiedCount !== null) setVerifiedTradies(verifiedCount);
-
-      const { data: whitelistedList } = await supabase
-        .from('users')
-        .select('*')
-        .eq('tradie_verified', true)
-        .order('display_name', { ascending: true });
       if (whitelistedList) setWhitelistedTradiesList(whitelistedList as UserProfile[]);
-
-      const { data: disputesList } = await getDisputedJobs();
       if (disputesList) setDisputedJobs(disputesList);
     } catch (err: any) {
       setError(err.message || 'Failed to load administrator dashboard data.');
     } finally {
       setLoading(false);
     }
-  }, [profile]);
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (profile) loadData();
-  }, [profile, loadData]);
+    if (isAdmin) loadData();
+  }, [isAdmin, loadData]);
 
   // ─── Verification handlers ─────────────────────────────────────────────────
 

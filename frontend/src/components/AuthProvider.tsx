@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -40,10 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const authenticatedUserIdRef = useRef<string | null>(null);
+  const profileUserIdRef = useRef<string | null>(null);
+  const profileSyncRef = useRef<{ userId: string; promise: Promise<void> } | null>(null);
 
   const fetchAndSyncProfile = async (currentUser: User | null) => {
     if (!currentUser) {
       setProfile(null);
+      profileUserIdRef.current = null;
       return;
     }
 
@@ -61,7 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (existingProfile) {
-        setProfile(existingProfile as UserProfile);
+        if (authenticatedUserIdRef.current === currentUser.id) {
+          setProfile(existingProfile as UserProfile);
+          profileUserIdRef.current = currentUser.id;
+        }
       } else {
         // 2. If it does not exist, insert minimal profile row (bypassing verified/is_admin overrides)
         const defaultDisplayName = currentUser.user_metadata?.display_name || (currentUser.email ? currentUser.email.split('@')[0] : 'User');
@@ -81,9 +88,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (insertError) {
           console.error('Error creating public profile:', insertError.message);
         } else if (insertedProfile) {
-          setProfile(insertedProfile as UserProfile);
+          if (authenticatedUserIdRef.current === currentUser.id) {
+            setProfile(insertedProfile as UserProfile);
+            profileUserIdRef.current = currentUser.id;
+          }
         } else {
-          setProfile(newProfile as unknown as UserProfile);
+          if (authenticatedUserIdRef.current === currentUser.id) {
+            setProfile(newProfile as unknown as UserProfile);
+            profileUserIdRef.current = currentUser.id;
+          }
         }
       }
     } catch (e: any) {
@@ -91,16 +104,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const syncProfile = (currentUser: User) => {
+    if (profileSyncRef.current?.userId === currentUser.id) {
+      return profileSyncRef.current.promise;
+    }
+
+    const promise = fetchAndSyncProfile(currentUser).finally(() => {
+      if (profileSyncRef.current?.promise === promise) {
+        profileSyncRef.current = null;
+      }
+    });
+    profileSyncRef.current = { userId: currentUser.id, promise };
+    return promise;
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
       const currentUser = initialSession?.user ?? null;
-      setUser(currentUser);
+      authenticatedUserIdRef.current = currentUser?.id ?? null;
+      setUser(previousUser => previousUser?.id === currentUser?.id ? previousUser : currentUser);
       
       if (currentUser) {
-        fetchAndSyncProfile(currentUser).finally(() => setLoading(false));
+        syncProfile(currentUser).finally(() => setLoading(false));
       } else {
+        setProfile(null);
+        profileUserIdRef.current = null;
         setLoading(false);
       }
     });
@@ -110,14 +140,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, currentSession) => {
         setSession(currentSession);
         const currentUser = currentSession?.user ?? null;
-        setUser(currentUser);
+        const previousUserId = authenticatedUserIdRef.current;
+        const currentUserId = currentUser?.id ?? null;
+        const identityChanged = previousUserId !== currentUserId;
 
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          setLoading(true);
-          await fetchAndSyncProfile(currentUser);
-          setLoading(false);
-        } else if (event === 'SIGNED_OUT') {
+        authenticatedUserIdRef.current = currentUserId;
+        setUser(previousUser => previousUser?.id === currentUserId ? previousUser : currentUser);
+
+        if (identityChanged) {
           setProfile(null);
+          profileUserIdRef.current = null;
+        }
+
+        if (event === 'SIGNED_OUT' || !currentUser) {
+          setProfile(null);
+          profileUserIdRef.current = null;
+          profileSyncRef.current = null;
+          setLoading(false);
+          return;
+        }
+
+        const profileMissing = profileUserIdRef.current !== currentUser.id;
+        const shouldSyncProfile = identityChanged || event === 'USER_UPDATED' || (event === 'SIGNED_IN' && profileMissing);
+
+        if (shouldSyncProfile) {
+          const syncAlreadyRunning = profileSyncRef.current?.userId === currentUser.id;
+          if (!syncAlreadyRunning) setLoading(true);
+          await syncProfile(currentUser);
           setLoading(false);
         }
       }
@@ -134,12 +183,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setUser(null);
     setProfile(null);
+    authenticatedUserIdRef.current = null;
+    profileUserIdRef.current = null;
+    profileSyncRef.current = null;
     setLoading(false);
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchAndSyncProfile(user);
+      await syncProfile(user);
     }
   };
 
