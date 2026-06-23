@@ -63,7 +63,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** It accepts any `jobId`, creates a service-role client, and updates job status without authenticating or authorizing the customer/admin actor.
 * **Risk:** If deployed, an untrusted caller—or any authenticated caller if only gateway JWT verification is enabled—can attempt to complete another user's job and trigger future release logic.
 * **Recommended fix:** Do not deploy as-is. Add explicit JWT validation, customer/admin authorization, current-state validation, idempotency, and provider-record verification.
-* **State:** Deferred; payment/Edge Function architecture change requires separate approval.
+* **State:** Fixed; legacy Edge Function disabled by replacing it with a secure, fail-closed HTTP 403 response in Deno function code (pending live Supabase deployment verification).
 
 ## High
 
