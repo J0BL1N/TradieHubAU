@@ -97,7 +97,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** The RPC permits both `completed_pending_review` and `disputed` states.
 * **Risk:** A customer can call it directly during a dispute and release the full amount, bypassing admin resolution.
 * **Recommended fix:** Permit customer approval only from `completed_pending_review`; require admin resolution from `disputed`.
-* **State:** Deferred; RPC rewrite required.
+* **State:** Fixed in source migration [026_block_completion_approval_during_disputes.sql](file:///F:/TradieHubAU/supabase/migrations/026_block_completion_approval_during_disputes.sql). Customer approval is restricted to `completed_pending_review`, active/open disputes fail closed, payment must still be held and unsettled, and approval/dispute creation share a job-row lock while admin resolution remains unchanged (pending live Supabase verification).
 
 ### H-05 — Admin dispute queries lack admin RLS on jobs/payments
 
@@ -223,7 +223,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * Verification storage policies in `008` scope user reads/uploads to `verifications/users/<auth.uid()>` and admins to `is_admin` (subject to C-01).
 * Latest completion RPC (`017`) checks authenticated payment payee and payment-held state.
 * Latest dispute RPC (`018`) checks authenticated job customer and completion-review state.
-* Dispute resolution (`011`) checks admin, disputed state, held funds, resolution type, and split bounds (subject to C-01/H-04).
+* Dispute resolution (`011`) checks admin, disputed state, held funds, resolution type, and split bounds (subject to C-01).
 * Quote acceptance (`010`) checks job customer, open state, application/job linkage, and positive estimate. Direct policies still weaken the boundary (C-04/H-02).
 * Frontend admin routes are guarded for navigation/UI, but are correctly not treated as the security boundary.
 
