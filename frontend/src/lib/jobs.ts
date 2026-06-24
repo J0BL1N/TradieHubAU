@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getPublicProfilesByIds } from './users';
 
 export interface Customer {
   id: string;
@@ -39,6 +40,34 @@ export interface GetJobsFilters {
   search?: string;
 }
 
+/** Attach public customer profiles without requiring a PostgREST relationship to the view. */
+export async function hydrateJobsWithPublicCustomers<T extends { customer_id: string }>(jobs: T[]) {
+  const { data: profiles, error } = await getPublicProfilesByIds(
+    jobs.map(job => job.customer_id)
+  );
+
+  if (error) {
+    return { data: [] as Array<T & { customer?: Customer }>, error };
+  }
+
+  const profilesById = new Map(profiles.map(profile => [profile.id, profile]));
+  const hydratedJobs = jobs.map(job => {
+    const profile = profilesById.get(job.customer_id);
+    return {
+      ...job,
+      customer: profile ? {
+        id: profile.id,
+        display_name: profile.display_name,
+        avatar_url: profile.avatar_url,
+        suburb: profile.suburb,
+        state: profile.state,
+      } : undefined,
+    };
+  });
+
+  return { data: hydratedJobs, error: null };
+}
+
 /**
  * Fetch all open jobs with optional filters from Supabase
  */
@@ -46,10 +75,7 @@ export async function fetchJobs(filters: GetJobsFilters = {}) {
   try {
     let query = supabase
       .from('jobs')
-      .select(`
-        *,
-        customer:public_profiles!customer_id(id, display_name, avatar_url, suburb, state)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     // Apply state filter if not 'all'
@@ -82,7 +108,10 @@ export async function fetchJobs(filters: GetJobsFilters = {}) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return { data: (data as Job[]) || [], error: null };
+    const { data: hydratedJobs, error: profilesError } = await hydrateJobsWithPublicCustomers(data || []);
+    if (profilesError) throw profilesError;
+
+    return { data: hydratedJobs as Job[], error: null };
   } catch (error: any) {
     console.error('❌ fetchJobs error:', error.message);
     return { data: [], error };

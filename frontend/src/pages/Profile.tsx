@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import {
   getUserProfile,
   getPublicUserProfile,
+  getPublicProfilesByIds,
   updateUserProfile,
   submitVerification
 } from '../lib/users';
@@ -157,14 +158,32 @@ export default function Profile() {
           rating,
           text,
           submitted_at,
-          reviewer:public_profiles!reviewer_id(display_name, avatar_url)
+          reviewer_id
         `)
         .eq('reviewee_id', targetId)
         .eq('unlocked', true)
         .order('submitted_at', { ascending: false });
 
       if (!reviewsErr && reviewsData) {
-        setReviews(reviewsData as any[]);
+        const { data: reviewerProfiles, error: reviewerProfilesErr } = await getPublicProfilesByIds(
+          reviewsData.map(review => review.reviewer_id)
+        );
+        const reviewersById = new Map(reviewerProfiles.map(profile => [profile.id, profile]));
+
+        if (reviewerProfilesErr) {
+          console.error('Error fetching reviewer public profiles:', reviewerProfilesErr);
+        }
+
+        setReviews(reviewsData.map(({ reviewer_id, ...review }) => {
+          const reviewer = reviewersById.get(reviewer_id);
+          return {
+            ...review,
+            reviewer: reviewer ? {
+              display_name: reviewer.display_name,
+              avatar_url: reviewer.avatar_url,
+            } : null,
+          };
+        }));
       }
 
       // 2. Fetch Jobs

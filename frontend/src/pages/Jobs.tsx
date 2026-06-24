@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fetchJobs } from '../lib/jobs';
+import { fetchJobs, hydrateJobsWithPublicCustomers } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
 import { submitApplication, getMyApplicationForJob, getApplicationsForJob, getMyApplications } from '../lib/applications';
 import type { Application } from '../lib/applications';
@@ -503,22 +503,24 @@ export default function Jobs() {
         // 1. Fetch customer owned jobs (with their applications list)
         const { data: customerJobs, error: custErr } = await supabase
           .from('jobs')
-          .select('*, customer:public_profiles!customer_id(id, display_name, avatar_url, suburb, state), applications(id, status, tradie_id)')
+          .select('*, applications(id, status, tradie_id)')
           .eq('customer_id', userId);
         if (custErr) throw custErr;
 
         // 2. Fetch jobs where user has applied (with their application details)
         const { data: tradieJobs, error: tradieErr } = await supabase
           .from('jobs')
-          .select('*, customer:public_profiles!customer_id(id, display_name, avatar_url, suburb, state), applications!inner(id, status, tradie_id)')
+          .select('*, applications!inner(id, status, tradie_id)')
           .eq('applications.tradie_id', userId);
         if (tradieErr) throw tradieErr;
 
         // Merge and de-duplicate by job.id
         const merged = [...(customerJobs || []), ...(tradieJobs || [])];
         const uniqueJobs = Array.from(new Map(merged.map(item => [item.id, item])).values());
-        
-        setJobs(uniqueJobs as Job[]);
+        const { data: hydratedJobs, error: profilesErr } = await hydrateJobsWithPublicCustomers(uniqueJobs);
+        if (profilesErr) throw profilesErr;
+
+        setJobs(hydratedJobs as Job[]);
       }
     } catch (fetchErr: any) {
       setError(fetchErr.message || 'Failed to load jobs.');

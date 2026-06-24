@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getPublicProfilesByIds } from './users';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,14 @@ export interface Application {
   status: 'pending' | 'accepted' | 'declined' | 'withdrawn';
   created_at: string;
   updated_at: string;
+  tradie?: {
+    id: string;
+    display_name: string;
+    abn: string | null;
+    license_number: string | null;
+    tradie_verified: boolean;
+    identity_verified: boolean;
+  } | null;
 }
 
 export interface SubmitApplicationPayload {
@@ -100,10 +109,33 @@ export async function getMyApplications() {
 export async function getApplicationsForJob(jobId: string) {
   const { data, error } = await supabase
     .from('applications')
-    .select('*, tradie:public_profiles!tradie_id(id, display_name, abn, license_number, tradie_verified, identity_verified)')
+    .select('*')
     .eq('job_id', jobId)
     .order('created_at', { ascending: false });
 
-  return { data: data ?? [], error };
+  if (error || !data) return { data: [], error };
+
+  const { data: profiles, error: profilesError } = await getPublicProfilesByIds(
+    data.map(application => application.tradie_id)
+  );
+  if (profilesError) return { data: [], error: profilesError };
+
+  const profilesById = new Map(profiles.map(profile => [profile.id, profile]));
+  const applications = data.map(application => {
+    const profile = profilesById.get(application.tradie_id);
+    return {
+      ...application,
+      tradie: profile ? {
+        id: profile.id,
+        display_name: profile.display_name,
+        abn: profile.abn,
+        license_number: profile.license_number,
+        tradie_verified: profile.tradie_verified,
+        identity_verified: profile.identity_verified,
+      } : null,
+    };
+  });
+
+  return { data: applications, error: null };
 }
 

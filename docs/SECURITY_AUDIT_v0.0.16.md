@@ -73,7 +73,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** RLS is row-based. `USING (true)` permits anonymous reads of all selectable columns, including email, phone, postcode, admin status, last-seen data, address rules, and Stripe identifiers. Frontend code previously requested `*` and rendered email/phone publicly.
 * **Risk:** Contact gating can be bypassed through direct REST queries; users/admins can be enumerated and provider identifiers disclosed.
 * **Recommended fix:** Expose an allowlisted public-profile view/RPC and remove anonymous SELECT from the base table. Keep self/admin reads separately scoped.
-* **State:** Fixed in migration [023_add_public_profile_boundary.sql](file:///F:/TradieHubAU/supabase/migrations/023_add_public_profile_boundary.sql) and frontend query/contact-gate alignment (pending live Supabase verification).
+* **State:** Fixed in migration [023_add_public_profile_boundary.sql](file:///F:/TradieHubAU/supabase/migrations/023_add_public_profile_boundary.sql) and frontend query/contact-gate alignment. Frontend job, application, and review hydration now performs separate allowlisted `public_profiles` lookups because PostgREST cannot infer foreign-key relationships to the view (pending live Supabase verification).
 
 ### H-02 — Tradies can rewrite their applications, including status
 

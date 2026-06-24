@@ -18,6 +18,24 @@ const PUBLIC_PROFILE_SELECT = [
   'updated_at',
 ].join(', ');
 
+export interface PublicProfile {
+  id: string;
+  role: 'customer' | 'tradie' | 'dual';
+  display_name: string;
+  avatar_url: string | null;
+  suburb: string | null;
+  state: string | null;
+  trades: string[] | null;
+  abn: string | null;
+  license_number: string | null;
+  verified: boolean;
+  identity_verified: boolean;
+  tradie_verified: boolean;
+  show_location: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -158,6 +176,24 @@ export async function getUserProfile(userId: string) {
     console.error('❌ getUserProfile error:', error.message);
     return { data: null, error };
   }
+}
+
+/**
+ * Fetch safe public profiles in one request without relying on view relationships
+ * that PostgREST cannot infer for embedded resource joins.
+ */
+export async function getPublicProfilesByIds(userIds: string[]) {
+  const uniqueIds = [...new Set(userIds.filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return { data: [] as PublicProfile[], error: null };
+  }
+
+  const { data, error } = await supabase
+    .from('public_profiles')
+    .select(PUBLIC_PROFILE_SELECT)
+    .in('id', uniqueIds);
+
+  return { data: (data as unknown as PublicProfile[]) || [], error };
 }
 
 /**
