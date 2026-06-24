@@ -301,6 +301,7 @@ Status: **In progress / unapproved.** Source audit findings are documented in [`
 * [x] H-04: Restricted `approve_job_completion()` to customer-owned jobs in `completed_pending_review` with held, unsettled funding in migration `026_block_completion_approval_during_disputes.sql`. Disputed/open-issue jobs now require admin resolution, and completion approval is serialized with dispute creation to prevent concurrent state bypass (pending live Supabase verification).
 * [x] H-05: Added SELECT-only admin policies for dispute-linked `public.jobs` and `public.payments` rows in migration `027_add_admin_dispute_read_policies.sql`. A secured dispute-case predicate scopes access to jobs with recorded ongoing or resolved issues while preserving existing participant access and all mutation boundaries (pending live Supabase verification).
 * [x] H-06: Disabled the legacy `send-email` Edge Function with a fail-closed HTTP 403 response. It no longer accepts or relays caller-controlled recipient, subject, or HTML content and does not read email-provider secrets (pending live function deployment verification; production notifications deferred to v0.7.x).
+* [x] H-07: Disabled the legacy `handle-new-message` and `handle-new-proposal` webhook handlers with fail-closed HTTP 403 responses. They no longer trust caller-supplied records, perform service-role reads/actions, or invoke email delivery (pending live function deployment verification; notification automation deferred to v0.7.x).
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
@@ -517,6 +518,7 @@ Status: **In progress / unapproved.** Source audit findings are documented in [`
 
 * [ ] Email notification foundation
 * [ ] Replace the disabled legacy email relay with authenticated event/template workflows, ownership validation, rate limits, preferences, and delivery auditing
+* [ ] Reintroduce database/webhook notification automation only with authenticated origin checks, minimal event IDs, server-side record re-reads, and event authorization
 * [ ] Quote received notification
 * [ ] Quote accepted notification
 * [ ] Payment funded notification

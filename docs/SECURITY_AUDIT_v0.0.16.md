@@ -121,7 +121,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Both accept a supplied `record`, use service-role reads/actions, and do not validate webhook origin.
 * **Risk:** Forged requests can trigger notifications, service-role reads, and resource consumption.
 * **Recommended fix:** Authenticate webhook origin, re-read records by ID, and authorize the referenced event.
-* **State:** Deferred; verify deployments.
+* **State:** Fixed in source by disabling both legacy handlers with fail-closed HTTP 403 responses. `handle-new-message` and `handle-new-proposal` no longer parse caller-supplied records, read service-role credentials/data, or invoke `send-email`; authenticated notification/webhook automation remains deferred to v0.7.x (pending live function deployment verification).
 
 ### H-08 — Payment Edge Functions use legacy schema/incomplete linkage checks
 
