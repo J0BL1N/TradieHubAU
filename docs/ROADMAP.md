@@ -23,7 +23,7 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.17 Medium Security Findings (in progress — M-01 through M-06 source-remediated, pending manual verification)
+* v0.0.17 Security Findings (in progress — Medium source-remediated; Low remediation in progress)
 * v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
 
 Later:
@@ -344,7 +344,12 @@ Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 * [x] M-04: Bound verification document paths to the authenticated submitter — migration `032_harden_verification_document_urls.sql`, commit `c8351e0` (pending manual verification).
 * [x] M-05: Removed broad conversation updates and restricted message updates to recipient read state — migration `033_lock_message_conversation_updates.sql`, commit `25f0fc5` (pending manual verification).
 * [x] M-06: Restricted review creation to completed/released job counterparties with existing duplicate protection — migration `034_harden_review_creation.sql` (applied; pending manual verification).
-* [ ] Reassess deferred Low findings after Medium remediation.
+### Low Security Findings
+
+* [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed `PUBLIC`/`anon` execution — migration `035_narrow_is_admin_checks.sql` (applied and anonymously probed; pending manual verification).
+* [ ] L-02: Remove or fail closed on unintended hosted-project frontend fallback.
+* [ ] L-03: Review production auth defaults before production deployment.
+* [ ] L-04: Make sensitive RPC EXECUTE grants explicit.
 
 Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notification and email automation remain deferred to v0.7.x.
 
