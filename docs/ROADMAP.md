@@ -23,7 +23,7 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.17 Security Findings (in progress — Medium source-remediated; Low remediation in progress)
+* v0.0.17 Security Findings (in progress/unapproved — Medium and Low source-remediated; manual verification pending)
 * v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
 
 Later:
@@ -334,7 +334,7 @@ Status: **Critical/High security hardening approved/passed.** Source remediation
 
 ---
 
-# v0.0.17 — Medium Security Findings
+# v0.0.17 — Medium and Low Security Findings
 
 Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 
@@ -350,6 +350,8 @@ Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 * [x] L-02: Removed committed hosted-project fallbacks; frontend now fails closed with a clear error when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing (pending manual configuration-error verification).
 * [x] L-03: Marked `supabase/config.toml` as local-development-only and added `docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md` covering required hosted auth review. Hosted/production auth remains unverified and unapproved.
 * [x] L-04: Revoked default `PUBLIC`/`anon` execution and granted sensitive workflow, admin, policy-helper, and internal functions only to their intended roles — migration `036_explicit_rpc_execute_grants.sql` (pending manual authenticated/admin flow verification).
+
+Closeout verification: hosted migrations `001`–`036` are aligned and the frontend production build passes. Source remediation is complete, but v0.0.17 remains unapproved pending the listed live/manual checks, including authenticated RPC regression. Real payments, GST implementation, production launch, and v0.1.0 readiness remain deferred and require separate approval.
 
 Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notification and email automation remain deferred to v0.7.x.
 
