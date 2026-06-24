@@ -1,92 +1,347 @@
-import { MessageSquare, Send, User } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  AlertCircle,
+  Briefcase,
+  Loader2,
+  Lock,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  User,
+} from 'lucide-react';
+import { useAuth } from '../components/AuthProvider';
+import {
+  getConversationMessages,
+  getJobConversations,
+  markIncomingMessagesRead,
+  openJobConversation,
+  sendJobMessage,
+} from '../lib/messages';
+import type { ConversationSummary, MessageRecord } from '../lib/messages';
+
+function formatTimestamp(value: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) {
+    return date.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  }
+  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    accepted: 'Accepted — awaiting payment',
+    payment_held: 'Payment funded — contract active',
+    completed_pending_review: 'Completion under review',
+    disputed: 'Disputed — admin review',
+    completed: 'Completed — payment released',
+  };
+  return labels[status] || status.replaceAll('_', ' ');
+}
 
 export default function Messages() {
-  const mockThreads = [
-    { id: 1, name: 'Dave Harrison', lastMessage: 'Hey, are you free for a call tomorrow?', time: '10:42 AM', unread: true },
-    { id: 2, name: 'Rebecca Sterling', lastMessage: 'Thanks for sending through the quote.', time: 'Yesterday', unread: false },
-  ];
+  const { user, loading: authLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<MessageRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [reply, setReply] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const activeConversation = useMemo(
+    () => conversations.find(conversation => conversation.id === activeConversationId) || null,
+    [activeConversationId, conversations]
+  );
+
+  const loadConversations = useCallback(async (preferredConversationId?: string | null) => {
+    if (!user) return;
+    const { data, error: conversationError } = await getJobConversations(user.id);
+    if (conversationError) throw conversationError;
+    setConversations(data);
+
+    const requestedId = preferredConversationId || searchParams.get('conversation');
+    const nextId = requestedId && data.some(item => item.id === requestedId)
+      ? requestedId
+      : data[0]?.id || null;
+    setActiveConversationId(nextId);
+  }, [searchParams, user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const initialise = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let preferredId = searchParams.get('conversation');
+        const jobId = searchParams.get('job');
+        if (jobId) {
+          const { data, error: openError } = await openJobConversation(jobId);
+          if (openError) throw openError;
+          preferredId = data;
+          if (data && !cancelled) setSearchParams({ conversation: data }, { replace: true });
+        }
+        if (!cancelled) await loadConversations(preferredId);
+      } catch (initialiseError: any) {
+        if (!cancelled) setError(initialiseError.message || 'Messages could not be loaded.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    initialise();
+    return () => { cancelled = true; };
+  }, [authLoading, loadConversations, searchParams, setSearchParams, user]);
+
+  const loadMessages = useCallback(async (conversationId: string) => {
+    if (!user) return;
+    setMessagesLoading(true);
+    setError(null);
+    try {
+      const { data, error: messagesError } = await getConversationMessages(conversationId);
+      if (messagesError) throw messagesError;
+      setMessages(data);
+
+      if (data.some(message => message.sender_id !== user.id && !message.read)) {
+        const { error: readError } = await markIncomingMessagesRead(conversationId, user.id);
+        if (readError) throw readError;
+        setConversations(current => current.map(conversation =>
+          conversation.id === conversationId ? { ...conversation, unread_count: 0 } : conversation
+        ));
+      }
+    } catch (messagesError: any) {
+      setMessages([]);
+      setError(messagesError.message || 'This conversation could not be loaded.');
+    } finally {
+      setMessagesLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeConversationId) loadMessages(activeConversationId);
+    else setMessages([]);
+  }, [activeConversationId, loadMessages]);
+
+  const selectConversation = (conversationId: string) => {
+    setActiveConversationId(conversationId);
+    setSearchParams({ conversation: conversationId }, { replace: true });
+  };
+
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!activeConversationId || !reply.trim() || sending) return;
+
+    setSending(true);
+    setError(null);
+    const text = reply.trim();
+    try {
+      const { error: sendError } = await sendJobMessage(activeConversationId, text);
+      if (sendError) throw sendError;
+      setReply('');
+      await loadMessages(activeConversationId);
+      await loadConversations(activeConversationId);
+    } catch (sendError: any) {
+      setError(sendError.message || 'Your message could not be sent.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (authLoading) {
+    return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md rounded-2xl border bg-card p-10 text-center space-y-4">
+        <Lock className="mx-auto h-10 w-10 text-primary" />
+        <h1 className="text-2xl font-extrabold">Sign in to view messages</h1>
+        <p className="text-sm font-medium leading-6 text-muted-foreground">
+          Job messaging is available only to the customer and accepted tradie for that job.
+        </p>
+        <Link to="/login" className="inline-flex rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
+          Sign In
+        </Link>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)] min-h-[500px]">
-      {/* Threads List */}
-      <div className="bg-card border rounded-2xl p-4 flex flex-col space-y-4">
-        <h2 className="text-xl font-bold px-2 flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-primary" /> Chats
-        </h2>
-        <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-          {mockThreads.map((thread) => (
-            <div
-              key={thread.id}
-              className={`p-4 rounded-xl cursor-pointer hover:bg-muted/50 transition-all flex items-center justify-between gap-4 border ${
-                thread.unread ? 'bg-primary/5 border-primary/20' : 'border-transparent bg-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold shrink-0">
-                  <User className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-bold text-sm truncate text-foreground">{thread.name}</h4>
-                  <p className={`text-xs truncate ${thread.unread ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
-                    {thread.lastMessage}
+    <div className="space-y-4">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-extrabold"><MessageSquare className="h-6 w-6 text-primary" /> Job Messages</h1>
+        <p className="mt-1 text-sm font-medium text-muted-foreground">Conversations are available only for accepted job relationships.</p>
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-600">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {conversations.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-12 text-center space-y-4">
+          <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/40" />
+          <h2 className="text-xl font-extrabold">No job conversations yet</h2>
+          <p className="mx-auto max-w-md text-sm font-medium leading-6 text-muted-foreground">
+            A conversation becomes available after a quote is accepted. Open an eligible job from My Jobs to start messaging.
+          </p>
+          <Link to="/jobs" className="inline-flex rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">View My Jobs</Link>
+        </div>
+      ) : (
+        <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:grid-cols-3">
+          <aside className="flex flex-col rounded-2xl border bg-card p-4">
+            <div className="mb-3 flex items-center justify-between px-2">
+              <h2 className="font-extrabold">Conversations</h2>
+              <button
+                type="button"
+                onClick={() => loadConversations(activeConversationId).catch((refreshError: any) => setError(refreshError.message))}
+                className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Refresh conversations"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-2 overflow-y-auto">
+              {conversations.map(conversation => (
+                <button
+                  type="button"
+                  key={conversation.id}
+                  onClick={() => selectConversation(conversation.id)}
+                  className={`w-full rounded-xl border p-4 text-left transition-colors ${
+                    conversation.id === activeConversationId
+                      ? 'border-primary/30 bg-primary/5'
+                      : 'border-transparent hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-foreground">{conversation.counterpart?.display_name || 'Job participant'}</p>
+                      <p className="mt-0.5 truncate text-xs font-semibold text-primary">{conversation.job_title}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="text-xs font-medium text-muted-foreground">{formatTimestamp(conversation.last_message_at)}</span>
+                      {conversation.unread_count > 0 && (
+                        <span className="ml-auto mt-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-primary-foreground">
+                          {conversation.unread_count}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className={`mt-2 truncate text-xs ${conversation.unread_count ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>
+                    {conversation.last_message_text || 'No messages yet'}
                   </p>
+                  <p className="mt-2 text-[11px] font-semibold text-muted-foreground">Job {conversation.job_id.slice(0, 8)} · {statusLabel(conversation.job_status)}</p>
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <section className="flex min-h-[560px] flex-col overflow-hidden rounded-2xl border bg-card lg:col-span-2">
+            {activeConversation ? (
+              <>
+                <header className="border-b bg-muted/20 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="truncate font-extrabold">{activeConversation.counterpart?.display_name || 'Job participant'}</h2>
+                        <p className="truncate text-xs font-semibold text-primary"><Briefcase className="mr-1 inline h-3 w-3" />{activeConversation.job_title}</p>
+                        <p className="text-xs font-medium text-muted-foreground">{statusLabel(activeConversation.job_status)}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        loadMessages(activeConversation.id);
+                        loadConversations(activeConversation.id).catch((refreshError: any) => setError(refreshError.message));
+                      }}
+                      className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      aria-label="Refresh message history"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {activeConversation.payment_status === 'pending' && (
+                    <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-5 text-amber-900">
+                      Quote accepted, but payment is not funded. Direct phone/email details remain locked and work should not start yet.
+                    </div>
+                  )}
+                </header>
+
+                <div className="flex-1 space-y-4 overflow-y-auto bg-muted/5 p-5">
+                  {messagesLoading ? (
+                    <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center text-center">
+                      <MessageSquare className="h-9 w-9 text-muted-foreground/40" />
+                      <p className="mt-3 font-extrabold">Start the job conversation</p>
+                      <p className="mt-1 max-w-sm text-sm font-medium text-muted-foreground">Keep messages focused on the accepted job, scope, timing, and work coordination.</p>
+                    </div>
+                  ) : messages.map(message => {
+                    const outgoing = message.sender_id === user.id;
+                    return (
+                      <div key={message.id} className={`flex ${outgoing ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
+                          outgoing
+                            ? 'rounded-br-none bg-primary text-primary-foreground'
+                            : 'rounded-bl-none border bg-card text-foreground'
+                        }`}>
+                          <p className="whitespace-pre-wrap break-words">{message.text}</p>
+                          <p className={`mt-1 text-[10px] font-semibold ${outgoing ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
+                            {new Date(message.created_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                            {outgoing && message.read ? ' · Read' : ''}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-[10px] font-semibold text-muted-foreground">{thread.time}</span>
-                {thread.unread && <div className="h-2 w-2 rounded-full bg-primary ml-auto mt-1"></div>}
-              </div>
-            </div>
-          ))}
+
+                <form onSubmit={handleSend} className="border-t bg-muted/20 p-4">
+                  <div className="flex items-end gap-3">
+                    <textarea
+                      value={reply}
+                      onChange={event => setReply(event.target.value)}
+                      placeholder="Write a job message…"
+                      rows={2}
+                      maxLength={4000}
+                      className="min-h-[48px] flex-1 resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary/50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!reply.trim() || sending}
+                      className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      <span className="hidden sm:inline">Send</span>
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs font-medium text-muted-foreground">Messages cannot be edited after sending.</p>
+                </form>
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm font-semibold text-muted-foreground">Select a conversation.</div>
+            )}
+          </section>
         </div>
-      </div>
-
-      {/* Active Conversation Placeholder */}
-      <div className="lg:col-span-2 bg-card border rounded-2xl flex flex-col justify-between overflow-hidden relative">
-        <div className="p-4 border-b bg-muted/20 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground">
-            <User className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-bold text-foreground">Dave Harrison</h3>
-            <p className="text-xs text-primary font-semibold">Licensed Electrician</p>
-          </div>
-        </div>
-
-        <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-muted/5">
-          {/* Incoming */}
-          <div className="flex items-end gap-2.5 max-w-[70%]">
-            <div className="p-4 bg-card border rounded-2xl rounded-bl-none text-sm text-foreground leading-relaxed shadow-sm">
-              Hey, I saw your job request for installing the ceiling fans. I can head out on Wednesday morning if that suits you?
-            </div>
-          </div>
-
-          {/* Outgoing */}
-          <div className="flex items-end gap-2.5 max-w-[70%] ml-auto justify-end">
-            <div className="p-4 bg-primary text-primary-foreground rounded-2xl rounded-br-none text-sm leading-relaxed shadow-md">
-              Hi Dave! Wednesday morning works perfectly. What is your estimated hourly rate for the installation?
-            </div>
-          </div>
-
-          {/* Incoming */}
-          <div className="flex items-end gap-2.5 max-w-[70%]">
-            <div className="p-4 bg-card border rounded-2xl rounded-bl-none text-sm text-foreground leading-relaxed shadow-sm">
-              Usually $80/hr plus a standard callout fee. I can send a firm quote once I see the fittings. Hey, are you free for a call tomorrow?
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 border-t bg-muted/20 flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="Type your message here..."
-            className="flex-1 bg-background border rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-all text-sm"
-          />
-          <button className="bg-primary text-primary-foreground p-3 rounded-xl hover:bg-primary/95 transition-all shadow-md shrink-0">
-            <Send className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

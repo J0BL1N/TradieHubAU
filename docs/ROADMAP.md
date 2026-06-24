@@ -368,6 +368,14 @@ Status: **In progress / unapproved.** This pass adds informational foundations o
 * [x] Add Tradie Verification explainer.
 * [x] Add Customer Verification explainer.
 * [x] Keep the main job flow unchanged and avoid real-provider or legal outcome claims.
+* [x] Replace dummy Messages content with authenticated, real job conversations and chronological message history.
+* [x] Bind conversation creation and message sending to the accepted customer/payee relationship through explicit authenticated RPCs — migration `037_job_messaging_foundation.sql`.
+* [x] Preserve immutable message evidence and recipient-only unread-to-read updates from v0.0.17 M-05.
+* [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
+* [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
+* [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.
+
+Advanced messaging remains deferred: email/push notifications, moderation dashboard, conversation reporting, rich attachments, typing indicators, online status, masked relay contact, and an advanced admin audit console.
 
 Real payment processing remains deferred to v0.2.x, GST implementation remains deferred to v0.3.x, and production launch remains separately gated under 1.0 readiness.
 

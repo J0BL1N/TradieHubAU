@@ -10,7 +10,7 @@ import {
   Search, MapPin, DollarSign, Briefcase, AlertTriangle,
   SlidersHorizontal, X, Clock, User, Filter, RefreshCw,
   Bookmark, BookmarkCheck, Send, CheckCircle, AlertCircle,
-  FileText, Loader2, Lock, Upload, Mail, Phone
+  FileText, Loader2, Lock, Upload, Mail, Phone, MessageSquare
 } from 'lucide-react';
 import { 
   acceptQuote, submitCompletionProof, raiseJobIssue, approveJobCompletion, 
@@ -698,6 +698,16 @@ export default function Jobs() {
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
+  const canMessageJob = (job: Job) => {
+    if (!user || !['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(job.status)) {
+      return false;
+    }
+    if (job.customer_id === user.id) return true;
+    return !!job.applications?.some(application =>
+      application.tradie_id === user.id && application.status === 'accepted'
+    );
+  };
+
   const activeCount = jobs.filter((j) => j.status === 'open').length;
   const urgentCount = jobs.filter((j) => j.status === 'open' && j.urgency === 'urgent').length;
   const totalValue = jobs.reduce((sum, j) => sum + (j.budget_max ?? j.budget_min ?? 0), 0);
@@ -1155,6 +1165,15 @@ export default function Jobs() {
                         Details
                       </button>
 
+                      {activeTab === 'my_jobs' && canMessageJob(job) && (
+                        <Link
+                          to={`/messages?job=${job.id}`}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10 whitespace-nowrap"
+                        >
+                          <MessageSquare className="h-4 w-4" /> Message
+                        </Link>
+                      )}
+
                       {job.status === 'open' ? (
                         user ? (
                           (() => {
@@ -1437,6 +1456,15 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <>
+                      {canMessageJob(selectedJob) && (
+                        <Link
+                          to={`/messages?job=${selectedJob.id}`}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm font-extrabold text-primary transition-colors hover:bg-primary/10"
+                        >
+                          <MessageSquare className="h-4 w-4" /> Open Job Messages
+                        </Link>
+                      )}
+
                       {lifecycleError && (
                         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2.5">
                           <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
