@@ -157,7 +157,7 @@ The final review found and corrected two narrow guard regressions in [028_finali
 * **Issue:** Completion uploads validate path segment 2 but not the `jobs/` prefix, uploader segment, or state. Dispute uploads validate customer/job but not uploader segment or review/dispute state.
 * **Risk:** Authorized users can upload into misleading namespaces, weakening attribution/evidence integrity.
 * **Recommended fix:** Enforce `jobs/<job>/<uid>/<uuid>` and `disputes/<job>/<uid>/<uuid>`, every path segment, and allowed state.
-* **State:** Deferred; storage policy rewrite required.
+* **State:** Source-remediated in migration `031_harden_completion_dispute_storage_paths.sql` — completion/dispute uploads now require exact prefixes, four-segment paths, matching authenticated uploader IDs, authorised job actors, and eligible lifecycle/payment state. Pending live/manual verification.
 
 ### M-04 — Verification record URL is not tied to submitter prefix
 
