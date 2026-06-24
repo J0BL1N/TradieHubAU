@@ -14,7 +14,7 @@ Approved/completed:
 
 Current focus:
 
-* v0.0.16 Security, RLS, Storage, and Privacy Audit (in progress — remediation and live Supabase verification outstanding)
+* v0.0.16 Security, RLS, Storage, and Privacy Audit (in progress — Critical/High verified; Medium/Low and manual verification outstanding)
 * v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow (awaiting manual review)
 * v0.0.13 Admin dashboard polish
 * v0.0.14 Admin Dispute Case Management (implementation complete, awaiting manual review)
@@ -286,23 +286,23 @@ Later:
 
 # v0.0.16 — Security, RLS, Storage, and Privacy Audit
 
-Status: **In progress / unapproved.** Source audit findings are documented in [`docs/SECURITY_AUDIT_v0.0.16.md`](SECURITY_AUDIT_v0.0.16.md). Critical/high remediation and live Supabase verification remain outstanding.
+Status: **In progress / unapproved.** Source audit findings are documented in [`docs/SECURITY_AUDIT_v0.0.16.md`](SECURITY_AUDIT_v0.0.16.md). Critical/High source remediation and hosted Supabase verification are complete; Medium/Low findings and manual workflow verification remain outstanding.
 
 ### Completed Remediation Items
 
-* [x] C-01: Redefined `protect_user_fields()` and attached it as `BEFORE INSERT OR UPDATE` trigger on `public.users` to block unauthorized client edits of privileged fields in migration `019_protect_user_fields_trigger.sql` (pending live Supabase verification).
-* [x] C-02: Replaced SELECT policies on `public.job_completion_proofs` and `public.job_issues` to use explicit aliases and correct outer column references in migration `020_fix_proof_dispute_rls_shadowing.sql` (pending live Supabase verification).
-* [x] C-03: Re-defined and secured `public.simulate_payment_funding` RPC to validate authentication, check customer/admin permissions, enforce expected state transitions, implement idempotent safety, and restrict execute permissions to authenticated users in migration `021_secure_simulate_payment_funding_rpc.sql` (pending live Supabase verification).
-* [x] C-04: Dropped direct client INSERT policy on `public.payments` table in migration `022_block_direct_client_payment_inserts.sql` to prevent client-side payment forgery, forcing payment creation exclusively through trusted database RPC functions (pending live Supabase verification).
-* [x] C-05: Disabled legacy, unused `release-payout` Edge Function by replacing Deno server handler with a secure fail-closed HTTP 403 response (pending live Supabase function deployment verification).
-* [x] H-01: Added database-level safe public profiles boundary by removing wide public SELECT policy on `public.users` and creating allowlisted view `public.public_profiles` in migration `023_add_public_profile_boundary.sql`. Aligned frontend queries and contact-gating resolution to query from the view, retrieve counterparty details via `jobPayment`, and hydrate job/application/reviewer profiles through separate safe view lookups instead of unsupported embedded joins (pending live Supabase verification).
-* [x] H-02: Replaced the broad UPDATE policy on `public.applications` with `"Tradies can withdraw own applications"` restricting updates to the status field (setting to `withdrawn` on pending applications) in migration `024_lock_application_updates.sql`. Added trigger function `protect_application_updates()` to enforce column immutability on client updates, preserving SECURITY DEFINER `accept_quote()` function transitions (pending live Supabase verification).
-* [x] H-03: Replaced the broad owner UPDATE policy on `public.jobs` with open-job-only owner editing in migration `025_lock_job_lifecycle_updates.sql`. Added `protect_job_lifecycle_updates()` to allowlist normal job content fields while blocking direct client changes to lifecycle, ownership, counters, and system timestamps; trusted SECURITY DEFINER RPC/service-role/admin transitions are preserved (pending live Supabase verification).
-* [x] H-04: Restricted `approve_job_completion()` to customer-owned jobs in `completed_pending_review` with held, unsettled funding in migration `026_block_completion_approval_during_disputes.sql`. Disputed/open-issue jobs now require admin resolution, and completion approval is serialized with dispute creation to prevent concurrent state bypass (pending live Supabase verification).
-* [x] H-05: Added SELECT-only admin policies for dispute-linked `public.jobs` and `public.payments` rows in migration `027_add_admin_dispute_read_policies.sql`. A secured dispute-case predicate scopes access to jobs with recorded ongoing or resolved issues while preserving existing participant access and all mutation boundaries (pending live Supabase verification).
-* [x] H-06: Disabled the legacy `send-email` Edge Function with a fail-closed HTTP 403 response. It no longer accepts or relays caller-controlled recipient, subject, or HTML content and does not read email-provider secrets (pending live function deployment verification; production notifications deferred to v0.7.x).
-* [x] H-07: Disabled the legacy `handle-new-message` and `handle-new-proposal` webhook handlers with fail-closed HTTP 403 responses. They no longer trust caller-supplied records, perform service-role reads/actions, or invoke email delivery (pending live function deployment verification; notification automation deferred to v0.7.x).
-* [x] H-08: Disabled the legacy `payment-sheet` and `stripe-webhook` Edge Functions with fail-closed HTTP 403 responses. They no longer create payment intents, read provider/service-role secrets, process caller/provider payloads, or mutate jobs/payments (pending live function deployment verification; real provider settlement remains deferred to v0.2.x).
+* [x] C-01: Redefined `protect_user_fields()` and attached it as `BEFORE INSERT OR UPDATE` trigger on `public.users` to block unauthorized client edits of privileged fields in migration `019_protect_user_fields_trigger.sql` (hosted migration verified).
+* [x] C-02: Replaced SELECT policies on `public.job_completion_proofs` and `public.job_issues` to use explicit aliases and correct outer column references in migration `020_fix_proof_dispute_rls_shadowing.sql` (hosted migration verified).
+* [x] C-03: Secured `public.simulate_payment_funding` with caller/state/idempotency checks in migration `021_secure_simulate_payment_funding_rpc.sql`; migration `028_finalize_critical_high_security_guards.sql` adds row locking so concurrent retries cannot duplicate funding (hosted migrations verified).
+* [x] C-04: Dropped direct client INSERT policy on `public.payments` in migration `022_block_direct_client_payment_inserts.sql`, forcing payment creation through trusted database paths (hosted migration verified).
+* [x] C-05: Disabled and deployed the legacy `release-payout` Edge Function as a fail-closed HTTP 403 handler (hosted probe verified).
+* [x] H-01: Removed wide public SELECT on `public.users`, added allowlisted `public.public_profiles` in migration `023_add_public_profile_boundary.sql`, and changed job/application/reviewer hydration to separate view lookups rather than unsupported embedded joins (hosted view and open-jobs REST probes verified).
+* [x] H-02: Restricted direct application updates to `pending -> withdrawn` in migration `024_lock_application_updates.sql`; migration `028_finalize_critical_high_security_guards.sql` makes the immutable-field trigger execute as invoker while preserving trusted RPC/service/admin transitions (hosted migrations verified).
+* [x] H-03: Replaced broad owner job UPDATE with open-job content editing plus a field allowlist trigger in migration `025_lock_job_lifecycle_updates.sql` (hosted migration verified).
+* [x] H-04: Restricted `approve_job_completion()` to held, unsettled `completed_pending_review` jobs and serialized it against dispute creation in migration `026_block_completion_approval_during_disputes.sql` (hosted migration verified).
+* [x] H-05: Added SELECT-only admin policies for dispute-linked `public.jobs` and `public.payments` in migration `027_add_admin_dispute_read_policies.sql` (hosted migration verified).
+* [x] H-06: Disabled and deployed `send-email` as a fail-closed HTTP 403 handler that does not parse delivery input or read provider secrets (hosted probe verified; production notifications deferred to v0.7.x).
+* [x] H-07: Disabled and deployed `handle-new-message` and `handle-new-proposal` as fail-closed HTTP 403 handlers without caller-record parsing, service-role reads, or email invocation (hosted probes verified; notification automation deferred to v0.7.x).
+* [x] H-08: Disabled and deployed `payment-sheet` and `stripe-webhook` as fail-closed HTTP 403 handlers without provider intent creation, secret reads, event processing, or database mutation (hosted probes verified; real provider settlement remains deferred to v0.2.x).
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`

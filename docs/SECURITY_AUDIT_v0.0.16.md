@@ -2,26 +2,26 @@
 
 Date: 2026-06-24
 
-Status: In progress — source audit complete; remediation and live Supabase verification remain outstanding.
+Status: In progress — Critical/High remediation and hosted Supabase verification complete; Medium/Low findings and manual workflow verification remain outstanding.
 
 Approval: This document does not approve v0.0.15 or v0.0.16.
 
 ## Scope and method
 
-This audit reviewed the committed frontend, Supabase migrations, Edge Functions, storage policies, auth/profile logic, and frontend Supabase calls. Findings describe the policy state produced by source migrations. The live hosted project was not queried, so migration drift, deployed function settings, grants, triggers, and bucket configuration require manual verification.
+This audit reviewed the committed frontend, Supabase migrations, Edge Functions, storage policies, auth/profile logic, and frontend Supabase calls. The final Critical/High review also checked linked migration state and exercised public REST and disabled-function boundaries against hosted project `phiurjqqfgbtauztqtxx` on 2026-06-24. Migrations 019–028 were present remotely, `public.public_profiles` resolved through the hosted schema cache, and all six disabled Edge Functions returned fail-closed HTTP 403 responses.
 
-No broad RLS, schema, storage, auth, payment, or dispute changes were made. One narrow frontend privacy reduction was made: public profile/directory requests now select public fields only, and another user's email, phone, and admin badge are no longer rendered. This does not replace a database privacy boundary.
+This verification is technical evidence, not subjective browser approval. Medium/Low findings, end-to-end role testing, and manual UI/UX approval remain outside this review.
 
 ## Summary
 
 | Severity | Count | State |
 | --- | ---: | --- |
-| Critical | 5 | Deferred; requires separately approved database/RPC or Edge Function work |
-| High | 8 | One frontend exposure partially mitigated; server fixes deferred |
+| Critical | 5 | Source-remediated and verified on hosted Supabase |
+| High | 8 | Source-remediated and verified on hosted Supabase |
 | Medium | 6 | Deferred |
 | Low | 4 | Deferred or accepted for local development |
 
-The most urgent issue is that the function intended to protect privileged `users` fields is never attached to a trigger in the committed migrations. An authenticated user can therefore attempt to update their own admin, verification, role, and provider-managed fields through the broad self-update policy.
+The final review found and corrected two narrow guard regressions in [028_finalize_critical_high_security_guards.sql](file:///F:/TradieHubAU/supabase/migrations/028_finalize_critical_high_security_guards.sql): application update protection now executes as the invoking role, and simulated funding retries are serialized before idempotency checks. The migration was applied to the hosted project.
 
 ## Critical
 
@@ -31,7 +31,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** The migrations define `protect_user_fields()` but never create a trigger that invokes it. The self-update policy allows an authenticated user to update their own row without column restrictions.
 * **Risk:** A user can attempt to set `is_admin`, `role`, verification flags, or Stripe/provider identifiers. Successful admin escalation compromises admin policies and security-definer admin RPCs.
 * **Recommended fix:** Add a reviewed `BEFORE INSERT OR UPDATE` trigger protecting every privilege, verification, and provider-managed field. Restrict ordinary profile changes to an allowlist.
-* **State:** Fixed in migration [019_protect_user_fields_trigger.sql](file:///F:/TradieHubAU/supabase/migrations/019_protect_user_fields_trigger.sql) (pending live Supabase verification).
+* **State:** Fixed in migration [019_protect_user_fields_trigger.sql](file:///F:/TradieHubAU/supabase/migrations/019_protect_user_fields_trigger.sql); applied to hosted Supabase and verified in linked migration status.
 
 ### C-02 — Proof/dispute RLS has an outer-column shadowing error
 
@@ -39,7 +39,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Both contain `SELECT payee_id FROM public.payments WHERE job_id = job_id`. Both unqualified names resolve to the payment row, making the condition effectively true for every payment.
 * **Risk:** A payee on any payment may be able to read proof and dispute rows for unrelated jobs, including complaint text, evidence paths, resolution data, and admin notes.
 * **Recommended fix:** Replace the policies using aliases and explicit correlation to the outer proof/issue job ID. Add wrong-tradie SQL tests.
-* **State:** Fixed in migration [020_fix_proof_dispute_rls_shadowing.sql](file:///F:/TradieHubAU/supabase/migrations/020_fix_proof_dispute_rls_shadowing.sql) (pending live Supabase verification).
+* **State:** Fixed in migration [020_fix_proof_dispute_rls_shadowing.sql](file:///F:/TradieHubAU/supabase/migrations/020_fix_proof_dispute_rls_shadowing.sql); applied to hosted Supabase and verified in linked migration status.
 
 ### C-03 — Simulated funding RPC has no caller authorization or idempotency guard
 
@@ -47,7 +47,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** The security-definer RPC funds a supplied job without checking job ownership, admin status, or an approved local-test actor. No explicit revoke/grant or pending-state guard is committed.
 * **Risk:** A caller with a job UUID can spoof funding, unlock lifecycle/contact behaviour, and create duplicate charge ledger entries. PostgreSQL functions are executable by `PUBLIC` unless privileges are tightened.
 * **Recommended fix:** Revoke `PUBLIC`/`anon`, authorize only the required authenticated actor, require the expected pending state, and make ledger insertion idempotent. Disable simulation before production.
-* **State:** Fixed in migration [021_secure_simulate_payment_funding_rpc.sql](file:///F:/TradieHubAU/supabase/migrations/021_secure_simulate_payment_funding_rpc.sql) (pending live Supabase verification).
+* **State:** Fixed in migration [021_secure_simulate_payment_funding_rpc.sql](file:///F:/TradieHubAU/supabase/migrations/021_secure_simulate_payment_funding_rpc.sql), with concurrent-retry serialization added by [028_finalize_critical_high_security_guards.sql](file:///F:/TradieHubAU/supabase/migrations/028_finalize_critical_high_security_guards.sql); both are applied to hosted Supabase.
 
 ### C-04 — Payment rows can be inserted directly by clients
 
@@ -55,7 +55,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** An authenticated payer can insert a payment while choosing job, payee, amount, status, and provider identifiers.
 * **Risk:** A client can forge payment/contract relationships, reserve a job's unique payment row to block legitimate acceptance, or create records that grant downstream access.
 * **Recommended fix:** Drop direct client INSERT and create payments only inside a validated quote-acceptance RPC or verified provider webhook.
-* **State:** Fixed in migration [022_block_direct_client_payment_inserts.sql](file:///F:/TradieHubAU/supabase/migrations/022_block_direct_client_payment_inserts.sql) (pending live Supabase verification).
+* **State:** Fixed in migration [022_block_direct_client_payment_inserts.sql](file:///F:/TradieHubAU/supabase/migrations/022_block_direct_client_payment_inserts.sql); applied to hosted Supabase and verified in linked migration status.
 
 ### C-05 — Release payout Edge Function lacks actor authorization
 
@@ -63,7 +63,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** It accepts any `jobId`, creates a service-role client, and updates job status without authenticating or authorizing the customer/admin actor.
 * **Risk:** If deployed, an untrusted caller—or any authenticated caller if only gateway JWT verification is enabled—can attempt to complete another user's job and trigger future release logic.
 * **Recommended fix:** Do not deploy as-is. Add explicit JWT validation, customer/admin authorization, current-state validation, idempotency, and provider-record verification.
-* **State:** Fixed; legacy Edge Function disabled by replacing it with a secure, fail-closed HTTP 403 response in Deno function code (pending live Supabase deployment verification).
+* **State:** Fixed; the legacy Edge Function is deployed as a fail-closed handler and returned HTTP 403 during hosted verification.
 
 ## High
 
@@ -73,7 +73,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** RLS is row-based. `USING (true)` permits anonymous reads of all selectable columns, including email, phone, postcode, admin status, last-seen data, address rules, and Stripe identifiers. Frontend code previously requested `*` and rendered email/phone publicly.
 * **Risk:** Contact gating can be bypassed through direct REST queries; users/admins can be enumerated and provider identifiers disclosed.
 * **Recommended fix:** Expose an allowlisted public-profile view/RPC and remove anonymous SELECT from the base table. Keep self/admin reads separately scoped.
-* **State:** Fixed in migration [023_add_public_profile_boundary.sql](file:///F:/TradieHubAU/supabase/migrations/023_add_public_profile_boundary.sql) and frontend query/contact-gate alignment. Frontend job, application, and review hydration now performs separate allowlisted `public_profiles` lookups because PostgREST cannot infer foreign-key relationships to the view (pending live Supabase verification).
+* **State:** Fixed in migration [023_add_public_profile_boundary.sql](file:///F:/TradieHubAU/supabase/migrations/023_add_public_profile_boundary.sql) and frontend query/contact-gate alignment. Frontend job, application, and review hydration performs separate allowlisted `public_profiles` lookups because PostgREST cannot infer foreign-key relationships to the view. The migration is applied, and hosted anonymous REST checks resolved both `public_profiles` and open jobs without schema-cache errors.
 
 ### H-02 — Tradies can rewrite their applications, including status
 
@@ -81,7 +81,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** UPDATE checks only `tradie_id = auth.uid()` and does not restrict columns or transitions.
 * **Risk:** A tradie can attempt to accept their own application, alter linkage, or bypass customer-controlled acceptance.
 * **Recommended fix:** Remove broad UPDATE and provide a narrow withdrawal RPC or immutable columns plus `pending -> withdrawn` enforcement.
-* **State:** Fixed in migration [024_lock_application_updates.sql](file:///F:/TradieHubAU/supabase/migrations/024_lock_application_updates.sql) (pending live Supabase verification).
+* **State:** Fixed in migration [024_lock_application_updates.sql](file:///F:/TradieHubAU/supabase/migrations/024_lock_application_updates.sql), with the trigger execution-context bypass corrected in [028_finalize_critical_high_security_guards.sql](file:///F:/TradieHubAU/supabase/migrations/028_finalize_critical_high_security_guards.sql); both are applied to hosted Supabase.
 
 ### H-03 — Job owners can directly spoof lifecycle states
 
@@ -89,7 +89,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Owners can update job rows without a column allowlist or status-transition enforcement.
 * **Risk:** A client can set accepted/payment-held/completed/disputed states and unlock UI behaviour without matching financial/proof state.
 * **Recommended fix:** Restrict ordinary edits to open-job content and move lifecycle transitions behind authorized RPCs and transition guards.
-* **State:** Fixed in source migration [025_lock_job_lifecycle_updates.sql](file:///F:/TradieHubAU/supabase/migrations/025_lock_job_lifecycle_updates.sql) by replacing the broad owner UPDATE policy with open-job-only editing and a content-field allowlist trigger; lifecycle and system fields remain available only to trusted RPC/service-role/admin operations (pending live Supabase verification).
+* **State:** Fixed in migration [025_lock_job_lifecycle_updates.sql](file:///F:/TradieHubAU/supabase/migrations/025_lock_job_lifecycle_updates.sql) by replacing the broad owner UPDATE policy with open-job-only editing and a content-field allowlist trigger; lifecycle and system fields remain available only to trusted RPC/service-role/admin operations. Applied to hosted Supabase.
 
 ### H-04 — Completion approval can bypass an open dispute
 
@@ -97,7 +97,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** The RPC permits both `completed_pending_review` and `disputed` states.
 * **Risk:** A customer can call it directly during a dispute and release the full amount, bypassing admin resolution.
 * **Recommended fix:** Permit customer approval only from `completed_pending_review`; require admin resolution from `disputed`.
-* **State:** Fixed in source migration [026_block_completion_approval_during_disputes.sql](file:///F:/TradieHubAU/supabase/migrations/026_block_completion_approval_during_disputes.sql). Customer approval is restricted to `completed_pending_review`, active/open disputes fail closed, payment must still be held and unsettled, and approval/dispute creation share a job-row lock while admin resolution remains unchanged (pending live Supabase verification).
+* **State:** Fixed in migration [026_block_completion_approval_during_disputes.sql](file:///F:/TradieHubAU/supabase/migrations/026_block_completion_approval_during_disputes.sql). Customer approval is restricted to `completed_pending_review`, active/open disputes fail closed, payment must still be held and unsettled, and approval/dispute creation share a job-row lock while admin resolution remains unchanged. Applied to hosted Supabase.
 
 ### H-05 — Admin dispute queries lack admin RLS on jobs/payments
 
@@ -105,7 +105,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Admin policies exist for issues, proofs, ledger, and verifications, but no committed admin SELECT policies exist for `jobs` or `payments`.
 * **Risk:** An admin who is not a participant can receive incomplete case data, encouraging unsafe workarounds.
 * **Recommended fix:** After C-01, add narrowly scoped admin SELECT and test a dedicated non-participant admin.
-* **State:** Fixed in source migration [027_add_admin_dispute_read_policies.sql](file:///F:/TradieHubAU/supabase/migrations/027_add_admin_dispute_read_policies.sql). Authenticated platform admins receive SELECT-only access to `jobs` and `payments` rows anchored to an existing ongoing or resolved `job_issues` case; non-case rows, non-admin participant boundaries, and all mutation permissions remain unchanged (pending live Supabase verification).
+* **State:** Fixed in migration [027_add_admin_dispute_read_policies.sql](file:///F:/TradieHubAU/supabase/migrations/027_add_admin_dispute_read_policies.sql). Authenticated platform admins receive SELECT-only access to `jobs` and `payments` rows anchored to an existing ongoing or resolved `job_issues` case; non-case rows, non-admin participant boundaries, and all mutation permissions remain unchanged. Applied to hosted Supabase.
 
 ### H-06 — Email Edge Function accepts arbitrary recipient and HTML
 
@@ -113,7 +113,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** It accepts caller-controlled `to`, `subject`, and `html` without application authorization, a trusted internal signature, or rate limiting.
 * **Risk:** If deployed, permitted callers can abuse Resend for spam/phishing and consume quota.
 * **Recommended fix:** Make it internal-only, use template/event identifiers, validate trusted origin/actor, and rate-limit.
-* **State:** Fixed in source by disabling the legacy `send-email` function with a fail-closed HTTP 403 response. The disabled handler does not parse recipient/subject/HTML input, read provider secrets, or call an email provider; production notifications remain deferred to v0.7.x (pending live function deployment verification).
+* **State:** Fixed by disabling the legacy `send-email` function with a fail-closed HTTP 403 response. The deployed handler does not parse recipient/subject/HTML input, read provider secrets, or call an email provider; its hosted probe returned HTTP 403. Production notifications remain deferred to v0.7.x.
 
 ### H-07 — Webhook handlers trust caller-supplied records
 
@@ -121,7 +121,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Both accept a supplied `record`, use service-role reads/actions, and do not validate webhook origin.
 * **Risk:** Forged requests can trigger notifications, service-role reads, and resource consumption.
 * **Recommended fix:** Authenticate webhook origin, re-read records by ID, and authorize the referenced event.
-* **State:** Fixed in source by disabling both legacy handlers with fail-closed HTTP 403 responses. `handle-new-message` and `handle-new-proposal` no longer parse caller-supplied records, read service-role credentials/data, or invoke `send-email`; authenticated notification/webhook automation remains deferred to v0.7.x (pending live function deployment verification).
+* **State:** Fixed by disabling both legacy handlers with fail-closed HTTP 403 responses. The deployed `handle-new-message` and `handle-new-proposal` handlers do not parse caller-supplied records, read service-role credentials/data, or invoke `send-email`; both hosted probes returned HTTP 403. Authenticated notification/webhook automation remains deferred to v0.7.x.
 
 ### H-08 — Payment Edge Functions use legacy schema/incomplete linkage checks
 
@@ -129,7 +129,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** They refer to `proposals`, `assigned_tradie_id`, and `in_progress` while current migrations use applications/payments and different states. Payment sheet does not prove supplied `jobId` matches the proposal/owner; webhook ignores important database errors.
 * **Risk:** A payment can be linked incorrectly in a compatible legacy schema, or current-schema operations can fail/inconsistently update financial state.
 * **Recommended fix:** Keep disabled for simulated payments. Rebuild under v0.2.x with current schema, ownership/linkage checks, idempotency, and reconciliation.
-* **State:** Fixed in source by disabling both legacy real-payment functions with fail-closed HTTP 403 responses. `payment-sheet` no longer reads provider/client values or creates payment intents, and `stripe-webhook` no longer reads secrets/events or mutates jobs/payments. Real provider settlement, signed webhooks, chargebacks, reconciliation, receipts, and payouts remain deferred to v0.2.x Real Payments Foundation (pending live function deployment verification).
+* **State:** Fixed by disabling both legacy real-payment functions with fail-closed HTTP 403 responses. The deployed `payment-sheet` no longer reads provider/client values or creates payment intents, and the deployed `stripe-webhook` no longer reads secrets/events or mutates jobs/payments; both hosted probes returned HTTP 403. Real provider settlement, signed webhooks, chargebacks, reconciliation, receipts, and payouts remain deferred to v0.2.x Real Payments Foundation.
 
 ## Medium
 
