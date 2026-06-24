@@ -89,7 +89,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Owners can update job rows without a column allowlist or status-transition enforcement.
 * **Risk:** A client can set accepted/payment-held/completed/disputed states and unlock UI behaviour without matching financial/proof state.
 * **Recommended fix:** Restrict ordinary edits to open-job content and move lifecycle transitions behind authorized RPCs and transition guards.
-* **State:** Deferred.
+* **State:** Fixed in source migration [025_lock_job_lifecycle_updates.sql](file:///F:/TradieHubAU/supabase/migrations/025_lock_job_lifecycle_updates.sql) by replacing the broad owner UPDATE policy with open-job-only editing and a content-field allowlist trigger; lifecycle and system fields remain available only to trusted RPC/service-role/admin operations (pending live Supabase verification).
 
 ### H-04 — Completion approval can bypass an open dispute
 
