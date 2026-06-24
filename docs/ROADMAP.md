@@ -23,7 +23,7 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.17 Medium Security Findings (in progress — M-01 source-remediated, pending live verification)
+* v0.0.17 Medium Security Findings (in progress — M-01 through M-06 source-remediated, pending manual verification)
 * v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
 
 Later:
@@ -259,26 +259,26 @@ Later:
 * [ ] Create primary tradie test account
 * [ ] Create second tradie test account
 * [ ] Create admin account
-* [ ] Test customer signup/login
-* [ ] Test tradie signup/login
+* [x] Test customer signup/login
+* [x] Test tradie signup/login
 * [ ] Test tradie verification/whitelist/admin approval
 * [ ] Test unverified tradie cannot quote/apply
 * [ ] Test suspended tradie cannot quote/apply
-* [ ] Test customer creates job
-* [ ] Test tradie submits quote
-* [ ] Test customer accepts quote
+* [x] Test customer creates job
+* [x] Test tradie submits quote
+* [x] Test customer accepts quote
 * [ ] Test contact details stay locked before payment funding
-* [ ] Test protected payment funding simulation
-* [ ] Test contact details unlock after payment funding
-* [ ] Test accepted tradie submits completion proof with images
+* [x] Test protected payment funding simulation
+* [x] Test contact details unlock after payment funding
+* [x] Test accepted tradie submits completion proof with images
 * [ ] Test wrong tradie cannot submit proof
-* [ ] Test customer reviews proof
-* [ ] Test customer approves work and payment release
-* [ ] Test dispute flow
-* [ ] Test admin dispute visibility
+* [x] Test customer reviews proof
+* [x] Test customer approves work and payment release
+* [x] Test dispute flow
+* [x] Test admin dispute visibility
 * [ ] Test completed job state
 * [ ] Test cancelled job state if supported
-* [ ] Test guest browsing
+* [x] Test guest browsing
 * [ ] Test guest save/apply gating
 * [ ] Test mobile/responsive layout manually
 * [ ] Test no user-facing “escrow” wording remains
@@ -318,11 +318,11 @@ Status: **Critical/High security hardening approved/passed.** Source remediation
 * [ ] Audit Supabase RLS policies for `payments`
 * [ ] Audit Supabase RLS policies for `completion_proofs`
 * [ ] Audit Supabase Storage policies for `completion_proofs`
-* [ ] Confirm guests only see public-safe job data
-* [ ] Confirm customers only see their own private data
-* [ ] Confirm tradies only see appropriate private data after payment funding
-* [ ] Confirm wrong tradies cannot access private proof/contact data
-* [ ] Confirm admin-only data is admin-only
+* [x] Confirm guests only see public-safe job data
+* [x] Confirm customers only see their own private data
+* [x] Confirm tradies only see appropriate private data after payment funding
+* [x] Confirm wrong tradies cannot access private proof/contact data
+* [x] Confirm admin-only data is admin-only
 * [ ] Confirm verification documents are protected
 * [ ] Confirm no service-role keys exist in frontend
 * [ ] Confirm no secrets are committed
@@ -341,9 +341,9 @@ Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 * [x] M-01: Dropped direct client INSERT policies on `job_completion_proofs` and `job_issues`; added `UNIQUE(job_id)` constraint and partial unique index `uq_open_issue_per_job`; updated `submit_completion_proof` RPC with explicit idempotency guard — migration `029_harden_proof_dispute_inserts.sql` (pending live/manual verification).
 * [x] M-02: Dropped direct variation INSERT/UPDATE policies; added partial unique index — migration `030_lock_variation_writes.sql` (pending live/manual verification).
 * [x] M-03: Bound completion/dispute storage uploads to exact prefixes, authenticated uploader segments, authorised jobs, and eligible lifecycle/payment state — migration `031_harden_completion_dispute_storage_paths.sql` (pending live/manual verification).
-* [ ] M-04: Bind verification document paths to the submitting user.
-* [ ] M-05: Narrow message/conversation UPDATE policies.
-* [ ] M-06: Require a completed participant relationship before review creation.
+* [x] M-04: Bound verification document paths to the authenticated submitter — migration `032_harden_verification_document_urls.sql`, commit `c8351e0` (pending manual verification).
+* [x] M-05: Removed broad conversation updates and restricted message updates to recipient read state — migration `033_lock_message_conversation_updates.sql`, commit `25f0fc5` (pending manual verification).
+* [x] M-06: Restricted review creation to completed/released job counterparties with existing duplicate protection — migration `034_harden_review_creation.sql` (applied; pending manual verification).
 * [ ] Reassess deferred Low findings after Medium remediation.
 
 Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notification and email automation remain deferred to v0.7.x.
