@@ -113,7 +113,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** It accepts caller-controlled `to`, `subject`, and `html` without application authorization, a trusted internal signature, or rate limiting.
 * **Risk:** If deployed, permitted callers can abuse Resend for spam/phishing and consume quota.
 * **Recommended fix:** Make it internal-only, use template/event identifiers, validate trusted origin/actor, and rate-limit.
-* **State:** Deferred; deployment status needs manual verification.
+* **State:** Fixed in source by disabling the legacy `send-email` function with a fail-closed HTTP 403 response. The disabled handler does not parse recipient/subject/HTML input, read provider secrets, or call an email provider; production notifications remain deferred to v0.7.x (pending live function deployment verification).
 
 ### H-07 — Webhook handlers trust caller-supplied records
 
