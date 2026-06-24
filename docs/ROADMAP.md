@@ -23,7 +23,7 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.17 Medium Security Findings (planned — not started)
+* v0.0.17 Medium Security Findings (in progress — M-01 source-remediated, pending live verification)
 * v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
 
 Later:
@@ -336,9 +336,9 @@ Status: **Critical/High security hardening approved/passed.** Source remediation
 
 # v0.0.17 — Medium Security Findings
 
-Status: **Planned / not started / unapproved.** No Medium finding was remediated as part of the v0.0.16 Critical/High approval.
+Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 
-* [ ] M-01: Route proof/dispute creation exclusively through lifecycle-validating RPC paths.
+* [x] M-01: Dropped direct client INSERT policies on `job_completion_proofs` and `job_issues`; added `UNIQUE(job_id)` constraint and partial unique index `uq_open_issue_per_job`; updated `submit_completion_proof` RPC with explicit idempotency guard — migration `029_harden_proof_dispute_inserts.sql` (pending live/manual verification).
 * [ ] M-02: Prevent direct variation workflow manipulation.
 * [ ] M-03: Bind storage upload paths to the authorised uploader and lifecycle.
 * [ ] M-04: Bind verification document paths to the submitting user.

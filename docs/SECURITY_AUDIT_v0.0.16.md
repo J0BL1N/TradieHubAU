@@ -141,7 +141,7 @@ The final review found and corrected two narrow guard regressions in [028_finali
 * **Issue:** Direct inserts validate participant ownership but not all job-state, timing, attachment, and transition rules enforced by RPCs.
 * **Risk:** Participants can create inconsistent or duplicate records by bypassing RPCs.
 * **Recommended fix:** Make inserts RPC-only or enforce every invariant in constraints/triggers.
-* **State:** Deferred.
+* **State:** Fixed in migration [029_harden_proof_dispute_inserts.sql](file:///F:/TradieHubAU/supabase/migrations/029_harden_proof_dispute_inserts.sql) — direct client INSERT policies dropped from both tables; `UNIQUE(job_id)` constraint added to `job_completion_proofs`; partial unique index `uq_open_issue_per_job` added to `job_issues`; `submit_completion_proof` RPC updated with explicit idempotency guard. Pending live/manual verification. v0.0.17 in progress / unapproved.
 
 ### M-02 — Variation policies allow direct workflow manipulation
 
