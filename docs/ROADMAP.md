@@ -349,7 +349,7 @@ Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 * [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed `PUBLIC`/`anon` execution — migration `035_narrow_is_admin_checks.sql` (applied and anonymously probed; pending manual verification).
 * [x] L-02: Removed committed hosted-project fallbacks; frontend now fails closed with a clear error when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing (pending manual configuration-error verification).
 * [x] L-03: Marked `supabase/config.toml` as local-development-only and added `docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md` covering required hosted auth review. Hosted/production auth remains unverified and unapproved.
-* [ ] L-04: Make sensitive RPC EXECUTE grants explicit.
+* [x] L-04: Revoked default `PUBLIC`/`anon` execution and granted sensitive workflow, admin, policy-helper, and internal functions only to their intended roles — migration `036_explicit_rpc_execute_grants.sql` (pending manual authenticated/admin flow verification).
 
 Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notification and email automation remain deferred to v0.7.x.
 
