@@ -149,7 +149,7 @@ The final review found and corrected two narrow guard regressions in [028_finali
 * **Issue:** Direct access is broader than variation RPC rules and does not protect every amount, linkage, and status field.
 * **Risk:** Participants can create or mutate unfunded/misleading variation state.
 * **Recommended fix:** Make mutations RPC-only or enforce immutable fields/transitions in the database.
-* **State:** Deferred.
+* **State:** Source-remediated in migration `030_lock_variation_writes.sql` — direct INSERT/UPDATE policies dropped; partial unique index `uq_pending_variation_per_contract` added. Pending live/manual verification.
 
 ### M-03 — Storage upload paths are insufficiently bound to uploader/lifecycle
 

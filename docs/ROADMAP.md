@@ -339,7 +339,7 @@ Status: **Critical/High security hardening approved/passed.** Source remediation
 Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 
 * [x] M-01: Dropped direct client INSERT policies on `job_completion_proofs` and `job_issues`; added `UNIQUE(job_id)` constraint and partial unique index `uq_open_issue_per_job`; updated `submit_completion_proof` RPC with explicit idempotency guard — migration `029_harden_proof_dispute_inserts.sql` (pending live/manual verification).
-* [ ] M-02: Prevent direct variation workflow manipulation.
+* [x] M-02: Dropped direct variation INSERT/UPDATE policies; added partial unique index — migration `030_lock_variation_writes.sql` (pending live/manual verification).
 * [ ] M-03: Bind storage upload paths to the authorised uploader and lifecycle.
 * [ ] M-04: Bind verification document paths to the submitting user.
 * [ ] M-05: Narrow message/conversation UPDATE policies.
