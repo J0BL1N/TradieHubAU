@@ -129,7 +129,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** They refer to `proposals`, `assigned_tradie_id`, and `in_progress` while current migrations use applications/payments and different states. Payment sheet does not prove supplied `jobId` matches the proposal/owner; webhook ignores important database errors.
 * **Risk:** A payment can be linked incorrectly in a compatible legacy schema, or current-schema operations can fail/inconsistently update financial state.
 * **Recommended fix:** Keep disabled for simulated payments. Rebuild under v0.2.x with current schema, ownership/linkage checks, idempotency, and reconciliation.
-* **State:** Deferred to v0.2.x Real Payments Foundation.
+* **State:** Fixed in source by disabling both legacy real-payment functions with fail-closed HTTP 403 responses. `payment-sheet` no longer reads provider/client values or creates payment intents, and `stripe-webhook` no longer reads secrets/events or mutates jobs/payments. Real provider settlement, signed webhooks, chargebacks, reconciliation, receipts, and payouts remain deferred to v0.2.x Real Payments Foundation (pending live function deployment verification).
 
 ## Medium
 
