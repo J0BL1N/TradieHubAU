@@ -105,7 +105,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** Admin policies exist for issues, proofs, ledger, and verifications, but no committed admin SELECT policies exist for `jobs` or `payments`.
 * **Risk:** An admin who is not a participant can receive incomplete case data, encouraging unsafe workarounds.
 * **Recommended fix:** After C-01, add narrowly scoped admin SELECT and test a dedicated non-participant admin.
-* **State:** Deferred; migration and live role test required.
+* **State:** Fixed in source migration [027_add_admin_dispute_read_policies.sql](file:///F:/TradieHubAU/supabase/migrations/027_add_admin_dispute_read_policies.sql). Authenticated platform admins receive SELECT-only access to `jobs` and `payments` rows anchored to an existing ongoing or resolved `job_issues` case; non-case rows, non-admin participant boundaries, and all mutation permissions remain unchanged (pending live Supabase verification).
 
 ### H-06 — Email Edge Function accepts arbitrary recipient and HTML
 
