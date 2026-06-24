@@ -23,7 +23,7 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.0.17 Security Findings (in progress/unapproved — Medium and Low source-remediated; manual verification pending)
+* v0.0.18 Controlled Local Beta Prep Foundation (in progress/unapproved)
 * v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
 
 Later:
@@ -336,24 +336,40 @@ Status: **Critical/High security hardening approved/passed.** Source remediation
 
 # v0.0.17 — Medium and Low Security Findings
 
-Status: **In progress / unapproved.** v0.1.0 is not marked ready.
+Status: **Approved/passed.** Medium and Low findings are source-remediated, hosted where applicable, and manually confirmed by the user. This approval does not mark v0.1.0 ready or approve real payments, GST, or production launch.
 
-* [x] M-01: Dropped direct client INSERT policies on `job_completion_proofs` and `job_issues`; added `UNIQUE(job_id)` constraint and partial unique index `uq_open_issue_per_job`; updated `submit_completion_proof` RPC with explicit idempotency guard — migration `029_harden_proof_dispute_inserts.sql` (pending live/manual verification).
-* [x] M-02: Dropped direct variation INSERT/UPDATE policies; added partial unique index — migration `030_lock_variation_writes.sql` (pending live/manual verification).
-* [x] M-03: Bound completion/dispute storage uploads to exact prefixes, authenticated uploader segments, authorised jobs, and eligible lifecycle/payment state — migration `031_harden_completion_dispute_storage_paths.sql` (pending live/manual verification).
-* [x] M-04: Bound verification document paths to the authenticated submitter — migration `032_harden_verification_document_urls.sql`, commit `c8351e0` (pending manual verification).
-* [x] M-05: Removed broad conversation updates and restricted message updates to recipient read state — migration `033_lock_message_conversation_updates.sql`, commit `25f0fc5` (pending manual verification).
-* [x] M-06: Restricted review creation to completed/released job counterparties with existing duplicate protection — migration `034_harden_review_creation.sql` (applied; pending manual verification).
+* [x] M-01: Dropped direct client INSERT policies on `job_completion_proofs` and `job_issues`; added `UNIQUE(job_id)` constraint and partial unique index `uq_open_issue_per_job`; updated `submit_completion_proof` RPC with explicit idempotency guard — migration `029_harden_proof_dispute_inserts.sql` (hosted and manually confirmed).
+* [x] M-02: Dropped direct variation INSERT/UPDATE policies; added partial unique index — migration `030_lock_variation_writes.sql` (hosted and manually confirmed).
+* [x] M-03: Bound completion/dispute storage uploads to exact prefixes, authenticated uploader segments, authorised jobs, and eligible lifecycle/payment state — migration `031_harden_completion_dispute_storage_paths.sql` (hosted and manually confirmed).
+* [x] M-04: Bound verification document paths to the authenticated submitter — migration `032_harden_verification_document_urls.sql`, commit `c8351e0` (hosted and manually confirmed).
+* [x] M-05: Removed broad conversation updates and restricted message updates to recipient read state — migration `033_lock_message_conversation_updates.sql`, commit `25f0fc5` (hosted and manually confirmed).
+* [x] M-06: Restricted review creation to completed/released job counterparties with existing duplicate protection — migration `034_harden_review_creation.sql` (hosted and manually confirmed).
 ### Low Security Findings
 
-* [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed `PUBLIC`/`anon` execution — migration `035_narrow_is_admin_checks.sql` (applied and anonymously probed; pending manual verification).
-* [x] L-02: Removed committed hosted-project fallbacks; frontend now fails closed with a clear error when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing (pending manual configuration-error verification).
+* [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed `PUBLIC`/`anon` execution — migration `035_narrow_is_admin_checks.sql` (hosted, anonymously probed, and manually confirmed).
+* [x] L-02: Removed committed hosted-project fallbacks; frontend now fails closed with a clear error when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing (manually confirmed).
 * [x] L-03: Marked `supabase/config.toml` as local-development-only and added `docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md` covering required hosted auth review. Hosted/production auth remains unverified and unapproved.
-* [x] L-04: Revoked default `PUBLIC`/`anon` execution and granted sensitive workflow, admin, policy-helper, and internal functions only to their intended roles — migration `036_explicit_rpc_execute_grants.sql` (pending manual authenticated/admin flow verification).
+* [x] L-04: Revoked default `PUBLIC`/`anon` execution and granted sensitive workflow, admin, policy-helper, and internal functions only to their intended roles — migration `036_explicit_rpc_execute_grants.sql` (hosted and manually confirmed).
 
-Closeout verification: hosted migrations `001`–`036` are aligned and the frontend production build passes. Source remediation is complete, but v0.0.17 remains unapproved pending the listed live/manual checks, including authenticated RPC regression. Real payments, GST implementation, production launch, and v0.1.0 readiness remain deferred and require separate approval.
+Closeout verification: hosted migrations `001`–`036` are aligned, the frontend production build passes, and the user has confirmed the required manual regression checks. Real payments, GST implementation, production launch, and v0.1.0 readiness remain deferred and require separate approval.
 
 Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notification and email automation remain deferred to v0.7.x.
+
+---
+
+# v0.0.18 — Controlled Local Beta Prep Foundation
+
+Status: **In progress / unapproved.** This pass adds informational foundations only. v0.1.0 remains not ready.
+
+* [x] Add Contact Support information page and non-invasive footer entry point.
+* [x] Add Protected Payment explainer with explicit simulated/local MVP limitations.
+* [x] Add Trust and Safety explainer.
+* [x] Add Dispute Process explainer.
+* [x] Add Tradie Verification explainer.
+* [x] Add Customer Verification explainer.
+* [x] Keep the main job flow unchanged and avoid real-provider or legal outcome claims.
+
+Real payment processing remains deferred to v0.2.x, GST implementation remains deferred to v0.3.x, and production launch remains separately gated under 1.0 readiness.
 
 ---
 

@@ -12,6 +12,14 @@ import Admin from './pages/Admin';
 import AdminDisputes from './pages/AdminDisputes';
 import AdminDisputeCase from './pages/AdminDisputeCase';
 import Auth from './pages/Auth';
+import {
+  ContactSupport,
+  CustomerVerificationExplainer,
+  DisputeProcessExplainer,
+  ProtectedPaymentExplainer,
+  TradieVerificationExplainer,
+  TrustAndSafetyExplainer,
+} from './pages/BetaInfoPages';
 
 export default function App() {
   return (
@@ -31,6 +39,12 @@ export default function App() {
             <Route path="admin/disputes" element={<AdminDisputes />} />
             <Route path="admin/disputes/:jobId" element={<AdminDisputeCase />} />
             <Route path="login" element={<Auth />} />
+            <Route path="support" element={<ContactSupport />} />
+            <Route path="protected-payments" element={<ProtectedPaymentExplainer />} />
+            <Route path="trust-and-safety" element={<TrustAndSafetyExplainer />} />
+            <Route path="dispute-process" element={<DisputeProcessExplainer />} />
+            <Route path="tradie-verification" element={<TradieVerificationExplainer />} />
+            <Route path="customer-verification" element={<CustomerVerificationExplainer />} />
           </Route>
         </Routes>
       </BrowserRouter>

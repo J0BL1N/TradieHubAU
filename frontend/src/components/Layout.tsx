@@ -302,10 +302,12 @@ export default function Layout() {
       <footer className="border-t bg-card py-8 text-center text-sm text-muted-foreground font-medium">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© {new Date().getFullYear()} TradieHubAU. All rights reserved.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-end">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-primary transition-colors">Contact Support</a>
+            <Link to="/protected-payments" className="hover:text-primary transition-colors">Protected Payments</Link>
+            <Link to="/trust-and-safety" className="hover:text-primary transition-colors">Trust &amp; Safety</Link>
+            <Link to="/support" className="hover:text-primary transition-colors">Contact Support</Link>
           </div>
         </div>
       </footer>
