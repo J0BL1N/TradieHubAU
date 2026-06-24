@@ -152,6 +152,11 @@ max_indexes = 5
 # Vector Buckets is available to Supabase Pro plan.
 # [storage.vector.buckets.documents-openai]
 
+# LOCAL DEVELOPMENT AUTH ONLY.
+# The values in this section intentionally support local testing and must not be
+# treated as hosted/production defaults. Hosted Supabase Auth dashboard/API settings
+# are the deployed source of truth and require the separate pre-beta review in:
+# ../docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md
 [auth]
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
@@ -178,6 +183,7 @@ enable_signup = true
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
+# Local-test password minimum. Do not copy this six-character value to production.
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
@@ -222,6 +228,7 @@ enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
+# Local testing leaves confirmation disabled. Hosted production must be reviewed separately.
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
