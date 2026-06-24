@@ -347,7 +347,7 @@ Status: **In progress / unapproved.** v0.1.0 is not marked ready.
 ### Low Security Findings
 
 * [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed `PUBLIC`/`anon` execution — migration `035_narrow_is_admin_checks.sql` (applied and anonymously probed; pending manual verification).
-* [ ] L-02: Remove or fail closed on unintended hosted-project frontend fallback.
+* [x] L-02: Removed committed hosted-project fallbacks; frontend now fails closed with a clear error when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing (pending manual configuration-error verification).
 * [ ] L-03: Review production auth defaults before production deployment.
 * [ ] L-04: Make sensitive RPC EXECUTE grants explicit.
 
