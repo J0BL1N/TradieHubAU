@@ -2,15 +2,17 @@
 
 Date: 2026-06-24
 
-Status: In progress — Critical/High remediation and hosted Supabase verification complete; Medium/Low findings and manual workflow verification remain outstanding.
+Status: Critical/High security pass approved — source remediation, hosted verification, and user manual core regression complete. Medium/Low findings remain deferred.
 
-Approval: This document does not approve v0.0.15 or v0.0.16.
+Approval: The user approved the v0.0.16 Critical/High remediation pass on 2026-06-24. This does not approve v0.0.15, Medium/Low remediation, v0.1.0 beta readiness, production launch, or real payment processing.
 
 ## Scope and method
 
 This audit reviewed the committed frontend, Supabase migrations, Edge Functions, storage policies, auth/profile logic, and frontend Supabase calls. The final Critical/High review also checked linked migration state and exercised public REST and disabled-function boundaries against hosted project `phiurjqqfgbtauztqtxx` on 2026-06-24. Migrations 019–028 were present remotely, `public.public_profiles` resolved through the hosted schema cache, and all six disabled Edge Functions returned fail-closed HTTP 403 responses.
 
-This verification is technical evidence, not subjective browser approval. Medium/Low findings, end-to-end role testing, and manual UI/UX approval remain outside this review.
+The user subsequently completed a browser-level core regression covering signup/login, Browse Jobs, public profiles/directories, customer job creation, tradie applications/quotes, quote acceptance, simulated funding, post-funding contact unlock, completion proof and approval, dispute creation, admin dispute case visibility, and wrong/public access checks. The user reported this core regression passed.
+
+This approval is limited to the Critical/High remediation pass. Medium/Low findings remain deferred, and this approval does not represent full production security certification, beta readiness, or approval of real provider payments.
 
 ## Summary
 
@@ -220,34 +222,23 @@ The final review found and corrected two narrow guard regressions in [028_finali
 * No literal service-role, Stripe secret, Resend secret, PEM, or private-key value was found in tracked source. Edge Functions read secrets from environment variables. The committed fallback is a publishable client key.
 * Ignore rules cover `.env`, `.env.*`, `*.env`, and local variants. Only `frontend/.env.example` is tracked.
 * Migration `016` creates `completion_proofs` as private with a 5 MB limit and image/PDF MIME allowlist.
-* Verification storage policies in `008` scope user reads/uploads to `verifications/users/<auth.uid()>` and admins to `is_admin` (subject to C-01).
+* Verification storage policies in `008` scope user reads/uploads to `verifications/users/<auth.uid()>` and admins to `is_admin`; C-01's admin-field protection is now applied through migration `019`.
 * Latest completion RPC (`017`) checks authenticated payment payee and payment-held state.
 * Latest dispute RPC (`018`) checks authenticated job customer and completion-review state.
-* Dispute resolution (`011`) checks admin, disputed state, held funds, resolution type, and split bounds (subject to C-01).
-* Quote acceptance (`010`) checks job customer, open state, application/job linkage, and positive estimate. Direct policies still weaken the boundary (C-04/H-02).
+* Dispute resolution (`011`) checks admin, disputed state, held funds, resolution type, and split bounds; C-01's admin-field protection is now applied.
+* Quote acceptance (`010`) checks job customer, open state, application/job linkage, and positive estimate. Migrations `022`, `024`, and `028` close the direct payment/application policy weaknesses identified by C-04/H-02.
 * Frontend admin routes are guarded for navigation/UI, but are correctly not treated as the security boundary.
 
-## Needs manual Supabase verification
+## Remaining deferred verification
 
-* Compare live `pg_policies` with migrations for users, jobs, applications, payments, proofs, issues, verifications, variations, ledger, messages, and reviews.
-* Inspect `pg_trigger` for any live `protect_user_fields()` trigger; none is committed.
-* Inspect `pg_proc.proacl`/routine privileges for every RPC, especially funding, verification, completion, dispute, and variation RPCs.
+* Run a dedicated direct SQL/REST/RPC role matrix beyond the completed browser regression, including anonymous, unrelated customer/tradie, participant, and dedicated-admin sessions.
 * Confirm the `verifications` bucket exists and is private; no committed migration creates it.
-* Confirm `completion_proofs` is private and effective storage policies match the latest replacements.
-* Verify deployed Edge Functions and JWT settings. Gateway JWT verification alone does not provide per-job authorization.
-* Test direct REST as anonymous, two customers, contracted tradie, wrong tradie, and dedicated admin. Cover user columns, non-open jobs, proof/issue/admin-note rows, verification rows, and signed URLs.
-* Test direct RPC calls—not only UI buttons—for funding, approval during dispute, proof submission, dispute creation/resolution, verification actions, and variations.
-* Confirm admin dispute pages with an admin who is neither customer nor payee.
-* Verify migrations are applied in order and review clean-reset compatibility; earlier protection functions reference fields introduced later.
+* Confirm `completion_proofs` effective storage policies and signed URL behaviour against wrong-user sessions as part of the deferred storage findings.
+* Inspect remaining RPC grants and policies while addressing Medium/Low findings, particularly variations, messages, reviews, and direct proof/dispute inserts.
+* Verify clean-reset migration compatibility before beta preparation.
 
-## Recommended remediation order
+## Critical/High remediation record
 
-1. Fix C-01 before trusting any admin policy/RPC.
-2. Fix C-02 and run wrong-user privacy tests.
-3. Disable or authorize C-03/C-05 and remove direct payment insertion.
-4. Replace public base-table user reads with a safe database view/RPC.
-5. Lock application/job transitions and prevent dispute bypass.
-6. Add minimum admin case read policies after admin identity is secure.
-7. Harden/disable Edge Functions, then address storage paths and remaining integrity findings.
+Critical/High remediation was completed through migrations `019`–`028`, the safe public-profile frontend hydration changes, and deployment of the six fail-closed legacy Edge Functions. The linked hosted migration list, public schema-cache access, function probes, production frontend build, and user core browser regression passed.
 
 Real provider settlement, webhook reconciliation, chargebacks, and real receipts remain deferred to v0.2.x Real Payments Foundation. Security changes for the simulated workflow should be delivered as separately approved focused migrations with role-based regression tests.

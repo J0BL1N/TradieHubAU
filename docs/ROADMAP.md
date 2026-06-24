@@ -11,10 +11,10 @@ Approved/completed:
 * v0.0.11 Jobs UX final polish
 * Admin UUID display hotfix
 * Job modal overlay hotfix
+* v0.0.16 Critical/High security hardening (source-remediated, hosted, and user regression approved)
 
 Current focus:
 
-* v0.0.16 Security, RLS, Storage, and Privacy Audit (in progress — Critical/High verified; Medium/Low and manual verification outstanding)
 * v0.0.12 Completion, review, dispute, contact gating, and protected payment workflow (awaiting manual review)
 * v0.0.13 Admin dashboard polish
 * v0.0.14 Admin Dispute Case Management (implementation complete, awaiting manual review)
@@ -23,7 +23,8 @@ Current focus:
 Next major focus:
 
 * v0.0.13 Admin dashboard polish
-* v0.1.0 Controlled Local Beta Prep, after security findings are remediated and manually verified
+* v0.0.17 Medium Security Findings (planned — not started)
+* v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
 
 Later:
 
@@ -286,7 +287,7 @@ Later:
 
 # v0.0.16 — Security, RLS, Storage, and Privacy Audit
 
-Status: **In progress / unapproved.** Source audit findings are documented in [`docs/SECURITY_AUDIT_v0.0.16.md`](SECURITY_AUDIT_v0.0.16.md). Critical/High source remediation and hosted Supabase verification are complete; Medium/Low findings and manual workflow verification remain outstanding.
+Status: **Critical/High security hardening approved/passed.** Source remediation, hosted Supabase/function verification, and the user's manual core regression are complete. This approval is limited to Critical/High findings; it does not approve production launch, real payments, or v0.1.0 beta readiness. Medium/Low findings remain deferred.
 
 ### Completed Remediation Items
 
@@ -303,6 +304,13 @@ Status: **In progress / unapproved.** Source audit findings are documented in [`
 * [x] H-06: Disabled and deployed `send-email` as a fail-closed HTTP 403 handler that does not parse delivery input or read provider secrets (hosted probe verified; production notifications deferred to v0.7.x).
 * [x] H-07: Disabled and deployed `handle-new-message` and `handle-new-proposal` as fail-closed HTTP 403 handlers without caller-record parsing, service-role reads, or email invocation (hosted probes verified; notification automation deferred to v0.7.x).
 * [x] H-08: Disabled and deployed `payment-sheet` and `stripe-webhook` as fail-closed HTTP 403 handlers without provider intent creation, secret reads, event processing, or database mutation (hosted probes verified; real provider settlement remains deferred to v0.2.x).
+
+### User Approval
+
+* [x] Core browser regression passed for authentication, Browse Jobs, public profiles, job creation, applications/quotes, quote acceptance, simulated funding, funded contact unlock, completion, disputes, admin case visibility, and wrong/public access checks.
+* [x] Approval scope recorded as the v0.0.16 Critical/High security pass only.
+
+### Deferred Follow-up Checks
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
@@ -323,6 +331,22 @@ Status: **In progress / unapproved.** Source audit findings are documented in [`
 * [ ] Confirm completion/dispute/approval RPCs enforce authorization server-side
 * [ ] Confirm storage uploads are path-restricted
 * [ ] Confirm signed URL access is controlled
+
+---
+
+# v0.0.17 — Medium Security Findings
+
+Status: **Planned / not started / unapproved.** No Medium finding was remediated as part of the v0.0.16 Critical/High approval.
+
+* [ ] M-01: Route proof/dispute creation exclusively through lifecycle-validating RPC paths.
+* [ ] M-02: Prevent direct variation workflow manipulation.
+* [ ] M-03: Bind storage upload paths to the authorised uploader and lifecycle.
+* [ ] M-04: Bind verification document paths to the submitting user.
+* [ ] M-05: Narrow message/conversation UPDATE policies.
+* [ ] M-06: Require a completed participant relationship before review creation.
+* [ ] Reassess deferred Low findings after Medium remediation.
+
+Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notification and email automation remain deferred to v0.7.x.
 
 ---
 
