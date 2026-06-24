@@ -81,7 +81,7 @@ The most urgent issue is that the function intended to protect privileged `users
 * **Issue:** UPDATE checks only `tradie_id = auth.uid()` and does not restrict columns or transitions.
 * **Risk:** A tradie can attempt to accept their own application, alter linkage, or bypass customer-controlled acceptance.
 * **Recommended fix:** Remove broad UPDATE and provide a narrow withdrawal RPC or immutable columns plus `pending -> withdrawn` enforcement.
-* **State:** Deferred; migration/RPC change required.
+* **State:** Fixed in migration [024_lock_application_updates.sql](file:///F:/TradieHubAU/supabase/migrations/024_lock_application_updates.sql) (pending live Supabase verification).
 
 ### H-03 — Job owners can directly spoof lifecycle states
 

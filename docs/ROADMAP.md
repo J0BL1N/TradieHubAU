@@ -296,6 +296,7 @@ Status: **In progress / unapproved.** Source audit findings are documented in [`
 * [x] C-04: Dropped direct client INSERT policy on `public.payments` table in migration `022_block_direct_client_payment_inserts.sql` to prevent client-side payment forgery, forcing payment creation exclusively through trusted database RPC functions (pending live Supabase verification).
 * [x] C-05: Disabled legacy, unused `release-payout` Edge Function by replacing Deno server handler with a secure fail-closed HTTP 403 response (pending live Supabase function deployment verification).
 * [x] H-01: Added database-level safe public profiles boundary by removing wide public SELECT policy on `public.users` and creating allowlisted view `public.public_profiles` in migration `023_add_public_profile_boundary.sql`. Aligned frontend queries and contact-gating resolution to query from the view, and retrieve counterparty details via `jobPayment` participants model (pending live Supabase verification).
+* [x] H-02: Replaced the broad UPDATE policy on `public.applications` with `"Tradies can withdraw own applications"` restricting updates to the status field (setting to `withdrawn` on pending applications) in migration `024_lock_application_updates.sql`. Added trigger function `protect_application_updates()` to enforce column immutability on client updates, preserving SECURITY DEFINER `accept_quote()` function transitions (pending live Supabase verification).
 
 * [ ] Audit Supabase RLS policies for `users`
 * [ ] Audit Supabase RLS policies for `jobs`
