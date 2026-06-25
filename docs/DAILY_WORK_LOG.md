@@ -78,12 +78,14 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 20:42:18 - roadmap priority decision - set near-term feature sequence as v0.0.18 Job Messaging Foundation, v0.0.19 Invoicing Foundation, and v0.0.20 Website Analytics Foundation; v0.0.18 remains in progress/unapproved and v0.1.0 remains not ready.
 * 21:00:15 - v0.0.18 messaging usability pass - added active-conversation Supabase Realtime handling and Enter-to-send with Shift+Enter newline behavior; v0.0.18 remains in progress/unapproved.
 * 21:07:43 - v0.0.18 messaging usability pass 1B - added lightweight emoji composer palette with cursor-position insertion; v0.0.18 remains in progress/unapproved.
+* 21:35:57 - v0.0.18 messaging attachments foundation - added private message attachment bucket/table/RLS/storage policies and `send_job_message_with_attachments` RPC; frontend upload/gallery remains pending.
 
 ### Migrations / Deployments
 
 * `036_explicit_rpc_execute_grants.sql` - created 00:07:01, modified 00:07:29; docs/ROADMAP.md says hosted and manually confirmed.
 * `037_job_messaging_foundation.sql` - created 00:44:41; linked hosted migration list on 2026-06-25 shows remote `037` applied. No db push was needed.
 * `039_enable_message_realtime.sql` - created/applied on 2026-06-25; adds `public.messages` to `supabase_realtime` for live active-conversation updates.
+* `040_message_attachments_foundation.sql` - created/applied on 2026-06-25; adds private `message_attachments` storage, `public.message_attachments`, participant-only RLS/storage policies, and trusted attachment message RPC.
 
 ### Validation
 
