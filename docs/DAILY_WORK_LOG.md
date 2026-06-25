@@ -79,12 +79,12 @@ Single ongoing project-history log. Entries are based on committed git history, 
 ### Migrations / Deployments
 
 * `036_explicit_rpc_execute_grants.sql` - created 00:07:01, modified 00:07:29; docs/ROADMAP.md says hosted and manually confirmed.
-* `037_job_messaging_foundation.sql` - created 00:44:41; docs/ROADMAP.md records the migration and foundation work, but hosted db push/deploy status was not confirmed from local git/files.
+* `037_job_messaging_foundation.sql` - created 00:44:41; linked hosted migration list on 2026-06-25 shows remote `037` applied. No db push was needed.
 
 ### Validation
 
 * v0.0.17 closeout - docs/ROADMAP.md says hosted migrations `001`-`036` aligned and production build passed.
-* v0.0.18 job messaging foundation - build/db push/manual QA status not confirmed from local git/files.
+* v0.0.18 job messaging foundation - hosted migration `037` confirmed applied on 2026-06-25 via `supabase migration list --linked`; linked catalog query confirmed `conversations_unique_job_pair`, the job participant message/conversation policies, and `list_job_conversations`, `open_job_conversation`, and `send_job_message`. Manual browser QA remains not confirmed.
 
 ### Remaining / Next
 
