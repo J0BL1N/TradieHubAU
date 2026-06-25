@@ -84,3 +84,70 @@ node scripts/delete-beta-test-accounts.mjs --apply
 ```
 
 Never commit `.env` files, service-role keys, generated profile cards, or generated credential exports.
+
+---
+
+## Beta Access Cards
+
+Individual license-style Beta Access Cards can be generated for private Discord DM distribution.
+Each card is a landscape "access card" containing the tester's assigned ID, fake name, login email,
+password, role, location, and mission — styled with TradieHubAU branding and a clear beta/fake disclaimer.
+Cards do not contain real personal information.
+
+### Outputs
+
+| Path | Contents |
+|------|----------|
+| `private/beta/profile-card-images/` | One PNG per tester (1600×900 px, hi-res) |
+| `private/beta/profile-card-pdfs/` | One A4-landscape PDF per tester |
+| `private/beta/TradieHubAU_Beta_Access_Cards.zip` | ZIP of all PNGs and PDFs |
+
+All output paths are gitignored. Never commit generated card files.
+
+### File naming
+
+```
+Customer-01-Sarah-Mitchell.png / .pdf
+Tradie-01-Lingo-Chen.png / .pdf
+```
+
+### Generate cards
+
+Install dependencies once (in the scripts/ folder):
+
+```bash
+cd F:\TradieHubAU\scripts
+npm install
+```
+
+Run the generator from the repo root:
+
+```bash
+cd F:\TradieHubAU
+node scripts/generate-beta-access-cards.mjs
+```
+
+This reads `private/beta/BETA_TEST_PROFILE_CARDS.md` and writes all output to `private/beta/`.
+No Supabase changes, no app code changes, no migrations.
+
+### Card design
+
+- Landscape card, 1600×900 px
+- Dark background with orange (customer) or teal (tradie) accent stripe
+- TradieHubAU wordmark + `BETA ACCESS CARD` title
+- Role badge: `CUSTOMER` or `VERIFIED TRADIE`
+- Tester ID, name, location, credentials, mission
+- Customer cards: job scenario, budget, urgency
+- Tradie cards: business name, trade category, fake ABN, fake licence
+- QR placeholder referencing `/beta-feedback`
+- Rotated "✓ VERIFIED BETA TESTER" stamp
+- Disclaimer footer: `Not a real ID. Beta testing account only. Use fake information only.`
+
+### Safety
+
+- All card content is fake beta-only data
+- Cards clearly state they are not real IDs
+- Passwords are included (for convenience during Discord DM distribution) — handle with care
+- Do not post cards in public channels
+- Generated files are gitignored and must not be committed
+
