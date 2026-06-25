@@ -1,18 +1,17 @@
 /**
- * generate-beta-access-cards.mjs  (v2)
+ * generate-beta-access-cards.mjs
  *
- * Redesigned: compact CR80-style access card (1080x680 px)
- * Front card: identity, role, scenario/trade info
- * Back card:  credentials, mission, feedback badge
+ * Light TradieHubAU beta access card generator.
  *
  * Outputs:
  *   private/beta/profile-card-images/<name>-front.png
  *   private/beta/profile-card-images/<name>-back.png
- *   private/beta/profile-card-pdfs/<name>.pdf   (both cards, 1 page each)
- *   private/beta/TradieHubAU_Beta_Access_Cards.zip
+ *   private/beta/profile-card-pdfs/<name>.pdf
+ *   private/beta/TradieHubAU_Beta_Access_Cards.zip (full run only)
  *
- * Usage:  node scripts/generate-beta-access-cards.mjs
- * Run from repo root: F:\TradieHubAU
+ * Usage:
+ *   node scripts/generate-beta-access-cards.mjs --sample
+ *   node scripts/generate-beta-access-cards.mjs --all
  */
 
 import { readFile, mkdir } from 'node:fs/promises';
@@ -22,276 +21,74 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const sharp       = require('sharp');
+const sharp = require('sharp');
 const PDFDocument = require('pdfkit');
-const AdmZip      = require('adm-zip');
+const AdmZip = require('adm-zip');
 
-// ── Paths ─────────────────────────────────────────────────────────────────────
-const __dirname  = path.dirname(fileURLToPath(import.meta.url));
-const ROOT       = path.resolve(__dirname, '..');
-const SOURCE_MD  = path.join(ROOT, 'private', 'beta', 'BETA_TEST_PROFILE_CARDS.md');
-const PNG_DIR    = path.join(ROOT, 'private', 'beta', 'profile-card-images');
-const PDF_DIR    = path.join(ROOT, 'private', 'beta', 'profile-card-pdfs');
-const ZIP_PATH   = path.join(ROOT, 'private', 'beta', 'TradieHubAU_Beta_Access_Cards.zip');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, '..');
+const SOURCE_MD = path.join(ROOT, 'private', 'beta', 'BETA_TEST_PROFILE_CARDS.md');
+const PNG_DIR = path.join(ROOT, 'private', 'beta', 'profile-card-images');
+const PDF_DIR = path.join(ROOT, 'private', 'beta', 'profile-card-pdfs');
+const ZIP_PATH = path.join(ROOT, 'private', 'beta', 'TradieHubAU_Beta_Access_Cards.zip');
 
-// ── Card dimensions  (CR80-style landscape, 1.586 ratio) ─────────────────────
-// Rendered at 2× for crisp Discord viewing: 1080 × 680 px
 const W = 1080;
 const H = 680;
+const SAMPLE_FILENAMES = new Set([
+  'Customer-01-Sarah-Mitchell',
+  'Tradie-01-Lingo-Chen',
+]);
 
-// ── Palette ───────────────────────────────────────────────────────────────────
 const P = {
-  bg0:     '#0b0e18',   // darkest bg
-  bg1:     '#131626',   // card body
-  panel:   '#1c2035',   // section panels
-  border:  '#252a42',   // subtle borders
-  white:   '#f1f5f9',
-  muted:   '#7c8bab',
-  dim:     '#4a5470',
-  gold:    '#f59e0b',
-  // per-role overridden below
+  card: '#fbfaf6',
+  card2: '#f4f1ea',
+  ink: '#07101f',
+  text: '#0b1220',
+  muted: '#4b5563',
+  faint: '#e5e0d6',
+  line: '#d8d2c8',
+  orange: '#ff4b0b',
+  orange2: '#ff7a00',
+  amber: '#f7c20a',
+  yellow: '#ffd43b',
+  black: '#09111f',
+  green: '#49a313',
+  greenDark: '#2f7d0a',
+  cream: '#fff7df',
+  panel: '#ffffff',
 };
 
-// Customer: orange + blue
-const CUS = { ac: '#f97316', ac2: '#fb923c', ac3: '#7c3d0e', tag: '#1d4ed8', tag2: '#1e40af' };
-// Tradie: teal + purple
-const TRD = { ac: '#14b8a6', ac2: '#2dd4bf', ac3: '#0f5f59', tag: '#7c3aed', tag2: '#6d28d9' };
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function esc(s) {
   if (!s) return '';
   return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
+
 function trunc(s, max) {
   if (!s) return '';
-  s = String(s);
-  return s.length > max ? s.slice(0, max - 1) + '\u2026' : s;
+  const v = String(s);
+  return v.length > max ? `${v.slice(0, max - 1)}...` : v;
 }
 
-// ── Shared card shell SVG ─────────────────────────────────────────────────────
-// Returns opening tags + defs + background layer; caller adds content + closing tags
-function cardShell(id_suffix, ac, ac3) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-<defs>
-  <linearGradient id="bg${id_suffix}" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" stop-color="#0b0e18"/>
-    <stop offset="100%" stop-color="#101422"/>
-  </linearGradient>
-  <linearGradient id="ac${id_suffix}" x1="0%" y1="0%" x2="100%" y2="0%">
-    <stop offset="0%" stop-color="${ac}"/>
-    <stop offset="100%" stop-color="${ac3}"/>
-  </linearGradient>
-  <linearGradient id="glow${id_suffix}" x1="0%" y1="0%" x2="100%" y2="0%">
-    <stop offset="0%" stop-color="${ac}" stop-opacity="0.7"/>
-    <stop offset="70%" stop-color="${ac}" stop-opacity="0.12"/>
-    <stop offset="100%" stop-color="${ac}" stop-opacity="0"/>
-  </linearGradient>
-  <clipPath id="card${id_suffix}"><rect width="${W}" height="${H}" rx="28"/></clipPath>
-</defs>
-<g clip-path="url(#card${id_suffix})">
-  <!-- Background -->
-  <rect width="${W}" height="${H}" fill="url(#bg${id_suffix})"/>
-  <!-- Subtle mesh dots -->
-  <g opacity="0.06">
-    ${Array.from({length:18},(_,i)=>Array.from({length:11},(_,j)=>`<circle cx="${i*64+32}" cy="${j*68+34}" r="1.5" fill="${ac}"/>`).join('')).join('')}
-  </g>
-  <!-- Top glow bar -->
-  <rect x="0" y="0" width="${W}" height="4" fill="url(#glow${id_suffix})"/>
-  <!-- Bottom glow bar (subtle) -->
-  <rect x="0" y="${H-3}" width="${W*0.6}" height="3" fill="${ac}" opacity="0.25"/>
-  <!-- Left accent stripe -->
-  <rect x="0" y="0" width="10" height="${H}" fill="url(#ac${id_suffix})"/>
-  <!-- Card border -->
-  <rect x="1" y="1" width="${W-2}" height="${H-2}" rx="28" fill="none" stroke="${ac}" stroke-width="1.5" opacity="0.3"/>`;
-}
-
-// ── FRONT card SVG ────────────────────────────────────────────────────────────
-function buildFront(t) {
-  const R = t.isTradie ? TRD : CUS;
-  const { ac, ac2, ac3, tag } = R;
-
-  // Layout
-  const LM = 36;           // left margin (after stripe)
-  const RM = W - 36;       // right margin
-  const COL2 = 420;        // second column x
-  const COL2W = RM - COL2; // second column width
-
-  const roleLabelW = t.isTradie ? 210 : 152;
-  const roleLabel  = (t.role || '').toUpperCase();
-
-  // Extra info panel content
-  let extraPanelItems = '';
-  if (t.isTradie) {
-    extraPanelItems = `
-  <!-- Business -->
-  <text x="${COL2+20}" y="300" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">BUSINESS</text>
-  <text x="${COL2+20}" y="320" font-size="16" fill="${P.white}" font-family="Arial,sans-serif" font-weight="bold">${esc(trunc(t.business,36))}</text>
-  <!-- Trade -->
-  <text x="${COL2+20}" y="356" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">TRADE CATEGORY</text>
-  <text x="${COL2+20}" y="376" font-size="18" fill="${ac}" font-family="Arial,sans-serif" font-weight="bold">${esc((t.trade||'').toUpperCase())}</text>
-  <!-- Licence -->
-  <text x="${COL2+20}" y="412" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">FAKE LICENCE</text>
-  <text x="${COL2+20}" y="432" font-size="15" fill="${P.white}" font-family="Arial,sans-serif" letter-spacing="1">${esc(t.licence)}</text>`;
-  } else {
-    extraPanelItems = `
-  <!-- Scenario -->
-  <text x="${COL2+20}" y="300" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">JOB SCENARIO</text>
-  <text x="${COL2+20}" y="320" font-size="15" fill="${P.white}" font-family="Arial,sans-serif">${esc(trunc(t.scenario,40))}</text>
-  <!-- Budget -->
-  <text x="${COL2+20}" y="360" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">BUDGET</text>
-  <text x="${COL2+20}" y="382" font-size="20" fill="${ac}" font-family="Arial,sans-serif" font-weight="bold">${esc(t.budget)}</text>
-  <!-- Urgency -->
-  <text x="${COL2+20}" y="418" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">URGENCY</text>
-  <text x="${COL2+20}" y="438" font-size="16" fill="${P.gold}" font-family="Arial,sans-serif" font-weight="bold">${esc((t.urgency||'').toUpperCase())}</text>`;
-  }
-
-  return cardShell('F'+t.filename, ac, ac3) + `
-
-  <!-- ═══ HEADER STRIP ═══════════════════════════════════ -->
-  <rect x="18" y="18" width="${W-36}" height="72" rx="12" fill="${P.panel}"/>
-  <!-- Wordmark -->
-  <text x="${LM+12}" y="62" font-size="22" font-weight="900" letter-spacing="1.5" font-family="Arial Black,Arial,sans-serif" fill="${P.white}">TradieHub<tspan fill="${ac}">AU</tspan></text>
-  <!-- Title -->
-  <text x="${W/2}" y="50" text-anchor="middle" font-size="13" font-weight="900" letter-spacing="4" font-family="Arial Black,Arial,sans-serif" fill="${P.muted}">BETA ACCESS PASS</text>
-  <text x="${W/2}" y="70" text-anchor="middle" font-size="11" font-style="italic" font-family="Arial,sans-serif" fill="${P.dim}">Find trusted tradies. Pay with confidence.</text>
-  <!-- Role badge -->
-  <rect x="${RM-roleLabelW-6}" y="30" width="${roleLabelW}" height="28" rx="14" fill="${tag}"/>
-  <text x="${RM-roleLabelW/2-6}" y="49" text-anchor="middle" font-size="12" font-weight="900" letter-spacing="2" font-family="Arial Black,Arial,sans-serif" fill="${P.white}">${esc(roleLabel)}</text>
-
-  <!-- ═══ LEFT COLUMN: Identity ═══════════════════════════ -->
-  <rect x="18" y="104" width="${COL2-36}" height="${H-156}" rx="12" fill="${P.panel}"/>
-
-  <!-- Tester ID -->
-  <text x="${LM+12}" y="148" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">TESTER ID</text>
-  <text x="${LM+12}" y="174" font-size="28" font-weight="900" letter-spacing="1" font-family="Arial Black,Arial,sans-serif" fill="${ac}">${esc(t.testerId)}</text>
-
-  <!-- Divider -->
-  <line x1="${LM+12}" y1="190" x2="${COL2-54}" y2="190" stroke="${P.border}" stroke-width="1"/>
-
-  <!-- Name -->
-  <text x="${LM+12}" y="218" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">NAME</text>
-  <text x="${LM+12}" y="244" font-size="26" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.white}">${esc(trunc(t.name,22))}</text>
-
-  <!-- Location -->
-  <text x="${LM+12}" y="278" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">LOCATION</text>
-  <text x="${LM+12}" y="300" font-size="17" font-family="Arial,sans-serif" fill="${P.white}">${esc(t.location)}</text>
-
-  <!-- Divider -->
-  <line x1="${LM+12}" y1="318" x2="${COL2-54}" y2="318" stroke="${P.border}" stroke-width="1"/>
-
-  <!-- Verified badge -->
-  <rect x="${LM+12}" y="332" width="140" height="30" rx="15" fill="${ac3}" opacity="0.8"/>
-  <text x="${LM+82}" y="352" text-anchor="middle" font-size="11" font-weight="900" letter-spacing="1.5" font-family="Arial Black,Arial,sans-serif" fill="${ac2}">+ VERIFIED TESTER</text>
-
-  <!-- Batch label -->
-  <text x="${LM+12}" y="396" font-size="10" fill="${P.dim}" font-family="Arial,sans-serif">Batch: discord-beta-001</text>
-
-  <!-- Avatar circle placeholder (decorative) -->
-  <circle cx="${LM+52}" cy="490" r="50" fill="${P.border}"/>
-  <circle cx="${LM+52}" cy="490" r="50" fill="none" stroke="${ac}" stroke-width="1.5" opacity="0.4"/>
-  <text x="${LM+52}" y="498" text-anchor="middle" font-size="32" font-family="Arial,sans-serif" fill="${ac}" opacity="0.6">${esc(t.name.charAt(0))}</text>
-  <text x="${LM+52}" y="560" text-anchor="middle" font-size="10" fill="${P.dim}" font-family="Arial,sans-serif">BETA TESTER</text>
-
-  <!-- ═══ RIGHT COLUMN: Info panel ═══════════════════════ -->
-  <rect x="${COL2}" y="104" width="${COL2W-18}" height="${H-156}" rx="12" fill="${P.panel}"/>
-
-  <text x="${COL2+20}" y="148" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">BETA TESTER DETAILS</text>
-  <line x1="${COL2+20}" y1="158" x2="${RM-20}" y2="158" stroke="${P.border}" stroke-width="1"/>
-
-  <!-- Corner accent dot -->
-  <circle cx="${RM-24}" cy="128" r="6" fill="${ac}" opacity="0.7"/>
-
-  ${extraPanelItems}
-
-  <!-- Feedback link badge -->
-  <rect x="${COL2+20}" y="${H-108}" width="${COL2W-58}" height="36" rx="10" fill="${ac3}" opacity="0.7"/>
-  <text x="${COL2+20+12}" y="${H-84}" font-size="14" fill="${ac2}" font-family="Arial,sans-serif" font-weight="bold">&gt; /beta-feedback</text>
-
-  <!-- ═══ FOOTER ══════════════════════════════════════════ -->
-  <rect x="18" y="${H-44}" width="${W-36}" height="30" rx="8" fill="${P.border}" opacity="0.6"/>
-  <text x="${W/2}" y="${H-24}" text-anchor="middle" font-size="10" fill="${P.dim}" font-family="Arial,sans-serif">Beta testing account only. Not a real ID.  |  TradieHubAU Beta Programme 2026</text>
-
-</g>
-</svg>`;
-}
-
-// ── BACK card SVG ─────────────────────────────────────────────────────────────
-function buildBack(t) {
-  const R = t.isTradie ? TRD : CUS;
-  const { ac, ac2, ac3, tag } = R;
-
-  const LM = 36;
-  const RM = W - 36;
-  const missionLines = splitLines(t.mission || '', 68, 3);
-
-  return cardShell('B'+t.filename, ac, ac3) + `
-
-  <!-- ═══ HEADER ═════════════════════════════════════════ -->
-  <rect x="18" y="18" width="${W-36}" height="60" rx="12" fill="${P.panel}"/>
-  <text x="${LM+12}" y="54" font-size="19" font-weight="900" letter-spacing="1.5" font-family="Arial Black,Arial,sans-serif" fill="${P.white}">TradieHub<tspan fill="${ac}">AU</tspan><tspan font-size="12" fill="${P.muted}" font-weight="400" letter-spacing="0" font-style="italic"> — Beta Access Pass (Back)</tspan></text>
-  <text x="${RM-8}" y="54" text-anchor="end" font-size="11" fill="${P.dim}" font-family="Arial,sans-serif">${esc(t.testerId)}</text>
-
-  <!-- ═══ CREDENTIALS PANEL ══════════════════════════════ -->
-  <rect x="18" y="92" width="${W-36}" height="182" rx="12" fill="${P.panel}"/>
-  <!-- Section heading -->
-  <text x="${LM+12}" y="120" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="2">LOGIN CREDENTIALS</text>
-  <line x1="${LM+12}" y1="130" x2="${RM-12}" y2="130" stroke="${P.border}" stroke-width="1"/>
-
-  <!-- Email -->
-  <text x="${LM+12}" y="158" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">EMAIL</text>
-  <rect x="${LM+12}" y="164" width="${W-80}" height="30" rx="6" fill="${P.bg0}" opacity="0.7"/>
-  <text x="${LM+24}" y="184" font-size="15" fill="${P.white}" font-family="Arial,sans-serif" letter-spacing="0.3">${esc(t.email)}</text>
-
-  <!-- Password -->
-  <text x="${LM+12}" y="212" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">PASSWORD</text>
-  <rect x="${LM+12}" y="218" width="${W-80}" height="30" rx="6" fill="${P.bg0}" opacity="0.7"/>
-  <text x="${LM+24}" y="238" font-size="16" fill="${P.gold}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1">${esc(t.password)}</text>
-
-  <!-- ═══ MISSION PANEL ═══════════════════════════════════ -->
-  <rect x="18" y="286" width="${W-36}" height="162" rx="12" fill="${P.panel}"/>
-  <text x="${LM+12}" y="314" font-size="11" fill="${P.muted}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="2">YOUR MISSION</text>
-  <line x1="${LM+12}" y1="324" x2="${RM-12}" y2="324" stroke="${P.border}" stroke-width="1"/>
-  ${missionLines.map((line, i) => `<text x="${LM+12}" y="${346 + i*24}" font-size="14" fill="${P.white}" font-family="Arial,sans-serif">${esc(line)}</text>`).join('\n  ')}
-
-  <!-- Feedback badge in mission panel corner -->
-  <rect x="${RM-180}" y="340" width="156" height="40" rx="10" fill="${ac3}" opacity="0.8"/>
-  <text x="${RM-102}" y="356" text-anchor="middle" font-size="10" fill="${ac}" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1">SUBMIT FEEDBACK</text>
-  <text x="${RM-102}" y="372" text-anchor="middle" font-size="13" fill="${ac2}" font-family="Arial,sans-serif" font-weight="bold">/beta-feedback</text>
-
-  <!-- ═══ WARNING PANEL ════════════════════════════════════ -->
-  <rect x="18" y="460" width="${W-36}" height="72" rx="12" fill="#1a0a0a"/>
-  <rect x="18" y="460" width="5" height="72" rx="3" fill="#dc2626"/>
-  <text x="${LM+16}" y="484" font-size="11" fill="#dc2626" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="1.5">!! IMPORTANT</text>
-  <text x="${LM+16}" y="503" font-size="12" fill="#f87171" font-family="Arial,sans-serif">Use fake information only. Do not enter real personal details,</text>
-  <text x="${LM+16}" y="521" font-size="12" fill="#f87171" font-family="Arial,sans-serif">real payment details, or private documents.</text>
-
-  <!-- ═══ FOOTER ══════════════════════════════════════════ -->
-  <rect x="18" y="${H-48}" width="${W-36}" height="30" rx="8" fill="${P.border}" opacity="0.6"/>
-  <text x="${LM+12}" y="${H-28}" font-size="10" fill="${P.dim}" font-family="Arial,sans-serif">Batch: discord-beta-001</text>
-  <text x="${W/2}" y="${H-28}" text-anchor="middle" font-size="10" fill="${P.dim}" font-family="Arial,sans-serif">TradieHubAU Beta Programme 2026</text>
-  <text x="${RM-12}" y="${H-28}" text-anchor="end" font-size="10" fill="${P.dim}" font-family="Arial,sans-serif">${esc(t.testerId)}</text>
-
-</g>
-</svg>`;
-}
-
-// ── Text wrapping helper ───────────────────────────────────────────────────────
 function splitLines(text, charsPerLine, maxLines) {
-  const words = text.split(' ');
+  const words = String(text || '').split(/\s+/).filter(Boolean);
   const lines = [];
   let current = '';
-  for (const w of words) {
-    if (lines.length >= maxLines) break;
-    if ((current + ' ' + w).trim().length <= charsPerLine) {
-      current = (current + ' ' + w).trim();
-    } else {
-      if (current) lines.push(current);
-      current = w;
+
+  for (const word of words) {
+    const next = `${current} ${word}`.trim();
+    if (next.length <= charsPerLine) {
+      current = next;
+      continue;
     }
+    if (current) lines.push(current);
+    current = word;
+    if (lines.length === maxLines) break;
   }
+
   if (current && lines.length < maxLines) lines.push(current);
   if (lines.length === maxLines && words.join(' ').length > lines.join(' ').length) {
     lines[maxLines - 1] = trunc(lines[maxLines - 1], charsPerLine);
@@ -299,45 +96,320 @@ function splitLines(text, charsPerLine, maxLines) {
   return lines;
 }
 
-// ── Parse markdown ────────────────────────────────────────────────────────────
+function serialFor(t) {
+  const roleCode = t.isTradie ? 'T' : 'C';
+  return `THAU-${roleCode}${t.num}-2026-005`;
+}
+
+function iconBox(x, y, kind) {
+  const glyphs = {
+    id: `<circle cx="21" cy="19" r="6"/><path d="M12 36c2-9 22-9 24 0"/><path d="M31 15h12M31 23h9M31 31h12"/>`,
+    user: `<circle cx="25" cy="18" r="8"/><path d="M10 39c3-15 27-15 30 0"/>`,
+    pin: `<path d="M25 9c-8 0-14 6-14 14 0 11 14 25 14 25s14-14 14-25c0-8-6-14-14-14z"/><circle cx="25" cy="23" r="5" fill="${P.card}"/>`,
+    brief: `<rect x="10" y="18" width="30" height="22" rx="4"/><path d="M17 18v-5h16v5M10 27h30"/><rect x="22" y="25" width="6" height="5" fill="${P.card}"/>`,
+    bolt: `<path d="M29 7 15 31h12l-5 17 16-27H26z"/>`,
+    shield: `<path d="M25 8 39 14v10c0 11-7 19-14 23-7-4-14-12-14-23V14z"/>`,
+    cash: `<path d="M10 17h30v22H10z"/><circle cx="25" cy="28" r="6" fill="${P.card}"/><path d="M14 22h5M31 34h5"/>`,
+    clock: `<circle cx="25" cy="28" r="14"/><path d="M25 18v11l8 5"/>`,
+  };
+
+  return `
+  <rect x="${x}" y="${y}" width="50" height="50" rx="6" fill="${P.card}" stroke="${P.orange}" stroke-width="2"/>
+  <g transform="translate(${x} ${y})" fill="${P.orange}" stroke="${P.orange}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    ${glyphs[kind] || glyphs.id}
+  </g>`;
+}
+
+function calendarIcon(x, y) {
+  return `
+  <rect x="${x}" y="${y}" width="36" height="36" rx="5" fill="none" stroke="${P.ink}" stroke-width="3"/>
+  <path d="M8 12h20M11 5v8M25 5v8" transform="translate(${x} ${y})" stroke="${P.ink}" stroke-width="3" stroke-linecap="round"/>
+  <g fill="${P.ink}">
+    <rect x="${x + 10}" y="${y + 19}" width="4" height="4"/><rect x="${x + 17}" y="${y + 19}" width="4" height="4"/><rect x="${x + 24}" y="${y + 19}" width="4" height="4"/>
+    <rect x="${x + 10}" y="${y + 26}" width="4" height="4"/><rect x="${x + 17}" y="${y + 26}" width="4" height="4"/><rect x="${x + 24}" y="${y + 26}" width="4" height="4"/>
+  </g>`;
+}
+
+function hazardStripes(x, y, width, height, id) {
+  const stripeWidth = 30;
+  const count = Math.ceil(width / stripeWidth) + 4;
+  return `
+  <clipPath id="haz${id}"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="2"/></clipPath>
+  <g clip-path="url(#haz${id})">
+    <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${P.ink}"/>
+    ${Array.from({ length: count }, (_, i) => {
+      const sx = x - 40 + i * stripeWidth;
+      return `<polygon points="${sx},${y + height} ${sx + 18},${y + height} ${sx + 58},${y} ${sx + 40},${y}" fill="${P.yellow}"/>`;
+    }).join('')}
+  </g>`;
+}
+
+function logo(x, y, scale = 1) {
+  const s = scale;
+  return `
+  <g transform="translate(${x} ${y}) scale(${s})">
+    <path d="M8 35 42 5l34 30" fill="none" stroke="${P.ink}" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M20 35v32h43V35" fill="none" stroke="${P.ink}" stroke-width="6"/>
+    <path d="M14 50h18M52 50h18" stroke="${P.orange}" stroke-width="5" stroke-linecap="square"/>
+    <path d="M47 31l13 10-13 10 4-10z" fill="${P.ink}"/>
+    <rect x="4" y="27" width="9" height="25" fill="${P.orange}"/>
+  </g>
+  <text x="${x + 96 * scale}" y="${y + 38 * scale}" font-size="${38 * scale}" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">TradieHub<tspan fill="${P.orange}">AU</tspan></text>
+  <text x="${x + 98 * scale}" y="${y + 63 * scale}" font-size="${13 * scale}" font-weight="700" font-family="Arial,sans-serif" fill="${P.ink}">Find trusted tradies. Pay with confidence.</text>`;
+}
+
+function shell(id) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<defs>
+  <linearGradient id="cardBg${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="${P.card}"/>
+    <stop offset="100%" stop-color="${P.card2}"/>
+  </linearGradient>
+  <linearGradient id="orange${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="${P.orange}"/>
+    <stop offset="100%" stop-color="${P.orange2}"/>
+  </linearGradient>
+  <linearGradient id="amber${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="${P.amber}"/>
+    <stop offset="100%" stop-color="${P.yellow}"/>
+  </linearGradient>
+  <filter id="shadow${id}" x="-10%" y="-10%" width="120%" height="130%">
+    <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#000000" flood-opacity="0.18"/>
+  </filter>
+  <clipPath id="clip${id}"><rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="27"/></clipPath>
+</defs>
+<rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="27" fill="url(#cardBg${id})" stroke="${P.line}" filter="url(#shadow${id})"/>
+<g clip-path="url(#clip${id})">`;
+}
+
+function closeShell() {
+  return `
+</g>
+</svg>`;
+}
+
+function verifiedBadge(x, y, label) {
+  return `
+  <rect x="${x}" y="${y}" width="282" height="44" rx="8" fill="${P.card}" stroke="${P.green}" stroke-width="2"/>
+  <circle cx="${x + 28}" cy="${y + 22}" r="16" fill="${P.green}"/>
+  <path d="m${x + 20} ${y + 22} 6 6 12-15" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="${x + 53}" y="${y + 29}" font-size="17" font-weight="900" letter-spacing="1.1" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">${esc(label)}</text>`;
+}
+
+function roleBadge(t) {
+  if (t.isTradie) return verifiedBadge(758, 34, 'VERIFIED TRADIE');
+  return `
+  <rect x="842" y="36" width="186" height="40" rx="8" fill="${P.card}" stroke="${P.orange}" stroke-width="2"/>
+  <text x="935" y="63" text-anchor="middle" font-size="18" font-weight="900" letter-spacing="2" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">CUSTOMER</text>`;
+}
+
+function infoRow(x, y, icon, label, value, options = {}) {
+  const valueSize = options.valueSize || 21;
+  const valueColor = options.valueColor || P.text;
+  return `
+  ${iconBox(x, y, icon)}
+  <text x="${x + 68}" y="${y + 17}" font-size="13" font-family="Arial,sans-serif" font-weight="800" letter-spacing="1.1" fill="${P.text}">${esc(label)}</text>
+  <text x="${x + 68}" y="${y + 42}" font-size="${valueSize}" font-family="Arial Black,Arial,sans-serif" font-weight="900" fill="${valueColor}">${esc(value)}</text>
+  <line x1="${x + 68}" y1="${y + 55}" x2="${x + 244}" y2="${y + 55}" stroke="${P.line}" stroke-width="1"/>`;
+}
+
+function buildFront(t) {
+  const id = `F${t.filename.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const isTradie = t.isTradie;
+  const serial = serialFor(t);
+  const rightRows = isTradie
+    ? [
+        ['brief', 'BUSINESS', trunc(t.business, 29), 17, P.text],
+        ['bolt', 'TRADE CATEGORY', String(t.trade || '').toUpperCase(), 20, P.orange],
+        ['shield', 'FAKE LICENCE', t.licence, 20, P.text],
+      ]
+    : [
+        ['brief', 'JOB SCENARIO', trunc(t.scenario, 30), 17, P.text],
+        ['cash', 'BUDGET', t.budget, 20, P.orange],
+        ['clock', 'URGENCY', String(t.urgency || '').toUpperCase(), 18, P.text],
+      ];
+
+  return shell(id) + `
+  <rect x="6" y="6" width="32" height="172" fill="${P.ink}"/>
+  ${hazardStripes(6, 22, 32, 124, `${id}left`)}
+  <path d="M998 122 1068 32v288l-62 58 44-124-88 124z" fill="url(#orange${id})"/>
+  <text x="706" y="236" font-size="148" font-family="Arial Black,Arial,sans-serif" fill="#d8d8d8" opacity="0.45" font-style="italic">TH</text>
+  <text x="865" y="234" font-size="60" font-family="Arial Black,Arial,sans-serif" fill="#d8d8d8" opacity="0.45" font-style="italic">AU</text>
+
+  ${logo(66, 38, 0.74)}
+  ${roleBadge(t)}
+
+  <text x="66" y="174" font-size="47" font-weight="900" letter-spacing="1" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">BETA</text>
+  <text x="214" y="174" font-size="47" font-weight="900" letter-spacing="1" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">ACCESS</text>
+  <text x="438" y="174" font-size="47" font-weight="900" letter-spacing="1" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">PASS</text>
+  <line x1="66" y1="194" x2="542" y2="194" stroke="${P.orange}" stroke-width="2"/>
+  <line x1="66" y1="199" x2="720" y2="199" stroke="${P.line}" stroke-width="1"/>
+
+  ${infoRow(66, 222, 'id', 'TESTER ID', t.testerId.toUpperCase(), { valueSize: 22 })}
+  ${infoRow(66, 294, 'user', 'NAME', trunc(t.name, 22), { valueSize: 21 })}
+  ${infoRow(66, 366, 'pin', 'LOCATION', t.location, { valueSize: 20 })}
+
+  ${infoRow(464, 222, rightRows[0][0], rightRows[0][1], rightRows[0][2], { valueSize: rightRows[0][3], valueColor: rightRows[0][4] })}
+  ${infoRow(464, 294, rightRows[1][0], rightRows[1][1], rightRows[1][2], { valueSize: rightRows[1][3], valueColor: rightRows[1][4] })}
+  ${infoRow(464, 366, rightRows[2][0], rightRows[2][1], rightRows[2][2], { valueSize: rightRows[2][3], valueColor: rightRows[2][4] })}
+
+  <g transform="translate(810 282)">
+    <path d="M77 0 154 44v88l-77 44L0 132V44z" fill="none" stroke="${P.orange}" stroke-width="2"/>
+    <path d="M77 22 139 58v72l-62 36-62-36V58z" fill="${P.card}" opacity="0.78"/>
+    <text x="77" y="54" text-anchor="middle" font-size="25" fill="${P.orange}" font-family="Arial Black,Arial,sans-serif">*</text>
+    <text x="77" y="92" text-anchor="middle" font-size="28" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">BETA</text>
+    <text x="77" y="124" text-anchor="middle" font-size="28" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">TESTER</text>
+    <line x1="66" y1="144" x2="88" y2="144" stroke="${P.orange}" stroke-width="3"/>
+  </g>
+
+  <rect x="6" y="524" width="${W - 12}" height="64" fill="#efede8" opacity="0.82"/>
+  ${calendarIcon(70, 542)}
+  <text x="122" y="559" font-size="13" font-weight="900" letter-spacing="1.2" font-family="Arial,sans-serif" fill="${P.text}">BATCH</text>
+  <text x="122" y="581" font-size="18" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.text}">discord-beta-001</text>
+  <line x1="384" y1="540" x2="384" y2="584" stroke="${P.line}"/>
+  ${calendarIcon(414, 542)}
+  <text x="466" y="559" font-size="13" font-weight="900" letter-spacing="1.2" font-family="Arial,sans-serif" fill="${P.text}">ISSUED</text>
+  <text x="466" y="581" font-size="18" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.text}">June 2026</text>
+  <line x1="648" y1="540" x2="648" y2="584" stroke="${P.line}"/>
+  <text x="684" y="575" font-size="41" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">#</text>
+  <text x="734" y="559" font-size="13" font-weight="900" letter-spacing="1.2" font-family="Arial,sans-serif" fill="${P.text}">SERIAL</text>
+  <text x="734" y="581" font-size="18" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.text}">${serial}</text>
+
+  <rect x="6" y="588" width="${W - 12}" height="86" fill="url(#amber${id})"/>
+  <path d="M82 625h16l-8-17z" fill="none" stroke="${P.ink}" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="90" y1="613" x2="90" y2="620" stroke="${P.ink}" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="90" cy="624" r="1.7" fill="${P.ink}"/>
+  <text x="118" y="624" font-size="19" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">Beta testing account only. Not a real ID.</text>
+  <text x="648" y="624" font-size="13" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">TradieHubAU Beta Programme 2026</text>
+  ${hazardStripes(966, 588, 98, 86, `${id}bottom`)}
+  ` + closeShell();
+}
+
+function credentialsPanel(t) {
+  return `
+  <rect x="64" y="130" width="444" height="246" rx="10" fill="${P.panel}" stroke="${P.line}"/>
+  <text x="98" y="166" font-size="16" font-weight="900" letter-spacing="1.4" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">LOGIN CREDENTIALS</text>
+  <text x="98" y="216" font-size="16" font-weight="800" letter-spacing="1.2" font-family="Arial,sans-serif" fill="${P.muted}">EMAIL</text>
+  <text x="98" y="248" font-size="19" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.text}">${esc(t.email)}</text>
+  <text x="98" y="300" font-size="16" font-weight="800" letter-spacing="1.2" font-family="Arial,sans-serif" fill="${P.muted}">PASSWORD</text>
+  <text x="98" y="333" font-size="26" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">${esc(t.password)}</text>
+  <rect x="88" y="346" width="386" height="52" rx="8" fill="${P.cream}" stroke="#f2d8a2"/>
+  <circle cx="116" cy="372" r="13" fill="none" stroke="${P.orange}" stroke-width="3"/>
+  <text x="116" y="381" text-anchor="middle" font-size="25" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">i</text>
+  <text x="146" y="378" font-size="15" font-family="Arial,sans-serif" fill="${P.text}">Use these details to log in to the beta platform.</text>`;
+}
+
+function missionPanel(t) {
+  const missionLines = splitLines(t.mission, 44, 3);
+  return `
+  <rect x="540" y="130" width="476" height="246" rx="10" fill="${P.panel}" stroke="${P.line}"/>
+  <text x="596" y="166" font-size="16" font-weight="900" letter-spacing="1.4" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">YOUR MISSION</text>
+  ${missionLines.map((line, i) => `<text x="596" y="${206 + i * 24}" font-size="18" font-family="Arial,sans-serif" fill="${P.text}">${esc(line)}</text>`).join('\n  ')}
+  <line x1="582" y1="270" x2="858" y2="270" stroke="${P.line}" />
+  <text x="596" y="308" font-size="16" font-weight="900" letter-spacing="1.4" font-family="Arial Black,Arial,sans-serif" fill="${P.orange}">GIVE FEEDBACK</text>
+  <text x="596" y="340" font-size="17" font-family="Arial,sans-serif" fill="${P.text}">Help us build a better platform.</text>
+  <rect x="596" y="354" width="170" height="42" rx="8" fill="url(#orangeB${t.filename.replace(/[^a-zA-Z0-9]/g, '')})"/>
+  <text x="681" y="382" text-anchor="middle" font-size="20" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="#fff">/beta-feedback</text>
+  <g transform="translate(878 258)" fill="none" stroke="#c4c4c4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="0" y="28" width="92" height="94" rx="9"/>
+    <path d="M30 28v-12h32v12"/>
+    <path d="M22 62l11 11 19-22" stroke="${P.orange}"/>
+    <path d="M22 88l11 11 19-22" stroke="${P.orange}"/>
+    <path d="M58 68h24M58 94h24"/>
+  </g>`;
+}
+
+function barcode(x, y, width, height, seed) {
+  let cursor = x;
+  const bars = [];
+  for (let i = 0; i < seed.length * 4 && cursor < x + width; i++) {
+    const code = seed.charCodeAt(i % seed.length);
+    const barW = 2 + ((code + i) % 4);
+    const gap = 2 + ((code + i * 3) % 3);
+    bars.push(`<rect x="${cursor}" y="${y}" width="${barW}" height="${height}" fill="${P.ink}"/>`);
+    cursor += barW + gap;
+  }
+  return `<g>${bars.join('')}</g>`;
+}
+
+function buildBack(t) {
+  const id = `B${t.filename.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const serial = serialFor(t);
+  const warning = 'Use fake information only. Do not enter real personal details, real payment details, or private documents.';
+
+  return shell(id) + `
+  ${logo(60, 38, 0.58)}
+  <text x="520" y="67" font-size="13" font-weight="900" letter-spacing="1.2" font-family="Arial,sans-serif" fill="${P.ink}">REAL TRADIES. REAL JOBS. <tspan fill="${P.orange}">REAL CONFIDENCE.</tspan></text>
+
+  ${credentialsPanel(t)}
+  ${missionPanel(t)}
+
+  <rect x="6" y="454" width="${W - 12}" height="84" fill="#efede8" opacity="0.75"/>
+  <rect x="64" y="470" width="250" height="54" rx="6" fill="url(#amber${id})"/>
+  <path d="M111 510h42l-21-45z" fill="none" stroke="${P.ink}" stroke-width="4" stroke-linejoin="round"/>
+  <line x1="132" y1="478" x2="132" y2="496" stroke="${P.ink}" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="132" cy="506" r="3" fill="${P.ink}"/>
+  <text x="178" y="505" font-size="20" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${P.ink}">IMPORTANT</text>
+  <text x="338" y="492" font-size="17" font-family="Arial,sans-serif" fill="${P.text}">${esc(splitLines(warning, 72, 1)[0])}</text>
+  <text x="338" y="518" font-size="17" font-family="Arial,sans-serif" fill="${P.text}">${esc(splitLines(warning, 72, 2)[1] || '')}</text>
+
+  ${barcode(708, 560, 320, 44, serial)}
+  <text x="868" y="626" text-anchor="middle" font-size="17" letter-spacing="3" font-family="Arial,sans-serif" fill="${P.text}">${serial}</text>
+  <text x="66" y="626" font-size="15" font-family="Arial,sans-serif" fill="${P.muted}">Batch: discord-beta-001</text>
+  ${hazardStripes(64, 646, 180, 22, `${id}back`)}
+  ` + closeShell();
+}
+
 function parseMd(md) {
   const testers = [];
   const sections = md.split(/^### (?=Customer|Tradie)/m).slice(1);
+
   for (const sec of sections) {
     const lines = sec.trim().split('\n');
     const header = lines[0].trim();
     const isTradie = header.startsWith('Tradie');
     const get = (key) => {
-      const line = lines.find(l => l.includes(`- ${key}:`));
+      const line = lines.find((l) => l.includes(`- ${key}:`));
       if (!line) return '';
       return line.replace(/^.*?:\s*`?/, '').replace(/`$/, '').trim();
     };
-    const numM  = header.match(/(\d+)/);
-    const num   = numM ? numM[1].padStart(2,'0') : '??';
+    const numM = header.match(/(\d+)/);
+    const num = numM ? numM[1].padStart(2, '0') : '??';
     const nameM = header.match(/- (.+)$/);
-    const name  = nameM ? nameM[1].trim() : 'Unknown';
+    const name = nameM ? nameM[1].trim() : 'Unknown';
     const t = {
-      isTradie, num, name, nameSafe: name.replace(/\s+/g,'-'),
-      role: get('Role'), email: get('Email'), password: get('Password'),
-      location: get('Location'), mission: get('Mission'),
+      isTradie,
+      num,
+      name,
+      nameSafe: name.replace(/\s+/g, '-'),
+      role: get('Role'),
+      email: get('Email'),
+      password: get('Password'),
+      location: get('Location'),
+      mission: get('Mission'),
     };
+
     if (isTradie) {
-      t.business = get('Business'); t.trade = get('Trade category');
-      t.abn      = get('Fake ABN'); t.licence = get('Fake licence');
+      t.business = get('Business');
+      t.trade = get('Trade category');
+      t.abn = get('Fake ABN');
+      t.licence = get('Fake licence');
     } else {
       t.scenario = get('Fake job scenario');
-      t.budget   = get('Budget range');
-      t.urgency  = get('Urgency');
+      t.budget = get('Budget range');
+      t.urgency = get('Urgency');
     }
-    const prefix  = isTradie ? 'Tradie' : 'Customer';
-    t.filename    = `${prefix}-${num}-${t.nameSafe}`;
-    t.testerId    = `${prefix} ${num}`;
+
+    const prefix = isTradie ? 'Tradie' : 'Customer';
+    t.filename = `${prefix}-${num}-${t.nameSafe}`;
+    t.testerId = `${prefix} ${num}`;
     testers.push(t);
   }
+
   return testers;
 }
 
-// ── Render helpers ────────────────────────────────────────────────────────────
 async function svgToPng(svgStr, outPath) {
   await sharp(Buffer.from(svgStr, 'utf8'), { density: 150 })
     .png({ quality: 95 })
@@ -346,21 +418,15 @@ async function svgToPng(svgStr, outPath) {
 
 async function twoCardPdf(frontPng, backPng, outPath) {
   return new Promise((res, rej) => {
-    // A4 portrait, one card per page
     const doc = new PDFDocument({ size: 'A4', margin: 28 });
-    const ws  = createWriteStream(outPath);
+    const ws = createWriteStream(outPath);
     doc.pipe(ws);
 
-    const pw = doc.page.width;
-    const ph = doc.page.height;
-    const cw = pw - 56;
+    const cw = doc.page.width - 56;
     const ch = cw * (H / W);
-    const cy = (ph - ch) / 2;
+    const cy = (doc.page.height - ch) / 2;
 
-    // Page 1: front
     doc.image(frontPng, 28, cy, { width: cw });
-
-    // Page 2: back
     doc.addPage();
     doc.image(backPng, 28, cy, { width: cw });
 
@@ -377,29 +443,43 @@ async function buildZip() {
   await zip.writeZipPromise(ZIP_PATH);
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+function selectedTesters(testers) {
+  const args = new Set(process.argv.slice(2));
+  const sampleMode = args.has('--sample') || !args.has('--all');
+  if (!sampleMode) return { testers, sampleMode };
+  return {
+    testers: testers.filter((t) => SAMPLE_FILENAMES.has(t.filename)),
+    sampleMode,
+  };
+}
+
 async function main() {
   console.log('='.repeat(60));
-  console.log('  TradieHubAU - Beta Access Card Generator  (v2)');
+  console.log('  TradieHubAU - Beta Access Card Generator');
   console.log('='.repeat(60));
 
   await mkdir(PNG_DIR, { recursive: true });
   await mkdir(PDF_DIR, { recursive: true });
 
-  const md      = await readFile(SOURCE_MD, 'utf8');
-  const testers = parseMd(md);
-  console.log(`Parsed: ${testers.length} testers\n`);
+  const md = await readFile(SOURCE_MD, 'utf8');
+  const parsed = parseMd(md);
+  const { testers, sampleMode } = selectedTesters(parsed);
+  console.log(`Parsed: ${parsed.length} testers`);
+  console.log(`Mode: ${sampleMode ? 'sample' : 'all'} (${testers.length} selected)\n`);
 
-  let frontOk = 0, backOk = 0, pdfOk = 0, errs = 0;
+  let frontOk = 0;
+  let backOk = 0;
+  let pdfOk = 0;
+  let errs = 0;
 
   for (const t of testers) {
     process.stdout.write(`  ${t.filename} ... `);
     try {
-      const frontSvg  = buildFront(t);
-      const backSvg   = buildBack(t);
+      const frontSvg = buildFront(t);
+      const backSvg = buildBack(t);
       const frontPath = path.join(PNG_DIR, `${t.filename}-front.png`);
-      const backPath  = path.join(PNG_DIR, `${t.filename}-back.png`);
-      const pdfPath   = path.join(PDF_DIR, `${t.filename}.pdf`);
+      const backPath = path.join(PNG_DIR, `${t.filename}-back.png`);
+      const pdfPath = path.join(PDF_DIR, `${t.filename}.pdf`);
 
       await svgToPng(frontSvg, frontPath);
       frontOk++;
@@ -409,7 +489,7 @@ async function main() {
       pdfOk++;
 
       console.log('OK');
-    } catch(e) {
+    } catch (e) {
       console.log(`ERROR: ${e.message}`);
       errs++;
     }
@@ -419,15 +499,23 @@ async function main() {
   console.log(`  -> ${path.relative(ROOT, PNG_DIR)}/`);
   console.log(`  -> ${path.relative(ROOT, PDF_DIR)}/`);
 
-  try {
-    await buildZip();
-    console.log(`ZIP: ${path.relative(ROOT, ZIP_PATH)}`);
-  } catch(e) {
-    console.warn(`ZIP skipped: ${e.message}`);
+  if (!sampleMode) {
+    try {
+      await buildZip();
+      console.log(`ZIP: ${path.relative(ROOT, ZIP_PATH)}`);
+    } catch (e) {
+      console.warn(`ZIP skipped: ${e.message}`);
+    }
+  } else {
+    console.log('ZIP skipped in sample mode.');
   }
 
-  console.log('\nDone. All output in private/beta/ (gitignored).');
-  console.log('No Supabase changes. No app changes.');
+  if (errs > 0) process.exitCode = 1;
+  console.log('\nDone. Output is under private/beta/ (gitignored).');
+  console.log('No Supabase changes. No app route/page changes.');
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
