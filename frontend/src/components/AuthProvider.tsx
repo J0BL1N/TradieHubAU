@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
 export interface UserProfile {
@@ -119,60 +119,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      const currentUser = initialSession?.user ?? null;
-      authenticatedUserIdRef.current = currentUser?.id ?? null;
-      setUser(previousUser => previousUser?.id === currentUser?.id ? previousUser : currentUser);
-      
-      if (currentUser) {
-        syncProfile(currentUser).finally(() => setLoading(false));
-      } else {
+    let disposed = false;
+
+    const clearAuthState = () => {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      authenticatedUserIdRef.current = null;
+      profileUserIdRef.current = null;
+      profileSyncRef.current = null;
+    };
+
+    const handleAuthSession = async (event: AuthChangeEvent | 'INITIAL_SESSION', currentSession: Session | null) => {
+      if (disposed) return;
+
+      setSession(currentSession);
+      const currentUser = currentSession?.user ?? null;
+      const previousUserId = authenticatedUserIdRef.current;
+      const currentUserId = currentUser?.id ?? null;
+      const identityChanged = previousUserId !== currentUserId;
+
+      authenticatedUserIdRef.current = currentUserId;
+      setUser(previousUser => previousUser?.id === currentUserId ? previousUser : currentUser);
+
+      if (identityChanged) {
         setProfile(null);
         profileUserIdRef.current = null;
+      }
+
+      if (event === 'SIGNED_OUT' || !currentUser) {
+        setProfile(null);
+        profileUserIdRef.current = null;
+        profileSyncRef.current = null;
+        setLoading(false);
+        return;
+      }
+
+      const profileMissing = profileUserIdRef.current !== currentUser.id;
+      const shouldSyncProfile =
+        event === 'INITIAL_SESSION' ||
+        identityChanged ||
+        event === 'USER_UPDATED' ||
+        (event === 'SIGNED_IN' && profileMissing);
+
+      if (shouldSyncProfile) {
+        const syncAlreadyRunning = profileSyncRef.current?.userId === currentUser.id;
+        if (!syncAlreadyRunning) setLoading(true);
+
+        try {
+          await syncProfile(currentUser);
+        } finally {
+          if (!disposed) {
+            setLoading(false);
+          }
+        }
+      } else {
         setLoading(false);
       }
-    });
+    };
 
-    // Listen for auth changes
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session: initialSession } }) => {
+        void handleAuthSession('INITIAL_SESSION', initialSession);
+      })
+      .catch((error) => {
+        console.error('Error loading Supabase session:', error.message);
+        if (!disposed) {
+          clearAuthState();
+          setLoading(false);
+        }
+      });
+
+    // Listen for auth changes. Supabase recommends not awaiting Supabase calls
+    // inside this callback, so profile sync is deferred outside the callback.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        setSession(currentSession);
-        const currentUser = currentSession?.user ?? null;
-        const previousUserId = authenticatedUserIdRef.current;
-        const currentUserId = currentUser?.id ?? null;
-        const identityChanged = previousUserId !== currentUserId;
-
-        authenticatedUserIdRef.current = currentUserId;
-        setUser(previousUser => previousUser?.id === currentUserId ? previousUser : currentUser);
-
-        if (identityChanged) {
-          setProfile(null);
-          profileUserIdRef.current = null;
-        }
-
-        if (event === 'SIGNED_OUT' || !currentUser) {
-          setProfile(null);
-          profileUserIdRef.current = null;
-          profileSyncRef.current = null;
-          setLoading(false);
-          return;
-        }
-
-        const profileMissing = profileUserIdRef.current !== currentUser.id;
-        const shouldSyncProfile = identityChanged || event === 'USER_UPDATED' || (event === 'SIGNED_IN' && profileMissing);
-
-        if (shouldSyncProfile) {
-          const syncAlreadyRunning = profileSyncRef.current?.userId === currentUser.id;
-          if (!syncAlreadyRunning) setLoading(true);
-          await syncProfile(currentUser);
-          setLoading(false);
-        }
+      (event, currentSession) => {
+        setTimeout(() => {
+          void handleAuthSession(event, currentSession);
+        }, 0);
       }
     );
 
     return () => {
+      disposed = true;
       subscription.unsubscribe();
     };
   }, []);
