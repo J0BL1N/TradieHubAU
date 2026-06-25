@@ -76,11 +76,13 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 00:24:54 - v0.0.18 foundation - commit `873b829` - added beta prep foundation pages; docs/ROADMAP.md updated.
 * 00:46:22 - v0.0.18 messaging foundation - commit `55f40ab` - added job messaging foundation; migration `037_job_messaging_foundation.sql`; docs/ROADMAP.md updated.
 * 20:42:18 - roadmap priority decision - set near-term feature sequence as v0.0.18 Job Messaging Foundation, v0.0.19 Invoicing Foundation, and v0.0.20 Website Analytics Foundation; v0.0.18 remains in progress/unapproved and v0.1.0 remains not ready.
+* 21:00:15 - v0.0.18 messaging usability pass - added active-conversation Supabase Realtime handling and Enter-to-send with Shift+Enter newline behavior; v0.0.18 remains in progress/unapproved.
 
 ### Migrations / Deployments
 
 * `036_explicit_rpc_execute_grants.sql` - created 00:07:01, modified 00:07:29; docs/ROADMAP.md says hosted and manually confirmed.
 * `037_job_messaging_foundation.sql` - created 00:44:41; linked hosted migration list on 2026-06-25 shows remote `037` applied. No db push was needed.
+* `039_enable_message_realtime.sql` - created/applied on 2026-06-25; adds `public.messages` to `supabase_realtime` for live active-conversation updates.
 
 ### Validation
 

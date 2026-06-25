@@ -380,6 +380,8 @@ Status: **In progress / unapproved.** This pass adds beta-prep information pages
 * [x] Enforce participant access controls through job/customer/payee/payment relationships.
 * [x] Preserve immutable message evidence and recipient-only unread-to-read updates from v0.0.17 M-05.
 * [x] Support read status through recipient-only unread-to-read updates.
+* [x] Add active-conversation live message updates with Supabase Realtime — migration `039_enable_message_realtime.sql`.
+* [x] Add Enter-to-send in the message composer while preserving Shift+Enter for new lines.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.

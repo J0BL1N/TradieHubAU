@@ -18,6 +18,7 @@ import {
   openJobConversation,
   sendJobMessage,
 } from '../lib/messages';
+import { supabase } from '../lib/supabase';
 import type { ConversationSummary, MessageRecord } from '../lib/messages';
 
 function formatTimestamp(value: string | null) {
@@ -39,6 +40,13 @@ function statusLabel(status: string) {
     completed: 'Completed — payment released',
   };
   return labels[status] || status.replaceAll('_', ' ');
+}
+
+function sortMessages(messages: MessageRecord[]) {
+  return [...messages].sort((a, b) => {
+    const byTime = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return byTime || a.id.localeCompare(b.id);
+  });
 }
 
 export default function Messages() {
@@ -109,7 +117,7 @@ export default function Messages() {
     try {
       const { data, error: messagesError } = await getConversationMessages(conversationId);
       if (messagesError) throw messagesError;
-      setMessages(data);
+      setMessages(sortMessages(data));
 
       if (data.some(message => message.sender_id !== user.id && !message.read)) {
         const { error: readError } = await markIncomingMessagesRead(conversationId, user.id);
@@ -130,6 +138,82 @@ export default function Messages() {
     if (activeConversationId) loadMessages(activeConversationId);
     else setMessages([]);
   }, [activeConversationId, loadMessages]);
+
+  useEffect(() => {
+    if (!activeConversationId || !user) return;
+
+    const mergeMessage = (incoming: MessageRecord) => {
+      setMessages(current => sortMessages([
+        ...current.filter(message => message.id !== incoming.id),
+        incoming,
+      ]));
+
+      setConversations(current => current.map(conversation =>
+        conversation.id === incoming.conversation_id
+          ? {
+              ...conversation,
+              last_message_text: incoming.text,
+              last_message_at: incoming.created_at,
+              last_message_from: incoming.sender_id,
+              unread_count: incoming.sender_id === user.id
+                ? conversation.unread_count
+                : Math.max(Number(conversation.unread_count || 0), 1),
+            }
+          : conversation
+      ));
+    };
+
+    const channel = supabase
+      .channel(`job-messages:${activeConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${activeConversationId}`,
+        },
+        payload => {
+          const incoming = payload.new as MessageRecord;
+          mergeMessage(incoming);
+
+          if (incoming.sender_id !== user.id) {
+            void markIncomingMessagesRead(activeConversationId, user.id)
+              .then(({ error: readError }) => {
+                if (readError) throw readError;
+                setConversations(current => current.map(conversation =>
+                  conversation.id === activeConversationId ? { ...conversation, unread_count: 0 } : conversation
+                ));
+              })
+              .catch((readError: any) => setError(readError.message || 'Messages were received, but read status could not be updated.'));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${activeConversationId}`,
+        },
+        payload => {
+          const incoming = payload.new as MessageRecord;
+          setMessages(current => sortMessages(current.map(message =>
+            message.id === incoming.id ? incoming : message
+          )));
+        }
+      )
+      .subscribe(status => {
+        if (status === 'CHANNEL_ERROR') {
+          setError('Live message updates are temporarily unavailable. You can still refresh messages manually.');
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeConversationId, user]);
 
   const selectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
@@ -154,6 +238,15 @@ export default function Messages() {
     } finally {
       setSending(false);
     }
+  };
+
+  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+
+    event.preventDefault();
+    if (!reply.trim() || sending) return;
+
+    event.currentTarget.form?.requestSubmit();
   };
 
   if (authLoading) {
@@ -319,6 +412,7 @@ export default function Messages() {
                     <textarea
                       value={reply}
                       onChange={event => setReply(event.target.value)}
+                      onKeyDown={handleComposerKeyDown}
                       placeholder="Write a job message…"
                       rows={2}
                       maxLength={4000}
@@ -333,7 +427,7 @@ export default function Messages() {
                       <span className="hidden sm:inline">Send</span>
                     </button>
                   </div>
-                  <p className="mt-2 text-xs font-medium text-muted-foreground">Messages cannot be edited after sending.</p>
+                  <p className="mt-2 text-xs font-medium text-muted-foreground">Press Enter to send. Use Shift+Enter for a new line. Messages cannot be edited after sending.</p>
                 </form>
               </>
             ) : (
