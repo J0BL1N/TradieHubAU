@@ -47,7 +47,6 @@ ai/
 db/
 notes/
 reports/
-scripts/
 static/
 temp/
 *layout_backup**/
@@ -56,3 +55,7 @@ archive/unused/
 # Local archive only
 archive/
 
+# Private beta tester generated credentials/cards
+private/beta/
+*.beta-credentials.md
+*.beta-credentials.csv
