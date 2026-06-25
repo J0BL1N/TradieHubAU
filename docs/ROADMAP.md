@@ -385,6 +385,7 @@ Status: **In progress / unapproved.** This pass adds beta-prep information pages
 * [x] Add a lightweight emoji composer palette with cursor-position insertion.
 * [x] Add message attachment DB/storage/RPC foundation for private image uploads — migration `040_message_attachments_foundation.sql`.
 * [x] Add frontend image attachment uploads, signed thumbnail previews, and per-message lightbox viewing.
+* [x] Guard empty attachment path handling so conversations without attachments do not surface raw Storage errors.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.

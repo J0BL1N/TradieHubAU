@@ -179,7 +179,10 @@ export default function Messages() {
       }
     } catch (messagesError: any) {
       setMessages([]);
-      setError(messagesError.message || 'This conversation could not be loaded.');
+      const message = messagesError.message === 'Could not load message attachments. Please try refreshing.'
+        ? messagesError.message
+        : 'This conversation could not be loaded.';
+      setError(message);
     } finally {
       setMessagesLoading(false);
     }
@@ -405,8 +408,9 @@ export default function Messages() {
       await loadMessages(activeConversationId);
       await loadConversations(activeConversationId);
     } catch (sendError: any) {
-      if (uploadedPaths.length > 0) {
-        await supabase.storage.from('message_attachments').remove(uploadedPaths);
+      const cleanupPaths = uploadedPaths.filter(path => path.trim().length > 0);
+      if (cleanupPaths.length > 0) {
+        await supabase.storage.from('message_attachments').remove(cleanupPaths);
       }
       setError(sendError.message || 'Your message could not be sent.');
     } finally {

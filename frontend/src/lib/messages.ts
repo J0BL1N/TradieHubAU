@@ -145,22 +145,39 @@ export async function sendJobMessageWithAttachments(
 }
 
 export async function getMessageAttachmentsForMessages(messageIds: string[]) {
-  if (messageIds.length === 0) return { data: [] as MessageAttachment[], error: null };
+  const validMessageIds = messageIds.filter(Boolean);
+  if (validMessageIds.length === 0) return { data: [] as MessageAttachment[], error: null };
 
   const { data, error } = await supabase
     .from('message_attachments')
     .select('id, message_id, conversation_id, job_id, uploader_id, bucket_id, storage_path, file_name, mime_type, file_size, width, height, created_at')
-    .in('message_id', messageIds)
+    .in('message_id', validMessageIds)
     .order('created_at', { ascending: true });
 
   if (error || !data) return { data: [] as MessageAttachment[], error };
 
   const attachments = data as MessageAttachment[];
+  const validPaths = attachments
+    .map(attachment => attachment.storage_path)
+    .filter((path): path is string => typeof path === 'string' && path.trim().length > 0);
+
+  if (validPaths.length === 0) {
+    return {
+      data: attachments.map(attachment => ({ ...attachment, signed_url: undefined })),
+      error: null,
+    };
+  }
+
   const { data: signedData, error: signedError } = await supabase.storage
     .from('message_attachments')
-    .createSignedUrls(attachments.map(attachment => attachment.storage_path), 3600);
+    .createSignedUrls(validPaths, 3600);
 
-  if (signedError) return { data: [] as MessageAttachment[], error: signedError };
+  if (signedError) {
+    return {
+      data: [] as MessageAttachment[],
+      error: new Error('Could not load message attachments. Please try refreshing.'),
+    };
+  }
 
   const signedUrlByPath = new Map(
     (signedData || []).map(item => [item.path, item.signedUrl])
