@@ -77,6 +77,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 00:46:22 - v0.0.18 messaging foundation - commit `55f40ab` - added job messaging foundation; migration `037_job_messaging_foundation.sql`; docs/ROADMAP.md updated.
 * 20:42:18 - roadmap priority decision - set near-term feature sequence as v0.0.18 Job Messaging Foundation, v0.0.19 Invoicing Foundation, and v0.0.20 Website Analytics Foundation; v0.0.18 remains in progress/unapproved and v0.1.0 remains not ready.
 * 21:00:15 - v0.0.18 messaging usability pass - added active-conversation Supabase Realtime handling and Enter-to-send with Shift+Enter newline behavior; v0.0.18 remains in progress/unapproved.
+* 21:07:43 - v0.0.18 messaging usability pass 1B - added lightweight emoji composer palette with cursor-position insertion; v0.0.18 remains in progress/unapproved.
 
 ### Migrations / Deployments
 

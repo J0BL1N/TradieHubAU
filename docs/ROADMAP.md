@@ -382,6 +382,7 @@ Status: **In progress / unapproved.** This pass adds beta-prep information pages
 * [x] Support read status through recipient-only unread-to-read updates.
 * [x] Add active-conversation live message updates with Supabase Realtime — migration `039_enable_message_realtime.sql`.
 * [x] Add Enter-to-send in the message composer while preserving Shift+Enter for new lines.
+* [x] Add a lightweight emoji composer palette with cursor-position insertion.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.

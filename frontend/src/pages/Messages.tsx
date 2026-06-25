@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -8,6 +8,7 @@ import {
   MessageSquare,
   RefreshCw,
   Send,
+  Smile,
   User,
 } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
@@ -49,6 +50,8 @@ function sortMessages(messages: MessageRecord[]) {
   });
 }
 
+const COMMON_EMOJIS = ['👍', '✅', '🙏', '🙂', '😊', '😄', '👌', '👏', '💬', '📷', '🛠️', '🏠', '⏰', '💰', '🚧', '⭐'];
+
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,7 +62,10 @@ export default function Messages() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [reply, setReply] = useState('');
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeConversationId) || null,
@@ -215,6 +221,24 @@ export default function Messages() {
     };
   }, [activeConversationId, user]);
 
+  useEffect(() => {
+    if (!emojiPickerOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (emojiPickerRef.current?.contains(target)) return;
+      setEmojiPickerOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [emojiPickerOpen]);
+
   const selectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
     setSearchParams({ conversation: conversationId }, { replace: true });
@@ -247,6 +271,22 @@ export default function Messages() {
     if (!reply.trim() || sending) return;
 
     event.currentTarget.form?.requestSubmit();
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const composer = composerRef.current;
+    const start = composer?.selectionStart ?? reply.length;
+    const end = composer?.selectionEnd ?? reply.length;
+    const nextReply = `${reply.slice(0, start)}${emoji}${reply.slice(end)}`.slice(0, 4000);
+    const nextCursor = Math.min(start + emoji.length, nextReply.length);
+
+    setReply(nextReply);
+    setEmojiPickerOpen(false);
+
+    window.requestAnimationFrame(() => {
+      composerRef.current?.focus();
+      composerRef.current?.setSelectionRange(nextCursor, nextCursor);
+    });
   };
 
   if (authLoading) {
@@ -409,7 +449,34 @@ export default function Messages() {
 
                 <form onSubmit={handleSend} className="border-t bg-muted/20 p-4">
                   <div className="flex items-end gap-3">
+                    <div ref={emojiPickerRef} className="relative shrink-0">
+                      {emojiPickerOpen && (
+                        <div className="absolute bottom-14 left-0 z-20 grid w-56 grid-cols-8 gap-1 rounded-xl border bg-popover p-2 shadow-lg">
+                          {COMMON_EMOJIS.map(emoji => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => insertEmoji(emoji)}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-lg hover:bg-muted focus:bg-muted focus:outline-none"
+                              aria-label={`Insert ${emoji}`}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setEmojiPickerOpen(open => !open)}
+                        className="inline-flex h-12 w-12 items-center justify-center rounded-xl border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label="Add emoji"
+                        aria-expanded={emojiPickerOpen}
+                      >
+                        <Smile className="h-5 w-5" />
+                      </button>
+                    </div>
                     <textarea
+                      ref={composerRef}
                       value={reply}
                       onChange={event => setReply(event.target.value)}
                       onKeyDown={handleComposerKeyDown}
