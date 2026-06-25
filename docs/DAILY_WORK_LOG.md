@@ -81,6 +81,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 21:35:57 - v0.0.18 messaging attachments foundation - added private message attachment bucket/table/RLS/storage policies and `send_job_message_with_attachments` RPC; frontend upload/gallery remains pending.
 * 21:53:14 - v0.0.18 messaging attachments frontend - added image picker validation, private bucket uploads, signed thumbnails, and per-message lightbox; v0.0.18 remains in progress/unapproved.
 * 22:03:08 - v0.0.18 messaging attachments bugfix - guarded empty attachment storage path arrays and replaced raw signed URL failures with a friendly attachment refresh message.
+* 22:21:07 - v0.0.18 messaging scroll/pagination - added latest-10 opening, older-message pagination, scroll preservation, new-message handling, and a temporary 1,000-message cap per conversation.
 
 ### Migrations / Deployments
 
@@ -88,6 +89,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * `037_job_messaging_foundation.sql` - created 00:44:41; linked hosted migration list on 2026-06-25 shows remote `037` applied. No db push was needed.
 * `039_enable_message_realtime.sql` - created/applied on 2026-06-25; adds `public.messages` to `supabase_realtime` for live active-conversation updates.
 * `040_message_attachments_foundation.sql` - created/applied on 2026-06-25; adds private `message_attachments` storage, `public.message_attachments`, participant-only RLS/storage policies, and trusted attachment message RPC.
+* `041_message_pagination_cap.sql` - created/applied on 2026-06-25; enforces the temporary beta 1,000-message cap per conversation in message send RPCs.
 
 ### Validation
 

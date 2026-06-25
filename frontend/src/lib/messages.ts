@@ -58,6 +58,19 @@ export interface ConversationSummary {
   } | null;
 }
 
+export interface MessagePageOptions {
+  limit?: number;
+  before?: {
+    created_at: string;
+    id: string;
+  };
+}
+
+export interface MessagePageResult {
+  messages: MessageRecord[];
+  hasMore: boolean;
+}
+
 export async function getJobConversations(currentUserId: string) {
   const { data, error } = await supabase.rpc('list_job_conversations');
   if (error || !data) return { data: [] as ConversationSummary[], error };
@@ -91,18 +104,29 @@ export async function openJobConversation(jobId: string) {
   return { data: data as string | null, error };
 }
 
-export async function getConversationMessages(conversationId: string) {
-  const { data, error } = await supabase
+export async function getConversationMessages(conversationId: string, options: MessagePageOptions = {}) {
+  const pageSize = options.limit || 10;
+  let query = supabase
     .from('messages')
     .select('id, conversation_id, sender_id, text, read, read_at, created_at')
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(pageSize + 1);
 
-  if (error || !data) return { data: [] as MessageRecord[], error };
+  if (options.before) {
+    query = query.or(`created_at.lt.${options.before.created_at},and(created_at.eq.${options.before.created_at},id.lt.${options.before.id})`);
+  }
 
-  const messages = data as MessageRecord[];
+  const { data, error } = await query;
+
+  if (error || !data) return { data: { messages: [], hasMore: false } as MessagePageResult, error };
+
+  const rows = data as MessageRecord[];
+  const hasMore = rows.length > pageSize;
+  const messages = rows.slice(0, pageSize).reverse();
   const { data: attachments, error: attachmentsError } = await getMessageAttachmentsForMessages(messages.map(message => message.id));
-  if (attachmentsError) return { data: [] as MessageRecord[], error: attachmentsError };
+  if (attachmentsError) return { data: { messages: [], hasMore: false } as MessagePageResult, error: attachmentsError };
 
   const attachmentsByMessage = new Map<string, MessageAttachment[]>();
   attachments.forEach(attachment => {
@@ -112,10 +136,13 @@ export async function getConversationMessages(conversationId: string) {
   });
 
   return {
-    data: messages.map(message => ({
-      ...message,
-      attachments: attachmentsByMessage.get(message.id) || [],
-    })),
+    data: {
+      messages: messages.map(message => ({
+        ...message,
+        attachments: attachmentsByMessage.get(message.id) || [],
+      })),
+      hasMore,
+    },
     error: null,
   };
 }

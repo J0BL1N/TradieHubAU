@@ -60,6 +60,8 @@ function sortMessages(messages: MessageRecord[]) {
 const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 4;
+const MESSAGE_PAGE_SIZE = 10;
+const SCROLL_EDGE_THRESHOLD = 96;
 
 type SelectedAttachment = {
   id: string;
@@ -68,6 +70,12 @@ type SelectedAttachment = {
   width: number | null;
   height: number | null;
 };
+
+function friendlyMessageError(message: string | undefined, fallback: string) {
+  if (message === 'This beta conversation has reached the temporary 1,000 message limit.') return message;
+  if (message === 'Could not load message attachments. Please try refreshing.') return message;
+  return fallback;
+}
 
 function sanitizeFileName(name: string) {
   const cleanName = name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
@@ -100,6 +108,9 @@ export default function Messages() {
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [olderMessagesLoading, setOlderMessagesLoading] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
+  const [newMessageAvailable, setNewMessageAvailable] = useState(false);
   const [sending, setSending] = useState(false);
   const [reply, setReply] = useState('');
   const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
@@ -110,12 +121,28 @@ export default function Messages() {
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
   const selectedAttachmentsRef = useRef<SelectedAttachment[]>([]);
 
   const activeConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeConversationId) || null,
     [activeConversationId, conversations]
   );
+
+  const isMessageListNearBottom = useCallback(() => {
+    const list = messageListRef.current;
+    if (!list) return true;
+    return list.scrollHeight - list.scrollTop - list.clientHeight < SCROLL_EDGE_THRESHOLD;
+  }, []);
+
+  const scrollMessagesToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
+    window.requestAnimationFrame(() => {
+      const list = messageListRef.current;
+      if (!list) return;
+      list.scrollTo({ top: list.scrollHeight, behavior });
+      setNewMessageAvailable(false);
+    });
+  }, []);
 
   const loadConversations = useCallback(async (preferredConversationId?: string | null) => {
     if (!user) return;
@@ -164,29 +191,74 @@ export default function Messages() {
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!user) return;
     setMessagesLoading(true);
+    setMessages([]);
+    setHasOlderMessages(false);
+    setNewMessageAvailable(false);
     setError(null);
     try {
-      const { data, error: messagesError } = await getConversationMessages(conversationId);
+      const { data, error: messagesError } = await getConversationMessages(conversationId, { limit: MESSAGE_PAGE_SIZE });
       if (messagesError) throw messagesError;
-      setMessages(sortMessages(data));
+      setMessages(sortMessages(data.messages));
+      setHasOlderMessages(data.hasMore);
 
-      if (data.some(message => message.sender_id !== user.id && !message.read)) {
+      if (data.messages.some(message => message.sender_id !== user.id && !message.read)) {
         const { error: readError } = await markIncomingMessagesRead(conversationId, user.id);
         if (readError) throw readError;
         setConversations(current => current.map(conversation =>
           conversation.id === conversationId ? { ...conversation, unread_count: 0 } : conversation
         ));
       }
+      scrollMessagesToBottom();
     } catch (messagesError: any) {
       setMessages([]);
-      const message = messagesError.message === 'Could not load message attachments. Please try refreshing.'
-        ? messagesError.message
-        : 'This conversation could not be loaded.';
-      setError(message);
+      setError(friendlyMessageError(messagesError.message, 'This conversation could not be loaded.'));
     } finally {
       setMessagesLoading(false);
     }
-  }, [user]);
+  }, [scrollMessagesToBottom, user]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!activeConversationId || !user || olderMessagesLoading || messages.length === 0 || !hasOlderMessages) return;
+    const oldestMessage = messages[0];
+    const list = messageListRef.current;
+    const previousScrollHeight = list?.scrollHeight || 0;
+    const previousScrollTop = list?.scrollTop || 0;
+
+    setOlderMessagesLoading(true);
+    setError(null);
+    try {
+      const { data, error: messagesError } = await getConversationMessages(activeConversationId, {
+        limit: MESSAGE_PAGE_SIZE,
+        before: {
+          created_at: oldestMessage.created_at,
+          id: oldestMessage.id,
+        },
+      });
+      if (messagesError) throw messagesError;
+
+      // Preserve the reader's viewport when older rows are prepended.
+      setMessages(current => sortMessages([
+        ...data.messages,
+        ...current.filter(message => !data.messages.some(older => older.id === message.id)),
+      ]));
+      setHasOlderMessages(data.hasMore);
+
+      if (data.messages.some(message => message.sender_id !== user.id && !message.read)) {
+        const { error: readError } = await markIncomingMessagesRead(activeConversationId, user.id);
+        if (readError) throw readError;
+      }
+
+      window.requestAnimationFrame(() => {
+        const currentList = messageListRef.current;
+        if (!currentList) return;
+        currentList.scrollTop = currentList.scrollHeight - previousScrollHeight + previousScrollTop;
+      });
+    } catch (messagesError: any) {
+      setError(friendlyMessageError(messagesError.message, 'Older messages could not be loaded.'));
+    } finally {
+      setOlderMessagesLoading(false);
+    }
+  }, [activeConversationId, hasOlderMessages, messages, olderMessagesLoading, user]);
 
   useEffect(() => {
     if (activeConversationId) loadMessages(activeConversationId);
@@ -196,11 +268,16 @@ export default function Messages() {
   useEffect(() => {
     if (!activeConversationId || !user) return;
 
-    const mergeMessage = (incoming: MessageRecord) => {
+    const mergeMessage = (incoming: MessageRecord, shouldScrollToBottom: boolean) => {
       setMessages(current => sortMessages([
         ...current.filter(message => message.id !== incoming.id),
         incoming,
       ]));
+      if (shouldScrollToBottom) {
+        scrollMessagesToBottom('smooth');
+      } else {
+        setNewMessageAvailable(true);
+      }
 
       setConversations(current => current.map(conversation =>
         conversation.id === incoming.conversation_id
@@ -229,11 +306,12 @@ export default function Messages() {
         },
         async payload => {
           const incoming = payload.new as MessageRecord;
+          const shouldScrollToBottom = incoming.sender_id === user.id || isMessageListNearBottom();
           const { data: incomingAttachments, error: incomingAttachmentsError } = await getMessageAttachmentsForMessages([incoming.id]);
           mergeMessage({
             ...incoming,
             attachments: incomingAttachmentsError ? [] : incomingAttachments,
-          });
+          }, shouldScrollToBottom);
 
           if (incoming.sender_id !== user.id) {
             void markIncomingMessagesRead(activeConversationId, user.id)
@@ -271,7 +349,7 @@ export default function Messages() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [activeConversationId, user]);
+  }, [activeConversationId, isMessageListNearBottom, scrollMessagesToBottom, user]);
 
   useEffect(() => {
     if (!emojiPickerOpen) return;
@@ -304,6 +382,15 @@ export default function Messages() {
   const selectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
     setSearchParams({ conversation: conversationId }, { replace: true });
+  };
+
+  const handleMessagesScroll = () => {
+    const list = messageListRef.current;
+    if (!list) return;
+    if (isMessageListNearBottom()) setNewMessageAvailable(false);
+    if (list.scrollTop < SCROLL_EDGE_THRESHOLD) {
+      void loadOlderMessages();
+    }
   };
 
   const handleAttachmentSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -412,7 +499,7 @@ export default function Messages() {
       if (cleanupPaths.length > 0) {
         await supabase.storage.from('message_attachments').remove(cleanupPaths);
       }
-      setError(sendError.message || 'Your message could not be sent.');
+      setError(friendlyMessageError(sendError.message, 'Your message could not be sent.'));
     } finally {
       setSending(false);
     }
@@ -490,7 +577,7 @@ export default function Messages() {
           <Link to="/jobs" className="inline-flex rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">View My Jobs</Link>
         </div>
       ) : (
-        <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:h-[calc(100vh-220px)] lg:grid-cols-3">
           <aside className="flex flex-col rounded-2xl border bg-card p-4">
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="font-extrabold">Conversations</h2>
@@ -572,7 +659,11 @@ export default function Messages() {
                   )}
                 </header>
 
-                <div className="flex-1 space-y-4 overflow-y-auto bg-muted/5 p-5">
+                <div
+                  ref={messageListRef}
+                  onScroll={handleMessagesScroll}
+                  className="relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/5 p-5"
+                >
                   {messagesLoading ? (
                     <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
                   ) : messages.length === 0 ? (
@@ -581,7 +672,20 @@ export default function Messages() {
                       <p className="mt-3 font-extrabold">Start the job conversation</p>
                       <p className="mt-1 max-w-sm text-sm font-medium text-muted-foreground">Keep messages focused on the accepted job, scope, timing, and work coordination.</p>
                     </div>
-                  ) : messages.map(message => {
+                  ) : (
+                    <>
+                      {olderMessagesLoading && (
+                        <div className="flex justify-center">
+                          <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Loading older messages
+                          </span>
+                        </div>
+                      )}
+                      {!hasOlderMessages && messages.length >= MESSAGE_PAGE_SIZE && (
+                        <p className="text-center text-xs font-semibold text-muted-foreground">Start of this conversation</p>
+                      )}
+                      {messages.map(message => {
                     const outgoing = message.sender_id === user.id;
                     return (
                       <div key={message.id} className={`flex ${outgoing ? 'justify-end' : 'justify-start'}`}>
@@ -624,6 +728,17 @@ export default function Messages() {
                       </div>
                     );
                   })}
+                    </>
+                  )}
+                  {newMessageAvailable && (
+                    <button
+                      type="button"
+                      onClick={() => scrollMessagesToBottom('smooth')}
+                      className="sticky bottom-2 left-1/2 z-10 mx-auto flex -translate-x-0 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-lg"
+                    >
+                      New message
+                    </button>
+                  )}
                 </div>
 
                 <form onSubmit={handleSend} className="border-t bg-muted/20 p-4">

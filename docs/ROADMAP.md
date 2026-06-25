@@ -386,6 +386,7 @@ Status: **In progress / unapproved.** This pass adds beta-prep information pages
 * [x] Add message attachment DB/storage/RPC foundation for private image uploads — migration `040_message_attachments_foundation.sql`.
 * [x] Add frontend image attachment uploads, signed thumbnail previews, and per-message lightbox viewing.
 * [x] Guard empty attachment path handling so conversations without attachments do not surface raw Storage errors.
+* [x] Add newest-first message opening, latest-10 initial load, older-message pagination, scroll preservation, and a temporary 1,000-message beta cap per conversation — migration `041_message_pagination_cap.sql`.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.
