@@ -3,24 +3,31 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
   Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
   Loader2,
   Lock,
   MessageSquare,
+  Paperclip,
   RefreshCw,
   Send,
   Smile,
+  X,
   User,
 } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
 import {
+  getMessageAttachmentsForMessages,
   getConversationMessages,
   getJobConversations,
   markIncomingMessagesRead,
   openJobConversation,
   sendJobMessage,
+  sendJobMessageWithAttachments,
 } from '../lib/messages';
 import { supabase } from '../lib/supabase';
-import type { ConversationSummary, MessageRecord } from '../lib/messages';
+import type { ConversationSummary, MessageAttachment, MessageAttachmentInput, MessageRecord } from '../lib/messages';
 
 function formatTimestamp(value: string | null) {
   if (!value) return '';
@@ -50,6 +57,39 @@ function sortMessages(messages: MessageRecord[]) {
   });
 }
 
+const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
+const MAX_ATTACHMENTS = 4;
+
+type SelectedAttachment = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  width: number | null;
+  height: number | null;
+};
+
+function sanitizeFileName(name: string) {
+  const cleanName = name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_');
+  return cleanName || 'attachment';
+}
+
+function getImageDimensions(file: File) {
+  return new Promise<{ width: number | null; height: number | null }>((resolve) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: image.naturalWidth || null, height: image.naturalHeight || null });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: null, height: null });
+    };
+    image.src = url;
+  });
+}
+
 const COMMON_EMOJIS = ['👍', '✅', '🙏', '🙂', '😊', '😄', '👌', '👏', '💬', '📷', '🛠️', '🏠', '⏰', '💰', '🚧', '⭐'];
 
 export default function Messages() {
@@ -62,10 +102,15 @@ export default function Messages() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [reply, setReply] = useState('');
+  const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ attachments: MessageAttachment[]; index: number } | null>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedAttachmentsRef = useRef<SelectedAttachment[]>([]);
 
   const activeConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeConversationId) || null,
@@ -179,9 +224,13 @@ export default function Messages() {
           table: 'messages',
           filter: `conversation_id=eq.${activeConversationId}`,
         },
-        payload => {
+        async payload => {
           const incoming = payload.new as MessageRecord;
-          mergeMessage(incoming);
+          const { data: incomingAttachments, error: incomingAttachmentsError } = await getMessageAttachmentsForMessages([incoming.id]);
+          mergeMessage({
+            ...incoming,
+            attachments: incomingAttachmentsError ? [] : incomingAttachments,
+          });
 
           if (incoming.sender_id !== user.id) {
             void markIncomingMessagesRead(activeConversationId, user.id)
@@ -206,7 +255,7 @@ export default function Messages() {
         payload => {
           const incoming = payload.new as MessageRecord;
           setMessages(current => sortMessages(current.map(message =>
-            message.id === incoming.id ? incoming : message
+            message.id === incoming.id ? { ...incoming, attachments: message.attachments || [] } : message
           )));
         }
       )
@@ -239,25 +288,126 @@ export default function Messages() {
     };
   }, [emojiPickerOpen]);
 
+  useEffect(() => {
+    selectedAttachmentsRef.current = selectedAttachments;
+  }, [selectedAttachments]);
+
+  useEffect(() => {
+    return () => {
+      selectedAttachmentsRef.current.forEach(attachment => URL.revokeObjectURL(attachment.previewUrl));
+    };
+  }, []);
+
   const selectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId);
     setSearchParams({ conversation: conversationId }, { replace: true });
   };
 
+  const handleAttachmentSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setAttachmentError(null);
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    if (selectedAttachments.length + files.length > MAX_ATTACHMENTS) {
+      setAttachmentError(`You can attach up to ${MAX_ATTACHMENTS} images per message.`);
+      return;
+    }
+
+    const nextAttachments: SelectedAttachment[] = [];
+    for (const file of files) {
+      if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as typeof ALLOWED_ATTACHMENT_TYPES[number])) {
+        setAttachmentError('Only jpg, jpeg, png, and webp images can be attached.');
+        nextAttachments.forEach(attachment => URL.revokeObjectURL(attachment.previewUrl));
+        return;
+      }
+
+      if (file.size > MAX_ATTACHMENT_SIZE) {
+        setAttachmentError('Each image must be 5MB or smaller.');
+        nextAttachments.forEach(attachment => URL.revokeObjectURL(attachment.previewUrl));
+        return;
+      }
+
+      const dimensions = await getImageDimensions(file);
+      nextAttachments.push({
+        id: crypto.randomUUID(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+        width: dimensions.width,
+        height: dimensions.height,
+      });
+    }
+
+    setSelectedAttachments(current => [...current, ...nextAttachments]);
+  };
+
+  const removeSelectedAttachment = (attachmentId: string) => {
+    setSelectedAttachments(current => {
+      const removed = current.find(attachment => attachment.id === attachmentId);
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return current.filter(attachment => attachment.id !== attachmentId);
+    });
+  };
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!activeConversationId || !reply.trim() || sending) return;
+    if (!activeConversationId || (!reply.trim() && selectedAttachments.length === 0) || sending) return;
 
     setSending(true);
     setError(null);
+    setAttachmentError(null);
     const text = reply.trim();
+    const uploadedPaths: string[] = [];
     try {
-      const { error: sendError } = await sendJobMessage(activeConversationId, text);
-      if (sendError) throw sendError;
+      if (selectedAttachments.length === 0) {
+        const { error: sendError } = await sendJobMessage(activeConversationId, text);
+        if (sendError) throw sendError;
+      } else {
+        if (!user || !activeConversation) throw new Error('A valid job conversation is required to send attachments.');
+        const messageId = crypto.randomUUID();
+        const attachmentMetadata: MessageAttachmentInput[] = [];
+
+        for (const attachment of selectedAttachments) {
+          const fileName = `${Date.now()}_${attachment.id}_${sanitizeFileName(attachment.file.name)}`;
+          const storagePath = `jobs/${activeConversation.job_id}/conversations/${activeConversation.id}/messages/${messageId}/${user.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('message_attachments')
+            .upload(storagePath, attachment.file, {
+              contentType: attachment.file.type,
+              upsert: false,
+            });
+
+          if (uploadError) throw new Error(`Failed to upload ${attachment.file.name}: ${uploadError.message}`);
+          uploadedPaths.push(storagePath);
+          attachmentMetadata.push({
+            storage_path: storagePath,
+            file_name: attachment.file.name,
+            mime_type: attachment.file.type as MessageAttachmentInput['mime_type'],
+            file_size: attachment.file.size,
+            width: attachment.width,
+            height: attachment.height,
+          });
+        }
+
+        const { error: sendError } = await sendJobMessageWithAttachments(
+          messageId,
+          activeConversationId,
+          text,
+          attachmentMetadata
+        );
+        if (sendError) throw sendError;
+      }
+
       setReply('');
+      selectedAttachments.forEach(attachment => URL.revokeObjectURL(attachment.previewUrl));
+      setSelectedAttachments([]);
       await loadMessages(activeConversationId);
       await loadConversations(activeConversationId);
     } catch (sendError: any) {
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from('message_attachments').remove(uploadedPaths);
+      }
       setError(sendError.message || 'Your message could not be sent.');
     } finally {
       setSending(false);
@@ -268,7 +418,7 @@ export default function Messages() {
     if (event.key !== 'Enter' || event.shiftKey) return;
 
     event.preventDefault();
-    if (!reply.trim() || sending) return;
+    if ((!reply.trim() && selectedAttachments.length === 0) || sending) return;
 
     event.currentTarget.form?.requestSubmit();
   };
@@ -319,10 +469,10 @@ export default function Messages() {
         <p className="mt-1 text-sm font-medium text-muted-foreground">Conversations are available only for accepted job relationships.</p>
       </div>
 
-      {error && (
+      {(error || attachmentError) && (
         <div className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-600">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error}</span>
+          <span>{error || attachmentError}</span>
         </div>
       )}
 
@@ -436,7 +586,32 @@ export default function Messages() {
                             ? 'rounded-br-none bg-primary text-primary-foreground'
                             : 'rounded-bl-none border bg-card text-foreground'
                         }`}>
-                          <p className="whitespace-pre-wrap break-words">{message.text}</p>
+                          {message.text && <p className="whitespace-pre-wrap break-words">{message.text}</p>}
+                          {message.attachments && message.attachments.length > 0 && (
+                            <div className={`mt-2 grid gap-2 ${message.attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                              {message.attachments.map((attachment, index) => (
+                                <button
+                                  key={attachment.id}
+                                  type="button"
+                                  onClick={() => setLightbox({ attachments: message.attachments || [], index })}
+                                  className="group overflow-hidden rounded-xl border bg-background/80 text-left"
+                                  aria-label={`Open ${attachment.file_name}`}
+                                >
+                                  {attachment.signed_url ? (
+                                    <img
+                                      src={attachment.signed_url}
+                                      alt={attachment.file_name}
+                                      className="aspect-square w-full object-cover transition-transform group-hover:scale-[1.02]"
+                                    />
+                                  ) : (
+                                    <span className="flex aspect-square w-full items-center justify-center text-muted-foreground">
+                                      <ImageIcon className="h-6 w-6" />
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           <p className={`mt-1 text-[10px] font-semibold ${outgoing ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
                             {new Date(message.created_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
                             {outgoing && message.read ? ' · Read' : ''}
@@ -448,6 +623,24 @@ export default function Messages() {
                 </div>
 
                 <form onSubmit={handleSend} className="border-t bg-muted/20 p-4">
+                  {selectedAttachments.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {selectedAttachments.map(attachment => (
+                        <div key={attachment.id} className="relative h-20 w-20 overflow-hidden rounded-xl border bg-background">
+                          <img src={attachment.previewUrl} alt={attachment.file.name} className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeSelectedAttachment(attachment.id)}
+                            className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+                            aria-label={`Remove ${attachment.file.name}`}
+                            disabled={sending}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-end gap-3">
                     <div ref={emojiPickerRef} className="relative shrink-0">
                       {emojiPickerOpen && (
@@ -475,6 +668,23 @@ export default function Messages() {
                         <Smile className="h-5 w-5" />
                       </button>
                     </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                      onChange={handleAttachmentSelect}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sending || selectedAttachments.length >= MAX_ATTACHMENTS}
+                      className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Attach images"
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </button>
                     <textarea
                       ref={composerRef}
                       value={reply}
@@ -487,7 +697,7 @@ export default function Messages() {
                     />
                     <button
                       type="submit"
-                      disabled={!reply.trim() || sending}
+                      disabled={(!reply.trim() && selectedAttachments.length === 0) || sending}
                       className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -501,6 +711,61 @@ export default function Messages() {
               <div className="flex h-full items-center justify-center text-sm font-semibold text-muted-foreground">Select a conversation.</div>
             )}
           </section>
+        </div>
+      )}
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <div className="relative flex max-h-full max-w-5xl items-center justify-center" onClick={event => event.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              className="absolute right-2 top-2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+              aria-label="Close image preview"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {lightbox.attachments.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setLightbox(current => current ? {
+                  ...current,
+                  index: (current.index - 1 + current.attachments.length) % current.attachments.length,
+                } : current)}
+                className="absolute left-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
+            {lightbox.attachments[lightbox.index]?.signed_url ? (
+              <img
+                src={lightbox.attachments[lightbox.index].signed_url}
+                alt={lightbox.attachments[lightbox.index].file_name}
+                className="max-h-[88vh] max-w-full rounded-xl object-contain shadow-2xl"
+              />
+            ) : (
+              <div className="flex h-64 w-64 items-center justify-center rounded-xl bg-background text-muted-foreground">
+                <ImageIcon className="h-10 w-10" />
+              </div>
+            )}
+            {lightbox.attachments.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setLightbox(current => current ? {
+                  ...current,
+                  index: (current.index + 1) % current.attachments.length,
+                } : current)}
+                className="absolute right-2 top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

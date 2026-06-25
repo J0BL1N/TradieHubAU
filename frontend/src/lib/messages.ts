@@ -9,6 +9,33 @@ export interface MessageRecord {
   read: boolean;
   read_at: string | null;
   created_at: string;
+  attachments?: MessageAttachment[];
+}
+
+export interface MessageAttachment {
+  id: string;
+  message_id: string;
+  conversation_id: string;
+  job_id: string;
+  uploader_id: string;
+  bucket_id: 'message_attachments';
+  storage_path: string;
+  file_name: string;
+  mime_type: 'image/jpeg' | 'image/jpg' | 'image/png' | 'image/webp';
+  file_size: number;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+  signed_url?: string;
+}
+
+export interface MessageAttachmentInput {
+  storage_path: string;
+  file_name: string;
+  mime_type: MessageAttachment['mime_type'];
+  file_size: number;
+  width?: number | null;
+  height?: number | null;
 }
 
 export interface ConversationSummary {
@@ -71,7 +98,26 @@ export async function getConversationMessages(conversationId: string) {
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 
-  return { data: (data as MessageRecord[]) || [], error };
+  if (error || !data) return { data: [] as MessageRecord[], error };
+
+  const messages = data as MessageRecord[];
+  const { data: attachments, error: attachmentsError } = await getMessageAttachmentsForMessages(messages.map(message => message.id));
+  if (attachmentsError) return { data: [] as MessageRecord[], error: attachmentsError };
+
+  const attachmentsByMessage = new Map<string, MessageAttachment[]>();
+  attachments.forEach(attachment => {
+    const current = attachmentsByMessage.get(attachment.message_id) || [];
+    current.push(attachment);
+    attachmentsByMessage.set(attachment.message_id, current);
+  });
+
+  return {
+    data: messages.map(message => ({
+      ...message,
+      attachments: attachmentsByMessage.get(message.id) || [],
+    })),
+    error: null,
+  };
 }
 
 export async function sendJobMessage(conversationId: string, text: string) {
@@ -80,6 +126,53 @@ export async function sendJobMessage(conversationId: string, text: string) {
     p_text: text,
   });
   return { data: data as string | null, error };
+}
+
+export async function sendJobMessageWithAttachments(
+  messageId: string,
+  conversationId: string,
+  text: string,
+  attachments: MessageAttachmentInput[]
+) {
+  const { data, error } = await supabase.rpc('send_job_message_with_attachments', {
+    p_message_id: messageId,
+    p_conversation_id: conversationId,
+    p_text: text,
+    p_attachments: attachments,
+  });
+
+  return { data: (Array.isArray(data) ? data[0] : data) as MessageRecord | null, error };
+}
+
+export async function getMessageAttachmentsForMessages(messageIds: string[]) {
+  if (messageIds.length === 0) return { data: [] as MessageAttachment[], error: null };
+
+  const { data, error } = await supabase
+    .from('message_attachments')
+    .select('id, message_id, conversation_id, job_id, uploader_id, bucket_id, storage_path, file_name, mime_type, file_size, width, height, created_at')
+    .in('message_id', messageIds)
+    .order('created_at', { ascending: true });
+
+  if (error || !data) return { data: [] as MessageAttachment[], error };
+
+  const attachments = data as MessageAttachment[];
+  const { data: signedData, error: signedError } = await supabase.storage
+    .from('message_attachments')
+    .createSignedUrls(attachments.map(attachment => attachment.storage_path), 3600);
+
+  if (signedError) return { data: [] as MessageAttachment[], error: signedError };
+
+  const signedUrlByPath = new Map(
+    (signedData || []).map(item => [item.path, item.signedUrl])
+  );
+
+  return {
+    data: attachments.map(attachment => ({
+      ...attachment,
+      signed_url: signedUrlByPath.get(attachment.storage_path) || undefined,
+    })),
+    error: null,
+  };
 }
 
 export async function markIncomingMessagesRead(conversationId: string, currentUserId: string) {

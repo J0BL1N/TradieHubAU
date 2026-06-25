@@ -383,7 +383,8 @@ Status: **In progress / unapproved.** This pass adds beta-prep information pages
 * [x] Add active-conversation live message updates with Supabase Realtime — migration `039_enable_message_realtime.sql`.
 * [x] Add Enter-to-send in the message composer while preserving Shift+Enter for new lines.
 * [x] Add a lightweight emoji composer palette with cursor-position insertion.
-* [x] Add message attachment DB/storage/RPC foundation for private image uploads — migration `040_message_attachments_foundation.sql`; frontend upload UI, thumbnails, signed URLs, and gallery/lightbox remain pending.
+* [x] Add message attachment DB/storage/RPC foundation for private image uploads — migration `040_message_attachments_foundation.sql`.
+* [x] Add frontend image attachment uploads, signed thumbnail previews, and per-message lightbox viewing.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.

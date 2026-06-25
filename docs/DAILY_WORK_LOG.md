@@ -79,6 +79,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 21:00:15 - v0.0.18 messaging usability pass - added active-conversation Supabase Realtime handling and Enter-to-send with Shift+Enter newline behavior; v0.0.18 remains in progress/unapproved.
 * 21:07:43 - v0.0.18 messaging usability pass 1B - added lightweight emoji composer palette with cursor-position insertion; v0.0.18 remains in progress/unapproved.
 * 21:35:57 - v0.0.18 messaging attachments foundation - added private message attachment bucket/table/RLS/storage policies and `send_job_message_with_attachments` RPC; frontend upload/gallery remains pending.
+* 21:53:14 - v0.0.18 messaging attachments frontend - added image picker validation, private bucket uploads, signed thumbnails, and per-message lightbox; v0.0.18 remains in progress/unapproved.
 
 ### Migrations / Deployments
 
