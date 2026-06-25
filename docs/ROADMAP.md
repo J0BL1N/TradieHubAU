@@ -1,6 +1,6 @@
 # TradieHubAU Roadmap
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
 ## Progress Snapshot
 
@@ -22,9 +22,10 @@ Current focus:
 
 Next major focus:
 
-* v0.0.13 Admin dashboard polish
-* v0.0.18 Controlled Local Beta Prep Foundation (in progress/unapproved)
-* v0.1.0 Controlled Local Beta Prep, after remaining security findings are remediated and manually verified
+* v0.0.18 Job Messaging Foundation (in progress/unapproved)
+* v0.0.19 Invoicing Foundation
+* v0.0.20 Website Analytics Foundation
+* v0.1.0 Controlled Local Beta Prep, after the near-term foundations are completed and separately verified
 
 Later:
 
@@ -357,9 +358,11 @@ Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notif
 
 ---
 
-# v0.0.18 — Controlled Local Beta Prep Foundation
+# v0.0.18 — Job Messaging Foundation
 
-Status: **In progress / unapproved.** This pass adds informational foundations only. v0.1.0 remains not ready.
+Status: **In progress / unapproved.** This pass adds beta-prep information pages and the first job-tied messaging foundation. v0.1.0 remains not ready.
+
+### Beta Prep Information Pages
 
 * [x] Add Contact Support information page and non-invasive footer entry point.
 * [x] Add Protected Payment explainer with explicit simulated/local MVP limitations.
@@ -368,9 +371,15 @@ Status: **In progress / unapproved.** This pass adds informational foundations o
 * [x] Add Tradie Verification explainer.
 * [x] Add Customer Verification explainer.
 * [x] Keep the main job flow unchanged and avoid real-provider or legal outcome claims.
+
+### Job Messaging Foundation
+
 * [x] Replace dummy Messages content with authenticated, real job conversations and chronological message history.
+* [x] Add job-tied conversations for accepted customer/tradie relationships.
 * [x] Bind conversation creation and message sending to the accepted customer/payee relationship through explicit authenticated RPCs — migration `037_job_messaging_foundation.sql`.
+* [x] Enforce participant access controls through job/customer/payee/payment relationships.
 * [x] Preserve immutable message evidence and recipient-only unread-to-read updates from v0.0.17 M-05.
+* [x] Support read status through recipient-only unread-to-read updates.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.
@@ -378,6 +387,39 @@ Status: **In progress / unapproved.** This pass adds informational foundations o
 Advanced messaging remains deferred: email/push notifications, moderation dashboard, conversation reporting, rich attachments, typing indicators, online status, masked relay contact, and an advanced admin audit console.
 
 Real payment processing remains deferred to v0.2.x, GST implementation remains deferred to v0.3.x, and production launch remains separately gated under 1.0 readiness.
+
+---
+
+# v0.0.19 — Invoicing Foundation
+
+Status: **Planned.** This is a local MVP invoicing foundation only. It does not approve real tax advice, accountant exports, GST-final logic, or real payment-provider settlement.
+
+* [ ] Add job-linked invoices.
+* [ ] Add invoice line items.
+* [ ] Add invoice statuses: draft, issued, paid, cancelled, void.
+* [ ] Define customer visibility for invoices tied to their jobs.
+* [ ] Define tradie visibility for invoices tied to their accepted/completed work.
+* [ ] Define admin visibility for invoice review and support.
+* [ ] Link invoices to protected payment records where a simulated payment exists.
+* [ ] Keep invoice state changes audit-friendly and anchored to the job/payment lifecycle.
+* [ ] Defer real tax invoice requirements, accountant exports, GST-final logic, BAS reporting, and payment-provider reconciliation to v0.3.x Finance/GST work unless separately approved.
+
+---
+
+# v0.0.20 — Website Analytics Foundation
+
+Status: **Planned.** This is an admin analytics foundation for first-party product metrics only. No third-party tracking is approved.
+
+* [ ] Add admin analytics dashboard foundation.
+* [ ] Track user signups.
+* [ ] Track jobs posted.
+* [ ] Track quote/application counts.
+* [ ] Track accepted quotes.
+* [ ] Track simulated funded/protected-payment conversion.
+* [ ] Track completion rates.
+* [ ] Track dispute rates.
+* [ ] Add basic funnel metrics from signup through job posting, quoting, acceptance, funding, completion, and dispute.
+* [ ] Avoid third-party tracking unless explicitly approved.
 
 ---
 
@@ -396,7 +438,7 @@ Real payment processing remains deferred to v0.2.x, GST implementation remains d
 * [ ] Add tradie verification explainer
 * [ ] Add customer verification explainer
 * [ ] Add job reference IDs/public IDs
-* [ ] Add simple invoice/reference foundation
+* [ ] Confirm v0.0.19 invoice foundation is sufficient for local beta demo needs
 * [ ] Prepare test data for beta demo
 * [ ] Prepare deployment checklist
 * [ ] Prepare manual QA checklist

@@ -75,6 +75,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 00:11:00 - v0.0.17 closeout - commit `0772de2` - closed out v0.0.17 security remediation; docs/ROADMAP.md updated.
 * 00:24:54 - v0.0.18 foundation - commit `873b829` - added beta prep foundation pages; docs/ROADMAP.md updated.
 * 00:46:22 - v0.0.18 messaging foundation - commit `55f40ab` - added job messaging foundation; migration `037_job_messaging_foundation.sql`; docs/ROADMAP.md updated.
+* 20:42:18 - roadmap priority decision - set near-term feature sequence as v0.0.18 Job Messaging Foundation, v0.0.19 Invoicing Foundation, and v0.0.20 Website Analytics Foundation; v0.0.18 remains in progress/unapproved and v0.1.0 remains not ready.
 
 ### Migrations / Deployments
 
@@ -88,5 +89,5 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ### Remaining / Next
 
-* v0.0.18 - in progress/unapproved; docs/ROADMAP.md says this pass adds informational foundations only and v0.1.0 remains not ready.
+* v0.0.18 - in progress/unapproved; docs/ROADMAP.md prioritizes job messaging foundation and says v0.1.0 remains not ready.
 * v0.1.0 Controlled Local Beta Prep remains next confirmed roadmap phase; not approved.
