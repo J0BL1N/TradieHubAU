@@ -30,21 +30,23 @@ const tradieNames = [
 ];
 
 const suburbs = [
-  ['Parramatta', 'NSW', '2150'], ['Brunswick', 'VIC', '3056'], ['New Farm', 'QLD', '4005'],
-  ['Fremantle', 'WA', '6160'], ['Norwood', 'SA', '5067'], ['Belconnen', 'ACT', '2617'],
-  ['Sandy Bay', 'TAS', '7005'], ['Darwin City', 'NT', '0800'], ['Geelong West', 'VIC', '3218'],
-  ['Wollongong', 'NSW', '2500'],
+  ['Pakenham', 'VIC', '3810'], ['Officer', 'VIC', '3809'], ['Berwick', 'VIC', '3806'],
+  ['Cranbourne', 'VIC', '3977'], ['Narre Warren', 'VIC', '3805'], ['Clyde', 'VIC', '3978'],
+  ['Clyde North', 'VIC', '3978'], ['Hallam', 'VIC', '3803'], ['Dandenong', 'VIC', '3175'],
+  ['Frankston', 'VIC', '3199'], ['Carrum Downs', 'VIC', '3201'], ['Keysborough', 'VIC', '3173'],
 ];
 
 const jobScenarios = [
-  ['Ceiling fan installation', '$250-$450', 'This week'],
-  ['Leaking kitchen tap repair', '$120-$280', 'ASAP'],
-  ['Fence panel replacement', '$500-$900', 'Next fortnight'],
-  ['Bathroom regrouting', '$300-$650', 'Flexible'],
-  ['Garden clean-up and green waste removal', '$180-$400', 'This weekend'],
-  ['Internal room repaint', '$700-$1,200', 'Next month'],
-  ['Blocked drain assessment', '$180-$350', 'ASAP'],
-  ['Laundry shelf and cabinet install', '$300-$600', 'This week'],
+  ['Berwick townhouse ceiling fan installation', '$250-$450', 'This week'],
+  ['Pakenham leaking kitchen tap repair', '$120-$280', 'ASAP'],
+  ['Cranbourne fence panel replacement', '$500-$900', 'Next fortnight'],
+  ['Officer bathroom regrouting', '$300-$650', 'Flexible'],
+  ['Narre Warren garden clean-up and green waste removal', '$180-$400', 'This weekend'],
+  ['Clyde North internal room repaint', '$700-$1,200', 'Next month'],
+  ['Dandenong blocked drain assessment', '$180-$350', 'ASAP'],
+  ['Frankston laundry shelf and cabinet install', '$300-$600', 'This week'],
+  ['Carrum Downs outdoor tap replacement', '$150-$320', 'This week'],
+  ['Keysborough garage lighting upgrade', '$350-$750', 'Next fortnight'],
 ];
 
 const tradieScenarios = [

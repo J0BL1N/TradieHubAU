@@ -82,6 +82,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 21:53:14 - v0.0.18 messaging attachments frontend - added image picker validation, private bucket uploads, signed thumbnails, and per-message lightbox; v0.0.18 remains in progress/unapproved.
 * 22:03:08 - v0.0.18 messaging attachments bugfix - guarded empty attachment storage path arrays and replaced raw signed URL failures with a friendly attachment refresh message.
 * 22:21:07 - v0.0.18 messaging scroll/pagination - added latest-10 opening, older-message pagination, scroll preservation, new-message handling, and a temporary 1,000-message cap per conversation.
+* 22:26:23 - beta testing account tooling - focused fake beta profile locations and scenarios on South East Melbourne suburbs; dry-run only, no hosted users created.
 
 ### Migrations / Deployments
 

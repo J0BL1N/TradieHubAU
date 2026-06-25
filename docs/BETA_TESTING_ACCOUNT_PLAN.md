@@ -11,6 +11,8 @@ The planned beta pool is 65 fake accounts, about 1.25x the expected tester count
 * 40 customer accounts
 * 25 verified tradie accounts
 
+The first small beta sample focuses on South East Melbourne suburbs and nearby service areas including Pakenham, Officer, Berwick, Cranbourne, Narre Warren, Clyde, Clyde North, Hallam, Dandenong, Frankston, Carrum Downs, and Keysborough.
+
 All account names, emails, passwords, suburbs, ABNs, licence numbers, jobs, and business names are fake beta-only data.
 
 ## Private Profile Cards
