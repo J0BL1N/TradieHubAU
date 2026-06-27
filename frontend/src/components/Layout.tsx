@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { Menu, X, Hammer, MessageSquare, Briefcase, Users, User, ShieldAlert, ChevronDown, LogOut } from 'lucide-react';
+import { Menu, X, MessageSquare, Briefcase, Users, User, ShieldAlert, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 
 export default function Layout() {
@@ -28,9 +28,12 @@ export default function Layout() {
           
           {/* Logo & Middle Menu Section */}
           <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 font-black text-2xl tracking-tight text-primary transition-transform active:scale-95">
-              <Hammer className="h-6 w-6 stroke-[3]" />
-              <span>TradieHubAU</span>
+            <Link to="/" className="flex items-center transition-transform active:scale-95" aria-label="TradieHubAU home">
+              <img
+                src="/assets/tradiehubau-logo.png"
+                alt="TradieHubAU"
+                className="h-10 w-auto max-w-[180px] object-contain sm:h-12 sm:max-w-[220px]"
+              />
             </Link>
 
             {/* Desktop Middle Navigation */}
