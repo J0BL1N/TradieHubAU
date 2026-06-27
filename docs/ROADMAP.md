@@ -388,6 +388,7 @@ Status: **Implementation complete / awaiting manual review.** This pass adds bet
 * [x] Guard empty attachment path handling so conversations without attachments do not surface raw Storage errors.
 * [x] Add newest-first message opening, latest-10 initial load, older-message pagination, scroll preservation, and a temporary 1,000-message beta cap per conversation — migration `041_message_pagination_cap.sql`.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
+* [x] Add direct `/jobs/:jobId` job detail route and wire Messages `Open Full Job` links to the active conversation job.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
 * [x] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, payment released, and admin dispute actions - migration `042_lifecycle_system_messages.sql`.
 * [x] Remove stale direct-user `/messages?user=` entry points; messaging remains job/conversation-based.

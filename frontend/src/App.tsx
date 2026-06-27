@@ -3,6 +3,7 @@ import { AuthProvider } from './components/AuthProvider';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
+import JobDetail from './pages/JobDetail';
 import PostJob from './pages/PostJob';
 import BrowseTradies from './pages/BrowseTradies';
 import BrowseCustomers from './pages/BrowseCustomers';
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="jobs" element={<Jobs />} />
+            <Route path="jobs/:jobId" element={<JobDetail />} />
             <Route path="post-job" element={<PostJob />} />
             <Route path="browse-tradies" element={<BrowseTradies />} />
             <Route path="browse-customers" element={<BrowseCustomers />} />

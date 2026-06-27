@@ -32,6 +32,24 @@ export interface Job {
   applications?: any[];
 }
 
+export interface JobDetailPayment {
+  id: string;
+  job_id: string;
+  payer_id: string;
+  payee_id: string;
+  amount: number;
+  platform_fee: number;
+  status: 'pending' | 'held' | 'held_in_escrow' | 'released' | 'refunded' | 'failed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobDetailData {
+  job: Job;
+  payment: JobDetailPayment | null;
+  tradie?: Customer;
+}
+
 export interface GetJobsFilters {
   state?: string;
   categories?: string[];
@@ -115,5 +133,59 @@ export async function fetchJobs(filters: GetJobsFilters = {}) {
   } catch (error: any) {
     console.error('❌ fetchJobs error:', error.message);
     return { data: [], error };
+  }
+}
+
+export async function fetchJobById(jobId: string) {
+  try {
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .maybeSingle();
+
+    if (jobError) throw jobError;
+    if (!job) return { data: null as JobDetailData | null, error: null };
+
+    const { data: hydratedJobs, error: profilesError } = await hydrateJobsWithPublicCustomers([job]);
+    if (profilesError) throw profilesError;
+
+    const hydratedJob = hydratedJobs[0] as Job;
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select('id, job_id, payer_id, payee_id, amount, platform_fee, status, created_at, updated_at')
+      .eq('job_id', jobId)
+      .maybeSingle();
+
+    if (paymentError) throw paymentError;
+
+    let tradie: Customer | undefined;
+    if (payment?.payee_id) {
+      const { data: profiles, error: tradieError } = await getPublicProfilesByIds([payment.payee_id]);
+      if (tradieError) throw tradieError;
+      const profile = profiles[0];
+      if (profile) {
+        tradie = {
+          id: profile.id,
+          display_name: profile.display_name,
+          avatar_url: profile.avatar_url,
+          suburb: profile.suburb,
+          state: profile.state,
+        };
+      }
+    }
+
+    return {
+      data: {
+        job: hydratedJob,
+        payment: (payment as JobDetailPayment | null) || null,
+        tradie,
+      },
+      error: null,
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown job detail error';
+    console.error('fetchJobById error:', message);
+    return { data: null as JobDetailData | null, error };
   }
 }

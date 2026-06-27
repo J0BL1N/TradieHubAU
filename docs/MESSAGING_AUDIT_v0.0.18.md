@@ -17,6 +17,8 @@ Update: a post-lifecycle regression where a selected message thread could show "
 
 Update: the Messages conversation header now has a read-only in-page Job Details panel. It loads the active conversation's job, payment amount/status, and participant public-profile names without exposing locked contact fields or adding lifecycle actions.
 
+Update: the Messages Job Details panel now links to a real dynamic `/jobs/:jobId` route, so users can open the active conversation's full job page directly instead of returning to the generic jobs board.
+
 ## Current Implementation Status
 
 Implemented:
@@ -29,6 +31,7 @@ Implemented:
 - Supabase Realtime subscription for active conversation inserts and updates.
 - Private image attachment table, private storage bucket, upload/read policies, signed thumbnails, and lightbox.
 - Read-only in-page Job Details panel from the active message thread header.
+- Direct full-job deep links from Messages through `/jobs/:jobId`.
 - Job details/list messaging entry points for valid accepted/funded/review/disputed/completed participants.
 - Backend pre-funding block for obvious phone/email strings in message text when payment status is `pending`.
 

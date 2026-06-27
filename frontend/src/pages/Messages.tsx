@@ -1108,7 +1108,7 @@ export default function Messages() {
                   <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs font-semibold text-muted-foreground">Job ref {jobDetails.job.id.slice(0, 8)}</p>
                     <Link
-                      to="/jobs"
+                      to={`/jobs/${jobDetails.job.id}`}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
                     >
                       Open Full Job
