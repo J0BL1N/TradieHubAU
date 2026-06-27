@@ -17,6 +17,7 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Redirect if already logged in
   const from = (location.state as any)?.from?.pathname || '/';
@@ -95,6 +96,25 @@ export default function Auth() {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    setError(null);
+    setSuccess(null);
+    setGoogleLoading(true);
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+
+    if (oauthError) {
+      console.error('Google OAuth error:', oauthError.message);
+      setError(oauthError.message || 'Google sign-in could not be started.');
+      setGoogleLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 bg-card border rounded-2xl max-w-md mx-auto my-12 gap-4">
@@ -169,6 +189,28 @@ export default function Auth() {
               <span>{success}</span>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleGoogleAuth}
+            disabled={googleLoading || submitting}
+            className="w-full inline-flex items-center justify-center gap-3 bg-background border border-border text-foreground text-sm font-bold py-3.5 rounded-xl hover:bg-muted/60 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
+          >
+            {googleLoading ? (
+              <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+            ) : (
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-sm font-black text-blue-600 border border-border">
+                G
+              </span>
+            )}
+            {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+          </button>
+
+          <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="h-px flex-1 bg-border"></div>
+            <span>or</span>
+            <div className="h-px flex-1 bg-border"></div>
+          </div>
 
           {isSignUp && (
             <div className="space-y-2">

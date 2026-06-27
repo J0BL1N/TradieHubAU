@@ -13,6 +13,7 @@ import Admin from './pages/Admin';
 import AdminDisputes from './pages/AdminDisputes';
 import AdminDisputeCase from './pages/AdminDisputeCase';
 import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
 import {
   ContactSupport,
   CustomerVerificationExplainer,
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="admin/disputes" element={<AdminDisputes />} />
             <Route path="admin/disputes/:jobId" element={<AdminDisputeCase />} />
             <Route path="login" element={<Auth />} />
+            <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="support" element={<ContactSupport />} />
             <Route path="protected-payments" element={<ProtectedPaymentExplainer />} />
             <Route path="trust-and-safety" element={<TrustAndSafetyExplainer />} />
