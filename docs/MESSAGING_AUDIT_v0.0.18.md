@@ -15,6 +15,8 @@ Update: lifecycle system messages have been implemented in migration `042_lifecy
 
 Update: a post-lifecycle regression where a selected message thread could show "This conversation could not be loaded." has been fixed. The linked Supabase migration list now verifies `042_lifecycle_system_messages.sql` as applied, and frontend read-status update failures are non-blocking after messages have loaded.
 
+Update: the Messages conversation header now has a read-only in-page Job Details panel. It loads the active conversation's job, payment amount/status, and participant public-profile names without exposing locked contact fields or adding lifecycle actions.
+
 ## Current Implementation Status
 
 Implemented:
@@ -26,6 +28,7 @@ Implemented:
 - Read/unread foundation via `messages.read`, `messages.read_at`, unread counts, and recipient-only read updates.
 - Supabase Realtime subscription for active conversation inserts and updates.
 - Private image attachment table, private storage bucket, upload/read policies, signed thumbnails, and lightbox.
+- Read-only in-page Job Details panel from the active message thread header.
 - Job details/list messaging entry points for valid accepted/funded/review/disputed/completed participants.
 - Backend pre-funding block for obvious phone/email strings in message text when payment status is `pending`.
 

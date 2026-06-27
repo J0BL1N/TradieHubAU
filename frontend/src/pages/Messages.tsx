@@ -3,11 +3,16 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
   Briefcase,
+  Calendar,
   ChevronLeft,
   ChevronRight,
+  DollarSign,
+  ExternalLink,
+  FileText,
   Image as ImageIcon,
   Loader2,
   Lock,
+  MapPin,
   MessageSquare,
   Paperclip,
   RefreshCw,
@@ -21,13 +26,14 @@ import {
   getMessageAttachmentsForMessages,
   getConversationMessages,
   getJobConversations,
+  getMessageJobDetails,
   markIncomingMessagesRead,
   openJobConversation,
   sendJobMessage,
   sendJobMessageWithAttachments,
 } from '../lib/messages';
 import { supabase } from '../lib/supabase';
-import type { ConversationSummary, MessageAttachment, MessageAttachmentInput, MessageRecord } from '../lib/messages';
+import type { ConversationSummary, MessageAttachment, MessageAttachmentInput, MessageJobDetails, MessageRecord } from '../lib/messages';
 
 function formatTimestamp(value: string | null) {
   if (!value) return '';
@@ -56,6 +62,33 @@ function sortMessages(messages: MessageRecord[]) {
     const byTime = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     return byTime || a.id.localeCompare(b.id);
   });
+}
+
+function paymentStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    pending: 'Payment pending',
+    held: 'Payment funded',
+    held_in_escrow: 'Payment funded',
+    released: 'Payment released',
+    refunded: 'Payment refunded',
+    failed: 'Payment failed',
+  };
+  return labels[status] || status.replaceAll('_', ' ');
+}
+
+function formatAUD(value: number) {
+  return value.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
+}
+
+function formatCentsToAUD(cents: number) {
+  return formatAUD(cents / 100);
+}
+
+function formatBudget(min: number | null, max: number | null) {
+  if (min && max) return `${formatAUD(min)} - ${formatAUD(max)}`;
+  if (min) return `From ${formatAUD(min)}`;
+  if (max) return `Up to ${formatAUD(max)}`;
+  return 'Not provided';
 }
 
 function hasUnreadIncomingUserMessages(messages: MessageRecord[], currentUserId: string) {
@@ -128,6 +161,10 @@ export default function Messages() {
   const [error, setError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ attachments: MessageAttachment[]; index: number } | null>(null);
+  const [jobDetailsOpen, setJobDetailsOpen] = useState(false);
+  const [jobDetails, setJobDetails] = useState<MessageJobDetails | null>(null);
+  const [jobDetailsLoading, setJobDetailsLoading] = useState(false);
+  const [jobDetailsError, setJobDetailsError] = useState<string | null>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +177,21 @@ export default function Messages() {
     () => conversations.find(conversation => conversation.id === activeConversationId) || null,
     [activeConversationId, conversations]
   );
+
+  const loadJobDetails = useCallback(async (jobId: string) => {
+    setJobDetailsLoading(true);
+    setJobDetailsError(null);
+    try {
+      const { data, error: detailsError } = await getMessageJobDetails(jobId);
+      if (detailsError || !data) throw detailsError || new Error('Job details could not be loaded.');
+      setJobDetails(data);
+    } catch (detailsError: any) {
+      setJobDetails(null);
+      setJobDetailsError(detailsError.message || 'Job details could not be loaded.');
+    } finally {
+      setJobDetailsLoading(false);
+    }
+  }, []);
 
   const isMessageListNearBottom = useCallback(() => {
     const list = messageListRef.current;
@@ -313,9 +365,18 @@ export default function Messages() {
 
   useEffect(() => {
     shouldStickToBottomRef.current = true;
+    setJobDetailsOpen(false);
+    setJobDetails(null);
+    setJobDetailsError(null);
     if (activeConversationId) loadMessages(activeConversationId);
     else setMessages([]);
   }, [activeConversationId, loadMessages]);
+
+  useEffect(() => {
+    if (jobDetailsOpen && activeConversation?.job_id) {
+      loadJobDetails(activeConversation.job_id);
+    }
+  }, [activeConversation?.job_id, jobDetailsOpen, loadJobDetails]);
 
   useLayoutEffect(() => {
     if (!activeConversationId || messagesLoading || messages.length === 0) return;
@@ -713,17 +774,28 @@ export default function Messages() {
                         <p className="text-xs font-medium text-muted-foreground">{statusLabel(activeConversation.job_status)}</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        loadMessages(activeConversation.id);
-                        loadConversations(activeConversation.id).catch((refreshError: any) => setError(refreshError.message));
-                      }}
-                      className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      aria-label="Refresh message history"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setJobDetailsOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted"
+                      >
+                        <Briefcase className="h-4 w-4" />
+                        Job Details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          loadMessages(activeConversation.id);
+                          loadConversations(activeConversation.id).catch((refreshError: any) => setError(refreshError.message));
+                          if (jobDetailsOpen) loadJobDetails(activeConversation.job_id);
+                        }}
+                        className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label="Refresh message history"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   {activeConversation.payment_status === 'pending' && (
                     <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-5 text-amber-900">
@@ -922,6 +994,131 @@ export default function Messages() {
               </div>
             )}
           </section>
+        </div>
+      )}
+
+      {jobDetailsOpen && activeConversation && (
+        <div
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          onClick={() => setJobDetailsOpen(false)}
+        >
+          <div
+            className="max-h-[92vh] w-full overflow-hidden rounded-t-2xl border bg-card shadow-2xl sm:max-w-2xl sm:rounded-2xl"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b p-4">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Job Details</p>
+                <h3 className="truncate text-lg font-extrabold text-foreground">{activeConversation.job_title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setJobDetailsOpen(false)}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Close job details"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-74px)] overflow-y-auto p-4">
+              {jobDetailsLoading ? (
+                <div className="flex min-h-48 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  Loading job details...
+                </div>
+              ) : jobDetailsError ? (
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-600">
+                  Job details could not be loaded.
+                </div>
+              ) : jobDetails ? (
+                <div className="space-y-5">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">{statusLabel(jobDetails.job.status)}</span>
+                    {jobDetails.payment && (
+                      <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
+                        {paymentStatusLabel(jobDetails.payment.status)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-xl font-extrabold leading-tight text-foreground">{jobDetails.job.title}</h4>
+                    <p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-6 text-foreground/80">{jobDetails.job.description || 'Not provided'}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border bg-background p-3">
+                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><DollarSign className="h-4 w-4" /> Budget</p>
+                      <p className="mt-1 text-sm font-extrabold text-foreground">{formatBudget(jobDetails.job.budget_min, jobDetails.job.budget_max)}</p>
+                    </div>
+                    {jobDetails.payment && (
+                      <div className="rounded-xl border bg-background p-3">
+                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><DollarSign className="h-4 w-4" /> Accepted amount</p>
+                        <p className="mt-1 text-sm font-extrabold text-foreground">{formatCentsToAUD(jobDetails.payment.amount)}</p>
+                      </div>
+                    )}
+                    <div className="rounded-xl border bg-background p-3">
+                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><MapPin className="h-4 w-4" /> Location</p>
+                      <p className="mt-1 text-sm font-extrabold text-foreground">{jobDetails.job.location}{jobDetails.job.state ? `, ${jobDetails.job.state}` : ''}</p>
+                    </div>
+                    <div className="rounded-xl border bg-background p-3">
+                      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Calendar className="h-4 w-4" /> Created</p>
+                      <p className="mt-1 text-sm font-extrabold text-foreground">{new Date(jobDetails.job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                    {(jobDetails.job.timeline || jobDetails.job.type || jobDetails.job.urgency) && (
+                      <div className="rounded-xl border bg-background p-3 sm:col-span-2">
+                        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><FileText className="h-4 w-4" /> Scope notes</p>
+                        <p className="mt-1 text-sm font-semibold text-foreground">
+                          {[jobDetails.job.type, jobDetails.job.timeline, jobDetails.job.urgency].filter(Boolean).join(' - ')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border bg-background p-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Customer</p>
+                      <p className="mt-1 text-sm font-extrabold text-foreground">{jobDetails.customer?.display_name || 'Not provided'}</p>
+                      {(jobDetails.customer?.suburb || jobDetails.customer?.state) && (
+                        <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                          {[jobDetails.customer.suburb, jobDetails.customer.state].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-xl border bg-background p-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tradie</p>
+                      <p className="mt-1 text-sm font-extrabold text-foreground">{jobDetails.tradie?.display_name || activeConversation.counterpart?.display_name || 'Not provided'}</p>
+                      {(jobDetails.tradie?.suburb || jobDetails.tradie?.state) && (
+                        <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                          {[jobDetails.tradie.suburb, jobDetails.tradie.state].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {['completed_pending_review', 'disputed', 'completed'].includes(jobDetails.job.status) && (
+                    <div className="rounded-xl border bg-muted/40 p-3 text-sm font-semibold text-foreground">
+                      {jobDetails.job.status === 'completed_pending_review' && 'Completion proof has been submitted and is under customer review.'}
+                      {jobDetails.job.status === 'disputed' && 'This job is currently disputed and awaiting admin review.'}
+                      {jobDetails.job.status === 'completed' && 'This job is completed and payment has been released or resolved.'}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs font-semibold text-muted-foreground">Job ref {jobDetails.job.id.slice(0, 8)}</p>
+                    <Link
+                      to="/jobs"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
+                    >
+                      Open Full Job
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       )}
 

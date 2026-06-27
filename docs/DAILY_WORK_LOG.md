@@ -109,6 +109,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * v0.0.18 messaging scroll fix - commit `8fd7169` - made active message threads force bottom scroll after initial load/conversation switch/refetch/sends and after attachment images load, while preserving older-message pagination position; v0.0.18 remained in progress/unapproved.
 * v0.0.18 lifecycle system messages - commit `8ce8818` - added trusted immutable job conversation system messages for quote acceptance, payment funding, completion proof, approval/release, dispute opening, and admin dispute actions; removed stale direct-user message links; v0.0.18 is implementation-complete and awaiting manual review, not approved.
 * 19:40:32 - v0.0.18 message-load resilience - made read-status update failures non-blocking after messages load and kept null-sender system messages safe in the thread; v0.0.18 remains awaiting manual review, not approved.
+* 19:54:26 - v0.0.18 messaging job details UX - added a read-only in-page Job Details panel to the active message thread header, loading job/payment/public participant details without exposing locked contact fields; v0.0.18 remains awaiting manual review, not approved.
 
 ### Migrations / Deployments
 
@@ -119,6 +120,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * Messaging scroll fix - frontend production build passed; lint still had known pre-existing app-wide debt.
 * Lifecycle system messages - frontend production build passed; lint still had known pre-existing app-wide debt. Supabase CLI was not available in the shell, so migration parser/lint validation was unavailable.
 * Message-load resilience - frontend production build passed; lint still had known pre-existing app-wide debt.
+* Messaging job details UX - frontend production build passed; `git diff --check` passed with line-ending warnings only.
 
 ### Remaining / Next
 

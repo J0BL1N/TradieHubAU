@@ -61,6 +61,50 @@ export interface ConversationSummary {
   } | null;
 }
 
+export interface MessageJobDetails {
+  job: {
+    id: string;
+    customer_id: string;
+    title: string;
+    description: string;
+    location: string;
+    state: string;
+    budget_min: number | null;
+    budget_max: number | null;
+    timeline: string | null;
+    urgency: string | null;
+    type: string | null;
+    status: string;
+    quotes_count: number;
+    created_at: string;
+    updated_at: string;
+  };
+  payment: {
+    id: string;
+    amount: number;
+    platform_fee: number;
+    status: string;
+    payer_id: string;
+    payee_id: string;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  customer: {
+    id: string;
+    display_name: string;
+    avatar_url: string | null;
+    suburb: string | null;
+    state: string | null;
+  } | null;
+  tradie: {
+    id: string;
+    display_name: string;
+    avatar_url: string | null;
+    suburb: string | null;
+    state: string | null;
+  } | null;
+}
+
 export interface MessagePageOptions {
   limit?: number;
   before?: {
@@ -98,6 +142,60 @@ export async function getJobConversations(currentUserId: string) {
         } : null,
       };
     }),
+    error: null,
+  };
+}
+
+export async function getMessageJobDetails(jobId: string) {
+  const { data: job, error: jobError } = await supabase
+    .from('jobs')
+    .select('id, customer_id, title, description, location, state, budget_min, budget_max, timeline, urgency, type, status, quotes_count, created_at, updated_at')
+    .eq('id', jobId)
+    .maybeSingle();
+
+  if (jobError || !job) {
+    return { data: null as MessageJobDetails | null, error: jobError || new Error('Job details could not be loaded.') };
+  }
+
+  const { data: payment, error: paymentError } = await supabase
+    .from('payments')
+    .select('id, amount, platform_fee, status, payer_id, payee_id, created_at, updated_at')
+    .eq('job_id', jobId)
+    .maybeSingle();
+
+  if (paymentError) {
+    return { data: null as MessageJobDetails | null, error: paymentError };
+  }
+
+  const participantIds = [job.customer_id, payment?.payee_id].filter(Boolean) as string[];
+  const { data: profiles, error: profileError } = await getPublicProfilesByIds(participantIds);
+  if (profileError) {
+    return { data: null as MessageJobDetails | null, error: profileError };
+  }
+
+  const profilesById = new Map(profiles.map(profile => [profile.id, profile]));
+  const customer = profilesById.get(job.customer_id);
+  const tradie = payment?.payee_id ? profilesById.get(payment.payee_id) : undefined;
+
+  return {
+    data: {
+      job: job as MessageJobDetails['job'],
+      payment: payment as MessageJobDetails['payment'],
+      customer: customer ? {
+        id: customer.id,
+        display_name: customer.display_name,
+        avatar_url: customer.avatar_url,
+        suburb: customer.suburb,
+        state: customer.state,
+      } : null,
+      tradie: tradie ? {
+        id: tradie.id,
+        display_name: tradie.display_name,
+        avatar_url: tradie.avatar_url,
+        suburb: tradie.suburb,
+        state: tradie.state,
+      } : null,
+    },
     error: null,
   };
 }
