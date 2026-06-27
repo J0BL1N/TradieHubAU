@@ -27,11 +27,23 @@ export interface PortfolioInput {
 
 export interface PublicProofImage {
   id: string;
-  job_id: string;
-  description: string | null;
+  portfolio_title: string | null;
+  portfolio_caption: string | null;
+  portfolio_trade_category: string | null;
   created_at: string;
   attachments: string[];
   image_urls?: string[];
+}
+
+export interface CompletionProofPortfolioItem extends PublicProofImage {
+  is_public_portfolio: boolean;
+}
+
+export interface CompletionProofPortfolioInput {
+  is_public_portfolio: boolean;
+  portfolio_title?: string | null;
+  portfolio_caption?: string | null;
+  portfolio_trade_category?: string | null;
 }
 
 const signedUrlTtlSeconds = 3600;
@@ -166,12 +178,9 @@ export async function deletePortfolioItem(itemId: string) {
 
 export async function fetchPublicProofGallery(tradieId: string) {
   try {
-    const { data, error } = await supabase
-      .from('job_completion_proofs')
-      .select('id, job_id, description, attachments, created_at')
-      .eq('tradie_id', tradieId)
-      .eq('is_public_portfolio', true)
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.rpc('list_public_tradie_completion_proof_gallery', {
+      p_tradie_id: tradieId,
+    });
 
     if (error) throw error;
 
@@ -197,4 +206,43 @@ export async function fetchPublicProofGallery(tradieId: string) {
     console.error('fetchPublicProofGallery error:', error.message);
     return { data: [] as PublicProofImage[], error };
   }
+}
+
+export async function fetchEligibleCompletionProofPortfolioItems() {
+  try {
+    const { data, error } = await supabase.rpc('list_my_portfolio_completion_proofs');
+    if (error) throw error;
+
+    const rows = ((data || []) as CompletionProofPortfolioItem[]).filter(row => row.attachments?.length > 0);
+    const paths = [...new Set(rows.flatMap(row => row.attachments || []))];
+    if (paths.length === 0) return { data: rows.map(row => ({ ...row, image_urls: [] })), error: null };
+
+    const { data: signed, error: signedError } = await supabase.storage
+      .from('completion_proofs')
+      .createSignedUrls(paths, signedUrlTtlSeconds);
+
+    if (signedError) throw signedError;
+
+    const urlByPath = new Map((signed || []).map(item => [item.path, item.signedUrl]));
+    return {
+      data: rows.map(row => ({
+        ...row,
+        image_urls: row.attachments.map(path => urlByPath.get(path)).filter(Boolean) as string[],
+      })),
+      error: null,
+    };
+  } catch (error: any) {
+    console.error('fetchEligibleCompletionProofPortfolioItems error:', error.message);
+    return { data: [] as CompletionProofPortfolioItem[], error };
+  }
+}
+
+export async function updateCompletionProofPortfolioItem(proofId: string, input: CompletionProofPortfolioInput) {
+  return supabase.rpc('update_completion_proof_portfolio_publication', {
+    p_proof_id: proofId,
+    p_is_public_portfolio: input.is_public_portfolio,
+    p_portfolio_title: input.portfolio_title || null,
+    p_portfolio_caption: input.portfolio_caption || null,
+    p_portfolio_trade_category: input.portfolio_trade_category || null,
+  });
 }

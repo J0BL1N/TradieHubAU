@@ -144,7 +144,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 01:30:45 | Auth | `d6d26fd` | Redirected users to `/login` after successful logout from desktop and mobile nav. |
 | 01:38:42 | Supabase security | `cc658b7` | Added pass 1 security lint hardening migration for `is_admin`, admin RPCs, simulation RPCs, and function search paths. |
 | 02:02:02 | Supabase security | `6b707b1` | Added pass 2 audit doc classifying remaining `SECURITY DEFINER` RPC Advisor warnings. |
-| In progress | Profile trust | this commit | Added profile trust foundation: avatar upload, public tradie fields, previous work portfolio, safe public tradie route, real reviews, and opt-in completed work gallery foundation. |
+| 02:31:06 | Profile trust | `8234397` | Added profile trust foundation: avatar upload, public tradie fields, previous work portfolio, safe public tradie route, real reviews, and opt-in completed work gallery foundation. |
+| In progress | Profile trust | this commit | Added public completion proof publishing for eligible completed/released job proof images with public-safe metadata and profile gallery controls. |
 
 ### Migrations / Deployments
 
@@ -152,6 +153,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | --- | --- | --- |
 | `044_harden_security_lint_findings_pass1.sql` | Created | Revokes anon execute on `is_admin`, keeps authenticated-only helper access, hardens admin-only RPCs, admin-gates simulation RPCs, and adds safe `search_path` on edited functions. |
 | `045_profile_trust_foundation.sql` | Created | Adds public-safe tradie profile fields, portfolio table/RLS, avatar and portfolio storage buckets/policies, and default-private public completion proof gallery flag. |
+| `046_public_completion_proof_publishing.sql` | Created | Adds public-safe completion proof gallery metadata, owner-only publish/unpublish RPCs, eligible-proof listing, and tighter public proof/portfolio storage policies. |
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
 | Leaked password protection | Dashboard action required | Remaining `auth_leaked_password_protection` warning must be fixed in Supabase Dashboard, not code. |
 
@@ -165,6 +167,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Supabase security pass 1 | `git diff --check` passed. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 | Supabase security pass 2 | `git diff --check` passed. SQL validation unavailable for the same local tooling reason. Frontend build was not run because no frontend files changed. |
 | Profile trust foundation | `npm run build` passed. SQL validation pending local tooling availability. |
+| Public completion proof publishing | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 
 ### Remaining / Next
 

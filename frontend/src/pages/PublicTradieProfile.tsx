@@ -241,9 +241,41 @@ export default function PublicTradieProfile() {
         {proofGallery.length === 0 ? (
           <p className="text-sm text-muted-foreground font-medium">No public completed work photos yet.</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {proofGallery.flatMap(proof => proof.image_urls || []).map(url => (
-              <img key={url} src={url} alt="Completed work" className="aspect-square rounded-2xl object-cover border" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {proofGallery.map(proof => (
+              <article key={proof.id} className="border rounded-2xl overflow-hidden bg-background">
+                {proof.image_urls && proof.image_urls.length > 0 && (
+                  <img
+                    src={proof.image_urls[0]}
+                    alt={proof.portfolio_title || 'Completed work'}
+                    className="h-48 w-full object-cover"
+                  />
+                )}
+                <div className="p-5 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-foreground">{proof.portfolio_title || 'Completed work'}</h3>
+                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground font-semibold">
+                      {proof.portfolio_trade_category && (
+                        <span>{tradeLabels[proof.portfolio_trade_category] || proof.portfolio_trade_category}</span>
+                      )}
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(proof.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                  {proof.portfolio_caption && (
+                    <p className="text-sm text-muted-foreground leading-6 font-medium">{proof.portfolio_caption}</p>
+                  )}
+                  {proof.image_urls && proof.image_urls.length > 1 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {proof.image_urls.slice(1, 5).map(url => (
+                        <img key={url} src={url} alt="" className="aspect-square rounded-lg object-cover" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </article>
             ))}
           </div>
         )}

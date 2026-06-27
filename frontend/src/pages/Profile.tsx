@@ -14,13 +14,15 @@ import { toggleSavedItem, isItemSaved } from '../lib/saved';
 import {
   createPortfolioItem,
   deletePortfolioItem,
+  fetchEligibleCompletionProofPortfolioItems,
   fetchPortfolioItems,
+  updateCompletionProofPortfolioItem,
   updatePortfolioItem,
   uploadAvatar,
   uploadPortfolioImages,
   validateTrustImage,
 } from '../lib/profileTrust';
-import type { PortfolioItem } from '../lib/profileTrust';
+import type { CompletionProofPortfolioItem, PortfolioItem } from '../lib/profileTrust';
 import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
   Upload, Loader2, Award, Star, Briefcase, Clock,
@@ -96,6 +98,16 @@ export default function Profile() {
   const [portfolioMonth, setPortfolioMonth] = useState('');
   const [portfolioPublic, setPortfolioPublic] = useState(true);
   const [portfolioFiles, setPortfolioFiles] = useState<File[]>([]);
+  const [completionProofItems, setCompletionProofItems] = useState<CompletionProofPortfolioItem[]>([]);
+  const [completionProofDrafts, setCompletionProofDrafts] = useState<Record<string, {
+    isPublic: boolean;
+    title: string;
+    caption: string;
+    trade: string;
+  }>>({});
+  const [completionProofLoading, setCompletionProofLoading] = useState(false);
+  const [completionProofSavingId, setCompletionProofSavingId] = useState<string | null>(null);
+  const [completionProofError, setCompletionProofError] = useState<string | null>(null);
 
   // Public view details state
   const [activeJobs, setActiveJobs] = useState<DisplayJob[]>([]);
@@ -181,6 +193,28 @@ export default function Profile() {
     }
     setPortfolioLoading(false);
   }, [targetId, isSelf, targetProfile]);
+
+  const loadCompletionProofPortfolioItems = useCallback(async () => {
+    if (!isSelf || !targetProfile || targetProfile.role === 'customer') return;
+    setCompletionProofLoading(true);
+    setCompletionProofError(null);
+    const { data, error: completionProofErr } = await fetchEligibleCompletionProofPortfolioItems();
+    if (completionProofErr) {
+      setCompletionProofError(completionProofErr.message || 'Failed to load completed work proof images.');
+    } else {
+      setCompletionProofItems(data);
+      setCompletionProofDrafts(Object.fromEntries(data.map(item => [
+        item.id,
+        {
+          isPublic: item.is_public_portfolio,
+          title: item.portfolio_title || '',
+          caption: item.portfolio_caption || '',
+          trade: item.portfolio_trade_category || '',
+        },
+      ])));
+    }
+    setCompletionProofLoading(false);
+  }, [isSelf, targetProfile]);
 
   // Load bookmark state for this profile
   const checkSavedState = useCallback(async () => {
@@ -328,8 +362,9 @@ export default function Profile() {
     if (targetProfile) {
       loadJobsAndReviews();
       loadPortfolioItems();
+      loadCompletionProofPortfolioItems();
     }
-  }, [targetProfile, loadJobsAndReviews, loadPortfolioItems]);
+  }, [targetProfile, loadJobsAndReviews, loadPortfolioItems, loadCompletionProofPortfolioItems]);
 
   // Handle profile edit submission
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -519,6 +554,45 @@ export default function Profile() {
       return;
     }
     await loadPortfolioItems();
+  };
+
+  const updateCompletionProofDraft = (
+    proofId: string,
+    updates: Partial<{ isPublic: boolean; title: string; caption: string; trade: string }>
+  ) => {
+    setCompletionProofDrafts(prev => ({
+      ...prev,
+      [proofId]: {
+        isPublic: prev[proofId]?.isPublic ?? false,
+        title: prev[proofId]?.title ?? '',
+        caption: prev[proofId]?.caption ?? '',
+        trade: prev[proofId]?.trade ?? '',
+        ...updates,
+      },
+    }));
+  };
+
+  const handleSaveCompletionProofPublication = async (proofId: string) => {
+    const draft = completionProofDrafts[proofId];
+    if (!draft) return;
+    setCompletionProofSavingId(proofId);
+    setCompletionProofError(null);
+
+    try {
+      const { error: saveErr } = await updateCompletionProofPortfolioItem(proofId, {
+        is_public_portfolio: draft.isPublic,
+        portfolio_title: draft.title.trim() || null,
+        portfolio_caption: draft.caption.trim() || null,
+        portfolio_trade_category: draft.trade || null,
+      });
+      if (saveErr) throw saveErr;
+      await loadCompletionProofPortfolioItems();
+    } catch (err: any) {
+      console.error('Completion proof publication save error:', err);
+      setCompletionProofError(err.message || 'Failed to update completed work gallery settings.');
+    } finally {
+      setCompletionProofSavingId(null);
+    }
   };
 
   const handleIdentityUpload = async (e: React.FormEvent) => {
@@ -1591,6 +1665,116 @@ export default function Profile() {
                     ))}
                   </div>
                 )}
+
+                <div className="border-t pt-6 space-y-4">
+                  <div>
+                    <h4 className="text-base font-bold text-foreground">Completed Work Proofs</h4>
+                    <p className="text-xs text-muted-foreground mt-1 font-medium">
+                      Publish approved completion proof photos only when they are safe for your public gallery.
+                    </p>
+                  </div>
+
+                  {completionProofError && (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
+                      {completionProofError}
+                    </div>
+                  )}
+
+                  {completionProofLoading ? (
+                    <div className="flex justify-center p-6">
+                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    </div>
+                  ) : completionProofItems.length === 0 ? (
+                    <p className="text-sm text-muted-foreground font-medium">
+                      No eligible completed work proof images yet. Photos appear here after a job is completed and payment is released.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {completionProofItems.map(item => {
+                        const draft = completionProofDrafts[item.id] || {
+                          isPublic: item.is_public_portfolio,
+                          title: item.portfolio_title || '',
+                          caption: item.portfolio_caption || '',
+                          trade: item.portfolio_trade_category || '',
+                        };
+                        const savingThisProof = completionProofSavingId === item.id;
+
+                        return (
+                          <div key={item.id} className="border rounded-2xl bg-background p-4 space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {(item.image_urls || []).slice(0, 4).map((url, index) => (
+                                <img
+                                  key={url}
+                                  src={url}
+                                  alt={index === 0 ? 'Eligible completed work proof' : ''}
+                                  className="aspect-square rounded-xl object-cover border"
+                                />
+                              ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Title</label>
+                                <input
+                                  type="text"
+                                  value={draft.title}
+                                  onChange={(e) => updateCompletionProofDraft(item.id, { title: e.target.value })}
+                                  maxLength={120}
+                                  placeholder="Completed kitchen tiling"
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Trade / Category</label>
+                                <select
+                                  value={draft.trade}
+                                  onChange={(e) => updateCompletionProofDraft(item.id, { trade: e.target.value })}
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
+                                >
+                                  <option value="">Select...</option>
+                                  {categoryOptions.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Caption</label>
+                              <textarea
+                                rows={2}
+                                value={draft.caption}
+                                onChange={(e) => updateCompletionProofDraft(item.id, { caption: e.target.value })}
+                                maxLength={280}
+                                placeholder="Keep this public-facing. Do not include customer names, addresses, contact details, or private job notes."
+                                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold resize-none"
+                              />
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                              <label className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  checked={draft.isPublic}
+                                  onChange={(e) => updateCompletionProofDraft(item.id, { isPublic: e.target.checked })}
+                                  className="rounded border-border text-primary"
+                                />
+                                Show these proof photos on my public profile
+                              </label>
+                              <button
+                                type="button"
+                                disabled={savingThisProof}
+                                onClick={() => void handleSaveCompletionProofPublication(item.id)}
+                                className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 disabled:opacity-50"
+                              >
+                                {savingThisProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                                Save Gallery Settings
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
