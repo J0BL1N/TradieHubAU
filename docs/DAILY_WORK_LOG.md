@@ -131,3 +131,45 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 * v0.0.18 - implementation complete / awaiting manual review; docs/ROADMAP.md says v0.1.0 remains not ready.
 * Manual browser QA still needs to confirm message threads load against the target environment after migration `042` and that read-status warning behavior is non-blocking.
+
+## 2026-06-28
+
+### Completed
+
+| Time | Area | Commit | Summary |
+| --- | --- | --- | --- |
+| 00:46:40 | Branding | `3baecf4` | Updated TradieHubAU logo/header branding and favicon assets. |
+| 01:06:39 | Branding | `25a9cb1` | Replaced the browser tab favicon/icon with the final provided icon. |
+| 01:18:20 | Auth | `1cf0e20` | Added Google OAuth sign-in/sign-up UI, `/auth/callback`, and setup notes. |
+| 01:30:45 | Auth | `d6d26fd` | Redirected users to `/login` after successful logout from desktop and mobile nav. |
+| 01:38:42 | Supabase security | `cc658b7` | Added pass 1 security lint hardening migration for `is_admin`, admin RPCs, simulation RPCs, and function search paths. |
+| 02:02:02 | Supabase security | `6b707b1` | Added pass 2 audit doc classifying remaining `SECURITY DEFINER` RPC Advisor warnings. |
+| In progress | Profile trust | this commit | Added profile trust foundation: avatar upload, public tradie fields, previous work portfolio, safe public tradie route, real reviews, and opt-in completed work gallery foundation. |
+
+### Migrations / Deployments
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| `044_harden_security_lint_findings_pass1.sql` | Created | Revokes anon execute on `is_admin`, keeps authenticated-only helper access, hardens admin-only RPCs, admin-gates simulation RPCs, and adds safe `search_path` on edited functions. |
+| `045_profile_trust_foundation.sql` | Created | Adds public-safe tradie profile fields, portfolio table/RLS, avatar and portfolio storage buckets/policies, and default-private public completion proof gallery flag. |
+| Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
+| Leaked password protection | Dashboard action required | Remaining `auth_leaked_password_protection` warning must be fixed in Supabase Dashboard, not code. |
+
+### Validation
+
+| Check | Result |
+| --- | --- |
+| Branding asset updates | Frontend production build passed during the branding work. |
+| Google OAuth | `npm run build` passed. Manual Supabase/Google dashboard provider setup still required. |
+| Logout redirect | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
+| Supabase security pass 1 | `git diff --check` passed. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
+| Supabase security pass 2 | `git diff --check` passed. SQL validation unavailable for the same local tooling reason. Frontend build was not run because no frontend files changed. |
+| Profile trust foundation | `npm run build` passed. SQL validation pending local tooling availability. |
+
+### Remaining / Next
+
+| Item | Status |
+| --- | --- |
+| Google OAuth provider | Needs dashboard setup: enable Google provider, add client ID/secret, configure Supabase redirect URLs, and configure Google Cloud callback to Supabase `/auth/v1/callback`. |
+| Supabase leaked password protection | Needs dashboard enablement and Advisor re-run. |
+| Remaining `SECURITY DEFINER` warnings | Documented as guarded/expected in `docs/supabase-security-definer-rpc-audit.md`; no code migration needed in pass 2. |

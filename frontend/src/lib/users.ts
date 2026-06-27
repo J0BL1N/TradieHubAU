@@ -14,6 +14,11 @@ const PUBLIC_PROFILE_SELECT = [
   'identity_verified',
   'tradie_verified',
   'show_location',
+  'business_name',
+  'bio',
+  'years_experience',
+  'service_areas',
+  'website_url',
   'created_at',
   'updated_at',
 ].join(', ');
@@ -32,6 +37,11 @@ export interface PublicProfile {
   identity_verified: boolean;
   tradie_verified: boolean;
   show_location: boolean;
+  business_name: string | null;
+  bio: string | null;
+  years_experience: number | null;
+  service_areas: string[] | null;
+  website_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +65,11 @@ export interface UserProfile {
   is_admin: boolean;
   show_location: boolean;
   address_rule: 'never' | 'afterAccepted' | 'afterJobStarts';
+  business_name: string | null;
+  bio: string | null;
+  years_experience: number | null;
+  service_areas: string[] | null;
+  website_url: string | null;
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;

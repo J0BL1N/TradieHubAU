@@ -207,7 +207,7 @@ export default function BrowseTradies() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {tradies.map((tradie) => {
-                const displayName = tradie.display_name || 'User';
+                const displayName = tradie.business_name || tradie.display_name || 'User';
                 const tradesLine = tradie.trades && tradie.trades.length > 0
                   ? tradie.trades.map(tid => categoryOptions.find(c => c.id === tid)?.label || tid).join(', ')
                   : 'General Contractor';
@@ -260,7 +260,7 @@ export default function BrowseTradies() {
                         <Award className="mr-1 h-4 w-4 text-muted-foreground/60" /> Verified Credentials
                       </span>
                       <Link
-                        to={`/profile/${tradie.id}`}
+                        to={`/tradies/${tradie.id}`}
                         className="bg-primary text-primary-foreground text-xs font-black px-4.5 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm"
                       >
                         View Profile

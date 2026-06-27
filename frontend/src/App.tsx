@@ -9,6 +9,7 @@ import BrowseTradies from './pages/BrowseTradies';
 import BrowseCustomers from './pages/BrowseCustomers';
 import Messages from './pages/Messages';
 import Profile from './pages/Profile';
+import PublicTradieProfile from './pages/PublicTradieProfile';
 import Admin from './pages/Admin';
 import AdminDisputes from './pages/AdminDisputes';
 import AdminDisputeCase from './pages/AdminDisputeCase';
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="post-job" element={<PostJob />} />
             <Route path="browse-tradies" element={<BrowseTradies />} />
             <Route path="browse-customers" element={<BrowseCustomers />} />
+            <Route path="tradies/:userId" element={<PublicTradieProfile />} />
             <Route path="messages" element={<Messages />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/:id" element={<Profile />} />

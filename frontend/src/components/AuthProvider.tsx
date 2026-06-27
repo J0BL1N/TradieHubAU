@@ -22,6 +22,11 @@ export interface UserProfile {
   show_location: boolean;
   address_rule: 'never' | 'afterAccepted' | 'afterJobStarts';
   is_admin: boolean;
+  business_name: string | null;
+  bio: string | null;
+  years_experience: number | null;
+  service_areas: string[] | null;
+  website_url: string | null;
 }
 
 interface AuthContextType {
