@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
   Camera, TrendingUp, DollarSign
 } from 'lucide-react';
-import { getDisputedJobs, resolveDispute } from '../lib/payments';
+import { getDisputedJobs, recordAdminDisputeAction, resolveDispute } from '../lib/payments';
 
 // ─── Local Types ─────────────────────────────────────────────────────────────
 
@@ -245,19 +245,12 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
             if (error) throw error;
           } else if (selectedAction === 'request_evidence' || selectedAction === 'escalate') {
             // Soft action: update the issue admin_notes only — job stays in 'disputed'
-            const { data: updatedIssue, error } = await supabase
-              .from('job_issues')
-              .update({ admin_notes: adminNotes.trim() })
-              .eq('id', issue.id)
-              .eq('status', 'open')
-              .select('id')
-              .maybeSingle();
+            const { error } = await recordAdminDisputeAction(dispute.id, selectedAction, adminNotes.trim());
             if (error) throw error;
-            if (!updatedIssue) throw new Error('This dispute is no longer open. Refresh the case before adding notes.');
             showToast(
               selectedAction === 'request_evidence'
-                ? 'Internal admin case note saved. The dispute remains open; no notification was sent.'
-                : 'Internal escalation note saved. The dispute remains open; no notification was sent.',
+                ? 'Admin evidence request recorded. The dispute remains open.'
+                : 'Admin escalation recorded. The dispute remains open.',
               'success'
             );
             setShowResolution(false);

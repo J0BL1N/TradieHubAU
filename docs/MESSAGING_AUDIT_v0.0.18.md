@@ -7,9 +7,11 @@ Scope: inspection only of the current Job Messaging / conversations / messages i
 
 The repo already contains a substantial v0.0.18 Job Messaging Foundation: real job-tied conversations, RPC-gated conversation opening and message sending, participant-only reads, recipient-only read-state updates, active-conversation Supabase Realtime, image attachment foundation, frontend attachment uploads/gallery, Enter-to-send, pagination, and a temporary 1,000-message cap.
 
-The main foundation gap is lifecycle/system messages. There is no `message_type` column, no system-message creation path, and no automatic messages for quote acceptance, payment funding, completion submission, approval/release, dispute opening, or admin dispute actions.
+The original main foundation gap was lifecycle/system messages. That gap has now been closed in migration `042_lifecycle_system_messages.sql`; manual review is still pending.
 
 Update: the active message thread bottom-scroll behavior has been fixed after this audit. The frontend now schedules scroll-to-bottom after message render, retries briefly for late layout changes, and re-scrolls when message attachment images finish loading while preserving older-message pagination position.
+
+Update: lifecycle system messages have been implemented in migration `042_lifecycle_system_messages.sql`. Messages now support `message_type`, `system_event_type`, and `metadata`; trusted lifecycle/admin RPCs insert idempotent immutable system timeline messages; the frontend renders system messages as centered status entries; stale direct-user message links were removed.
 
 ## Current Implementation Status
 
@@ -25,13 +27,10 @@ Implemented:
 - Job details/list messaging entry points for valid accepted/funded/review/disputed/completed participants.
 - Backend pre-funding block for obvious phone/email strings in message text when payment status is `pending`.
 
-Not implemented:
+Still limited/deferred:
 
-- `message_type` support.
-- Dedicated immutable system messages.
-- Automatic lifecycle message insertion.
-- Admin dispute message/audit feed integration.
 - Conversation-level participant table; participants are modeled directly as `conversations.user1_id` and `user2_id`.
+- Message search, moderation/reporting, and an advanced admin audit console remain deferred.
 
 ## Database Findings
 
@@ -63,7 +62,7 @@ Not implemented:
 - `created_at`
 - `updated_at`
 
-There is no `message_type`, `system_event_type`, `metadata`, `edited_at`, `deleted_at`, or attachment field on `messages`.
+Migration `042_lifecycle_system_messages.sql` adds `message_type`, `system_event_type`, and `metadata` to `messages`. There is still no `edited_at`, `deleted_at`, or inline attachment field on `messages`; attachments remain in `message_attachments`.
 
 `public.message_attachments` is added in `040_message_attachments_foundation.sql` with immutable metadata:
 
@@ -106,8 +105,8 @@ Current support:
 - Read status: yes, per message with `read`/`read_at`.
 - Attachments: yes, image-only private attachment foundation.
 - Lifecycle events: no.
-- System messages: no dedicated type/path.
-- Message type: no column.
+- System messages: implemented through trusted lifecycle/admin RPC paths.
+- Message type: implemented with `user` and `system`.
 
 ## RLS/Security Findings
 
@@ -115,7 +114,7 @@ Current support:
 
 Current SELECT policy:
 
-- `Job participants view conversations` lets only authenticated job customer or accepted payee view a conversation, and only while the job status is one of `accepted`, `payment_held`, `completed_pending_review`, `disputed`, or `completed`.
+- `Job participants view conversations` lets only authenticated job customer or accepted payee view a conversation, and only while the job status is one of `accepted`, `payment_held`, `completed_pending_review`, `disputed`, `completed`, or `cancelled`.
 
 Current INSERT policy:
 
@@ -223,9 +222,9 @@ Gating:
 - `Jobs.tsx` exposes message buttons only when the job status is one of `accepted`, `payment_held`, `completed_pending_review`, `disputed`, or `completed`, and only for the job owner or accepted tradie.
 - Direct contact details in job details are locked before funded states and unlocked only after payment funding/review/dispute/completion states.
 
-Potential stale/non-working entry points:
+Stale direct-user entry points:
 
-- `BrowseCustomers.tsx` and `Profile.tsx` still link to `/messages?user=<id>`, but `Messages.tsx` does not implement a `user` query path. Current real messaging is job-tied via `job` or direct `conversation`.
+- Fixed. `BrowseCustomers.tsx` and `Profile.tsx` no longer link to `/messages?user=<id>` and instead explain that messaging is available through active jobs/contracts.
 
 ## Lifecycle/System Message Findings
 
@@ -278,32 +277,28 @@ Required later for fuller live chat:
 
 ## Gaps
 
-Against the intended v0.0.18 foundation:
+Against the intended v0.0.18 foundation after migration `042`:
 
 - Job-tied conversations: implemented.
 - One conversation per accepted/funded job: implemented as one canonical conversation per job/customer/payee, but allowed as early as `accepted` before payment funding.
 - Only job owner and accepted tradie can access: implemented through policies/RPCs.
 - Immutable user messages: implemented, except recipient read-state updates are allowed.
-- Immutable system messages: not implemented.
-- `message_type` support: not implemented.
+- Immutable system messages: implemented.
+- `message_type` support: implemented.
 - Read/unread foundation: implemented.
 - Safe message creation path: implemented through authenticated RPCs.
 - No contact-gating bypass: mostly implemented for stored contact details and obvious phone/email text before funding; not comprehensive for URLs/obfuscation/images.
 - No broad admin/user data exposure: no broad conversation/message admin policies found; public/user profile exposure handled elsewhere.
-- Docs/roadmap updated: `docs/ROADMAP.md` already tracks v0.0.18 messaging work and marks lifecycle system messages as pending.
+- Docs/roadmap updated: `docs/ROADMAP.md` tracks v0.0.18 messaging as implementation-complete and awaiting manual review, not approved.
 
 ## Recommended Next Implementation Plan
 
-### Must Do For v0.0.18 Foundation
+### Must Do Before v0.0.18 Approval
 
-1. Add `messages.message_type text not null default 'user' check (message_type in ('user', 'system'))`.
-2. Add optional structured system fields, either `system_event_type text` plus `metadata jsonb`, or a minimal `metadata jsonb` only.
-3. Update immutability trigger so `message_type`, `system_event_type`, and `metadata` are immutable.
-4. Add a trusted backend helper for lifecycle system messages; do not expose direct client system-message insertion.
-5. Insert system messages from accepted backend lifecycle RPCs for quote accepted, payment funded, completion submitted, approval/release, and dispute opened.
-6. Decide whether admin dispute soft actions should write messages now or wait for the later admin dispute audit log.
-7. Update `list_job_conversations()` and message selects only if new fields are rendered or needed.
-8. Update docs/roadmap to reflect the final v0.0.18 boundary.
+1. Apply/verify migration `042_lifecycle_system_messages.sql` on the target Supabase environment.
+2. Manually test quote acceptance, payment funding, completion proof submission, approval/release, dispute opening, admin evidence request, admin escalation, and admin dispute resolution system messages.
+3. Manually confirm stale direct-user message links are gone from customer/profile surfaces.
+4. Confirm v0.0.18 messaging behavior in browser before marking approved.
 
 ### Nice To Have But Can Defer
 

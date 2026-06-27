@@ -44,6 +44,7 @@ function statusLabel(status: string) {
     accepted: 'Accepted — awaiting payment',
     payment_held: 'Payment funded — contract active',
     completed_pending_review: 'Completion under review',
+    cancelled: 'Cancelled - payment refunded',
     disputed: 'Disputed — admin review',
     completed: 'Completed — payment released',
   };
@@ -599,7 +600,7 @@ export default function Messages() {
         <Lock className="mx-auto h-10 w-10 text-primary" />
         <h1 className="text-2xl font-extrabold">Sign in to view messages</h1>
         <p className="text-sm font-medium leading-6 text-muted-foreground">
-          Job messaging is available only to the customer and accepted tradie for that job.
+          Job messaging is available only between participants on active jobs and contracts.
         </p>
         <Link to="/login" className="inline-flex rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">
           Sign In
@@ -631,7 +632,7 @@ export default function Messages() {
           <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/40" />
           <h2 className="text-xl font-extrabold">No job conversations yet</h2>
           <p className="mx-auto max-w-md text-sm font-medium leading-6 text-muted-foreground">
-            A conversation becomes available after a quote is accepted. Open an eligible job from My Jobs to start messaging.
+            Messaging unlocks through active jobs and contracts. A job conversation becomes available after a quote is accepted.
           </p>
           <Link to="/jobs" className="inline-flex rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">View My Jobs</Link>
         </div>
@@ -745,6 +746,18 @@ export default function Messages() {
                         <p className="text-center text-xs font-semibold text-muted-foreground">Start of this conversation</p>
                       )}
                       {messages.map(message => {
+                    if (message.message_type === 'system') {
+                      return (
+                        <div key={message.id} className="flex justify-center">
+                          <div className="max-w-[85%] rounded-full border bg-background px-4 py-2 text-center shadow-sm">
+                            <p className="text-xs font-bold text-foreground">{message.text}</p>
+                            <p className="mt-0.5 text-[10px] font-semibold text-muted-foreground">
+                              {new Date(message.created_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
                     const outgoing = message.sender_id === user.id;
                     return (
                       <div key={message.id} className={`flex ${outgoing ? 'justify-end' : 'justify-start'}`}>
@@ -887,7 +900,13 @@ export default function Messages() {
                 </form>
               </>
             ) : (
-              <div className="flex h-full items-center justify-center text-sm font-semibold text-muted-foreground">Select a conversation.</div>
+              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                <MessageSquare className="h-9 w-9 text-muted-foreground/40" />
+                <p className="mt-3 text-sm font-extrabold text-foreground">Select a job conversation</p>
+                <p className="mt-1 max-w-sm text-sm font-medium leading-6 text-muted-foreground">
+                  Messages are only available between participants on accepted jobs and active contracts.
+                </p>
+              </div>
             )}
           </section>
         </div>

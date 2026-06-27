@@ -83,6 +83,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 22:03:08 - v0.0.18 messaging attachments bugfix - guarded empty attachment storage path arrays and replaced raw signed URL failures with a friendly attachment refresh message.
 * 22:21:07 - v0.0.18 messaging scroll/pagination - added latest-10 opening, older-message pagination, scroll preservation, new-message handling, and a temporary 1,000-message cap per conversation.
 * 2026-06-27 - v0.0.18 messaging scroll fix - made active message threads force bottom scroll after initial load/conversation switch/refetch/sends and after attachment images load, while preserving older-message pagination position; v0.0.18 remains in progress/unapproved.
+* 2026-06-27 - v0.0.18 lifecycle system messages - added trusted immutable job conversation system messages for quote acceptance, payment funding, completion proof, approval/release, dispute opening, and admin dispute actions; removed stale direct-user message links; v0.0.18 is implementation-complete and awaiting manual review, not approved.
 * 22:26:23 - beta testing account tooling - focused fake beta profile locations and scenarios on South East Melbourne suburbs; dry-run only, no hosted users created.
 
 ### Migrations / Deployments
@@ -92,6 +93,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * `039_enable_message_realtime.sql` - created/applied on 2026-06-25; adds `public.messages` to `supabase_realtime` for live active-conversation updates.
 * `040_message_attachments_foundation.sql` - created/applied on 2026-06-25; adds private `message_attachments` storage, `public.message_attachments`, participant-only RLS/storage policies, and trusted attachment message RPC.
 * `041_message_pagination_cap.sql` - created/applied on 2026-06-25; enforces the temporary beta 1,000-message cap per conversation in message send RPCs.
+* `042_lifecycle_system_messages.sql` - created on 2026-06-27; adds immutable system message fields/helper and wires lifecycle/admin RPCs for trusted system timeline messages. Hosted application remains pending.
 
 ### Validation
 
@@ -100,5 +102,5 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ### Remaining / Next
 
-* v0.0.18 - in progress/unapproved; docs/ROADMAP.md prioritizes job messaging foundation and says v0.1.0 remains not ready.
+* v0.0.18 - implementation complete / awaiting manual review; docs/ROADMAP.md says v0.1.0 remains not ready.
 * v0.1.0 Controlled Local Beta Prep remains next confirmed roadmap phase; not approved.

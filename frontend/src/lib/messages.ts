@@ -4,11 +4,14 @@ import { getPublicProfilesByIds } from './users';
 export interface MessageRecord {
   id: string;
   conversation_id: string;
-  sender_id: string;
+  sender_id: string | null;
   text: string;
   read: boolean;
   read_at: string | null;
   created_at: string;
+  message_type: 'user' | 'system';
+  system_event_type: string | null;
+  metadata: Record<string, unknown>;
   attachments?: MessageAttachment[];
 }
 
@@ -108,7 +111,7 @@ export async function getConversationMessages(conversationId: string, options: M
   const pageSize = options.limit || 10;
   let query = supabase
     .from('messages')
-    .select('id, conversation_id, sender_id, text, read, read_at, created_at')
+    .select('id, conversation_id, sender_id, text, read, read_at, created_at, message_type, system_event_type, metadata')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })

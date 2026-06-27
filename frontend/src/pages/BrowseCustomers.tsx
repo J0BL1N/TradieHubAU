@@ -178,18 +178,15 @@ export default function BrowseCustomers() {
                       </div>
                     </div>
 
-                    <div className="border-t pt-4 flex items-center justify-end gap-3">
+                    <div className="border-t pt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-semibold leading-5 text-muted-foreground">
+                        Messaging is available through active jobs and contracts.
+                      </p>
                       <Link
                         to={`/profile/${customer.id}`}
                         className="bg-secondary text-secondary-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all"
                       >
                         View Profile
-                      </Link>
-                      <Link
-                        to={`/messages?user=${customer.id}`}
-                        className="bg-primary text-primary-foreground text-xs font-black px-4.5 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm"
-                      >
-                        Contact Client
                       </Link>
                     </div>
                   </div>

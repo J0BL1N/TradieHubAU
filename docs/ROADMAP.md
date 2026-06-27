@@ -360,7 +360,7 @@ Real provider payments remain deferred to v0.2.x Real Payments Foundation. Notif
 
 # v0.0.18 — Job Messaging Foundation
 
-Status: **In progress / unapproved.** This pass adds beta-prep information pages and the first job-tied messaging foundation. v0.1.0 remains not ready.
+Status: **Implementation complete / awaiting manual review.** This pass adds beta-prep information pages and the job-tied messaging foundation. v0.1.0 remains not ready and v0.0.18 is not approved until manual review passes.
 
 ### Beta Prep Information Pages
 
@@ -389,11 +389,15 @@ Status: **In progress / unapproved.** This pass adds beta-prep information pages
 * [x] Add newest-first message opening, latest-10 initial load, older-message pagination, scroll preservation, and a temporary 1,000-message beta cap per conversation — migration `041_message_pagination_cap.sql`.
 * [x] Add non-invasive My Jobs and job-detail messaging actions for valid participants.
 * [x] Keep stored contact details locked and block obvious phone/email sharing before payment is funded.
-* [ ] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, and payment released.
+* [x] Add trusted lifecycle system-message insertion for quote accepted, payment funded, completion submitted, dispute opened, payment released, and admin dispute actions - migration `042_lifecycle_system_messages.sql`.
+* [x] Remove stale direct-user `/messages?user=` entry points; messaging remains job/conversation-based.
+* [x] Clarify messaging empty states around active jobs/contracts and participant-only access.
 
-Advanced messaging remains deferred: email/push notifications, moderation dashboard, conversation reporting, rich attachments, typing indicators, online status, masked relay contact, and an advanced admin audit console.
+Advanced messaging remains deferred: message search, email/push notifications, moderation dashboard, conversation reporting, rich attachments, typing indicators, online status, masked relay contact, and an advanced admin audit console.
 
 Real payment processing remains deferred to v0.2.x, GST implementation remains deferred to v0.3.x, and production launch remains separately gated under 1.0 readiness.
+
+Cloudflare/private beta deployment remains deferred until after v0.0.18 manual messaging review.
 
 ---
 
@@ -450,6 +454,8 @@ Status: **Planned.** This is an admin analytics foundation for first-party produ
 * [ ] Prepare deployment checklist
 * [ ] Prepare manual QA checklist
 * [ ] Prepare rollback checklist
+* [ ] Plan Cloudflare/private beta deployment after v0.0.18 messaging manual review passes
+* [ ] Plan booking/scheduling foundation as a later standalone feature, separate from v0.0.18 messaging completion
 
 ---
 

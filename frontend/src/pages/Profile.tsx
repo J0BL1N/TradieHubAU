@@ -13,7 +13,7 @@ import type { UserProfile } from '../lib/users';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
 import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
-  Upload, Loader2, Award, Star, Briefcase, Clock, MessageSquare,
+  Upload, Loader2, Award, Star, Briefcase, Clock,
   Bookmark, BookmarkCheck, AlertCircle, CheckCircle, Send
 } from 'lucide-react';
 
@@ -601,12 +601,9 @@ export default function Profile() {
           {/* CTA Row (Guest views) */}
           {!isSelf && (
             <div className="pt-2 w-full flex flex-col gap-2.5">
-              <Link
-                to={`/messages?user=${targetId}`}
-                className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-bold py-3 rounded-xl hover:bg-primary/95 transition-all shadow-md active:scale-95"
-              >
-                <MessageSquare className="h-4 w-4" /> Message
-              </Link>
+              <div className="rounded-xl border bg-muted/30 px-4 py-3 text-center text-sm font-semibold leading-6 text-muted-foreground">
+                Messaging is available through active jobs and contracts.
+              </div>
               <button
                 onClick={handleToggleBookmark}
                 disabled={saveActionLoading}

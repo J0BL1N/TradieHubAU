@@ -179,6 +179,15 @@ export async function resolveDispute(jobId: string, resolution: string, splitPer
   return { data, error };
 }
 
+export async function recordAdminDisputeAction(jobId: string, action: 'request_evidence' | 'escalate', adminNotes: string) {
+  const { data, error } = await supabase.rpc('record_admin_dispute_action', {
+    p_job_id: jobId,
+    p_action: action,
+    p_admin_notes: adminNotes
+  });
+  return { data, error };
+}
+
 // ─── Query Operations ────────────────────────────────────────────────────────
 
 /**
