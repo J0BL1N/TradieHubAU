@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Menu, X, MessageSquare, Briefcase, Users, User, ShieldAlert, ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -19,6 +20,17 @@ export default function Layout() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setDropdownOpen(false);
+      setMobileMenuOpen(false);
+      navigate('/login', { replace: true });
+    } catch (error: any) {
+      console.error('Sign out failed:', error?.message || error);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -144,10 +156,7 @@ export default function Layout() {
                     <hr className="my-1.5 border-border" />
 
                     <button
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        signOut();
-                      }}
+                      onClick={() => void handleSignOut()}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-500 hover:bg-red-500/5 transition-colors text-left"
                     >
                       <LogOut className="h-4 w-4" />
@@ -265,10 +274,7 @@ export default function Layout() {
                 )}
 
                 <button
-                  onClick={() => {
-                    signOut();
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={() => void handleSignOut()}
                   className="w-full inline-flex items-center justify-center border border-border bg-muted/40 text-muted-foreground font-bold py-3.5 rounded-xl hover:bg-muted transition-all"
                 >
                   Sign Out
