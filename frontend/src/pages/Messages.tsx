@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -62,6 +62,7 @@ const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 4;
 const MESSAGE_PAGE_SIZE = 10;
 const SCROLL_EDGE_THRESHOLD = 96;
+const SCROLL_RETRY_DELAYS = [0, 60, 180, 360];
 
 type SelectedAttachment = {
   id: string;
@@ -123,6 +124,8 @@ export default function Messages() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
   const selectedAttachmentsRef = useRef<SelectedAttachment[]>([]);
+  const shouldStickToBottomRef = useRef(true);
+  const scrollRetryTimeoutsRef = useRef<number[]>([]);
 
   const activeConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeConversationId) || null,
@@ -132,17 +135,48 @@ export default function Messages() {
   const isMessageListNearBottom = useCallback(() => {
     const list = messageListRef.current;
     if (!list) return true;
-    return list.scrollHeight - list.scrollTop - list.clientHeight < SCROLL_EDGE_THRESHOLD;
+    return list.scrollHeight - list.scrollTop - list.clientHeight <= SCROLL_EDGE_THRESHOLD;
+  }, []);
+
+  const clearScheduledScrolls = useCallback(() => {
+    scrollRetryTimeoutsRef.current.forEach(timeoutId => window.clearTimeout(timeoutId));
+    scrollRetryTimeoutsRef.current = [];
   }, []);
 
   const scrollMessagesToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
-    window.requestAnimationFrame(() => {
+    const scroll = () => {
       const list = messageListRef.current;
       if (!list) return;
-      list.scrollTo({ top: list.scrollHeight, behavior });
+      list.scrollTo({ top: list.scrollHeight - list.clientHeight, behavior });
       setNewMessageAvailable(false);
-    });
+    };
+
+    window.requestAnimationFrame(scroll);
   }, []);
+
+  const scheduleScrollToBottom = useCallback((
+    behavior: ScrollBehavior = 'auto',
+    options: { force?: boolean; retry?: boolean } = {}
+  ) => {
+    if (options.force) shouldStickToBottomRef.current = true;
+
+    const shouldScroll = () => options.force || shouldStickToBottomRef.current || isMessageListNearBottom();
+    const run = () => {
+      if (!shouldScroll()) return;
+      scrollMessagesToBottom(behavior);
+    };
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(run);
+    });
+
+    if (options.retry) {
+      clearScheduledScrolls();
+      scrollRetryTimeoutsRef.current = SCROLL_RETRY_DELAYS.map(delay =>
+        window.setTimeout(run, delay)
+      );
+    }
+  }, [clearScheduledScrolls, isMessageListNearBottom, scrollMessagesToBottom]);
 
   const loadConversations = useCallback(async (preferredConversationId?: string | null) => {
     if (!user) return;
@@ -154,6 +188,7 @@ export default function Messages() {
     const nextId = requestedId && data.some(item => item.id === requestedId)
       ? requestedId
       : data[0]?.id || null;
+    shouldStickToBottomRef.current = true;
     setActiveConversationId(nextId);
   }, [searchParams, user]);
 
@@ -198,6 +233,7 @@ export default function Messages() {
     try {
       const { data, error: messagesError } = await getConversationMessages(conversationId, { limit: MESSAGE_PAGE_SIZE });
       if (messagesError) throw messagesError;
+      shouldStickToBottomRef.current = true;
       setMessages(sortMessages(data.messages));
       setHasOlderMessages(data.hasMore);
 
@@ -208,14 +244,14 @@ export default function Messages() {
           conversation.id === conversationId ? { ...conversation, unread_count: 0 } : conversation
         ));
       }
-      scrollMessagesToBottom();
+      scheduleScrollToBottom('auto', { force: true, retry: true });
     } catch (messagesError: any) {
       setMessages([]);
       setError(friendlyMessageError(messagesError.message, 'This conversation could not be loaded.'));
     } finally {
       setMessagesLoading(false);
     }
-  }, [scrollMessagesToBottom, user]);
+  }, [scheduleScrollToBottom, user]);
 
   const loadOlderMessages = useCallback(async () => {
     if (!activeConversationId || !user || olderMessagesLoading || messages.length === 0 || !hasOlderMessages) return;
@@ -225,6 +261,7 @@ export default function Messages() {
     const previousScrollTop = list?.scrollTop || 0;
 
     setOlderMessagesLoading(true);
+    shouldStickToBottomRef.current = false;
     setError(null);
     try {
       const { data, error: messagesError } = await getConversationMessages(activeConversationId, {
@@ -261,21 +298,31 @@ export default function Messages() {
   }, [activeConversationId, hasOlderMessages, messages, olderMessagesLoading, user]);
 
   useEffect(() => {
+    shouldStickToBottomRef.current = true;
     if (activeConversationId) loadMessages(activeConversationId);
     else setMessages([]);
   }, [activeConversationId, loadMessages]);
+
+  useLayoutEffect(() => {
+    if (!activeConversationId || messagesLoading || messages.length === 0) return;
+    if (shouldStickToBottomRef.current) {
+      scheduleScrollToBottom('auto', { force: true, retry: true });
+    }
+  }, [activeConversationId, messages.length, messagesLoading, scheduleScrollToBottom]);
 
   useEffect(() => {
     if (!activeConversationId || !user) return;
 
     const mergeMessage = (incoming: MessageRecord, shouldScrollToBottom: boolean) => {
+      if (shouldScrollToBottom) shouldStickToBottomRef.current = true;
       setMessages(current => sortMessages([
         ...current.filter(message => message.id !== incoming.id),
         incoming,
       ]));
       if (shouldScrollToBottom) {
-        scrollMessagesToBottom('smooth');
+        scheduleScrollToBottom('smooth', { force: true, retry: true });
       } else {
+        shouldStickToBottomRef.current = false;
         setNewMessageAvailable(true);
       }
 
@@ -349,7 +396,7 @@ export default function Messages() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [activeConversationId, isMessageListNearBottom, scrollMessagesToBottom, user]);
+  }, [activeConversationId, isMessageListNearBottom, scheduleScrollToBottom, user]);
 
   useEffect(() => {
     if (!emojiPickerOpen) return;
@@ -375,11 +422,13 @@ export default function Messages() {
 
   useEffect(() => {
     return () => {
+      clearScheduledScrolls();
       selectedAttachmentsRef.current.forEach(attachment => URL.revokeObjectURL(attachment.previewUrl));
     };
-  }, []);
+  }, [clearScheduledScrolls]);
 
   const selectConversation = (conversationId: string) => {
+    shouldStickToBottomRef.current = true;
     setActiveConversationId(conversationId);
     setSearchParams({ conversation: conversationId }, { replace: true });
   };
@@ -387,10 +436,17 @@ export default function Messages() {
   const handleMessagesScroll = () => {
     const list = messageListRef.current;
     if (!list) return;
-    if (isMessageListNearBottom()) setNewMessageAvailable(false);
+    const nearBottom = isMessageListNearBottom();
+    shouldStickToBottomRef.current = nearBottom;
+    if (nearBottom) setNewMessageAvailable(false);
     if (list.scrollTop < SCROLL_EDGE_THRESHOLD) {
       void loadOlderMessages();
     }
+  };
+
+  const handleMessageImageLoad = () => {
+    if (!shouldStickToBottomRef.current && !isMessageListNearBottom()) return;
+    scheduleScrollToBottom('auto', { retry: true });
   };
 
   const handleAttachmentSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -450,10 +506,12 @@ export default function Messages() {
     const uploadedPaths: string[] = [];
     try {
       if (selectedAttachments.length === 0) {
+        shouldStickToBottomRef.current = true;
         const { error: sendError } = await sendJobMessage(activeConversationId, text);
         if (sendError) throw sendError;
       } else {
         if (!user || !activeConversation) throw new Error('A valid job conversation is required to send attachments.');
+        shouldStickToBottomRef.current = true;
         const messageId = crypto.randomUUID();
         const attachmentMetadata: MessageAttachmentInput[] = [];
 
@@ -494,6 +552,7 @@ export default function Messages() {
       setSelectedAttachments([]);
       await loadMessages(activeConversationId);
       await loadConversations(activeConversationId);
+      scheduleScrollToBottom('smooth', { force: true, retry: true });
     } catch (sendError: any) {
       const cleanupPaths = uploadedPaths.filter(path => path.trim().length > 0);
       if (cleanupPaths.length > 0) {
@@ -709,6 +768,7 @@ export default function Messages() {
                                     <img
                                       src={attachment.signed_url}
                                       alt={attachment.file_name}
+                                      onLoad={handleMessageImageLoad}
                                       className="aspect-square w-full object-cover transition-transform group-hover:scale-[1.02]"
                                     />
                                   ) : (
@@ -733,7 +793,7 @@ export default function Messages() {
                   {newMessageAvailable && (
                     <button
                       type="button"
-                      onClick={() => scrollMessagesToBottom('smooth')}
+                      onClick={() => scheduleScrollToBottom('smooth', { force: true, retry: true })}
                       className="sticky bottom-2 left-1/2 z-10 mx-auto flex -translate-x-0 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-lg"
                     >
                       New message
