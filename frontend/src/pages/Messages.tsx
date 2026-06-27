@@ -58,6 +58,14 @@ function sortMessages(messages: MessageRecord[]) {
   });
 }
 
+function hasUnreadIncomingUserMessages(messages: MessageRecord[], currentUserId: string) {
+  return messages.some(message =>
+    message.message_type !== 'system' &&
+    message.sender_id !== currentUserId &&
+    !message.read
+  );
+}
+
 const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 4;
@@ -238,12 +246,15 @@ export default function Messages() {
       setMessages(sortMessages(data.messages));
       setHasOlderMessages(data.hasMore);
 
-      if (data.messages.some(message => message.sender_id !== user.id && !message.read)) {
+      if (hasUnreadIncomingUserMessages(data.messages, user.id)) {
         const { error: readError } = await markIncomingMessagesRead(conversationId, user.id);
-        if (readError) throw readError;
-        setConversations(current => current.map(conversation =>
-          conversation.id === conversationId ? { ...conversation, unread_count: 0 } : conversation
-        ));
+        if (readError) {
+          setError('Messages loaded, but read status could not be updated.');
+        } else {
+          setConversations(current => current.map(conversation =>
+            conversation.id === conversationId ? { ...conversation, unread_count: 0 } : conversation
+          ));
+        }
       }
       scheduleScrollToBottom('auto', { force: true, retry: true });
     } catch (messagesError: any) {
@@ -281,9 +292,11 @@ export default function Messages() {
       ]));
       setHasOlderMessages(data.hasMore);
 
-      if (data.messages.some(message => message.sender_id !== user.id && !message.read)) {
+      if (hasUnreadIncomingUserMessages(data.messages, user.id)) {
         const { error: readError } = await markIncomingMessagesRead(activeConversationId, user.id);
-        if (readError) throw readError;
+        if (readError) {
+          setError('Messages loaded, but read status could not be updated.');
+        }
       }
 
       window.requestAnimationFrame(() => {
@@ -361,7 +374,7 @@ export default function Messages() {
             attachments: incomingAttachmentsError ? [] : incomingAttachments,
           }, shouldScrollToBottom);
 
-          if (incoming.sender_id !== user.id) {
+          if (incoming.message_type !== 'system' && incoming.sender_id !== user.id) {
             void markIncomingMessagesRead(activeConversationId, user.id)
               .then(({ error: readError }) => {
                 if (readError) throw readError;

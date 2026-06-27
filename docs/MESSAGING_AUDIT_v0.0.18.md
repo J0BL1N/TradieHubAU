@@ -13,6 +13,8 @@ Update: the active message thread bottom-scroll behavior has been fixed after th
 
 Update: lifecycle system messages have been implemented in migration `042_lifecycle_system_messages.sql`. Messages now support `message_type`, `system_event_type`, and `metadata`; trusted lifecycle/admin RPCs insert idempotent immutable system timeline messages; the frontend renders system messages as centered status entries; stale direct-user message links were removed.
 
+Update: a post-lifecycle regression where a selected message thread could show "This conversation could not be loaded." has been fixed. The linked Supabase migration list now verifies `042_lifecycle_system_messages.sql` as applied, and frontend read-status update failures are non-blocking after messages have loaded.
+
 ## Current Implementation Status
 
 Implemented:

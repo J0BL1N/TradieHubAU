@@ -227,6 +227,7 @@ export async function markIncomingMessagesRead(conversationId: string, currentUs
     .from('messages')
     .update({ read: true })
     .eq('conversation_id', conversationId)
+    .eq('message_type', 'user')
     .neq('sender_id', currentUserId)
     .eq('read', false);
 

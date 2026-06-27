@@ -108,17 +108,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 * v0.0.18 messaging scroll fix - commit `8fd7169` - made active message threads force bottom scroll after initial load/conversation switch/refetch/sends and after attachment images load, while preserving older-message pagination position; v0.0.18 remained in progress/unapproved.
 * v0.0.18 lifecycle system messages - commit `8ce8818` - added trusted immutable job conversation system messages for quote acceptance, payment funding, completion proof, approval/release, dispute opening, and admin dispute actions; removed stale direct-user message links; v0.0.18 is implementation-complete and awaiting manual review, not approved.
+* 19:40:32 - v0.0.18 message-load resilience - made read-status update failures non-blocking after messages load and kept null-sender system messages safe in the thread; v0.0.18 remains awaiting manual review, not approved.
 
 ### Migrations / Deployments
 
-* `042_lifecycle_system_messages.sql` - created on 2026-06-27 in commit `8ce8818`; adds immutable system message fields/helper and wires lifecycle/admin RPCs for trusted system timeline messages. Hosted application remains pending.
+* `042_lifecycle_system_messages.sql` - created on 2026-06-27 in commit `8ce8818`; adds immutable system message fields/helper and wires lifecycle/admin RPCs for trusted system timeline messages. Applied/verified on the linked Supabase database on 2026-06-27 with `npx supabase db push` and `npx supabase migration list` showing `042 | 042 | 042`; local Docker-backed Supabase was not running, so local DB verification was unavailable.
 
 ### Validation
 
 * Messaging scroll fix - frontend production build passed; lint still had known pre-existing app-wide debt.
 * Lifecycle system messages - frontend production build passed; lint still had known pre-existing app-wide debt. Supabase CLI was not available in the shell, so migration parser/lint validation was unavailable.
+* Message-load resilience - frontend production build passed; lint still had known pre-existing app-wide debt.
 
 ### Remaining / Next
 
 * v0.0.18 - implementation complete / awaiting manual review; docs/ROADMAP.md says v0.1.0 remains not ready.
-* Apply/verify migration `042_lifecycle_system_messages.sql` on the target Supabase environment before manual approval.
+* Manual browser QA still needs to confirm message threads load against the target environment after migration `042` and that read-status warning behavior is non-blocking.
