@@ -347,7 +347,7 @@ Status: **Approved/passed.** Medium and Low findings are source-remediated, host
 * [x] M-06: Restricted review creation to completed/released job counterparties with existing duplicate protection — migration `034_harden_review_creation.sql` (hosted and manually confirmed).
 ### Low Security Findings
 
-* [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed `PUBLIC`/`anon` execution — migration `035_narrow_is_admin_checks.sql` (hosted, anonymously probed, and manually confirmed).
+* [x] L-01: Narrowed `is_admin(uuid)` to the authenticated caller and removed broad `PUBLIC` execution — migration `035_narrow_is_admin_checks.sql`; follow-up migration `043_allow_anon_is_admin_policy_evaluation.sql` grants `anon` execute only so guest RLS policy evaluation can return false instead of failing (hosted, anonymously probed, and manually confirmed).
 * [x] L-02: Removed committed hosted-project fallbacks; frontend now fails closed with a clear error when `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing (manually confirmed).
 * [x] L-03: Marked `supabase/config.toml` as local-development-only and added `docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md` covering required hosted auth review. Hosted/production auth remains unverified and unapproved.
 * [x] L-04: Revoked default `PUBLIC`/`anon` execution and granted sensitive workflow, admin, policy-helper, and internal functions only to their intended roles — migration `036_explicit_rpc_execute_grants.sql` (hosted and manually confirmed).

@@ -173,7 +173,7 @@ The final review found and corrected two narrow guard regressions in [028_finali
 * **Issue:** Participants can update rows without column restrictions; message UPDATE is based on conversation membership, not authorship.
 * **Risk:** A participant may alter other messages, sender metadata, or conversation linkage, undermining evidence integrity.
 * **Recommended fix:** Restrict updates to explicit fields such as read state; preserve sender/content and participant linkage.
-* **State:** Deferred.
+* **State:** Fixed in migration `035_narrow_is_admin_checks.sql` by checking only the authenticated caller. Follow-up migration `043_allow_anon_is_admin_policy_evaluation.sql` grants `anon` execute only so RLS policies used by `public_profiles` can evaluate `is_admin(auth.uid())` for guests; with `auth.uid()` null, the helper returns false and does not expose admin status or broaden table access.
 
 ### M-06 — Review creation does not prove completed participant relationship
 

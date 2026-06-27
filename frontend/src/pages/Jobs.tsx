@@ -523,7 +523,8 @@ export default function Jobs() {
         setJobs(hydratedJobs as Job[]);
       }
     } catch (fetchErr: any) {
-      setError(fetchErr.message || 'Failed to load jobs.');
+      console.error('Failed to load jobs:', fetchErr);
+      setError('Jobs could not be loaded right now. Please try again shortly.');
     } finally {
       setLoading(false);
     }

@@ -111,10 +111,12 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * 19:40:32 - v0.0.18 message-load resilience - made read-status update failures non-blocking after messages load and kept null-sender system messages safe in the thread; v0.0.18 remains awaiting manual review, not approved.
 * 19:54:26 - v0.0.18 messaging job details UX - added a read-only in-page Job Details panel to the active message thread header, loading job/payment/public participant details without exposing locked contact fields; v0.0.18 remains awaiting manual review, not approved.
 * 20:01:35 - v0.0.18 job detail deep links - added dynamic `/jobs/:jobId` route and wired Messages `Open Full Job` to the active conversation job; v0.0.18 remains awaiting manual review, not approved.
+* 21:40:30 - public jobs guest loading fix - added migration `043_allow_anon_is_admin_policy_evaluation.sql` so guest `public_profiles` RLS checks can evaluate `is_admin(auth.uid())` as false, and replaced raw jobs-board load errors with a friendly message.
 
 ### Migrations / Deployments
 
 * `042_lifecycle_system_messages.sql` - created on 2026-06-27 in commit `8ce8818`; adds immutable system message fields/helper and wires lifecycle/admin RPCs for trusted system timeline messages. Applied/verified on the linked Supabase database on 2026-06-27 with `npx supabase db push` and `npx supabase migration list` showing `042 | 042 | 042`; local Docker-backed Supabase was not running, so local DB verification was unavailable.
+* `043_allow_anon_is_admin_policy_evaluation.sql` - created/applied on 2026-06-27; linked Supabase migration list shows `043 | 043 | 043`.
 
 ### Validation
 
@@ -123,6 +125,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 * Message-load resilience - frontend production build passed; lint still had known pre-existing app-wide debt.
 * Messaging job details UX - frontend production build passed; `git diff --check` passed with line-ending warnings only.
 * Job detail deep links - frontend production build passed; `git diff --check` passed with line-ending warnings only; lint still had known pre-existing app-wide debt.
+* Public jobs guest loading fix - anonymous REST probe for open jobs passed without `is_admin` permission errors; frontend production build passed; `git diff --check` passed with line-ending warnings only; lint still had known pre-existing app-wide debt.
 
 ### Remaining / Next
 
