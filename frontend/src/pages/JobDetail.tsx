@@ -8,6 +8,7 @@ import {
   Calendar,
   Clock,
   DollarSign,
+  Image as ImageIcon,
   Loader2,
   Lock,
   MapPin,
@@ -17,6 +18,7 @@ import {
 import { useAuth } from '../components/AuthProvider';
 import { fetchJobById } from '../lib/jobs';
 import type { JobDetailData } from '../lib/jobs';
+import type { Job } from '../lib/jobs';
 
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
@@ -51,10 +53,15 @@ function formatCentsToAUD(cents: number) {
   return formatAUD(cents / 100);
 }
 
-function formatBudget(min: number | null, max: number | null) {
-  if (min && max) return `${formatAUD(min)} - ${formatAUD(max)}`;
-  if (min) return `From ${formatAUD(min)}`;
-  if (max) return `Up to ${formatAUD(max)}`;
+function formatBudget(job: Job) {
+  if (job.budget_type === 'need_quotes') return 'Need quotes';
+  if (job.estimated_budget !== null && job.estimated_budget !== undefined) {
+    const prefix = job.budget_type === 'fixed_budget' ? 'Fixed' : 'Estimate';
+    return `${prefix}: ${formatAUD(job.estimated_budget)}`;
+  }
+  if (job.budget_min && job.budget_max) return `${formatAUD(job.budget_min)} - ${formatAUD(job.budget_max)}`;
+  if (job.budget_min) return `From ${formatAUD(job.budget_min)}`;
+  if (job.budget_max) return `Up to ${formatAUD(job.budget_max)}`;
   return 'Not provided';
 }
 
@@ -169,7 +176,7 @@ export default function JobDetail() {
     );
   }
 
-  const { job, payment, tradie } = details;
+  const { job, payment, tradie, workspace_images } = details;
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
@@ -210,13 +217,35 @@ export default function JobDetail() {
           </section>
 
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <DetailTile icon={<DollarSign className="h-4 w-4" />} label="Budget" value={formatBudget(job.budget_min, job.budget_max)} />
+            <DetailTile icon={<DollarSign className="h-4 w-4" />} label="Budget" value={formatBudget(job)} />
             {payment && <DetailTile icon={<DollarSign className="h-4 w-4" />} label="Accepted amount" value={formatCentsToAUD(payment.amount)} />}
             <DetailTile icon={<MapPin className="h-4 w-4" />} label="Location" value={`${job.location}${job.state ? `, ${job.state}` : ''}`} />
             <DetailTile icon={<Calendar className="h-4 w-4" />} label="Created" value={new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} />
             <DetailTile icon={<Briefcase className="h-4 w-4" />} label="Job type" value={job.type || 'Standard'} />
             <DetailTile icon={<Clock className="h-4 w-4" />} label="Timeline" value={job.timeline || job.urgency || 'Flexible'} />
           </section>
+
+          {job.workspace_image_count > 0 && (
+            <section className="space-y-3">
+              <h2 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-muted-foreground">
+                <ImageIcon className="h-4 w-4" />
+                Workspace Photos
+              </h2>
+              {workspace_images.length === 0 ? (
+                <p className="rounded-xl border bg-muted/30 p-4 text-sm font-semibold text-muted-foreground">
+                  Photos are attached. They are only visible to the job owner and accepted tradie.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                  {workspace_images.map(image => (
+                    <a key={image.id} href={image.signed_url} target="_blank" rel="noopener noreferrer" className="overflow-hidden rounded-xl border bg-background">
+                      <img src={image.signed_url} alt="Workspace attachment" className="aspect-square w-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl border bg-background p-4">

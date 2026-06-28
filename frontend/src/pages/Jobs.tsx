@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fetchJobs, hydrateJobsWithPublicCustomers } from '../lib/jobs';
+import { fetchJobWorkspaceImages, fetchJobs, hydrateJobsWithPublicCustomers } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
 import { submitApplication, getMyApplicationForJob, getApplicationsForJob, getMyApplications } from '../lib/applications';
 import type { Application } from '../lib/applications';
@@ -10,7 +10,8 @@ import {
   Search, MapPin, DollarSign, Briefcase, AlertTriangle,
   SlidersHorizontal, X, Clock, User, Filter, RefreshCw,
   Bookmark, BookmarkCheck, Send, CheckCircle, AlertCircle,
-  FileText, Loader2, Lock, Upload, Mail, Phone, MessageSquare
+  FileText, Loader2, Lock, Upload, Mail, Phone, MessageSquare,
+  Image as ImageIcon
 } from 'lucide-react';
 import { 
   acceptQuote, submitCompletionProof, raiseJobIssue, approveJobCompletion, 
@@ -331,6 +332,8 @@ export default function Jobs() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [completionModalJob, setCompletionModalJob] = useState<Job | null>(null);
   const [proofImageUrls, setProofImageUrls] = useState<string[]>([]);
+  const [workspaceImageUrls, setWorkspaceImageUrls] = useState<string[]>([]);
+  const [workspaceImageError, setWorkspaceImageError] = useState<string | null>(null);
 
   // Prevent body scroll when details or other modals are open
   useEffect(() => {
@@ -420,6 +423,17 @@ export default function Jobs() {
   useEffect(() => {
     if (selectedJob) {
       fetchJobLifecycleDetails(selectedJob.id);
+      setWorkspaceImageUrls([]);
+      setWorkspaceImageError(null);
+      if (selectedJob.workspace_image_count > 0 && user) {
+        fetchJobWorkspaceImages(selectedJob.id).then(({ data, error }) => {
+          if (error) {
+            setWorkspaceImageError('Workspace photos could not be loaded.');
+            return;
+          }
+          setWorkspaceImageUrls(data.map(image => image.signed_url).filter(Boolean) as string[]);
+        });
+      }
     } else {
       setJobApplications([]);
       setJobPayment(null);
@@ -427,8 +441,10 @@ export default function Jobs() {
       setJobVariations([]);
       setJobProofs([]);
       setJobIssues([]);
+      setWorkspaceImageUrls([]);
+      setWorkspaceImageError(null);
     }
-  }, [selectedJob, fetchJobLifecycleDetails]);
+  }, [selectedJob, fetchJobLifecycleDetails, user]);
   
   // Fetch signed URLs for completion proofs
   useEffect(() => {
@@ -724,11 +740,16 @@ export default function Jobs() {
     setSearchParams({});
   };
 
-  const formatBudget = (min: number | null, max: number | null) => {
-    if (min === null && max === null) return 'Budget TBD';
-    if (min !== null && max !== null) return `$${min.toLocaleString()} – $${max.toLocaleString()}`;
-    if (min !== null) return `From $${min.toLocaleString()}`;
-    return `Up to $${max!.toLocaleString()}`;
+  const formatBudget = (job: Job) => {
+    if (job.budget_type === 'need_quotes') return 'Need quotes';
+    if (job.estimated_budget !== null && job.estimated_budget !== undefined) {
+      const prefix = job.budget_type === 'fixed_budget' ? 'Fixed' : 'Estimate';
+      return `${prefix}: $${job.estimated_budget.toLocaleString()}`;
+    }
+    if (job.budget_min === null && job.budget_max === null) return 'Budget TBD';
+    if (job.budget_min !== null && job.budget_max !== null) return `$${job.budget_min.toLocaleString()} - $${job.budget_max.toLocaleString()}`;
+    if (job.budget_min !== null) return `From $${job.budget_min.toLocaleString()}`;
+    return `Up to $${job.budget_max!.toLocaleString()}`;
   };
 
   const formatDate = (dateStr: string) => {
@@ -1122,7 +1143,10 @@ export default function Jobs() {
 
                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground font-semibold border-t pt-4">
                         <span className="flex items-center"><MapPin className="mr-1.5 h-3.5 w-3.5" />{job.location}</span>
-                        <span className="flex items-center"><DollarSign className="mr-1.5 h-3.5 w-3.5" />{formatBudget(job.budget_min, job.budget_max)}</span>
+                        <span className="flex items-center"><DollarSign className="mr-1.5 h-3.5 w-3.5" />{formatBudget(job)}</span>
+                        {job.workspace_image_count > 0 && (
+                          <span className="flex items-center"><ImageIcon className="mr-1.5 h-3.5 w-3.5" />Photos attached</span>
+                        )}
                         <span className="flex items-center"><Clock className="mr-1.5 h-3.5 w-3.5" />{formatDate(job.created_at)}</span>
                         {job.customer?.display_name && (
                           <span className="flex items-center"><User className="mr-1.5 h-3.5 w-3.5" />By {job.customer.display_name}</span>
@@ -1418,6 +1442,26 @@ export default function Jobs() {
                 <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Job Description</h4>
                 <p className="text-foreground/90 leading-relaxed font-medium whitespace-pre-wrap">{selectedJob.description}</p>
               </div>
+              {selectedJob.workspace_image_count > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Workspace Photos</h4>
+                  {workspaceImageError ? (
+                    <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold text-amber-800">{workspaceImageError}</p>
+                  ) : workspaceImageUrls.length === 0 ? (
+                    <p className="rounded-xl border bg-muted/20 p-3 text-xs font-semibold text-muted-foreground">
+                      Photos are attached. They are only visible to the job owner and accepted tradie.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {workspaceImageUrls.map(url => (
+                        <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl border bg-background">
+                          <img src={url} alt="Workspace attachment" className="aspect-square w-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-6 bg-muted/20 border p-5 rounded-2xl">
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Location</span>
@@ -1425,7 +1469,7 @@ export default function Jobs() {
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Est. Budget</span>
-                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><DollarSign className="h-4 w-4 text-foreground/60" />{formatBudget(selectedJob.budget_min, selectedJob.budget_max)}</p>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><DollarSign className="h-4 w-4 text-foreground/60" />{formatBudget(selectedJob)}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Job Type</span>

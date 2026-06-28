@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { supabase } from '../lib/supabase';
-import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase } from 'lucide-react';
+import { uploadJobWorkspaceImages, validateWorkspaceImage } from '../lib/jobs';
+import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase, ImagePlus, Trash2 } from 'lucide-react';
 
 export default function PostJob() {
   const { user, profile, loading } = useAuth();
@@ -16,9 +17,10 @@ export default function PostJob() {
   const [suburb, setSuburb] = useState('');
   const [state, setState] = useState('');
   const [timeline, setTimeline] = useState('');
-  const [budgetMin, setBudgetMin] = useState('');
-  const [budgetMax, setBudgetMax] = useState('');
+  const [estimatedBudget, setEstimatedBudget] = useState('');
+  const [budgetType, setBudgetType] = useState<'rough_estimate' | 'fixed_budget' | 'need_quotes'>('rough_estimate');
   const [description, setDescription] = useState('');
+  const [workspaceImages, setWorkspaceImages] = useState<File[]>([]);
 
   // Status State
   const [error, setError] = useState<string | null>(null);
@@ -100,9 +102,10 @@ export default function PostJob() {
     setSuburb('');
     setState('');
     setTimeline('');
-    setBudgetMin('');
-    setBudgetMax('');
+    setEstimatedBudget('');
+    setBudgetType('rough_estimate');
     setDescription('');
+    setWorkspaceImages([]);
     setError(null);
     setSuccess(false);
     setConfirmOpen(false);
@@ -155,15 +158,17 @@ export default function PostJob() {
   const selectedTradeLabel = tradeCategories.find(trade => trade.id === category)?.label || category;
   const trimmedTimeline = timeline.trim() || 'Flexible';
   const locationSummary = [suburb.trim(), state].filter(Boolean).join(', ');
-  const minB = budgetMin ? parseInt(budgetMin) : null;
-  const maxB = budgetMax ? parseInt(budgetMax) : null;
-  const budgetSummary = minB !== null && maxB !== null
-    ? `$${minB.toLocaleString()} - $${maxB.toLocaleString()}`
-    : minB !== null
-      ? `From $${minB.toLocaleString()}`
-      : maxB !== null
-        ? `Up to $${maxB.toLocaleString()}`
-        : 'Not specified';
+  const estimatedBudgetValue = estimatedBudget ? parseInt(estimatedBudget) : null;
+  const budgetTypeLabel = budgetType === 'rough_estimate'
+    ? 'Rough estimate'
+    : budgetType === 'fixed_budget'
+      ? 'Fixed budget'
+      : 'Not sure, need quotes';
+  const budgetSummary = budgetType === 'need_quotes'
+    ? 'Not sure, need quotes'
+    : estimatedBudgetValue !== null && !isNaN(estimatedBudgetValue)
+      ? `${budgetTypeLabel}: $${estimatedBudgetValue.toLocaleString()}`
+      : `${budgetTypeLabel}: Not specified`;
 
   const validateForm = () => {
     setError(null);
@@ -194,18 +199,18 @@ export default function PostJob() {
       return false;
     }
 
-    if (minB !== null && (isNaN(minB) || minB < 0)) {
-      setError('Minimum budget must be a positive number.');
+    if (estimatedBudgetValue !== null && (isNaN(estimatedBudgetValue) || estimatedBudgetValue < 0)) {
+      setError('Estimated budget must be a positive number.');
       return false;
     }
 
-    if (maxB !== null && (isNaN(maxB) || maxB < 0)) {
-      setError('Maximum budget must be a positive number.');
+    if (budgetType !== 'need_quotes' && estimatedBudgetValue === null) {
+      setError('Please enter an estimated budget, or choose "Not sure, need quotes".');
       return false;
     }
 
-    if (minB !== null && maxB !== null && maxB < minB) {
-      setError('Maximum budget cannot be less than the minimum budget.');
+    if (workspaceImages.length > 5) {
+      setError('You can attach up to 5 workspace photos.');
       return false;
     }
 
@@ -227,7 +232,8 @@ export default function PostJob() {
     setSubmitting(true);
 
     try {
-      const { error: insertError } = await supabase
+      const compatibleBudget = budgetType === 'need_quotes' ? null : estimatedBudgetValue;
+      const { data: jobRow, error: insertError } = await supabase
         .from('jobs')
         .insert({
           customer_id: user.id,
@@ -236,15 +242,25 @@ export default function PostJob() {
           categories: [category],
           location: locationSummary,
           state: state,
-          budget_min: minB,
-          budget_max: maxB,
+          budget_min: compatibleBudget,
+          budget_max: compatibleBudget,
+          estimated_budget: compatibleBudget,
+          budget_type: budgetType,
           timeline: trimmedTimeline,
           urgency,
           type: jobType,
           status: 'open'
-        });
+        })
+        .select('id')
+        .maybeSingle();
 
       if (insertError) throw insertError;
+      if (!jobRow?.id) throw new Error('Job was created, but the job ID was not returned.');
+
+      if (workspaceImages.length > 0) {
+        const { error: imageError } = await uploadJobWorkspaceImages(jobRow.id, user.id, workspaceImages);
+        if (imageError) throw imageError;
+      }
 
       setConfirmOpen(false);
       setSuccess(true);
@@ -254,6 +270,22 @@ export default function PostJob() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleWorkspaceImages = (files: FileList | null) => {
+    if (!files) return;
+    setError(null);
+    const nextFiles = [...workspaceImages, ...Array.from(files)].slice(0, 5);
+
+    for (const file of nextFiles) {
+      const validationError = validateWorkspaceImage(file);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
+
+    setWorkspaceImages(nextFiles);
   };
 
   return (
@@ -390,7 +422,7 @@ export default function PostJob() {
           </div>
         </section>
 
-        {/* Section 3: Budget Range */}
+        {/* Section 3: Budget */}
         <section className="space-y-4">
           <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2 border-b pb-2">
             <DollarSign className="h-5 w-5 text-primary" /> 3. Budget Estimate
@@ -398,33 +430,36 @@ export default function PostJob() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Minimum Budget ($)</label>
-              <div className="relative">
-                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="number"
-                  placeholder="e.g. 200"
-                  min="0"
-                  value={budgetMin}
-                  onChange={(e) => setBudgetMin(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-sm font-semibold transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Maximum Budget ($)</label>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Estimated Budget ($)</label>
               <div className="relative">
                 <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="number"
                   placeholder="e.g. 500"
                   min="0"
-                  value={budgetMax}
-                  onChange={(e) => setBudgetMax(e.target.value)}
+                  value={estimatedBudget}
+                  onChange={(e) => setEstimatedBudget(e.target.value)}
+                  disabled={budgetType === 'need_quotes'}
                   className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-sm font-semibold transition-all"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Budget Type</label>
+              <select
+                value={budgetType}
+                onChange={(e) => {
+                  const nextType = e.target.value as typeof budgetType;
+                  setBudgetType(nextType);
+                  if (nextType === 'need_quotes') setEstimatedBudget('');
+                }}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer"
+              >
+                <option value="rough_estimate">Rough estimate</option>
+                <option value="fixed_budget">Fixed budget</option>
+                <option value="need_quotes">Not sure, need quotes</option>
+              </select>
             </div>
           </div>
         </section>
@@ -445,6 +480,49 @@ export default function PostJob() {
               className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold leading-relaxed transition-all"
               required
             ></textarea>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2 border-b pb-2">
+            <ImagePlus className="h-5 w-5 text-primary" /> 5. Workspace Photos
+          </h3>
+          <div className="space-y-3">
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed bg-muted/10 px-4 py-6 text-center hover:bg-muted/20">
+              <ImagePlus className="h-7 w-7 text-primary" />
+              <span className="text-sm font-bold text-foreground">Add workspace or problem photos</span>
+              <span className="text-xs font-semibold text-muted-foreground">Up to 5 JPG, PNG, or WebP images. 5MB each.</span>
+              <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={(event) => {
+                  handleWorkspaceImages(event.target.files);
+                  event.currentTarget.value = '';
+                }}
+              />
+            </label>
+
+            {workspaceImages.length === 0 ? (
+              <p className="text-xs font-semibold text-muted-foreground">No photos attached.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {workspaceImages.map((file, index) => (
+                  <div key={`${file.name}-${file.lastModified}`} className="relative overflow-hidden rounded-xl border bg-background">
+                    <img src={URL.createObjectURL(file)} alt="" className="aspect-square w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setWorkspaceImages(prev => prev.filter((_, fileIndex) => fileIndex !== index))}
+                      className="absolute right-1.5 top-1.5 rounded-lg bg-background/90 p-1.5 text-red-500 shadow"
+                      title="Remove photo"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -496,6 +574,12 @@ export default function PostJob() {
                 <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Budget</p>
                 <p className="mt-1 font-bold text-foreground">{budgetSummary}</p>
               </div>
+              {workspaceImages.length > 0 && (
+                <div className="rounded-2xl border bg-background p-4 sm:col-span-2">
+                  <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Attached Images</p>
+                  <p className="mt-1 font-bold text-foreground">{workspaceImages.length} workspace photo{workspaceImages.length === 1 ? '' : 's'}</p>
+                </div>
+              )}
               <div className="rounded-2xl border bg-background p-4 sm:col-span-2">
                 <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Description</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm font-semibold leading-6 text-foreground">{description.trim()}</p>

@@ -21,6 +21,9 @@ export interface Job {
   state: string;
   budget_min: number | null;
   budget_max: number | null;
+  estimated_budget: number | null;
+  budget_type: 'rough_estimate' | 'fixed_budget' | 'need_quotes' | null;
+  workspace_image_count: number;
   timeline: string | null;
   urgency: 'urgent' | 'week' | 'flexible' | null;
   type: 'one-off' | 'contract' | 'ongoing' | null;
@@ -48,6 +51,20 @@ export interface JobDetailData {
   job: Job;
   payment: JobDetailPayment | null;
   tradie?: Customer;
+  workspace_images: JobWorkspaceImage[];
+}
+
+export interface JobWorkspaceImage {
+  id: string;
+  job_id: string;
+  owner_id: string;
+  bucket_id: 'job_workspace_images';
+  storage_path: string;
+  file_name: string;
+  mime_type: 'image/jpeg' | 'image/jpg' | 'image/png' | 'image/webp';
+  file_size: number;
+  created_at: string;
+  signed_url?: string;
 }
 
 export interface GetJobsFilters {
@@ -175,11 +192,14 @@ export async function fetchJobById(jobId: string) {
       }
     }
 
+    const { data: workspaceImages } = await fetchJobWorkspaceImages(jobId);
+
     return {
       data: {
         job: hydratedJob,
         payment: (payment as JobDetailPayment | null) || null,
         tradie,
+        workspace_images: workspaceImages,
       },
       error: null,
     };
@@ -187,5 +207,88 @@ export async function fetchJobById(jobId: string) {
     const message = error instanceof Error ? error.message : 'Unknown job detail error';
     console.error('fetchJobById error:', message);
     return { data: null as JobDetailData | null, error };
+  }
+}
+
+const workspaceSignedUrlTtlSeconds = 3600;
+const workspaceAllowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const workspaceMaxImageSize = 5 * 1024 * 1024;
+
+export function validateWorkspaceImage(file: File) {
+  if (!workspaceAllowedImageTypes.includes(file.type)) {
+    return 'Only JPG, PNG, and WebP workspace photos are supported.';
+  }
+  if (file.size > workspaceMaxImageSize) {
+    return 'Each workspace photo must be 5MB or smaller.';
+  }
+  return null;
+}
+
+export async function uploadJobWorkspaceImages(jobId: string, ownerId: string, files: File[]) {
+  const uploadedRows: JobWorkspaceImage[] = [];
+
+  for (const file of files.slice(0, 5)) {
+    const validationError = validateWorkspaceImage(file);
+    if (validationError) return { data: uploadedRows, error: new Error(validationError) };
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const storagePath = `jobs/${jobId}/${ownerId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('job_workspace_images')
+      .upload(storagePath, file, { contentType: file.type });
+
+    if (uploadError) return { data: uploadedRows, error: uploadError };
+
+    const { data, error } = await supabase
+      .from('job_workspace_images')
+      .insert({
+        job_id: jobId,
+        owner_id: ownerId,
+        storage_path: storagePath,
+        file_name: file.name,
+        mime_type: file.type,
+        file_size: file.size,
+      })
+      .select('*')
+      .maybeSingle();
+
+    if (error) return { data: uploadedRows, error };
+    if (data) uploadedRows.push(data as JobWorkspaceImage);
+  }
+
+  return { data: uploadedRows, error: null };
+}
+
+export async function fetchJobWorkspaceImages(jobId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('job_workspace_images')
+      .select('*')
+      .eq('job_id', jobId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    const rows = (data || []) as JobWorkspaceImage[];
+    const paths = rows.map(row => row.storage_path);
+    if (paths.length === 0) return { data: [] as JobWorkspaceImage[], error: null };
+
+    const { data: signed, error: signedError } = await supabase.storage
+      .from('job_workspace_images')
+      .createSignedUrls(paths, workspaceSignedUrlTtlSeconds);
+
+    if (signedError) throw signedError;
+
+    const signedByPath = new Map((signed || []).map(item => [item.path, item.signedUrl]));
+    return {
+      data: rows.map(row => ({
+        ...row,
+        signed_url: signedByPath.get(row.storage_path) || undefined,
+      })),
+      error: null,
+    };
+  } catch (error) {
+    return { data: [] as JobWorkspaceImage[], error };
   }
 }
