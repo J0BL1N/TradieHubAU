@@ -23,7 +23,7 @@ import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
   Upload, Loader2, Award, Star, Briefcase, Clock,
   Bookmark, BookmarkCheck, AlertCircle, CheckCircle, Send,
-  ImagePlus, Eye, Globe, Calendar
+  ImagePlus, Eye, Globe, Calendar, Camera
 } from 'lucide-react';
 
 interface DisplayJob {
@@ -153,6 +153,14 @@ export default function Profile() {
   const [idUploadError, setIdUploadError] = useState<string | null>(null);
   const [idVerificationStatus, setIdVerificationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
   const [idVerificationNotes, setIdVerificationNotes] = useState<string | null>(null);
+
+  // Liveness selfie check state
+  const [livenessFile, setLivenessFile] = useState<File | null>(null);
+  const [livenessUploadSuccess, setLivenessUploadSuccess] = useState(false);
+  const [livenessUploadError, setLivenessUploadError] = useState<string | null>(null);
+  const [livenessUploading, setLivenessUploading] = useState(false);
+  const [livenessVerificationStatus, setLivenessVerificationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+  const [livenessVerificationNotes, setLivenessVerificationNotes] = useState<string | null>(null);
 
   // Tradie check state
   const [tradieDocType, setTradieDocType] = useState('contractor_license');
@@ -322,6 +330,7 @@ export default function Profile() {
           'insurance',
           'trade_certificate',
           'other_trade_credential',
+          'liveness_selfie',
         ])
         .order('submitted_at', { ascending: false });
 
@@ -348,6 +357,23 @@ export default function Profile() {
       } else {
         setIdVerificationStatus('none');
         setIdVerificationNotes(null);
+      }
+
+      // Query latest liveness selfie verification status
+      const { data: livenessData, error: livenessErr } = await supabase
+        .from('verifications')
+        .select('status, admin_notes')
+        .eq('user_id', targetId)
+        .eq('document_type', 'liveness_selfie')
+        .order('submitted_at', { ascending: false })
+        .limit(1);
+
+      if (!livenessErr && livenessData && livenessData.length > 0) {
+        setLivenessVerificationStatus(livenessData[0].status as any);
+        setLivenessVerificationNotes(livenessData[0].admin_notes);
+      } else {
+        setLivenessVerificationStatus('none');
+        setLivenessVerificationNotes(null);
       }
 
       // Query latest tradie credential verification status
@@ -575,6 +601,56 @@ export default function Profile() {
       setIdUploadError(err.message || 'Failed to submit photo ID for review.');
     } finally {
       setUploadingDoc(false);
+    }
+  };
+
+  const handleLivenessUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (!livenessFile) {
+      setLivenessUploadError('Please select a selfie photo file.');
+      return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(livenessFile.type)) {
+      setLivenessUploadError('Invalid file type. Please upload a JPEG, PNG, or WEBP image.');
+      return;
+    }
+
+    setLivenessUploading(true);
+    setLivenessUploadError(null);
+    setLivenessUploadSuccess(false);
+
+    try {
+      const fileExt = livenessFile.name.split('.').pop();
+      const filePath = `users/${user.id}/${Date.now()}_liveness_selfie.${fileExt}`;
+
+      // 1. Upload to storage
+      const { error: uploadErr } = await supabase.storage
+        .from('verifications')
+        .upload(filePath, livenessFile);
+
+      if (uploadErr) throw uploadErr;
+
+      // 2. Submit verification row
+      const { error: dbErr } = await submitVerification({
+        user_id: user.id,
+        document_type: 'liveness_selfie',
+        document_url: filePath
+      });
+
+      if (dbErr) throw dbErr;
+
+      setLivenessUploadSuccess(true);
+      setLivenessFile(null);
+      await loadVerificationStatus();
+      await loadProfile();
+    } catch (err: any) {
+      console.error('Liveness selfie upload error:', err);
+      setLivenessUploadError(err.message || 'Failed to submit liveness selfie for review.');
+    } finally {
+      setLivenessUploading(false);
     }
   };
 
@@ -1286,6 +1362,115 @@ export default function Profile() {
                           Submit Document
                         </button>
                       </div>
+                    </div>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Liveness Selfie Section (Shown to all users) */}
+            <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
+              <div className="border-b pb-4">
+                <h3 className="text-xl font-bold text-foreground">Liveness Selfie Verification</h3>
+                <p className="text-xs text-muted-foreground mt-1">Verify that you are physically present to complete your identity setup.</p>
+              </div>
+
+              {livenessVerificationStatus === 'approved' ? (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
+                  <div>
+                    <p className="font-bold">Liveness Selfie Verified ✓</p>
+                    <p className="mt-0.5 font-medium text-green-600/90 leading-relaxed">
+                      Your liveness selfie has been successfully verified by TradieHubAU admins.
+                    </p>
+                  </div>
+                </div>
+              ) : livenessVerificationStatus === 'pending' ? (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-semibold flex items-start gap-2">
+                  <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Selfie Review Pending</p>
+                    <p className="mt-1 font-medium text-amber-600/90 leading-relaxed">
+                      Your liveness selfie is currently under manual review by our administration staff.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleLivenessUpload} className="space-y-4">
+                  {livenessVerificationStatus === 'rejected' && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Selfie Verification Rejected</p>
+                        <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                          Your selfie was rejected: <strong className="text-foreground">{livenessVerificationNotes}</strong>.
+                          Please upload a new selfie matching the challenge description.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {livenessUploadSuccess && (
+                    <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold">
+                      Your selfie has been submitted for review.
+                    </div>
+                  )}
+
+                  {livenessUploadError && (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
+                      {livenessUploadError}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Required Proof</h4>
+                    <div className="rounded-2xl border bg-muted/10 p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <div>
+                          <h5 className="text-sm font-black text-foreground">Liveness Selfie</h5>
+                          <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                            Upload a clear selfie holding up 4 fingers next to your face.
+                          </p>
+                          <p className="text-[11px] text-muted-foreground font-semibold mt-1">
+                            This helps us confirm the person submitting the ID is physically present. It is used only for verification and is not shown publicly.
+                          </p>
+                        </div>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(livenessVerificationStatus)}`}>
+                          {getStatusLabel(livenessVerificationStatus)}
+                        </span>
+                      </div>
+
+                      {livenessFile && (
+                        <p className="text-xs font-bold text-muted-foreground">{livenessFile.name}</p>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <label className="inline-flex flex-1 items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                          <Camera className="h-4 w-4" /> Take / Choose Photo
+                          <input
+                            type="file"
+                            onChange={(e) => {
+                              setLivenessFile(e.target.files?.[0] || null);
+                            }}
+                            disabled={livenessUploading}
+                            className="hidden"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                          />
+                        </label>
+
+                        <button
+                          type="submit"
+                          disabled={livenessUploading || !livenessFile}
+                          className="inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                        >
+                          {livenessUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                          Submit Selfie
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-muted-foreground italic mt-2 leading-relaxed">
+                        By uploading this selfie, you agree that TradieHubAU may use it only for identity verification, fraud prevention, dispute support, and account safety. It is not shown publicly.
+                      </p>
                     </div>
                   </div>
                 </form>

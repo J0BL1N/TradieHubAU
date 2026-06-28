@@ -55,7 +55,7 @@ function verificationStatusClass(status: string): string {
   return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
 }
 
-const IDENTITY_DOCUMENT_TYPES = ['drivers_license', 'passport', 'proof_of_age', 'other_identity'];
+const IDENTITY_DOCUMENT_TYPES = ['drivers_license', 'passport', 'proof_of_age', 'other_identity', 'liveness_selfie'];
 const TRADIE_DOCUMENT_TYPES = ['contractor_license', 'insurance', 'trade_certificate', 'other_trade_credential'];
 
 interface VerificationCase {
@@ -1494,6 +1494,11 @@ export default function Admin() {
                                           Submitted {new Date(doc.submitted_at).toLocaleDateString('en-AU')}{' '}
                                           {new Date(doc.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
+                                        {doc.document_type === 'liveness_selfie' && (
+                                          <p className="text-[10px] text-amber-600 font-bold mt-1">
+                                            Expected: Selfie holding up 4 fingers next to face
+                                          </p>
+                                        )}
                                       </div>
                                       <div className="flex flex-wrap items-center gap-2">
                                         <button onClick={() => handleViewFile(doc.document_url)} className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 focus:outline-none">

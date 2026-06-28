@@ -618,6 +618,23 @@ Status: **Implementation complete / awaiting manual review.** This is an admin a
 
 ---
 
+# Phase 1 Chunk A — Liveness Selfie Verification Foundation
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Add liveness selfie verification document type check constraint (`liveness_selfie`)
+* [x] Redefine `approve_identity_verification` RPC function to support liveness selfie approval
+* [x] Update frontend profile state and upload logic to support image-only selfie uploads
+* [x] Renders new Liveness Selfie Verification UI card in user profile settings
+* [x] Update identity document verification queues in Admin panel to include liveness selfies with custom instructions
+* [ ] Future liveness items (to be reviewed for Chunk B):
+  * [ ] Random liveness challenge generation (e.g. dynamic finger counts or hand signs)
+  * [ ] Liveness challenge expiry limits
+  * [ ] Strict blocker gating liveness check before early payment release requests
+  * [ ] Auto-deletion/retention safety policy for completed verification documents
+
+---
+
 # v0.6.x — Reviews and Reputation
 
 * [ ] Add post-completion customer review

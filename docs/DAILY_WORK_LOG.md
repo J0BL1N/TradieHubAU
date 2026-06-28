@@ -172,6 +172,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 00:40:00 | Invoicing Foundation | this commit | Added safe invoicing foundation based on real completed/released platform jobs and payments. Created job_invoices table, select RLS policies, automatic trigger-based invoice generation on payment release, idempotent numbering, existing job backfills, invoices.ts helper, "View Receipt" (customer) & "View Payout Statement" (tradie) buttons on Jobs.tsx, interactive modal preview, and print stylesheets. |
 | 00:20:00 | Fix Invoices Generation | this commit | Fixed trigger race condition during completion approval/payment release by moving to dual status triggers on both jobs and payments, creating ensure_job_invoices self-healing function, secure get_my_job_invoice RPC, error message overrides in Jobs.tsx, and backfill. |
 | 00:20:00 | Invoice Layout Polish | this commit | Polished invoicing document layouts into a professional tax-ready preview; resolved ABN display for verified contractors, clean From/To party grids, itemized Line Item subtotal breakdowns (with net payout fee splits), and clear tax disclaimers. |
+| 00:30:00 | Liveness Selfie Verification Foundation | this commit | Implemented liveness selfie verification step to strengthen identity checks. Added check constraint and approve_identity_verification updates in migration 064, updated Profile.tsx to show upload card and handle image-only files, and updated Admin.tsx to display expected challenge instructions in review queues. |
+
 
 
 
@@ -208,6 +210,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `061_admin_analytics_polish.sql` | Created | Extends public.get_admin_analytics RPC to support active user counters, today's logs, and user, job, verification, and category breakdowns. |
 | `062_invoicing_foundation.sql` | Created | Creates job_invoices table, RLS, trigger-based invoice generation on payments release, idempotent number generation, and idempotent backfills. |
 | `063_fix_invoice_generation_for_completed_jobs.sql` | Created | Replaces payment release trigger with secure ensure_job_invoices function, triggers on both jobs and payments status updates, secure get_my_job_invoice RPC, and backfills missing invoices. |
+| `064_add_liveness_selfie_verification_document_type.sql` | Created | Adds liveness_selfie to verification document types check constraint and redefines approve_identity_verification function. |
+
 
 
 
@@ -241,6 +245,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Invoicing foundation | `npm run build` passed. Verified automatic trigger-based generation, customer/tradie RLS SELECT security checks, modal document preview, and custom `@media print` layout formatting. |
 | Invoice generation fix | `npm run build` passed. Verified get_my_job_invoice RPC returns correct role-filtered data, auto-heals missing invoices, and triggers on both jobs & payments table status updates. |
 | Invoice layout polish | `npm run build` passed. Verified ABN and business name fields rendered from public_profiles view, subtotal / net payout divisions, and GST disclaimer. |
+| Liveness selfie verification | `npm run build` passed. Verified document type check relaxes DB validations, Profile.tsx restricts inputs to JPEG/PNG/WEBP files, and Admin.tsx renders queues with instructions. |
+
 
 
 
