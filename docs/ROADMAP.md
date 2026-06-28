@@ -632,7 +632,7 @@ Status: **Approved / accepted.**
 
 # Phase 1 Chunk B — Verification Status Upgrade
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed; awaiting manual review.**
 
 * [x] Create centralized status tracking summary card on user profile dashboard
 * [x] Categorize progress indicators for ID Verification, Liveness Selfie, and Professional Credentials
@@ -645,12 +645,20 @@ Status: **Implementation complete / awaiting manual review.**
 
 # Phase 1 Chunk C — Verification Expiry & Recheck Later
 
-Status: **Upcoming.**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Implement liveness challenge expiry and auto-rejections
+* [x] Add nullable verification expiry/recheck fields in migration `065_add_verification_recheck_and_expiry_fields.sql`
+* [x] Add admin "Request recheck" controls for verification documents with reason and optional expiry date
+* [x] Show user-facing Recheck Requested and Expired states for ID, liveness selfie, and tradie credential documents
+* [x] Allow users to resubmit rejected, recheck-requested, or expired verification documents
+* [x] Exclude recheck-requested or expired documents from new tradie whitelisting readiness checks
+* [x] Preserve existing approved/whitelisted tradies; no retroactive unapproval is performed
+* [ ] Automated expiry reminders
+* [ ] Scheduled recheck jobs
+* [ ] Retention/deletion policy for verification images after approval
+* [ ] Stronger liveness enforcement before early release requests
+* [ ] Per-document verification expiry rules
 * [ ] Implement random liveness challenge generation next to face (dynamic finger counts / hand signs)
-* [ ] Strict blocker gating liveness check before early payment releases
-* [ ] Retention & automatic deletion policies for verification images after approval
 
 
 ---

@@ -48,14 +48,28 @@ interface UserReview {
   } | null;
 }
 
-type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected';
+type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'recheck' | 'expired';
 
 interface VerificationSummary {
   document_type: string;
-  status: VerificationStatus;
+  status: 'pending' | 'approved' | 'rejected';
   admin_notes: string | null;
   submitted_at: string;
+  expires_at?: string | null;
+  recheck_requested_at?: string | null;
+  recheck_reason?: string | null;
+  recheck_requested_by?: string | null;
 }
+
+const deriveDocumentStatus = (summary: any): VerificationStatus => {
+  if (!summary) return 'none';
+  if (summary.status === 'rejected') return 'rejected';
+  if (summary.recheck_requested_at) return 'recheck';
+  if (summary.expires_at && new Date(summary.expires_at) < new Date()) return 'expired';
+  if (summary.status === 'pending') return 'pending';
+  if (summary.status === 'approved') return 'approved';
+  return 'none';
+};
 
 const IDENTITY_DOCUMENT_CARD = {
   type: 'drivers_license',
@@ -151,23 +165,25 @@ export default function Profile() {
   const [idFile, setIdFile] = useState<File | null>(null);
   const [idUploadSuccess, setIdUploadSuccess] = useState(false);
   const [idUploadError, setIdUploadError] = useState<string | null>(null);
-  const [idVerificationStatus, setIdVerificationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+  const [idVerificationStatus, setIdVerificationStatus] = useState<VerificationStatus>('none');
   const [idVerificationNotes, setIdVerificationNotes] = useState<string | null>(null);
+  const [idVerificationRecheckReason, setIdVerificationRecheckReason] = useState<string | null>(null);
 
   // Liveness selfie check state
   const [livenessFile, setLivenessFile] = useState<File | null>(null);
   const [livenessUploadSuccess, setLivenessUploadSuccess] = useState(false);
   const [livenessUploadError, setLivenessUploadError] = useState<string | null>(null);
   const [livenessUploading, setLivenessUploading] = useState(false);
-  const [livenessVerificationStatus, setLivenessVerificationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+  const [livenessVerificationStatus, setLivenessVerificationStatus] = useState<VerificationStatus>('none');
   const [livenessVerificationNotes, setLivenessVerificationNotes] = useState<string | null>(null);
+  const [livenessVerificationRecheckReason, setLivenessVerificationRecheckReason] = useState<string | null>(null);
 
   // Tradie check state
   const [tradieDocType, setTradieDocType] = useState('contractor_license');
   const [tradieFile, setTradieFile] = useState<File | null>(null);
   const [tradieFiles, setTradieFiles] = useState<Record<string, File | null>>({});
   const [verificationSummaries, setVerificationSummaries] = useState<Record<string, VerificationSummary>>({});
-  const [tradieVerificationStatus, setTradieVerificationStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
+  const [tradieVerificationStatus, setTradieVerificationStatus] = useState<VerificationStatus>('none');
   const [tradieVerificationNotes, setTradieVerificationNotes] = useState<string | null>(null);
 
   const categoryOptions = [
@@ -319,7 +335,7 @@ export default function Profile() {
     try {
       const { data: allVerificationData, error: allVerificationErr } = await supabase
         .from('verifications')
-        .select('document_type, status, admin_notes, submitted_at')
+        .select('document_type, status, admin_notes, submitted_at, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .in('document_type', [
           'drivers_license',
@@ -335,7 +351,7 @@ export default function Profile() {
         .order('submitted_at', { ascending: false });
 
       if (!allVerificationErr && allVerificationData) {
-        const latestByType = (allVerificationData as VerificationSummary[]).reduce<Record<string, VerificationSummary>>((acc, item) => {
+        const latestByType = (allVerificationData as any[]).reduce<Record<string, VerificationSummary>>((acc, item) => {
           if (!acc[item.document_type]) acc[item.document_type] = item;
           return acc;
         }, {});
@@ -345,48 +361,52 @@ export default function Profile() {
       // Query latest identity verification status
       const { data: idData, error: idErr } = await supabase
         .from('verifications')
-        .select('status, admin_notes')
+        .select('status, admin_notes, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .in('document_type', ['drivers_license', 'passport', 'proof_of_age', 'other_identity'])
         .order('submitted_at', { ascending: false })
         .limit(1);
 
       if (!idErr && idData && idData.length > 0) {
-        setIdVerificationStatus(idData[0].status as any);
+        setIdVerificationStatus(deriveDocumentStatus(idData[0]));
         setIdVerificationNotes(idData[0].admin_notes);
+        setIdVerificationRecheckReason(idData[0].recheck_reason);
       } else {
         setIdVerificationStatus('none');
         setIdVerificationNotes(null);
+        setIdVerificationRecheckReason(null);
       }
 
       // Query latest liveness selfie verification status
       const { data: livenessData, error: livenessErr } = await supabase
         .from('verifications')
-        .select('status, admin_notes')
+        .select('status, admin_notes, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .eq('document_type', 'liveness_selfie')
         .order('submitted_at', { ascending: false })
         .limit(1);
 
       if (!livenessErr && livenessData && livenessData.length > 0) {
-        setLivenessVerificationStatus(livenessData[0].status as any);
+        setLivenessVerificationStatus(deriveDocumentStatus(livenessData[0]));
         setLivenessVerificationNotes(livenessData[0].admin_notes);
+        setLivenessVerificationRecheckReason(livenessData[0].recheck_reason);
       } else {
         setLivenessVerificationStatus('none');
         setLivenessVerificationNotes(null);
+        setLivenessVerificationRecheckReason(null);
       }
 
       // Query latest tradie credential verification status
       const { data: trData, error: trErr } = await supabase
         .from('verifications')
-        .select('status, admin_notes')
+        .select('status, admin_notes, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .in('document_type', ['contractor_license', 'insurance', 'trade_certificate', 'other_trade_credential'])
         .order('submitted_at', { ascending: false })
         .limit(1);
 
       if (!trErr && trData && trData.length > 0) {
-        setTradieVerificationStatus(trData[0].status as any);
+        setTradieVerificationStatus(deriveDocumentStatus(trData[0]));
         setTradieVerificationNotes(trData[0].admin_notes);
       } else {
         setTradieVerificationStatus('none');
@@ -719,19 +739,23 @@ export default function Profile() {
     }
   };
 
-  const getDocumentStatus = (documentType: string, fallback: VerificationStatus = 'none'): VerificationStatus => (
-    verificationSummaries[documentType]?.status || fallback
-  );
+  const getDocumentStatus = (documentType: string, fallback: VerificationStatus = 'none'): VerificationStatus => {
+    const summary = verificationSummaries[documentType];
+    return deriveDocumentStatus(summary) || fallback;
+  };
 
   const getStatusLabel = (status: VerificationStatus, required = true) => {
     if (status === 'none') return required ? 'Required' : 'Optional';
+    if (status === 'recheck') return 'Recheck Requested';
+    if (status === 'expired') return 'Expired';
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const getStatusClass = (status: VerificationStatus) => {
     if (status === 'approved') return 'bg-green-500/10 text-green-600 border-green-500/20';
     if (status === 'pending') return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
-    if (status === 'rejected') return 'bg-red-500/10 text-red-500 border-red-500/20';
+    if (status === 'recheck') return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+    if (status === 'rejected' || status === 'expired') return 'bg-red-500/10 text-red-500 border-red-500/20';
     return 'bg-muted text-muted-foreground border-border';
   };
 
@@ -1185,7 +1209,7 @@ export default function Profile() {
                   </div>
 
                   {/* Verification document status / uploads */}
-                  {targetProfile.tradie_verified ? (
+                  {targetProfile.tradie_verified && !['recheck', 'expired'].includes(tradieVerificationStatus) ? (
                     <div className="space-y-4 border-t pt-5">
                       <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
                         <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
@@ -1203,6 +1227,30 @@ export default function Profile() {
                       <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
                         Upload your contractor license or insurance certificate. TradieHubAU admins will review documents atomically to check qualifications.
                       </p>
+
+                      {tradieVerificationStatus === 'recheck' && (
+                        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
+                          <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold">Credential Recheck Requested</p>
+                            <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                              An administrator has requested an updated trade credential document. Please upload the current document requested below.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {tradieVerificationStatus === 'expired' && (
+                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+                          <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold">Credential Expired</p>
+                            <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                              One of your submitted trade credential documents has expired or needs updating. Please upload a current document.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {uploadSuccess && (
                         <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold">
@@ -1356,7 +1404,7 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground mt-1">Verify your basic photo ID to build trust across TradieHubAU.</p>
               </div>
 
-              {targetProfile.identity_verified ? (
+              {idVerificationStatus === 'approved' ? (
                 <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
                   <div>
@@ -1378,6 +1426,30 @@ export default function Profile() {
                 </div>
               ) : (
                 <form onSubmit={handleIdentityUpload} className="space-y-4">
+                  {idVerificationStatus === 'recheck' && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Identity Recheck Requested</p>
+                        <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                          An administrator has requested a recheck of your photo ID. Reason: <strong className="text-foreground">{idVerificationRecheckReason}</strong>. Please upload a new ID.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {idVerificationStatus === 'expired' && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Identity Document Expired</p>
+                        <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                          Your submitted photo ID document has expired or is out of date. Please upload a current ID.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {idVerificationStatus === 'rejected' && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
@@ -1479,6 +1551,30 @@ export default function Profile() {
                 </div>
               ) : (
                 <form onSubmit={handleLivenessUpload} className="space-y-4">
+                  {livenessVerificationStatus === 'recheck' && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Selfie Recheck Requested</p>
+                        <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                          An administrator has requested a recheck of your selfie. Reason: <strong className="text-foreground">{livenessVerificationRecheckReason}</strong>. Please upload a new selfie.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {livenessVerificationStatus === 'expired' && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Selfie Expired</p>
+                        <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                          Your submitted liveness selfie check has expired. Please upload a new selfie.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {livenessVerificationStatus === 'rejected' && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />

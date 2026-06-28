@@ -85,6 +85,10 @@ export interface VerificationRecord {
   reviewed_by: string | null;
   submitted_at: string;
   reviewed_at: string | null;
+  expires_at?: string | null;
+  recheck_requested_at?: string | null;
+  recheck_reason?: string | null;
+  recheck_requested_by?: string | null;
   user?: {
     display_name: string;
     email: string;
@@ -421,3 +425,32 @@ export async function suspendIdentityVerification(userId: string) {
   }
 }
 
+/**
+ * Request a recheck on a verification document (admin only)
+ */
+export async function requestVerificationRecheck(
+  verificationId: string,
+  reason: string,
+  expiresAt: string | null
+) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('verifications')
+      .update({
+        recheck_requested_at: new Date().toISOString(),
+        recheck_reason: reason.trim() || null,
+        expires_at: expiresAt || null,
+        recheck_requested_by: user?.id || null
+      })
+      .eq('id', verificationId)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ requestVerificationRecheck error:', error.message);
+    return { data: null, error };
+  }
+}

@@ -174,6 +174,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 00:20:00 | Invoice Layout Polish | this commit | Polished invoicing document layouts into a professional tax-ready preview; resolved ABN display for verified contractors, clean From/To party grids, itemized Line Item subtotal breakdowns (with net payout fee splits), and clear tax disclaimers. |
 | 00:30:00 | Liveness Selfie Verification Foundation | this commit | Implemented liveness selfie verification step to strengthen identity checks. Added check constraint and approve_identity_verification updates in migration 064, updated Profile.tsx to show upload card and handle image-only files, and updated Admin.tsx to display expected challenge instructions in review queues. |
 | 00:30:00 | Verification Status Upgrade | this commit | Upgraded verification status displays. Added centralized Verification Status Overview progress checklist card to user settings, updated Admin applications card to require approved liveness selfie for new whitelist applications, and maintained backwards-compatibility for existing whitelisted users. |
+| In progress | Verification Expiry / Recheck Later | this commit | Added admin recheck controls for verification documents, user-facing Recheck Requested and Expired statuses for ID/liveness/tradie credentials, and migration `065_add_verification_recheck_and_expiry_fields.sql`. Changed files: `Admin.tsx`, `Profile.tsx`, `users.ts`, migration 065, `ROADMAP.md`, and this log. Privacy note: verification/liveness files remain private and no public profile, job, message, invoice, analytics, or gallery data was exposed. Existing approved tradies are not retroactively unapproved; recheck/expired documents are excluded from new whitelist readiness. Validation: `npm run build` passed; `git diff --check` passed. Live Supabase action required: run migration 065. |
 
 
 
@@ -213,6 +214,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `062_invoicing_foundation.sql` | Created | Creates job_invoices table, RLS, trigger-based invoice generation on payments release, idempotent number generation, and idempotent backfills. |
 | `063_fix_invoice_generation_for_completed_jobs.sql` | Created | Replaces payment release trigger with secure ensure_job_invoices function, triggers on both jobs and payments status updates, secure get_my_job_invoice RPC, and backfills missing invoices. |
 | `064_add_liveness_selfie_verification_document_type.sql` | Created | Adds liveness_selfie to verification document types check constraint and redefines approve_identity_verification function. |
+| `065_add_verification_recheck_and_expiry_fields.sql` | Created | Adds nullable verification expiry/recheck metadata and tightens future auto-whitelist checks so expired or admin recheck-requested verification documents do not count for new tradie approvals. Live Supabase must run this migration. |
 | Verification Status Upgrade | No migration | No database migration was added; changes are purely frontend layout, logic derivation, and checklist integration. |
 
 
@@ -251,6 +253,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Invoice layout polish | `npm run build` passed. Verified ABN and business name fields rendered from public_profiles view, subtotal / net payout divisions, and GST disclaimer. |
 | Liveness selfie verification | `npm run build` passed. Verified document type check relaxes DB validations, Profile.tsx restricts inputs to JPEG/PNG/WEBP files, and Admin.tsx renders queues with instructions. |
 | Verification status upgrade | `npm run build` passed. Centralized verification card added, whitelist requirements checked for new applicants, and existing whitelisted tradies remain valid. |
+| Verification expiry / recheck later | `npm run build` passed; `git diff --check` passed. Admin can request document rechecks with a reason and optional expiry date; users can see and resubmit recheck-requested or expired ID/liveness/tradie credential documents. SQL validation pending local Supabase/psql availability. |
 
 
 

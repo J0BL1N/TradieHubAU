@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import {
   getPendingVerifications, approveIdentityVerification, approveTradieProfile,
-  approveDocumentOnly, rejectVerification, suspendTradieProfile, suspendIdentityVerification
+  approveDocumentOnly, rejectVerification, suspendTradieProfile, suspendIdentityVerification,
+  requestVerificationRecheck
 } from '../lib/users';
 import type { VerificationRecord, UserProfile } from '../lib/users';
 import { supabase } from '../lib/supabase';
@@ -53,6 +54,12 @@ function verificationStatusClass(status: string): string {
   if (status === 'approved') return 'bg-green-500/10 text-green-600 border-green-500/20';
   if (status === 'rejected') return 'bg-red-500/10 text-red-500 border-red-500/20';
   return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+}
+
+function verificationDisplayStatus(item: Pick<VerificationRecord, 'status' | 'recheck_requested_at' | 'expires_at'>): string {
+  if (item.recheck_requested_at) return 'recheck requested';
+  if (item.expires_at && new Date(item.expires_at) < new Date()) return 'expired';
+  return item.status;
 }
 
 const IDENTITY_DOCUMENT_TYPES = ['drivers_license', 'passport', 'proof_of_age', 'other_identity', 'liveness_selfie'];
@@ -867,6 +874,9 @@ export default function Admin() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState('');
+  const [recheckId, setRecheckId] = useState<string | null>(null);
+  const [recheckReason, setRecheckReason] = useState('');
+  const [recheckExpiry, setRecheckExpiry] = useState('');
 
   // Toast + Confirm modal state
   const [toastMessage, setToastMessage] = useState<ToastMessage | null>(null);
@@ -1052,6 +1062,27 @@ export default function Admin() {
     setRejectNotes('');
     if (err) showToast(err.message || 'Failed to reject verification.', 'error');
     else { showToast('Verification rejected.', 'success'); loadData(); }
+  };
+
+  const handleRequestRecheckSubmit = async (id: string) => {
+    if (!recheckReason.trim()) {
+      showToast('Please specify a recheck reason.', 'error');
+      return;
+    }
+
+    setActionLoadingId(id);
+    const { error: err } = await requestVerificationRecheck(id, recheckReason, recheckExpiry || null);
+    setActionLoadingId(null);
+
+    if (err) {
+      showToast(err.message || 'Failed to request verification recheck.', 'error');
+    } else {
+      setRecheckId(null);
+      setRecheckReason('');
+      setRecheckExpiry('');
+      showToast('Verification recheck requested.', 'success');
+      loadData();
+    }
   };
 
   const handleSuspendTradie = (userId: string) => {
@@ -1333,7 +1364,38 @@ export default function Admin() {
                             </button>
                           </td>
                           <td className="p-4 pr-6 text-right">
-                            {isRejecting ? (
+                            {recheckId === item.id ? (
+                              <div className="flex flex-col gap-2 max-w-xs ml-auto text-left">
+                                <p className="text-[10px] font-black uppercase text-foreground">Request ID Recheck</p>
+                                <textarea
+                                  placeholder="Reason for recheck..."
+                                  value={recheckReason}
+                                  onChange={(e) => setRecheckReason(e.target.value)}
+                                  rows={2}
+                                  className="w-full text-xs p-2 border rounded-lg bg-background outline-none font-medium text-foreground focus:border-primary/50 resize-none"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <label className="text-[10px] font-bold text-muted-foreground shrink-0">Expiry Date (opt):</label>
+                                  <input
+                                    type="date"
+                                    value={recheckExpiry}
+                                    onChange={(e) => setRecheckExpiry(e.target.value)}
+                                    className="text-xs p-1 border rounded bg-background text-foreground outline-none font-medium flex-1"
+                                  />
+                                </div>
+                                <div className="flex justify-end gap-1.5">
+                                  <button onClick={() => setRecheckId(null)} className="px-2.5 py-1 border rounded-md text-[10px] font-bold text-muted-foreground hover:bg-muted">Cancel</button>
+                                  <button
+                                    onClick={() => handleRequestRecheckSubmit(item.id)}
+                                    disabled={isActionLoading}
+                                    className="px-2.5 py-1 bg-amber-600 text-white rounded-md text-[10px] font-bold hover:bg-amber-700 transition-all flex items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {isActionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                                    Submit
+                                  </button>
+                                </div>
+                              </div>
+                            ) : isRejecting ? (
                               <div className="flex flex-col gap-2 max-w-xs ml-auto">
                                 <textarea
                                   placeholder="Reason for rejection..."
@@ -1362,6 +1424,13 @@ export default function Admin() {
                                   className="bg-destructive/10 hover:bg-destructive/15 text-destructive font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
                                 >
                                   Reject
+                                </button>
+                                <button
+                                  onClick={() => { setRecheckId(item.id); setRecheckReason(''); setRecheckExpiry(''); }}
+                                  disabled={isActionLoading}
+                                  className="bg-amber-600/10 hover:bg-amber-600/15 text-amber-700 font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50 inline-flex items-center gap-1"
+                                >
+                                  Recheck
                                 </button>
                                 <button
                                   onClick={() => handleApproveIdentity(item.id, item.user_id)}
@@ -1412,19 +1481,31 @@ export default function Admin() {
                         .sort((a, b) => Date.parse(a.submitted_at) - Date.parse(b.submitted_at));
                       const isActionLoading = actionLoadingId === item.userId || allDocs.some(doc => actionLoadingId === doc.id);
                       const isAlreadyWhitelisted = !!user?.tradie_verified;
-                      const hasIdentityApproval = !!user?.identity_verified;
-                      const hasApprovedLicenceProof = item.tradieDocs.some(doc => doc.document_type === 'contractor_license' && doc.status === 'approved');
-                      const hasApprovedInsuranceProof = item.tradieDocs.some(doc => doc.document_type === 'insurance' && doc.status === 'approved');
-                      const hasApprovedLiveness = item.identityDocs.some(doc => doc.document_type === 'liveness_selfie' && doc.status === 'approved');
+
+                      const isDocValid = (doc: any) => {
+                        if (!doc) return false;
+                        if (doc.status !== 'approved') return false;
+                        if (doc.recheck_requested_at) return false;
+                        if (doc.expires_at && new Date(doc.expires_at) < new Date()) return false;
+                        return true;
+                      };
+
+                      const hasIdentityApproval = !!user?.identity_verified && !item.identityDocs.some(
+                        doc => doc.document_type !== 'liveness_selfie'
+                          && (doc.recheck_requested_at || (doc.expires_at && new Date(doc.expires_at) < new Date()))
+                      );
+                      const hasApprovedLicenceProof = item.tradieDocs.some(doc => doc.document_type === 'contractor_license' && isDocValid(doc));
+                      const hasApprovedInsuranceProof = item.tradieDocs.some(doc => doc.document_type === 'insurance' && isDocValid(doc));
+                      const hasApprovedLiveness = item.identityDocs.some(doc => doc.document_type === 'liveness_selfie' && isDocValid(doc));
                       const hasAbn = !!user?.abn?.trim();
                       const hasLicenceNumber = !!user?.license_number?.trim();
                       const missingWhitelistRequirements = [
-                        !hasIdentityApproval && 'Approve ID first',
-                        !hasApprovedLiveness && 'Liveness Selfie missing',
+                        !hasIdentityApproval && 'ID missing or needs recheck',
+                        !hasApprovedLiveness && 'Liveness Selfie missing or needs recheck',
                         !hasAbn && 'ABN missing',
                         !hasLicenceNumber && 'Licence number missing',
-                        !hasApprovedLicenceProof && 'Licence proof not approved',
-                        !hasApprovedInsuranceProof && 'Insurance proof not approved',
+                        !hasApprovedLicenceProof && 'Licence proof missing or needs recheck',
+                        !hasApprovedInsuranceProof && 'Insurance proof missing or needs recheck',
                       ].filter(Boolean) as string[];
                       const canWhitelist = !isAlreadyWhitelisted && missingWhitelistRequirements.length === 0;
                       const overallStatus = isAlreadyWhitelisted
@@ -1482,14 +1563,16 @@ export default function Admin() {
                               {allDocs.map((doc) => {
                                 const isDocLoading = actionLoadingId === doc.id;
                                 const isDocRejecting = rejectingId === doc.id;
+                                const isDocRechecking = recheckId === doc.id;
+                                const displayStatus = verificationDisplayStatus(doc);
                                 return (
                                   <div key={doc.id} className="rounded-xl border bg-card p-3">
                                     <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                                       <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                           <span className="text-xs font-black text-foreground">{formatDocumentType(doc.document_type)}</span>
-                                          <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${verificationStatusClass(doc.status)}`}>
-                                            {doc.status}
+                                          <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${verificationStatusClass(displayStatus)}`}>
+                                            {displayStatus}
                                           </span>
                                         </div>
                                         <p className="text-[10px] text-muted-foreground font-semibold mt-1">
@@ -1536,8 +1619,46 @@ export default function Admin() {
                                             )}
                                           </>
                                         )}
+                                        {doc.status === 'approved' && !doc.recheck_requested_at && (
+                                          <button
+                                            onClick={() => { setRecheckId(doc.id); setRecheckReason(''); setRecheckExpiry(doc.expires_at?.slice(0, 10) || ''); }}
+                                            disabled={isActionLoading}
+                                            className="bg-amber-600/10 hover:bg-amber-600/15 text-amber-700 font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
+                                          >
+                                            Request Recheck
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
+
+                                    {isDocRechecking && (
+                                      <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                                        <textarea
+                                          placeholder={`Reason for rechecking ${formatDocumentType(doc.document_type)}...`}
+                                          value={recheckReason}
+                                          onChange={(e) => setRecheckReason(e.target.value)}
+                                          rows={2}
+                                          className="flex-1 text-xs p-2 border rounded-lg bg-background outline-none font-medium text-foreground focus:border-primary/50 resize-none"
+                                        />
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                          <input
+                                            type="date"
+                                            value={recheckExpiry}
+                                            onChange={(e) => setRecheckExpiry(e.target.value)}
+                                            className="text-xs p-2 border rounded-xl bg-background text-foreground outline-none font-medium"
+                                          />
+                                          <button onClick={() => setRecheckId(null)} className="px-3 py-2 border rounded-xl text-xs font-bold text-muted-foreground hover:bg-muted">Cancel</button>
+                                          <button
+                                            onClick={() => handleRequestRecheckSubmit(doc.id)}
+                                            disabled={isDocLoading}
+                                            className="px-3 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-all inline-flex items-center gap-1 disabled:opacity-50"
+                                          >
+                                            {isDocLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                                            Submit Recheck
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
 
                                     {isDocRejecting && (
                                       <div className="mt-3 flex flex-col sm:flex-row gap-2">
