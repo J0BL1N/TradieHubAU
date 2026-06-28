@@ -129,8 +129,13 @@ export default function Home() {
   return (
     <div className="space-y-16">
       {/* Hero Section */}
-      <section className="text-center max-w-4xl mx-auto space-y-8 py-4">
-        <div className="flex justify-center">
+      <section className="text-center max-w-4xl mx-auto space-y-8 pt-6 pb-4 sm:pt-10">
+        <div className="flex flex-col items-center">
+          <img
+            src="/assets/tradiehubau-logo.png"
+            alt="TradieHubAU"
+            className="mb-4 h-auto w-[min(90vw,360px)] sm:w-[min(80vw,460px)] lg:w-[520px]"
+          />
           <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-semibold">
             <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></span>
             Australia's Trusted Tradie Network
