@@ -157,6 +157,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Admin verification | this commit | Grouped identity and tradie proof review into one tradie approval case and kept approved credential rows visible until final tradie whitelisting. |
 | In progress | Verification UI polish | this commit | Replaced applicant document-type dropdowns with explicit upload cards and converted tradie admin approval cases from a table to case review cards. |
 | In progress | Application guard | this commit | Blocked job owners from quoting/applying on their own jobs in the UI and applications insert policy. |
+| 20:31:21 | Job Location & Schedule | 7c2579d | Polish post job schedule fields: Renamed 'Region / Council Area' to 'Region', improved desktop grid columns layout to 4 columns, set preferred start date & time to datetime-local input with 15-minute increments (step=900), and updated region validation error message. |
+
 
 ### Migrations / Deployments
 
@@ -176,6 +178,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `docs/profile-trust-live-supabase-deploy.md` | Created | Provides copy-paste SQL Editor deployment instructions, full `047` SQL, verification SQL, and expected results for live repair when CLI deployment is unavailable. |
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
 | Leaked password protection | Dashboard action required | Remaining `auth_leaked_password_protection` warning must be fixed in Supabase Dashboard, not code. |
+| Post Job Polish | No migration | No database migration was added; changes are purely frontend layout, labels, and inputs. |
 
 ### Validation
 
@@ -195,6 +198,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Workspace images and simplified budget | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Structured job location fields | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Australia-wide location selector | `npm run build` passed; `git diff --check` passed with line-ending warnings only. Manual example locations were found in the generated selector dataset. |
+| Job location & schedule polish | `npm run build` passed; layout and 15-minute step input verified. |
 
 ### Remaining / Next
 
