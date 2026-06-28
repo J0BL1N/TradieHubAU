@@ -414,7 +414,7 @@ export default function Jobs() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Quote / Payment Lifecycle states
-  const [activeTab, setActiveTab] = useState<'all' | 'my_jobs'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'my_jobs' | 'completed_jobs'>('all');
   const [myJobsStatusFilter, setMyJobsStatusFilter] = useState('all');
   const [savedJobsOnly, setSavedJobsOnly] = useState(false);
   const [jobApplications, setJobApplications] = useState<any[]>([]);
@@ -554,7 +554,7 @@ export default function Jobs() {
         const { data, error: fetchErr } = await fetchJobs({ status: 'open' });
         if (fetchErr) throw fetchErr;
         setJobs(data);
-      } else if (activeTab === 'my_jobs') {
+      } else if (activeTab === 'my_jobs' || activeTab === 'completed_jobs') {
         if (!userId) {
           setJobs([]);
           setLoading(false);
@@ -564,14 +564,14 @@ export default function Jobs() {
         // 1. Fetch customer owned jobs (with their applications list)
         const { data: customerJobs, error: custErr } = await supabase
           .from('jobs')
-          .select('*, applications(id, status, tradie_id)')
+          .select('*, applications(id, status, tradie_id), payments(id, status, updated_at, payee_id, payer_id)')
           .eq('customer_id', userId);
         if (custErr) throw custErr;
 
         // 2. Fetch jobs where user has applied (with their application details)
         const { data: tradieJobs, error: tradieErr } = await supabase
           .from('jobs')
-          .select('*, applications!inner(id, status, tradie_id)')
+          .select('*, applications!inner(id, status, tradie_id), payments(id, status, updated_at, payee_id, payer_id)')
           .eq('applications.tradie_id', userId);
         if (tradieErr) throw tradieErr;
 
@@ -667,6 +667,23 @@ export default function Jobs() {
     setApplyJob(null);
     setShowSuccess(true);
   };
+
+  const getListPayment = (job: Job) => {
+    const payments = (job as any).payments;
+    if (Array.isArray(payments)) return payments[0] || null;
+    return payments || null;
+  };
+
+  const isCompletedReleasedJob = (job: Job) => {
+    const payment = getListPayment(job);
+    return job.status === 'completed' && payment?.status === 'released';
+  };
+
+  const getCompletedDate = (job: Job) => {
+    const payment = getListPayment(job);
+    return payment?.updated_at || job.updated_at || job.created_at;
+  };
+
   const openReviewModalIfEligible = useCallback(async (job: Job) => {
     if (!user || job.customer_id !== user.id) return;
     if (job.status !== 'completed') return;
@@ -689,6 +706,10 @@ export default function Jobs() {
 
   // ─── Filters ────────────────────────────────────────────────────────────────
   const filteredJobs = jobs.filter((job) => {
+    const isCompletedReleased = isCompletedReleasedJob(job);
+    if (activeTab === 'my_jobs' && isCompletedReleased) return false;
+    if (activeTab === 'completed_jobs' && !isCompletedReleased) return false;
+
     if (searchText) {
       const q = searchText.toLowerCase();
       const categoryMatch = job.categories.some((cat) => {
@@ -707,6 +728,8 @@ export default function Jobs() {
         return false;
       }
     }
+    if (activeTab === 'completed_jobs') return true;
+
     if (selectedState !== 'all' && job.state.toUpperCase() !== selectedState.toUpperCase()) return false;
     if (selectedRegion !== 'all' && (!job.region || job.region.toLowerCase() !== selectedRegion.toLowerCase())) return false;
     if (selectedSuburb !== 'all' && (!job.suburb || job.suburb.toLowerCase() !== selectedSuburb.toLowerCase())) return false;
@@ -769,6 +792,9 @@ export default function Jobs() {
   };
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
+    if (activeTab === 'completed_jobs') {
+      return new Date(getCompletedDate(b)).getTime() - new Date(getCompletedDate(a)).getTime();
+    }
     if (activeTab === 'my_jobs' && user) {
       const prioA = getSortPriority(a, user.id);
       const prioB = getSortPriority(b, user.id);
@@ -864,7 +890,6 @@ export default function Jobs() {
             <option value="contract_active">Payment Funded — Contract Active</option>
             <option value="completion_review">Under Review</option>
             <option value="disputed">Disputed</option>
-            <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
@@ -1072,45 +1097,55 @@ export default function Jobs() {
         >
           My Jobs
         </button>
+        <button
+          onClick={() => setActiveTab('completed_jobs')}
+          className={`pb-3 transition-colors border-b-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-md ${activeTab === 'completed_jobs' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+        >
+          Completed Jobs
+        </button>
       </div>
 
       {/* Stats Counter Bar */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 bg-gradient-to-tr from-primary/95 to-amber-700 text-primary-foreground rounded-2xl flex items-center justify-between shadow-md">
-          <div className="space-y-1">
-            <h3 className="text-3xl font-extrabold">{activeCount}</h3>
-            <p className="text-xs font-semibold text-primary-foreground/85 uppercase tracking-wider">Active Jobs</p>
+      {activeTab !== 'completed_jobs' && (
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-gradient-to-tr from-primary/95 to-amber-700 text-primary-foreground rounded-2xl flex items-center justify-between shadow-md">
+            <div className="space-y-1">
+              <h3 className="text-3xl font-extrabold">{activeCount}</h3>
+              <p className="text-xs font-semibold text-primary-foreground/85 uppercase tracking-wider">Active Jobs</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
+              <Briefcase className="h-6 w-6 text-accent" />
+            </div>
           </div>
-          <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
-            <Briefcase className="h-6 w-6 text-accent" />
+          <div className="p-6 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="space-y-1">
+              <h3 className="text-3xl font-extrabold text-foreground">${totalValue.toLocaleString()}</h3>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Job Value</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <DollarSign className="h-6 w-6" />
+            </div>
           </div>
-        </div>
-        <div className="p-6 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <h3 className="text-3xl font-extrabold text-foreground">${totalValue.toLocaleString()}</h3>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Job Value</p>
+          <div className="p-6 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
+            <div className="space-y-1">
+              <h3 className="text-3xl font-extrabold text-foreground">{urgentCount}</h3>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Urgent Requests</p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
           </div>
-          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <DollarSign className="h-6 w-6" />
-          </div>
-        </div>
-        <div className="p-6 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
-          <div className="space-y-1">
-            <h3 className="text-3xl font-extrabold text-foreground">{urgentCount}</h3>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Urgent Requests</p>
-          </div>
-          <div className="h-12 w-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
-            <AlertTriangle className="h-6 w-6" />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Filter + Content Layout */}
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* Sidebar — Desktop */}
-        <aside className="hidden lg:block w-1/4 bg-card border p-6 rounded-2xl sticky top-24">
-          <SidebarFilters />
-        </aside>
+        {activeTab !== 'completed_jobs' && (
+          <aside className="hidden lg:block w-1/4 bg-card border p-6 rounded-2xl sticky top-24">
+            <SidebarFilters />
+          </aside>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 w-full space-y-6">
@@ -1120,11 +1155,25 @@ export default function Jobs() {
               <span className="font-extrabold text-foreground">{sortedJobs.length}</span>
               <span className="text-sm text-muted-foreground font-semibold">jobs found</span>
             </div>
+            {activeTab === 'completed_jobs' && (
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search completed jobs..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border rounded-xl bg-background outline-none text-sm focus:border-primary/50 transition-all font-medium"
+                />
+              </div>
+            )}
             <div className="flex items-center gap-2">
-              <button onClick={() => setMobileFiltersOpen(true)}
-                className="lg:hidden p-2 border rounded-xl hover:bg-muted text-muted-foreground flex items-center gap-1.5 text-xs font-bold">
-                <SlidersHorizontal className="h-4 w-4" /> Filters
-              </button>
+              {activeTab !== 'completed_jobs' && (
+                <button onClick={() => setMobileFiltersOpen(true)}
+                  className="lg:hidden p-2 border rounded-xl hover:bg-muted text-muted-foreground flex items-center gap-1.5 text-xs font-bold">
+                  <SlidersHorizontal className="h-4 w-4" /> Filters
+                </button>
+              )}
               {activeTab === 'all' && (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-foreground/75 whitespace-nowrap">Sort by:</span>
@@ -1163,10 +1212,10 @@ export default function Jobs() {
           )}
 
           {/* Loading / Error / Empty / Guest My Jobs */}
-          {activeTab === 'my_jobs' && !user ? (
+          {(activeTab === 'my_jobs' || activeTab === 'completed_jobs') && !user ? (
             <div className="p-12 bg-card border rounded-2xl text-center space-y-4 max-w-md mx-auto w-full">
               <Lock className="h-12 w-12 text-primary mx-auto" />
-              <h3 className="text-xl font-bold text-foreground">Sign in to view My Jobs</h3>
+              <h3 className="text-xl font-bold text-foreground">Sign in to view {activeTab === 'completed_jobs' ? 'Completed Jobs' : 'My Jobs'}</h3>
               <p className="text-sm text-foreground/75 leading-relaxed">
                 Track your posted jobs, active quotes, variations, and payouts by signing in to your account.
               </p>
@@ -1191,13 +1240,19 @@ export default function Jobs() {
           ) : sortedJobs.length === 0 ? (
             <div className="p-12 bg-card border rounded-2xl text-center space-y-4">
               <Briefcase className="h-12 w-12 text-muted-foreground/30 mx-auto" />
-              <h3 className="text-xl font-bold text-foreground">No jobs matching filters</h3>
+              <h3 className="text-xl font-bold text-foreground">
+                {activeTab === 'completed_jobs' ? 'No completed jobs yet' : 'No jobs matching filters'}
+              </h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                Try modifying your trade category, selecting a different state, or clearing filters.
+                {activeTab === 'completed_jobs'
+                  ? 'Completed jobs will appear here after work is approved and payment is released.'
+                  : 'Try modifying your trade category, selecting a different state, or clearing filters.'}
               </p>
-              <button onClick={clearAllFilters} className="bg-primary text-primary-foreground font-semibold px-5 py-2.5 rounded-xl text-sm shadow-md hover:bg-primary/95">
-                Clear All Filters
-              </button>
+              {activeTab !== 'completed_jobs' && (
+                <button onClick={clearAllFilters} className="bg-primary text-primary-foreground font-semibold px-5 py-2.5 rounded-xl text-sm shadow-md hover:bg-primary/95">
+                  Clear All Filters
+                </button>
+              )}
             </div>
           ) : (
             /* Job Listings */
@@ -1206,13 +1261,15 @@ export default function Jobs() {
                 const isSaved = savedJobIds.has(job.id);
                 const isSaving = savingId === job.id;
                 const hasApplied = myApplications.has(job.id) && myApplications.get(job.id)?.status !== 'withdrawn';
+                const isCompactCard = activeTab !== 'all';
+                const completedAt = getCompletedDate(job);
 
                 return (
                   <div
                     key={job.id}
-                    className="p-6 bg-card border border-border rounded-2xl hover:shadow-md transition-all flex flex-col md:flex-row md:items-start justify-between gap-6"
+                    className={`${isCompactCard ? 'p-4 gap-4' : 'p-6 gap-6'} bg-card border border-border rounded-2xl hover:shadow-md transition-all flex flex-col md:flex-row md:items-start justify-between`}
                   >
-                    <div className="space-y-4 flex-grow min-w-0">
+                    <div className={`${isCompactCard ? 'space-y-2.5' : 'space-y-4'} flex-grow min-w-0`}>
                       {/* Category + Urgency badges */}
                       <div className="flex flex-wrap items-center gap-2">
                         {job.categories.map((cat) => (
@@ -1268,20 +1325,25 @@ export default function Jobs() {
                       <div className="space-y-1">
                         <h3
                           onClick={() => setSelectedJob(job)}
-                          className="text-xl font-extrabold text-foreground hover:text-primary cursor-pointer transition-colors leading-snug truncate"
+                          className={`${isCompactCard ? 'text-base' : 'text-xl'} font-extrabold text-foreground hover:text-primary cursor-pointer transition-colors leading-snug truncate`}
                         >
                           {job.title}
                         </h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{job.description}</p>
+                        {activeTab !== 'completed_jobs' && (
+                          <p className={`${isCompactCard ? 'text-xs line-clamp-1' : 'text-sm line-clamp-2'} text-muted-foreground leading-relaxed`}>{job.description}</p>
+                        )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground font-semibold border-t pt-4">
+                      <div className={`${isCompactCard ? 'gap-x-4 gap-y-1.5 border-t pt-2.5' : 'gap-x-6 gap-y-2 border-t pt-4'} flex flex-wrap items-center text-xs text-muted-foreground font-semibold`}>
                         <span className="flex items-center"><MapPin className="mr-1.5 h-3.5 w-3.5" />{getPublicJobLocation(job)}</span>
                         <span className="flex items-center"><DollarSign className="mr-1.5 h-3.5 w-3.5" />{formatBudget(job)}</span>
                         {job.workspace_image_count > 0 && (
                           <span className="flex items-center"><ImageIcon className="mr-1.5 h-3.5 w-3.5" />Photos attached</span>
                         )}
                         <span className="flex items-center"><Clock className="mr-1.5 h-3.5 w-3.5" />{formatDate(job.created_at)}</span>
+                        {activeTab === 'completed_jobs' && (
+                          <span className="flex items-center"><CheckCircle className="mr-1.5 h-3.5 w-3.5" />Completed {new Date(completedAt).toLocaleDateString()}</span>
+                        )}
                         {job.customer?.display_name && (
                           <span className="flex items-center"><User className="mr-1.5 h-3.5 w-3.5" />By {job.customer.display_name}</span>
                         )}
@@ -1289,7 +1351,7 @@ export default function Jobs() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="shrink-0 flex flex-row md:flex-col items-center gap-2 md:self-center">
+                    <div className={`shrink-0 flex flex-row ${isCompactCard ? 'md:flex-row md:self-start flex-wrap justify-end' : 'md:flex-col md:self-center'} items-center gap-2`}>
                       {/* Save button */}
                       <button
                         onClick={(e) => {
@@ -1302,7 +1364,7 @@ export default function Jobs() {
                         }}
                         disabled={isSaving}
                         title={isSaved ? 'Unsave job' : 'Save job'}
-                        className={`p-2.5 rounded-xl border transition-all ${
+                        className={`${isCompactCard ? 'p-2' : 'p-2.5'} rounded-xl border transition-all ${
                           isSaved
                             ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
                             : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -1319,15 +1381,15 @@ export default function Jobs() {
 
                       <button
                         onClick={() => setSelectedJob(job)}
-                        className="bg-secondary text-secondary-foreground text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all whitespace-nowrap"
+                        className={`${isCompactCard ? 'text-xs px-3 py-2' : 'text-sm px-4 py-2.5'} bg-secondary text-secondary-foreground font-bold rounded-xl hover:bg-secondary/80 transition-all whitespace-nowrap`}
                       >
                         Details
                       </button>
 
-                      {activeTab === 'my_jobs' && canMessageJob(job) && (
+                      {activeTab !== 'all' && canMessageJob(job) && (
                         <Link
                           to={`/messages?job=${job.id}`}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10 whitespace-nowrap"
+                          className={`${isCompactCard ? 'text-xs px-3 py-2' : 'text-sm px-4 py-2.5'} inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 font-bold text-primary transition-colors hover:bg-primary/10 whitespace-nowrap`}
                         >
                           <MessageSquare className="h-4 w-4" /> Message
                         </Link>
@@ -1513,7 +1575,7 @@ export default function Jobs() {
       </div>
 
       {/* Mobile Filters Drawer */}
-      {mobileFiltersOpen && (
+      {mobileFiltersOpen && activeTab !== 'completed_jobs' && (
         <div className="fixed inset-0 z-50 lg:hidden bg-background/95 backdrop-blur-md pt-20 px-6 overflow-y-auto pb-8 space-y-6">
           <div className="flex items-center justify-between border-b pb-4">
             <h3 className="font-extrabold text-xl text-foreground flex items-center gap-2">
