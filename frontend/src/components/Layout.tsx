@@ -47,17 +47,6 @@ export default function Layout() {
             {/* Desktop Middle Navigation */}
             <nav className="hidden md:flex items-center gap-6">
               <NavLink
-                to="/how-it-works"
-                className={({ isActive }) =>
-                  `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  }`
-                }
-              >
-                How It Works
-              </NavLink>
-
-              <NavLink
                 to="/jobs"
                 className={({ isActive }) =>
                   `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
@@ -99,6 +88,16 @@ export default function Layout() {
 
           {/* Right Action & Account Area */}
           <div className="flex items-center gap-4">
+            <NavLink
+              to="/how-it-works"
+              className={({ isActive }) =>
+                `hidden md:inline-flex text-sm font-semibold hover:text-primary transition-colors items-center gap-1.5 ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                }`
+              }
+            >
+              How It Works
+            </NavLink>
             
             {/* Primary Action Button */}
             <Link
