@@ -68,16 +68,12 @@ export default function Home() {
     <div className="space-y-16">
       {/* Hero Section */}
       <section className="text-center max-w-4xl mx-auto space-y-8 pt-8 pb-4 sm:pt-12">
-        <div className="flex flex-col items-center">
+        <div className="flex justify-center">
           <img
             src="/assets/tradiehubau-logo.png"
             alt="TradieHubAU"
-            className="mb-4 h-auto w-[min(92vw,420px)] sm:w-[min(92vw,620px)] lg:w-[min(92vw,760px)]"
+            className="h-auto w-[min(92vw,420px)] sm:w-[min(92vw,620px)] lg:w-[min(92vw,760px)]"
           />
-          <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-semibold">
-            <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></span>
-            Australia's Trusted Tradie Network
-          </span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight text-foreground">
@@ -86,6 +82,13 @@ export default function Home() {
             you can actually trust
           </span>
         </h1>
+
+        <div className="flex justify-center">
+          <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-semibold">
+            <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></span>
+            Australia's Trusted Tradie Network
+          </span>
+        </div>
 
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
           Connect with verified professionals for any job. Post for free, get quotes, and hire with confidence.
