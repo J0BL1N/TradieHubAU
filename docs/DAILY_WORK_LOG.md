@@ -169,6 +169,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 20:50:00 | Tradie Directory Access | this commit | Restored public tradie directory access by resetting public.public_profiles to security definer mode (security_invoker = false), enabling guests and customers to view safe sanitized profiles. |
 | 00:20:00 | Website Analytics Foundation | this commit | Implemented website analytics foundation for admin users. Created get_admin_analytics RPC, added tab-switching logic to Admin.tsx, and displayed Marketplace Snapshot, Job Funnel, and Beta Activity indicators with All-time/30-day/7-day windows. |
 | 00:30:00 | Admin Analytics Polish | this commit | Polished admin marketplace analytics with 30s silent background auto-refresh interval, a Last Updated timestamp, a manual Refresh button, live activity strip (pulsating indicator), Donut charts for breakdown data (User breakdown, Job Status, and Verification status), and a sorted Category horizontal bar chart. |
+| 00:40:00 | Invoicing Foundation | this commit | Added safe invoicing foundation based on real completed/released platform jobs and payments. Created job_invoices table, select RLS policies, automatic trigger-based invoice generation on payment release, idempotent numbering, existing job backfills, invoices.ts helper, "View Receipt" (customer) & "View Payout Statement" (tradie) buttons on Jobs.tsx, interactive modal preview, and print stylesheets. |
+
 
 
 
@@ -200,6 +202,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `059_real_job_reviews.sql` | Created | Hardens review eligibility to the original customer reviewing the contracted tradie only after job `completed`, payment `released`, and no open dispute; adds safe public review/detail and summary RPCs. Live Supabase must run this migration before the review UI/RPCs work. |
 | `060_admin_analytics_rpc.sql` | Created | Adds public.get_admin_analytics RPC, checking admin role and compiling aggregate marketplace snapshot, job funnel, and beta activity metrics. |
 | `061_admin_analytics_polish.sql` | Created | Extends public.get_admin_analytics RPC to support active user counters, today's logs, and user, job, verification, and category breakdowns. |
+| `062_invoicing_foundation.sql` | Created | Creates job_invoices table, RLS, trigger-based invoice generation on payments release, idempotent number generation, and idempotent backfills. |
+
 
 
 
@@ -228,6 +232,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Completed work portfolio | `npm run build` passed; verified real completed platform job visibility toggles and safe public directory details. |
 | Website analytics foundation | `npm run build` passed. Verified aggregate statistics generation, time-window support, and tab-selector interface. |
 | Website analytics polish | `npm run build` passed. Verified aggregate statistics generation, 30s background refresh, manual refresh, and visual SVG donut/bar breakdowns. |
+| Invoicing foundation | `npm run build` passed. Verified automatic trigger-based generation, customer/tradie RLS SELECT security checks, modal document preview, and custom `@media print` layout formatting. |
+
 
 
 

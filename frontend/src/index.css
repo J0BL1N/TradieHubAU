@@ -141,9 +141,32 @@
   object-fit: contain;
 }
 
-/* Form options styling */
 select option {
   background-color: hsl(var(--card));
   color: hsl(var(--foreground));
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-target-invoice, #print-target-invoice * {
+    visibility: visible;
+  }
+  #print-target-invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
 }
 

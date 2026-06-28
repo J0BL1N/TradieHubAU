@@ -20,6 +20,7 @@ import {
   getLedgerForPayment, simulateVariationFunding
 } from '../lib/payments';
 import { supabase } from '../lib/supabase';
+import { fetchInvoiceDetailsByJob } from '../lib/invoices';
 import {
   getRegionsForState,
   getSuburbsForRegion,
@@ -339,6 +340,27 @@ export default function Jobs() {
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [savingId, setSavingId] = useState<string | null>(null);
 
+  // Invoicing state
+  const [activeInvoice, setActiveInvoice] = useState<any>(null);
+  const [invoiceModalLoading, setInvoiceModalLoading] = useState(false);
+
+  const handleOpenInvoice = async (jobId: string) => {
+    setInvoiceModalLoading(true);
+    try {
+      const { data, error: err } = await fetchInvoiceDetailsByJob(jobId);
+      if (err) throw err;
+      if (data && data.length > 0) {
+        setActiveInvoice(data[0]);
+      } else {
+        showToast("Invoice/receipt not found or you are not authorized to view it.", 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || "Failed to fetch invoice details.", 'error');
+    } finally {
+      setInvoiceModalLoading(false);
+    }
+  };
+
   // Applications: map of job_id → Application (for jobs the user has applied to)
   const [myApplications, setMyApplications] = useState<Map<string, Application>>(new Map());
 
@@ -355,7 +377,7 @@ export default function Jobs() {
 
   // Prevent body scroll when details or other modals are open
   useEffect(() => {
-    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob) {
+    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob || activeInvoice) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -363,7 +385,7 @@ export default function Jobs() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob]);
+  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob, activeInvoice]);
 
   // Escape key close for details modal
   useEffect(() => {
@@ -1075,6 +1097,142 @@ export default function Jobs() {
         />
       )}
 
+      {activeInvoice && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 print:bg-white">
+          <div id="print-target-invoice" className="bg-card border border-border w-full max-w-2xl rounded-3xl shadow-2xl p-8 space-y-6 animate-in fade-in zoom-in-95 duration-150 print:border-none print:shadow-none print:p-0">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 border-b pb-4 print:hidden">
+              <div>
+                <h3 className="text-xl font-black text-foreground">
+                  {activeInvoice.invoice_type === 'customer_receipt' ? 'Customer Receipt' : 'Payout Statement'}
+                </h3>
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Invoice Number: {activeInvoice.invoice_number}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveInvoice(null)}
+                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Invoice Document Body */}
+            <div className="space-y-6 text-sm font-semibold text-muted-foreground">
+              {/* Branding and Invoice Info */}
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black text-primary tracking-tight">TradieHubAU</h2>
+                  <p className="text-xs font-bold text-muted-foreground">Quality Aussie Trade Marketplace</p>
+                </div>
+                <div className="text-right space-y-0.5">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Document Number</p>
+                  <p className="text-sm font-black text-foreground">{activeInvoice.invoice_number}</p>
+                  <p className="text-[10px] text-muted-foreground">Issued: {new Date(activeInvoice.issued_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <hr className="border-border" />
+
+              {/* Parties */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Customer (Payer)</span>
+                  <p className="text-sm font-black text-foreground">{activeInvoice.payer_name}</p>
+                  <p className="text-xs">Location: {[activeInvoice.job_suburb, activeInvoice.job_state].filter(Boolean).join(', ')}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Contractor (Payee)</span>
+                  <p className="text-sm font-black text-foreground">{activeInvoice.payee_name}</p>
+                  <p className="text-xs">Location: {[activeInvoice.job_suburb, activeInvoice.job_state].filter(Boolean).join(', ')}</p>
+                </div>
+              </div>
+
+              <hr className="border-border" />
+
+              {/* Job Details Table */}
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Job Details</span>
+                <div className="border rounded-2xl overflow-hidden bg-muted/5">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-muted/10 border-b">
+                        <th className="p-3 font-bold text-muted-foreground">Description</th>
+                        <th className="p-3 font-bold text-muted-foreground text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b">
+                        <td className="p-3">
+                          <p className="font-bold text-foreground">{activeInvoice.job_title}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Category: {activeInvoice.job_categories?.join(', ')}
+                          </p>
+                        </td>
+                        <td className="p-3 text-right font-bold text-foreground font-mono">
+                          ${(activeInvoice.amount_cents / 100).toFixed(2)} AUD
+                        </td>
+                      </tr>
+
+                      {/* Fees / Payout Breakdowns */}
+                      {activeInvoice.invoice_type === 'tradie_payout_statement' ? (
+                        <>
+                          <tr className="border-b bg-muted/5 font-mono">
+                            <td className="p-3 text-right text-muted-foreground font-sans">Platform Fee:</td>
+                            <td className="p-3 text-right text-red-500 font-bold">
+                              -${(activeInvoice.platform_fee_cents / 100).toFixed(2)} AUD
+                            </td>
+                          </tr>
+                          <tr className="bg-primary/5 font-black text-primary font-mono">
+                            <td className="p-3 text-right uppercase font-sans">Net Payout:</td>
+                            <td className="p-3 text-right text-sm">
+                              ${(activeInvoice.payout_amount_cents / 100).toFixed(2)} AUD
+                            </td>
+                          </tr>
+                        </>
+                      ) : (
+                        <tr className="bg-primary/5 font-black text-primary font-mono">
+                          <td className="p-3 text-right uppercase font-sans">Total Paid:</td>
+                          <td className="p-3 text-right text-sm">
+                            ${(activeInvoice.amount_cents / 100).toFixed(2)} AUD
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Footer text */}
+              <div className="space-y-1.5 text-center text-[10px] text-muted-foreground pt-4 border-t">
+                <p>Status: Released / Completed</p>
+                <p className="italic">GST/tax invoice support pending accountant review. This document is a payment receipt record only.</p>
+                <p>© 2026 TradieHubAU. Protected payment Escrow System.</p>
+              </div>
+            </div>
+
+            {/* Print and Close controls */}
+            <div className="flex justify-end gap-3 pt-4 border-t print:hidden">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center justify-center gap-1.5 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 text-xs transition"
+              >
+                Print Document
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveInvoice(null)}
+                className="bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 text-xs transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight">Active Jobs Board</h1>
@@ -1495,12 +1653,23 @@ export default function Jobs() {
                               }
                               if (job.status === 'completed') {
                                 return (
-                                  <button
-                                    onClick={() => setTradieReviewModalJob(job)}
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-nowrap"
-                                  >
-                                    Leave Review
-                                  </button>
+                                  <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto">
+                                    <button
+                                      disabled={invoiceModalLoading}
+                                      onClick={() => setTradieReviewModalJob(job)}
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-nowrap w-full text-center disabled:opacity-50"
+                                    >
+                                      Leave Review
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={invoiceModalLoading}
+                                      onClick={() => handleOpenInvoice(job.id)}
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-nowrap w-full text-center disabled:opacity-50"
+                                    >
+                                      {invoiceModalLoading ? 'Loading...' : 'View Receipt'}
+                                    </button>
+                                  </div>
                                 );
                               }
                             } else {
@@ -1538,10 +1707,12 @@ export default function Jobs() {
                                 if (job.status === 'completed') {
                                   return (
                                     <button
-                                      disabled
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-emerald-600 text-white cursor-default whitespace-nowrap"
+                                      type="button"
+                                      disabled={invoiceModalLoading}
+                                      onClick={() => handleOpenInvoice(job.id)}
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-50"
                                     >
-                                      Completed
+                                      {invoiceModalLoading ? 'Loading...' : 'View Payout Statement'}
                                     </button>
                                   );
                                 }

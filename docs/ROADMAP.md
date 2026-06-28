@@ -404,17 +404,17 @@ Cloudflare/private beta deployment remains deferred until after v0.0.18 manual m
 
 # v0.0.19 — Invoicing Foundation
 
-Status: **Planned.** This is a local MVP invoicing foundation only. It does not approve real tax advice, accountant exports, GST-final logic, or real payment-provider settlement.
+Status: **Implementation complete / awaiting manual review.** This is a local MVP invoicing foundation only. It does not approve real tax advice, accountant exports, GST-final logic, or real payment-provider settlement.
 
-* [ ] Add job-linked invoices.
-* [ ] Add invoice line items.
-* [ ] Add invoice statuses: draft, issued, paid, cancelled, void.
-* [ ] Define customer visibility for invoices tied to their jobs.
-* [ ] Define tradie visibility for invoices tied to their accepted/completed work.
-* [ ] Define admin visibility for invoice review and support.
-* [ ] Link invoices to protected payment records where a simulated payment exists.
-* [ ] Keep invoice state changes audit-friendly and anchored to the job/payment lifecycle.
-* [ ] Defer real tax invoice requirements, accountant exports, GST-final logic, BAS reporting, and payment-provider reconciliation to v0.3.x Finance/GST work unless separately approved.
+* [x] Add job-linked invoices.
+* [x] Add invoice line items.
+* [x] Add invoice statuses: draft, issued, paid, cancelled, void.
+* [x] Define customer visibility for invoices tied to their jobs.
+* [x] Define tradie visibility for invoices tied to their accepted/completed work.
+* [x] Define admin visibility for invoice review and support.
+* [x] Link invoices to protected payment records where a simulated payment exists.
+* [x] Keep invoice state changes audit-friendly and anchored to the job/payment lifecycle.
+* [x] Defer real tax invoice requirements, accountant exports, GST-final logic, BAS reporting, and payment-provider reconciliation to v0.3.x Finance/GST work unless separately approved.
 
 ---
 
