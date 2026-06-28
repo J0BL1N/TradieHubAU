@@ -126,3 +126,17 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/25 rounded-full hover:bg-muted-foreground/45 transition-colors;
 }
+
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-logo-img {
+  display: block;
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
