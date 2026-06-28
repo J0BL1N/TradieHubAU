@@ -20,6 +20,13 @@ import {
   getLedgerForPayment, simulateVariationFunding
 } from '../lib/payments';
 import { supabase } from '../lib/supabase';
+import {
+  getRegionsForState,
+  getSuburbsForRegion,
+  loadAustralianLocations,
+  formatSuburbOption
+} from '../lib/auLocations';
+import type { AustralianLocationOption } from '../lib/auLocations';
 
 // ─── Application Modal ────────────────────────────────────────────────────────
 
@@ -366,6 +373,33 @@ export default function Jobs() {
   // Filter States
   const [searchText, setSearchText] = useState('');
   const [selectedState, setSelectedState] = useState('all');
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [selectedSuburb, setSelectedSuburb] = useState('all');
+  const [locationOptions, setLocationOptions] = useState<AustralianLocationOption[]>([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLocationLoading(true);
+    loadAustralianLocations()
+      .then(dataset => {
+        if (cancelled) return;
+        setLocationOptions(dataset.entries);
+      })
+      .catch(error => {
+        console.error('Failed to load Australian locations:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLocationLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const regionOptions = selectedState !== 'all' ? getRegionsForState(locationOptions, selectedState) : [];
+  const suburbOptions = selectedState !== 'all' && selectedRegion !== 'all' ? getSuburbsForRegion(locationOptions, selectedState, selectedRegion) : [];
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [budgetRange, setBudgetRange] = useState('any');
   const [selectedUrgencies, setSelectedUrgencies] = useState<string[]>([]);
@@ -649,6 +683,8 @@ export default function Jobs() {
       }
     }
     if (selectedState !== 'all' && job.state.toUpperCase() !== selectedState.toUpperCase()) return false;
+    if (selectedRegion !== 'all' && (!job.region || job.region.toLowerCase() !== selectedRegion.toLowerCase())) return false;
+    if (selectedSuburb !== 'all' && (!job.suburb || job.suburb.toLowerCase() !== selectedSuburb.toLowerCase())) return false;
     if (selectedCategories.length > 0 && !job.categories.some((cat) => selectedCategories.includes(cat))) return false;
     if (selectedUrgencies.length > 0 && (!job.urgency || !selectedUrgencies.includes(job.urgency))) return false;
     if (selectedTypes.length > 0 && (!job.type || !selectedTypes.includes(job.type))) return false;
@@ -742,7 +778,8 @@ export default function Jobs() {
   const toggleUrgency = (id: string) => setSelectedUrgencies((p) => p.includes(id) ? p.filter((u) => u !== id) : [...p, id]);
   const toggleType = (id: string) => setSelectedTypes((p) => p.includes(id) ? p.filter((t) => t !== id) : [...p, id]);
   const clearAllFilters = () => {
-    setSearchText(''); setSelectedState('all'); setSelectedCategories([]);
+    setSearchText(''); setSelectedState('all'); setSelectedRegion('all'); setSelectedSuburb('all');
+    setSelectedCategories([]);
     setBudgetRange('any'); setSelectedUrgencies([]); setSelectedTypes([]); setSortBy('recent');
     setMyJobsStatusFilter('all');
     setSavedJobsOnly(false);
@@ -819,11 +856,54 @@ export default function Jobs() {
         </div>
       )}
       <div className="space-y-2">
-        <label className="text-xs font-bold text-foreground uppercase tracking-wider">State</label>
-        <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)}
-          className="w-full px-3 py-2 border rounded-xl bg-background outline-none text-sm focus:border-primary/50 transition-all font-medium">
+        <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
+        <select
+          value={selectedState}
+          onChange={(e) => {
+            const nextState = e.target.value;
+            setSelectedState(nextState);
+            setSelectedRegion('all');
+            setSelectedSuburb('all');
+          }}
+          className="w-full px-3 py-2 border rounded-xl bg-background outline-none text-sm focus:border-primary/50 transition-all font-medium cursor-pointer"
+        >
           <option value="all">All Australia</option>
-          {['NSW','VIC','QLD','WA','SA','TAS','ACT','NT'].map((s) => <option key={s} value={s}>{s}</option>)}
+          {['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'].map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-foreground uppercase tracking-wider">Region</label>
+        <select
+          value={selectedRegion}
+          onChange={(e) => {
+            setSelectedRegion(e.target.value);
+            setSelectedSuburb('all');
+          }}
+          disabled={selectedState === 'all' || locationLoading}
+          className="w-full px-3 py-2 border rounded-xl bg-background outline-none text-sm focus:border-primary/50 transition-all font-medium cursor-pointer disabled:opacity-60"
+        >
+          <option value="all">{selectedState !== 'all' ? 'All Regions' : 'Select state first'}</option>
+          {regionOptions.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
+        <select
+          value={selectedSuburb}
+          onChange={(e) => setSelectedSuburb(e.target.value)}
+          disabled={selectedRegion === 'all' || locationLoading}
+          className="w-full px-3 py-2 border rounded-xl bg-background outline-none text-sm focus:border-primary/50 transition-all font-medium cursor-pointer disabled:opacity-60"
+        >
+          <option value="all">{selectedRegion !== 'all' ? 'All Suburbs' : 'Select region first'}</option>
+          {suburbOptions.map((sub) => (
+            <option key={`${sub.suburb}-${sub.postcode}`} value={sub.suburb}>
+              {formatSuburbOption(sub)}
+            </option>
+          ))}
         </select>
       </div>
       <div className="space-y-2">

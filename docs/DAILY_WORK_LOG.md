@@ -158,6 +158,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Verification UI polish | this commit | Replaced applicant document-type dropdowns with explicit upload cards and converted tradie admin approval cases from a table to case review cards. |
 | In progress | Application guard | this commit | Blocked job owners from quoting/applying on their own jobs in the UI and applications insert policy. |
 | 20:31:21 | Job Location & Schedule | 7c2579d | Polish post job schedule fields: Renamed 'Region / Council Area' to 'Region', improved desktop grid columns layout to 4 columns, set preferred start date & time to datetime-local input with 15-minute increments (step=900), and updated region validation error message. |
+| 20:38:00 | Location Filters | this commit | Updated browse/search location filters in Jobs.tsx to support State, Region, and Suburb cascading selects. Deferred Browse Tradies due to lacking reliable region/suburb profile fields. |
+
 
 
 ### Migrations / Deployments
@@ -179,6 +181,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
 | Leaked password protection | Dashboard action required | Remaining `auth_leaked_password_protection` warning must be fixed in Supabase Dashboard, not code. |
 | Post Job Polish | No migration | No database migration was added; changes are purely frontend layout, labels, and inputs. |
+| Browse Location Filters | No migration | No database migration was added; filtering is executed on the client side using in-memory dataset search. |
 
 ### Validation
 
@@ -199,6 +202,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Structured job location fields | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Australia-wide location selector | `npm run build` passed; `git diff --check` passed with line-ending warnings only. Manual example locations were found in the generated selector dataset. |
 | Job location & schedule polish | `npm run build` passed; layout and 15-minute step input verified. |
+| Structured location browse filters | `npm run build` passed. Cascading dropdown behavior and filtering on state/region/suburb verified on client side. Deferred Browse Tradies (documented limitation). |
 
 ### Remaining / Next
 
