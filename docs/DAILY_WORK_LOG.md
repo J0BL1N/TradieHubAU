@@ -146,7 +146,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 02:02:02 | Supabase security | `6b707b1` | Added pass 2 audit doc classifying remaining `SECURITY DEFINER` RPC Advisor warnings. |
 | 02:31:06 | Profile trust | `8234397` | Added profile trust foundation: avatar upload, public tradie fields, previous work portfolio, safe public tradie route, real reviews, and opt-in completed work gallery foundation. |
 | 02:48:18 | Profile trust | `d1bca28` | Added public completion proof publishing for eligible completed/released job proof images with public-safe metadata and profile gallery controls. |
-| In progress | Profile trust hotfix | this commit | Added idempotent live schema/storage repair migration for profile media, portfolio items, public profile fields, and completion proof gallery RPCs. |
+| 03:15:43 | Profile trust hotfix | `3e888ea` | Added idempotent live schema/storage repair migration for profile media, portfolio items, public profile fields, and completion proof gallery RPCs. |
+| In progress | Profile trust deploy | this commit | Added copy-paste Supabase SQL Editor deployment pack for the live profile trust repair migration and verification checks. |
 
 ### Migrations / Deployments
 
@@ -156,6 +157,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `045_profile_trust_foundation.sql` | Created | Adds public-safe tradie profile fields, portfolio table/RLS, avatar and portfolio storage buckets/policies, and default-private public completion proof gallery flag. |
 | `046_public_completion_proof_publishing.sql` | Created | Adds public-safe completion proof gallery metadata, owner-only publish/unpublish RPCs, eligible-proof listing, and tighter public proof/portfolio storage policies. |
 | `047_repair_profile_trust_live_schema.sql` | Created | Idempotently repairs missing live profile trust columns, public profile view fields, portfolio table/RLS, storage buckets/policies, and gallery RPC aliases after partial 045/046 application. |
+| `docs/profile-trust-live-supabase-deploy.md` | Created | Provides copy-paste SQL Editor deployment instructions, full `047` SQL, verification SQL, and expected results for live repair when CLI deployment is unavailable. |
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
 | Leaked password protection | Dashboard action required | Remaining `auth_leaked_password_protection` warning must be fixed in Supabase Dashboard, not code. |
 
@@ -171,6 +173,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Profile trust foundation | `npm run build` passed. SQL validation pending local tooling availability. |
 | Public completion proof publishing | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 | Profile trust live schema hotfix | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
+| Profile trust SQL deployment pack | Embedded SQL matched `047_repair_profile_trust_live_schema.sql`; `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 
 ### Remaining / Next
 
