@@ -37,6 +37,7 @@ interface DisplayJob {
   location: string;
   suburb: string | null;
   state: string | null;
+  region: string | null;
   status: string;
   categories: string[];
 }
@@ -277,7 +278,7 @@ export default function Profile() {
         // Customer active and past posted jobs
         const { data: customerJobs, error: jobsErr } = await supabase
           .from('jobs')
-          .select('id, title, location, suburb, state, status, categories')
+          .select('id, title, location, suburb, state, region, status, categories')
           .eq('customer_id', targetId);
 
         if (!jobsErr && customerJobs) {
@@ -293,7 +294,7 @@ export default function Profile() {
           .from('applications')
           .select(`
             status,
-            job:jobs(id, title, location, suburb, state, status, categories)
+            job:jobs(id, title, location, suburb, state, region, status, categories)
           `)
           .eq('tradie_id', targetId)
           .eq('status', 'accepted');

@@ -21,6 +21,7 @@ export interface Job {
   location: string;
   suburb: string | null;
   state: string;
+  region: string | null;
   postcode: string | null;
   location_label: string | null;
   budget_min: number | null;

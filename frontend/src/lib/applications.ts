@@ -97,7 +97,7 @@ export async function withdrawApplication(applicationId: string) {
 export async function getMyApplications() {
   const { data, error } = await supabase
     .from('applications')
-    .select('*, job:jobs(id, title, location, suburb, state, status)')
+    .select('*, job:jobs(id, title, location, suburb, state, region, status)')
     .order('created_at', { ascending: false });
 
   return { data: data ?? [], error };

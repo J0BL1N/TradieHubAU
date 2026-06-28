@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { uploadJobWorkspaceImages, validateWorkspaceImage } from '../lib/jobs';
-import { australianLocationOptions, findAustralianLocationOption, formatJobLocation } from '../lib/auLocations';
+import {
+  australianStates,
+  findAustralianLocationOption,
+  formatJobLocation,
+  formatSuburbOption,
+  getRegionsForState,
+  getSuburbsForRegion,
+  loadAustralianLocations,
+} from '../lib/auLocations';
+import type { AustralianLocationOption } from '../lib/auLocations';
 import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase, ImagePlus, Trash2 } from 'lucide-react';
 
 export default function PostJob() {
@@ -15,8 +24,9 @@ export default function PostJob() {
   const [category, setCategory] = useState('');
   const [urgency, setUrgency] = useState('flexible');
   const [jobType, setJobType] = useState('one-off');
-  const [suburb, setSuburb] = useState('');
   const [state, setState] = useState('');
+  const [region, setRegion] = useState('');
+  const [suburb, setSuburb] = useState('');
   const [postcode, setPostcode] = useState('');
   const [timeline, setTimeline] = useState('');
   const [estimatedBudget, setEstimatedBudget] = useState('');
@@ -29,6 +39,31 @@ export default function PostJob() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [locationOptions, setLocationOptions] = useState<AustralianLocationOption[]>([]);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationLoadError, setLocationLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadAustralianLocations()
+      .then(dataset => {
+        if (cancelled) return;
+        setLocationOptions(dataset.entries);
+        setLocationLoadError(null);
+      })
+      .catch(error => {
+        if (cancelled) return;
+        setLocationLoadError(error instanceof Error ? error.message : 'Australian location dataset could not be loaded.');
+      })
+      .finally(() => {
+        if (!cancelled) setLocationLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -101,8 +136,9 @@ export default function PostJob() {
     setCategory('');
     setUrgency('flexible');
     setJobType('one-off');
-    setSuburb('');
     setState('');
+    setRegion('');
+    setSuburb('');
     setPostcode('');
     setTimeline('');
     setEstimatedBudget('');
@@ -161,8 +197,11 @@ export default function PostJob() {
   const selectedTradeLabel = tradeCategories.find(trade => trade.id === category)?.label || category;
   const trimmedTimeline = timeline.trim() || 'Flexible';
   const trimmedSuburb = suburb.trim().replace(/\s+/g, ' ');
+  const trimmedRegion = region.trim().replace(/\s+/g, ' ');
   const trimmedPostcode = postcode.trim();
   const locationSummary = formatJobLocation(trimmedSuburb, state);
+  const regionOptions = getRegionsForState(locationOptions, state);
+  const suburbOptions = getSuburbsForRegion(locationOptions, state, region);
   const estimatedBudgetValue = estimatedBudget ? parseInt(estimatedBudget) : null;
   const budgetTypeLabel = budgetType === 'rough_estimate'
     ? 'Rough estimate'
@@ -189,13 +228,13 @@ export default function PostJob() {
       return false;
     }
 
-    if (!trimmedSuburb) {
-      setError('Please enter a suburb.');
+    if (locationLoading) {
+      setError('Please wait for the Australian location list to finish loading.');
       return false;
     }
 
-    if (!/^[A-Za-z][A-Za-z .'-]{1,79}$/.test(trimmedSuburb)) {
-      setError('Please enter a valid suburb name. Do not include a street address.');
+    if (locationLoadError || locationOptions.length === 0) {
+      setError(locationLoadError || 'Australian location list is unavailable. Please try again.');
       return false;
     }
 
@@ -204,17 +243,24 @@ export default function PostJob() {
       return false;
     }
 
-    if (!/^\d{4}$/.test(trimmedPostcode)) {
-      setError('Please enter a valid 4-digit postcode.');
+    if (!trimmedRegion) {
+      setError('Please select a region or council area.');
       return false;
     }
 
-    const knownLocation = australianLocationOptions.find(option =>
-      option.suburb.toLowerCase() === trimmedSuburb.toLowerCase() &&
-      option.state === state
-    );
-    if (knownLocation && knownLocation.postcode !== trimmedPostcode) {
-      setError(`The postcode for ${knownLocation.suburb}, ${knownLocation.state} should be ${knownLocation.postcode}.`);
+    if (!trimmedSuburb) {
+      setError('Please select a suburb.');
+      return false;
+    }
+
+    if (!/^\d{4}$/.test(trimmedPostcode)) {
+      setError('Please select a suburb with a valid 4-digit postcode.');
+      return false;
+    }
+
+    const knownLocation = findAustralianLocationOption(locationOptions, state, trimmedRegion, trimmedSuburb, trimmedPostcode);
+    if (!knownLocation) {
+      setError('Please select a valid state, region, suburb, and postcode combination.');
       return false;
     }
 
@@ -267,6 +313,7 @@ export default function PostJob() {
           location: locationSummary,
           suburb: trimmedSuburb,
           state: state,
+          region: trimmedRegion,
           postcode: trimmedPostcode,
           location_label: locationSummary,
           budget_min: compatibleBudget,
@@ -401,51 +448,66 @@ export default function PostJob() {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
-              <input
-                type="text"
-                list="job-suburb-options"
-                placeholder="e.g. Richmond"
-                value={suburb}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
+              <select
+                value={state}
                 onChange={(e) => {
-                  const nextSuburb = e.target.value;
-                  setSuburb(nextSuburb);
-                  const selectedLocation = findAustralianLocationOption(nextSuburb);
-                  if (selectedLocation) {
-                    setSuburb(selectedLocation.suburb);
-                    setState(selectedLocation.state);
-                    setPostcode(selectedLocation.postcode);
-                  }
+                  setState(e.target.value);
+                  setRegion('');
+                  setSuburb('');
+                  setPostcode('');
                 }}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer"
+                disabled={locationLoading}
                 required
-              />
-              <datalist id="job-suburb-options">
-                {australianLocationOptions.map(option => (
-                  <option key={`${option.suburb}-${option.state}-${option.postcode}`} value={`${option.suburb}, ${option.state} ${option.postcode}`} />
+              >
+                <option value="">{locationLoading ? 'Loading...' : 'State / Territory'}</option>
+                {australianStates.map(option => (
+                  <option key={option} value={option}>{option}</option>
                 ))}
-              </datalist>
-              <p className="text-[11px] font-semibold text-muted-foreground">Start with suburb only. Street addresses are not collected here.</p>
+              </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">State</label>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Region / Council Area</label>
               <select
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer"
+                value={region}
+                onChange={(e) => {
+                  setRegion(e.target.value);
+                  setSuburb('');
+                  setPostcode('');
+                }}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer disabled:opacity-60"
+                disabled={!state || locationLoading}
                 required
               >
-                <option value="">State...</option>
-                <option value="NSW">NSW</option>
-                <option value="VIC">VIC</option>
-                <option value="QLD">QLD</option>
-                <option value="WA">WA</option>
-                <option value="SA">SA</option>
-                <option value="TAS">TAS</option>
-                <option value="ACT">ACT</option>
-                <option value="NT">NT</option>
+                <option value="">{state ? 'Region / Council Area' : 'Select state first'}</option>
+                {regionOptions.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
+              <select
+                value={suburb && postcode ? `${suburb}|${postcode}` : ''}
+                onChange={(e) => {
+                  const [nextSuburb, nextPostcode] = e.target.value.split('|');
+                  setSuburb(nextSuburb || '');
+                  setPostcode(nextPostcode || '');
+                }}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer disabled:opacity-60"
+                disabled={!region || locationLoading}
+                required
+              >
+                <option value="">{region ? 'Suburb' : 'Select region first'}</option>
+                {suburbOptions.map(option => (
+                  <option key={`${option.suburb}-${option.postcode}`} value={`${option.suburb}|${option.postcode}`}>
+                    {formatSuburbOption(option)}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -456,14 +518,18 @@ export default function PostJob() {
                 inputMode="numeric"
                 pattern="[0-9]{4}"
                 maxLength={4}
-                placeholder="e.g. 3121"
+                placeholder="Auto-filled"
                 value={postcode}
-                onChange={(e) => setPostcode(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+                readOnly
+                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none text-sm font-semibold transition-all"
                 required
               />
             </div>
           </div>
+          {locationLoadError && (
+            <p className="text-xs font-bold text-red-500">{locationLoadError}</p>
+          )}
+          <p className="text-[11px] font-semibold text-muted-foreground">Select suburb-level job location only. Street addresses are not collected here.</p>
 
           <div className="space-y-2">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider">Timeline / Start Date</label>
