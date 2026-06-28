@@ -148,6 +148,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 02:48:18 | Profile trust | `d1bca28` | Added public completion proof publishing for eligible completed/released job proof images with public-safe metadata and profile gallery controls. |
 | 03:15:43 | Profile trust hotfix | `3e888ea` | Added idempotent live schema/storage repair migration for profile media, portfolio items, public profile fields, and completion proof gallery RPCs. |
 | In progress | Profile trust deploy | this commit | Added copy-paste Supabase SQL Editor deployment pack for the live profile trust repair migration and verification checks. |
+| In progress | Profile avatar polish | this commit | Refresh profile and header avatar state immediately after successful profile photo upload. |
 
 ### Migrations / Deployments
 
@@ -174,6 +175,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Public completion proof publishing | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 | Profile trust live schema hotfix | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 | Profile trust SQL deployment pack | Embedded SQL matched `047_repair_profile_trust_live_schema.sql`; `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
+| Profile avatar refresh polish | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 
 ### Remaining / Next
 

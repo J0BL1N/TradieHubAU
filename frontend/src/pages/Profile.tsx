@@ -51,7 +51,7 @@ interface UserReview {
 
 export default function Profile() {
   const { id } = useParams<{ id?: string }>();
-  const { user, loading: authLoading, refreshProfile } = useAuth();
+  const { user, loading: authLoading, refreshProfile, updateProfileState } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -464,7 +464,10 @@ export default function Profile() {
       });
       if (updateErr) throw updateErr;
 
-      await refreshProfile();
+      const nextAvatarUrl = data?.publicUrl ? `${data.publicUrl}${data.publicUrl.includes('?') ? '&' : '?'}v=${Date.now()}` : null;
+      updateProfileState({ avatar_url: nextAvatarUrl });
+      setTargetProfile(current => current ? { ...current, avatar_url: nextAvatarUrl } : current);
+      void refreshProfile();
       await loadProfile();
     } catch (err: any) {
       console.error('Avatar upload error:', err);

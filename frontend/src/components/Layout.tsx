@@ -108,8 +108,12 @@ export default function Layout() {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all focus:outline-none"
                 >
-                  <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm border border-primary/20 shadow-sm">
-                    {(profile?.display_name || user.email || 'U').charAt(0).toUpperCase()}
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm border border-primary/20 shadow-sm overflow-hidden">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      (profile?.display_name || user.email || 'U').charAt(0).toUpperCase()
+                    )}
                   </div>
                   <span className="hidden lg:inline-block max-w-[120px] truncate">
                     {profile?.display_name || user.email?.split('@')[0]}
@@ -244,8 +248,12 @@ export default function Layout() {
             {user ? (
               <div className="mt-4 border-t pt-4 space-y-3 w-full">
                 <div className="flex items-center gap-3 px-4 py-2">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-base border">
-                    {(profile?.display_name || user.email || 'U').charAt(0).toUpperCase()}
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-base border overflow-hidden">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      (profile?.display_name || user.email || 'U').charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div className="text-left">
                     <p className="font-bold text-foreground">{profile?.display_name || user.email?.split('@')[0]}</p>
