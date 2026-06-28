@@ -95,3 +95,10 @@ This is not controlled by migrations in this repo.
 - `supabase/migrations/041_message_pagination_cap.sql`
 - `supabase/migrations/042_lifecycle_system_messages.sql`
 - `supabase/migrations/044_harden_security_lint_findings_pass1.sql`
+
+## Security Definer View Exceptions
+
+### `public.public_profiles` View
+* **Type:** Security Definer (via `security_invoker = false` / default view settings).
+* **Rationale:** The base `public.users` table contains sensitive private information like email, phone numbers, Stripe IDs, and verification documents. Access to this base table is strictly restricted by RLS to the user themselves, admins, and active counterparty contract participants to prevent leaks. To allow guests and customers to browse the directory, a safe sanitized projection view is needed. The `public_profiles` view exposes *only* safe public fields (name, trades, years experience, rating, general location, etc.) and does not contain private fields. Resetting the view to standard security definer behavior allows it to fetch these public fields without triggering base-table RLS constraints, avoiding directory loading failures.
+
