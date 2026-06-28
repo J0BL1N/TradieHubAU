@@ -156,6 +156,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Verification storage hotfix | this commit | Added private `verifications` storage bucket repair migration for identity and tradie credential uploads. |
 | In progress | Admin verification | this commit | Grouped identity and tradie proof review into one tradie approval case and kept approved credential rows visible until final tradie whitelisting. |
 | In progress | Verification UI polish | this commit | Replaced applicant document-type dropdowns with explicit upload cards and converted tradie admin approval cases from a table to case review cards. |
+| In progress | Application guard | this commit | Blocked job owners from quoting/applying on their own jobs in the UI and applications insert policy. |
 
 ### Migrations / Deployments
 
@@ -170,6 +171,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `050_structured_job_location_fields.sql` | Created | Adds structured job suburb/postcode/location label columns, indexes, validation checks, legacy backfill, and quote-lock allowlist compatibility. |
 | `051_add_job_region.sql` | Created | Adds `jobs.region`, indexes it with state, and keeps the quote-lock trigger compatible with pre-quote location edits. |
 | `052_fix_verification_storage_bucket.sql` | Created | Creates private `verifications` bucket and refreshes owner-upload/owner-read/admin-read verification document storage policies. |
+| `053_block_self_quote_applications.sql` | Created | Recreates the verified-tradie application insert policy with an added guard that the target job owner is not the authenticated applicant. |
 | `frontend/public/data/au-postcode-localities.json` | Created | Generated Australia-wide location selector dataset from the Matthew Proctor Australian Postcodes public-domain CSV. |
 | `docs/profile-trust-live-supabase-deploy.md` | Created | Provides copy-paste SQL Editor deployment instructions, full `047` SQL, verification SQL, and expected results for live repair when CLI deployment is unavailable. |
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |

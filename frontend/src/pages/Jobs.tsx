@@ -95,6 +95,11 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
       return;
     }
 
+    if (job.customer_id === user.id) {
+      setError("You can't quote on your own job.");
+      return;
+    }
+
     if (message.trim().length < 20) {
       setError('Your message must be at least 20 characters.');
       return;
@@ -601,6 +606,10 @@ export default function Jobs() {
 
   // ─── Open Apply Modal ───────────────────────────────────────────────────────
   const handleOpenApply = async (job: Job) => {
+    if (user && job.customer_id === user.id) {
+      showToast("You can't quote on your own job.", 'error');
+      return;
+    }
     setSelectedJob(null); // close detail modal
     // Pre-fetch existing application
     if (user) {
@@ -1204,23 +1213,12 @@ export default function Jobs() {
                           (() => {
                             const isOwner = job.customer_id === user.id;
                             if (isOwner) {
-                              const appsCount = job.applications?.length || 0;
-                              if (appsCount > 0) {
-                                return (
-                                  <button
-                                    disabled
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-blue-500/10 text-blue-600 border border-blue-500/20 cursor-default whitespace-nowrap"
-                                  >
-                                    Quotes Received ({appsCount})
-                                  </button>
-                                );
-                              }
                               return (
                                 <button
                                   disabled
                                   className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 cursor-default whitespace-nowrap"
                                 >
-                                  Posted
+                                  You can't quote on your own job.
                                 </button>
                               );
                             }
@@ -2155,7 +2153,14 @@ export default function Jobs() {
                 </button>
                 {selectedJob.status === 'open' && (
                   user ? (
-                    profile?.role !== 'customer' ? (
+                    selectedJob.customer_id === user.id ? (
+                      <button
+                        disabled
+                        className="font-bold px-6 py-2.5 rounded-xl text-sm bg-gray-100 text-gray-500 border border-gray-200 cursor-default"
+                      >
+                        You can't quote on your own job.
+                      </button>
+                    ) : profile?.role !== 'customer' ? (
                       <button
                         onClick={() => {
                           if (!isVerifiedTradie) {

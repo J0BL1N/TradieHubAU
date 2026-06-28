@@ -41,6 +41,9 @@ export interface SubmitApplicationPayload {
 export async function submitApplication(payload: SubmitApplicationPayload) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { data: null, error: new Error('Not authenticated') };
+  if (payload.customer_id === user.id) {
+    return { data: null, error: new Error("You can't quote on your own job.") };
+  }
 
   const { data, error } = await supabase
     .from('applications')
