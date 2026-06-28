@@ -153,6 +153,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Job posting media | this commit | Added private workspace/problem photos for posted jobs and simplified customer budget input to estimated budget plus budget type. |
 | In progress | Job location structure | this commit | Added structured suburb/state/postcode job fields, local suburb autocomplete foundation, compatibility writes, and suburb/state-only public displays. |
 | In progress | Job location selector | this commit | Replaced suburb-first job posting with Australia-wide state, region/council area, suburb, and postcode selector backed by a generated public postcode dataset. |
+| In progress | Verification storage hotfix | this commit | Added private `verifications` storage bucket repair migration for identity and tradie credential uploads. |
 
 ### Migrations / Deployments
 
@@ -166,6 +167,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `049_job_workspace_images_and_budget_type.sql` | Created | Adds private `job_workspace_images` bucket/table/RLS, public-safe workspace image counts, and simple budget metadata while preserving `budget_min`/`budget_max`. |
 | `050_structured_job_location_fields.sql` | Created | Adds structured job suburb/postcode/location label columns, indexes, validation checks, legacy backfill, and quote-lock allowlist compatibility. |
 | `051_add_job_region.sql` | Created | Adds `jobs.region`, indexes it with state, and keeps the quote-lock trigger compatible with pre-quote location edits. |
+| `052_fix_verification_storage_bucket.sql` | Created | Creates private `verifications` bucket and refreshes owner-upload/owner-read/admin-read verification document storage policies. |
 | `frontend/public/data/au-postcode-localities.json` | Created | Generated Australia-wide location selector dataset from the Matthew Proctor Australian Postcodes public-domain CSV. |
 | `docs/profile-trust-live-supabase-deploy.md` | Created | Provides copy-paste SQL Editor deployment instructions, full `047` SQL, verification SQL, and expected results for live repair when CLI deployment is unavailable. |
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
