@@ -415,6 +415,11 @@ Status: **Implementation complete / awaiting manual review.** This is a local MV
 * [x] Link invoices to protected payment records where a simulated payment exists.
 * [x] Keep invoice state changes audit-friendly and anchored to the job/payment lifecycle.
 * [x] Defer real tax invoice requirements, accountant exports, GST-final logic, BAS reporting, and payment-provider reconciliation to v0.3.x Finance/GST work unless separately approved.
+* [ ] Post-MVP Invoicing Tasks (to be reviewed for v0.3.x Finance/GST work):
+  * [ ] Quote/invoice itemisation for detailed labour & materials breakdown.
+  * [ ] Stored GST registration status and full "Tax Invoice" layout support.
+  * [ ] Explicit billing address and secure contact exchange policy.
+  * [ ] Final accountant-reviewed invoice compliance audits.
 
 ---
 

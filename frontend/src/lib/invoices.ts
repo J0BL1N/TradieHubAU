@@ -20,6 +20,8 @@ export interface JobInvoice {
   job_state?: string;
   payer_name?: string;
   payee_name?: string;
+  payee_business_name?: string;
+  payee_abn?: string;
 }
 
 export async function fetchInvoiceDetailsByJob(jobId: string, invoiceType: 'customer_receipt' | 'tradie_payout_statement') {
@@ -38,7 +40,7 @@ export async function fetchInvoiceDetailsByJob(jobId: string, invoiceType: 'cust
   // Resolve profiles safely using public_profiles boundary to avoid exposure
   const [payerRes, payeeRes, jobRes] = await Promise.all([
     supabase.from('public_profiles').select('display_name').eq('id', inv.payer_id).single(),
-    supabase.from('public_profiles').select('display_name').eq('id', inv.payee_id).single(),
+    supabase.from('public_profiles').select('display_name, business_name, abn').eq('id', inv.payee_id).single(),
     supabase.from('jobs').select('title, categories, suburb, state').eq('id', inv.job_id).single()
   ]);
 
@@ -51,6 +53,8 @@ export async function fetchInvoiceDetailsByJob(jobId: string, invoiceType: 'cust
       job_state: jobRes.data?.state,
       payer_name: payerRes.data?.display_name || 'Customer',
       payee_name: payeeRes.data?.display_name || 'Contractor',
+      payee_business_name: payeeRes.data?.business_name,
+      payee_abn: payeeRes.data?.abn
     }],
     error: null
   };

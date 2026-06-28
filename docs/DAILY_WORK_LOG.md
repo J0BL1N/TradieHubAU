@@ -171,6 +171,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 00:30:00 | Admin Analytics Polish | this commit | Polished admin marketplace analytics with 30s silent background auto-refresh interval, a Last Updated timestamp, a manual Refresh button, live activity strip (pulsating indicator), Donut charts for breakdown data (User breakdown, Job Status, and Verification status), and a sorted Category horizontal bar chart. |
 | 00:40:00 | Invoicing Foundation | this commit | Added safe invoicing foundation based on real completed/released platform jobs and payments. Created job_invoices table, select RLS policies, automatic trigger-based invoice generation on payment release, idempotent numbering, existing job backfills, invoices.ts helper, "View Receipt" (customer) & "View Payout Statement" (tradie) buttons on Jobs.tsx, interactive modal preview, and print stylesheets. |
 | 00:20:00 | Fix Invoices Generation | this commit | Fixed trigger race condition during completion approval/payment release by moving to dual status triggers on both jobs and payments, creating ensure_job_invoices self-healing function, secure get_my_job_invoice RPC, error message overrides in Jobs.tsx, and backfill. |
+| 00:20:00 | Invoice Layout Polish | this commit | Polished invoicing document layouts into a professional tax-ready preview; resolved ABN display for verified contractors, clean From/To party grids, itemized Line Item subtotal breakdowns (with net payout fee splits), and clear tax disclaimers. |
+
 
 
 
@@ -238,6 +240,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Website analytics polish | `npm run build` passed. Verified aggregate statistics generation, 30s background refresh, manual refresh, and visual SVG donut/bar breakdowns. |
 | Invoicing foundation | `npm run build` passed. Verified automatic trigger-based generation, customer/tradie RLS SELECT security checks, modal document preview, and custom `@media print` layout formatting. |
 | Invoice generation fix | `npm run build` passed. Verified get_my_job_invoice RPC returns correct role-filtered data, auto-heals missing invoices, and triggers on both jobs & payments table status updates. |
+| Invoice layout polish | `npm run build` passed. Verified ABN and business name fields rendered from public_profiles view, subtotal / net payout divisions, and GST disclaimer. |
+
 
 
 
