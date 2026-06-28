@@ -1267,6 +1267,88 @@ export default function Profile() {
               )}
             </form>
 
+            {/* Verification Status Summary Card */}
+            <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+              <div className="border-b pb-4">
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <ShieldCheck className="h-5.5 w-5.5 text-primary" /> Verification Status Overview
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Track your verification credentials and trust checklist progress.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. Identity Document */}
+                <div className="p-4 rounded-2xl border bg-muted/5 flex flex-col justify-between space-y-3">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">1. Photo ID Verification</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Drivers license or passport submission.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between">
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(idVerificationStatus)}`}>
+                      {getStatusLabel(idVerificationStatus)}
+                    </span>
+                    {idVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                  </div>
+                </div>
+
+                {/* 2. Liveness Selfie */}
+                <div className="p-4 rounded-2xl border bg-muted/5 flex flex-col justify-between space-y-3">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">2. Liveness Selfie</h4>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Physically present verification check. Not shown publicly.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between">
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(livenessVerificationStatus)}`}>
+                      {getStatusLabel(livenessVerificationStatus)}
+                    </span>
+                    {livenessVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                  </div>
+                </div>
+
+                {/* 3. Trade Credentials */}
+                {targetProfile.role !== 'customer' && (
+                  <div className="p-4 rounded-2xl border bg-muted/5 flex flex-col justify-between space-y-3">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">3. Professional Credentials</h4>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Contractor license &amp; public liability insurance.
+                      </p>
+                    </div>
+                    <div className="pt-2 flex items-center justify-between">
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(tradieVerificationStatus)}`}>
+                        {getStatusLabel(tradieVerificationStatus)}
+                      </span>
+                      {tradieVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* General Guidance message */}
+              <div className="text-xs font-semibold leading-relaxed p-4 rounded-2xl bg-primary/5 text-primary border border-primary/10">
+                {targetProfile.role === 'customer' ? (
+                  <p>
+                    {idVerificationStatus === 'approved' && livenessVerificationStatus === 'approved'
+                      ? "✓ Your customer identity verification is complete. You are fully verified!"
+                      : "Please submit both your Photo ID and Liveness Selfie to verify your account."}
+                  </p>
+                ) : (
+                  <p>
+                    {targetProfile.tradie_verified
+                      ? "✓ Your professional tradie profile is whitelisted and approved!"
+                      : "Submit Photo ID, Liveness Selfie, ABN, contractor license, and insurance to get whitelisted."}
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Identity Verification Section (Shown to all users) */}
             <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
               <div className="border-b pb-4">

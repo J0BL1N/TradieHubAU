@@ -620,18 +620,38 @@ Status: **Implementation complete / awaiting manual review.** This is an admin a
 
 # Phase 1 Chunk A — Liveness Selfie Verification Foundation
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Approved / accepted.**
 
 * [x] Add liveness selfie verification document type check constraint (`liveness_selfie`)
 * [x] Redefine `approve_identity_verification` RPC function to support liveness selfie approval
 * [x] Update frontend profile state and upload logic to support image-only selfie uploads
 * [x] Renders new Liveness Selfie Verification UI card in user profile settings
 * [x] Update identity document verification queues in Admin panel to include liveness selfies with custom instructions
-* [ ] Future liveness items (to be reviewed for Chunk B):
-  * [ ] Random liveness challenge generation (e.g. dynamic finger counts or hand signs)
-  * [ ] Liveness challenge expiry limits
-  * [ ] Strict blocker gating liveness check before early payment release requests
-  * [ ] Auto-deletion/retention safety policy for completed verification documents
+
+---
+
+# Phase 1 Chunk B — Verification Status Upgrade
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Create centralized status tracking summary card on user profile dashboard
+* [x] Categorize progress indicators for ID Verification, Liveness Selfie, and Professional Credentials
+* [x] Support visual alerts for approved, pending, rejected, and missing verification credentials
+* [x] Display status indicators and check liveness selfie approval in admin whitelist checklist card
+* [x] Require approved liveness selfie for new tradie whitelisting applications
+* [x] Preserve access for existing whitelisted tradies during beta (feature-safe "new approvals only" path)
+
+---
+
+# Phase 1 Chunk C — Verification Expiry & Recheck Later
+
+Status: **Upcoming.**
+
+* [ ] Implement liveness challenge expiry and auto-rejections
+* [ ] Implement random liveness challenge generation next to face (dynamic finger counts / hand signs)
+* [ ] Strict blocker gating liveness check before early payment releases
+* [ ] Retention & automatic deletion policies for verification images after approval
+
 
 ---
 

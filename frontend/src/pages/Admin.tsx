@@ -1415,10 +1415,12 @@ export default function Admin() {
                       const hasIdentityApproval = !!user?.identity_verified;
                       const hasApprovedLicenceProof = item.tradieDocs.some(doc => doc.document_type === 'contractor_license' && doc.status === 'approved');
                       const hasApprovedInsuranceProof = item.tradieDocs.some(doc => doc.document_type === 'insurance' && doc.status === 'approved');
+                      const hasApprovedLiveness = item.identityDocs.some(doc => doc.document_type === 'liveness_selfie' && doc.status === 'approved');
                       const hasAbn = !!user?.abn?.trim();
                       const hasLicenceNumber = !!user?.license_number?.trim();
                       const missingWhitelistRequirements = [
                         !hasIdentityApproval && 'Approve ID first',
+                        !hasApprovedLiveness && 'Liveness Selfie missing',
                         !hasAbn && 'ABN missing',
                         !hasLicenceNumber && 'Licence number missing',
                         !hasApprovedLicenceProof && 'Licence proof not approved',
@@ -1569,11 +1571,12 @@ export default function Admin() {
                             <div className="space-y-2">
                               <h5 className="text-xs font-black uppercase tracking-wider text-foreground">Final Tradie Approval</h5>
                               <p className="text-xs text-muted-foreground font-semibold">
-                                ID, contractor licence proof, and insurance proof must be approved before final whitelisting.
+                                ID, Liveness Selfie, contractor licence proof, and insurance proof must be approved before final whitelisting.
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {[
                                   ['ID approved', hasIdentityApproval],
+                                  ['Liveness Selfie approved', hasApprovedLiveness],
                                   ['ABN entered', hasAbn],
                                   ['Licence number entered', hasLicenceNumber],
                                   ['Licence proof approved', hasApprovedLicenceProof],
