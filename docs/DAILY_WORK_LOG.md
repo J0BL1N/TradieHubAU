@@ -167,6 +167,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 20:31:21 | Job Location & Schedule | 7c2579d | Polish post job schedule fields: Renamed 'Region / Council Area' to 'Region', improved desktop grid columns layout to 4 columns, set preferred start date & time to datetime-local input with 15-minute increments (step=900), and updated region validation error message. |
 | 20:38:00 | Location Filters | this commit | Updated browse/search location filters in Jobs.tsx to support State, Region, and Suburb cascading selects. Deferred Browse Tradies due to lacking reliable region/suburb profile fields. |
 | 20:50:00 | Tradie Directory Access | this commit | Restored public tradie directory access by resetting public.public_profiles to security definer mode (security_invoker = false), enabling guests and customers to view safe sanitized profiles. |
+| 00:20:00 | Website Analytics Foundation | this commit | Implemented website analytics foundation for admin users. Created get_admin_analytics RPC, added tab-switching logic to Admin.tsx, and displayed Marketplace Snapshot, Job Funnel, and Beta Activity indicators with All-time/30-day/7-day windows. |
+
 
 
 
@@ -194,6 +196,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Browse Location Filters | No migration | No database migration was added; filtering is executed on the client side using in-memory dataset search. |
 | `057_restore_public_profiles_directory_access.sql` | Created | Resets security_invoker on public.public_profiles view and grants SELECT to anon and authenticated. |
 | `059_real_job_reviews.sql` | Created | Hardens review eligibility to the original customer reviewing the contracted tradie only after job `completed`, payment `released`, and no open dispute; adds safe public review/detail and summary RPCs. Live Supabase must run this migration before the review UI/RPCs work. |
+| `060_admin_analytics_rpc.sql` | Created | Adds public.get_admin_analytics RPC, checking admin role and compiling aggregate marketplace snapshot, job funnel, and beta activity metrics. |
+
 
 ### Validation
 
@@ -218,6 +222,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Structured location browse filters | `npm run build` passed. Cascading dropdown behavior and filtering on state/region/suburb verified on client side. Deferred Browse Tradies (documented limitation). |
 | Public tradie directory access | `npm run build` passed. Verified public_profiles view does not contain private fields like email/phone, ensuring safety. |
 | Completed work portfolio | `npm run build` passed; verified real completed platform job visibility toggles and safe public directory details. |
+| Website analytics foundation | `npm run build` passed. Verified aggregate statistics generation, time-window support, and tab-selector interface. |
+
 
 ### Remaining / Next
 

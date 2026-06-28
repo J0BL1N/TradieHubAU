@@ -723,6 +723,13 @@ export default function Admin() {
   const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Analytics state
+  const [adminTab, setAdminTab] = useState<'queues' | 'analytics'>('queues');
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsTimeWindow, setAnalyticsTimeWindow] = useState('all');
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
   // ─── Toast helper ──────────────────────────────────────────────────────────
 
   const showToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
@@ -779,9 +786,32 @@ export default function Admin() {
     }
   }, [isAdmin]);
 
+  const loadAnalytics = useCallback(async (window: string) => {
+    if (!isAdmin) return;
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const { data, error: err } = await supabase.rpc('get_admin_analytics', {
+        p_time_window: window,
+      });
+      if (err) throw err;
+      setAnalyticsData(data);
+    } catch (err: any) {
+      setAnalyticsError(err.message || 'Failed to load marketplace analytics.');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
     if (isAdmin) loadData();
   }, [isAdmin, loadData]);
+
+  useEffect(() => {
+    if (isAdmin && adminTab === 'analytics') {
+      loadAnalytics(analyticsTimeWindow);
+    }
+  }, [isAdmin, adminTab, analyticsTimeWindow, loadAnalytics]);
 
   // ─── Verification handlers ─────────────────────────────────────────────────
 
@@ -978,6 +1008,30 @@ export default function Admin() {
         <p className="text-muted-foreground mt-1">Review trade credentials, manage user security settings, and resolve disputes.</p>
       </div>
 
+      {/* Tab Switcher */}
+      <div className="flex border-b border-border pb-px gap-6">
+        <button
+          onClick={() => setAdminTab('queues')}
+          className={`pb-4 text-sm font-bold border-b-2 transition-all ${
+            adminTab === 'queues'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Verification &amp; Disputes Queues
+        </button>
+        <button
+          onClick={() => setAdminTab('analytics')}
+          className={`pb-4 text-sm font-bold border-b-2 transition-all ${
+            adminTab === 'analytics'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Marketplace Analytics
+        </button>
+      </div>
+
       {/* Global Error Banner */}
       {error && (
         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-center gap-2">
@@ -986,7 +1040,9 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Stats Row — 4 tiles */}
+      {adminTab === 'queues' && (
+        <>
+          {/* Stats Row — 4 tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-5 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
           <div>
@@ -1506,6 +1562,200 @@ export default function Admin() {
             )}
           </div>
 
+        </div>
+      )}
+        </>
+      )}
+
+      {adminTab === 'analytics' && (
+        <div className="space-y-8">
+          {/* Time window selector and header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card border p-6 rounded-3xl">
+            <div>
+              <h2 className="text-lg font-black text-foreground">Marketplace Analytics</h2>
+              <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                Monitor beta registrations, job listings, messaging volume, and task progression.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground">Time Window:</span>
+              <select
+                value={analyticsTimeWindow}
+                onChange={(e) => setAnalyticsTimeWindow(e.target.value)}
+                className="bg-background border border-border rounded-xl px-3 py-1.5 outline-none focus:border-primary/50 text-xs font-bold"
+              >
+                <option value="all">All Time</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="7days">Last 7 Days</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Error Banner */}
+          {analyticsError && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{analyticsError}</span>
+            </div>
+          )}
+
+          {analyticsLoading ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-card border rounded-3xl gap-4">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <p className="text-sm font-semibold text-muted-foreground">Compiling aggregate statistics...</p>
+            </div>
+          ) : analyticsData ? (
+            <div className="space-y-8">
+              {/* Marketplace Snapshot */}
+              <section className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Marketplace Snapshot</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-5 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Users</p>
+                      <h4 className="text-2xl font-extrabold text-foreground mt-1">
+                        {analyticsData.marketplace_snapshot.total_users}
+                      </h4>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <User className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Customers</p>
+                      <h4 className="text-2xl font-extrabold text-foreground mt-1">
+                        {analyticsData.marketplace_snapshot.total_customers}
+                      </h4>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <UserCheck className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Tradies (Verified)</p>
+                      <h4 className="text-2xl font-extrabold text-foreground mt-1">
+                        {analyticsData.marketplace_snapshot.total_tradies} ({analyticsData.marketplace_snapshot.verified_tradies})
+                      </h4>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Award className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-card border rounded-2xl flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Average Rating</p>
+                      <h4 className="text-2xl font-extrabold text-foreground mt-1">
+                        ★ {analyticsData.marketplace_snapshot.average_rating || 'N/A'} ({analyticsData.marketplace_snapshot.total_reviews} reviews)
+                      </h4>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Verification Pipeline & Portfolios */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Verification Pipeline</h3>
+                  <div className="divide-y text-sm">
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">Pending Docs/Files</span>
+                      <span className="text-foreground">{analyticsData.marketplace_snapshot.pending_verifications}</span>
+                    </div>
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">Pending Review Cases</span>
+                      <span className="text-foreground">{analyticsData.marketplace_snapshot.pending_verification_cases}</span>
+                    </div>
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">Active Public Portfolios</span>
+                      <span className="text-foreground">{analyticsData.marketplace_snapshot.public_portfolios} items</span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Beta Activity Indicators */}
+                <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Beta Activity ({analyticsTimeWindow === 'all' ? 'Cumulative' : analyticsTimeWindow === '30days' ? 'Last 30d' : 'Last 7d'})</h3>
+                  <div className="divide-y text-sm">
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">New Registrations</span>
+                      <span className="text-foreground flex items-center gap-1.5 font-bold">
+                        <User className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_users}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">New Jobs Posted</span>
+                      <span className="text-foreground flex items-center gap-1.5 font-bold">
+                        <Briefcase className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_jobs}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">Messages Swapped</span>
+                      <span className="text-foreground flex items-center gap-1.5 font-bold">
+                        <MessageSquare className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_messages}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-2.5 font-semibold">
+                      <span className="text-muted-foreground">New Reviews Posted</span>
+                      <span className="text-foreground flex items-center gap-1.5 font-bold">
+                        <CheckCircle className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_reviews}
+                      </span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Job Funnel */}
+              <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Job Funnel ({analyticsTimeWindow === 'all' ? 'Cumulative' : analyticsTimeWindow === '30days' ? 'Last 30d' : 'Last 7d'})</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center font-bold">
+                  <div className="p-4 bg-muted/20 border rounded-xl space-y-1 shadow-sm">
+                    <p className="text-[10px] text-muted-foreground uppercase">Jobs Posted</p>
+                    <p className="text-xl font-extrabold text-foreground">{analyticsData.job_funnel.jobs_posted}</p>
+                  </div>
+                  <div className="p-4 bg-muted/20 border rounded-xl space-y-1 shadow-sm">
+                    <p className="text-[10px] text-muted-foreground uppercase">Quotes Submitted</p>
+                    <p className="text-xl font-extrabold text-foreground">{analyticsData.job_funnel.quotes_submitted}</p>
+                  </div>
+                  <div className="p-4 bg-muted/20 border rounded-xl space-y-1 shadow-sm">
+                    <p className="text-[10px] text-muted-foreground uppercase">Contracts Created</p>
+                    <p className="text-xl font-extrabold text-foreground">{analyticsData.job_funnel.quotes_accepted}</p>
+                  </div>
+                  <div className="p-4 bg-muted/20 border rounded-xl space-y-1 shadow-sm">
+                    <p className="text-[10px] text-muted-foreground uppercase">Completed &amp; Released</p>
+                    <p className="text-xl font-extrabold text-green-500">{analyticsData.job_funnel.completed_released}</p>
+                  </div>
+                </div>
+
+                <div className="border rounded-2xl bg-muted/5 p-4 text-xs space-y-3 font-semibold text-muted-foreground shadow-sm">
+                  <h4 className="text-foreground font-bold uppercase tracking-wider text-[10px]">Lifecycle Stage Breakdowns:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div>
+                      <p className="text-[9px]">Funded / Active</p>
+                      <p className="text-sm font-extrabold text-foreground mt-0.5">{analyticsData.job_funnel.contracts_active}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px]">Completion Submitted</p>
+                      <p className="text-sm font-extrabold text-foreground mt-0.5">{analyticsData.job_funnel.completions_submitted}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px]">Under Dispute</p>
+                      <p className="text-sm font-extrabold text-red-500 mt-0.5">{analyticsData.job_funnel.disputed}</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          ) : (
+            <p className="text-sm font-semibold text-muted-foreground">No analytics compiled yet.</p>
+          )}
         </div>
       )}
 

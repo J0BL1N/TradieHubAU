@@ -420,18 +420,18 @@ Status: **Planned.** This is a local MVP invoicing foundation only. It does not 
 
 # v0.0.20 — Website Analytics Foundation
 
-Status: **Planned.** This is an admin analytics foundation for first-party product metrics only. No third-party tracking is approved.
+Status: **Implementation complete / awaiting manual review.** This is an admin analytics foundation for first-party product metrics only. No third-party tracking is approved.
 
-* [ ] Add admin analytics dashboard foundation.
-* [ ] Track user signups.
-* [ ] Track jobs posted.
-* [ ] Track quote/application counts.
-* [ ] Track accepted quotes.
-* [ ] Track simulated funded/protected-payment conversion.
-* [ ] Track completion rates.
-* [ ] Track dispute rates.
-* [ ] Add basic funnel metrics from signup through job posting, quoting, acceptance, funding, completion, and dispute.
-* [ ] Avoid third-party tracking unless explicitly approved.
+* [x] Add admin analytics dashboard foundation.
+* [x] Track user signups.
+* [x] Track jobs posted.
+* [x] Track quote/application counts.
+* [x] Track accepted quotes.
+* [x] Track simulated funded/protected-payment conversion.
+* [x] Track completion rates.
+* [x] Track dispute rates.
+* [x] Add basic funnel metrics from signup through job posting, quoting, acceptance, funding, completion, and dispute.
+* [x] Avoid third-party tracking unless explicitly approved.
 
 ---
 
