@@ -68,7 +68,10 @@ export interface MessageJobDetails {
     title: string;
     description: string;
     location: string;
+    suburb: string | null;
     state: string;
+    postcode: string | null;
+    location_label: string | null;
     budget_min: number | null;
     budget_max: number | null;
     timeline: string | null;
@@ -149,7 +152,7 @@ export async function getJobConversations(currentUserId: string) {
 export async function getMessageJobDetails(jobId: string) {
   const { data: job, error: jobError } = await supabase
     .from('jobs')
-    .select('id, customer_id, title, description, location, state, budget_min, budget_max, timeline, urgency, type, status, quotes_count, created_at, updated_at')
+    .select('id, customer_id, title, description, location, suburb, state, postcode, location_label, budget_min, budget_max, timeline, urgency, type, status, quotes_count, created_at, updated_at')
     .eq('id', jobId)
     .maybeSingle();
 

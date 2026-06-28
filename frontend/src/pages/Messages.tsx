@@ -33,6 +33,7 @@ import {
   sendJobMessageWithAttachments,
 } from '../lib/messages';
 import { supabase } from '../lib/supabase';
+import { formatJobLocation } from '../lib/auLocations';
 import type { ConversationSummary, MessageAttachment, MessageAttachmentInput, MessageJobDetails, MessageRecord } from '../lib/messages';
 
 function formatTimestamp(value: string | null) {
@@ -1060,7 +1061,7 @@ export default function Messages() {
                     )}
                     <div className="rounded-xl border bg-background p-3">
                       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><MapPin className="h-4 w-4" /> Location</p>
-                      <p className="mt-1 text-sm font-extrabold text-foreground">{jobDetails.job.location}{jobDetails.job.state ? `, ${jobDetails.job.state}` : ''}</p>
+                      <p className="mt-1 text-sm font-extrabold text-foreground">{formatJobLocation(jobDetails.job.suburb, jobDetails.job.state) || jobDetails.job.location}</p>
                     </div>
                     <div className="rounded-xl border bg-background p-3">
                       <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"><Calendar className="h-4 w-4" /> Created</p>

@@ -151,6 +151,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Profile avatar polish | this commit | Refresh profile and header avatar state immediately after successful profile photo upload. |
 | In progress | Job posting polish | this commit | Added post-job review confirmation and database quote-lock rule for core job edits after tradie quotes exist. |
 | In progress | Job posting media | this commit | Added private workspace/problem photos for posted jobs and simplified customer budget input to estimated budget plus budget type. |
+| In progress | Job location structure | this commit | Added structured suburb/state/postcode job fields, local suburb autocomplete foundation, compatibility writes, and suburb/state-only public displays. |
 
 ### Migrations / Deployments
 
@@ -162,6 +163,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `047_repair_profile_trust_live_schema.sql` | Created | Idempotently repairs missing live profile trust columns, public profile view fields, portfolio table/RLS, storage buckets/policies, and gallery RPC aliases after partial 045/046 application. |
 | `048_lock_job_edits_after_quotes.sql` | Created | Updates the open-job edit protection trigger so owners can edit core job details only before any quote/application exists. |
 | `049_job_workspace_images_and_budget_type.sql` | Created | Adds private `job_workspace_images` bucket/table/RLS, public-safe workspace image counts, and simple budget metadata while preserving `budget_min`/`budget_max`. |
+| `050_structured_job_location_fields.sql` | Created | Adds structured job suburb/postcode/location label columns, indexes, validation checks, legacy backfill, and quote-lock allowlist compatibility. |
 | `docs/profile-trust-live-supabase-deploy.md` | Created | Provides copy-paste SQL Editor deployment instructions, full `047` SQL, verification SQL, and expected results for live repair when CLI deployment is unavailable. |
 | Supabase Advisor pass 2 | Documented | `docs/supabase-security-definer-rpc-audit.md` records why remaining authenticated `SECURITY DEFINER` warnings are expected/guarded. |
 | Leaked password protection | Dashboard action required | Remaining `auth_leaked_password_protection` warning must be fixed in Supabase Dashboard, not code. |
@@ -182,6 +184,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Profile avatar refresh polish | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Post-job confirmation and quote edit lock | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Workspace images and simplified budget | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
+| Structured job location fields | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 
 ### Remaining / Next
 

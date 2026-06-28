@@ -16,7 +16,7 @@ import {
   User,
 } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
-import { fetchJobById } from '../lib/jobs';
+import { fetchJobById, getPublicJobLocation } from '../lib/jobs';
 import type { JobDetailData } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
 
@@ -219,7 +219,7 @@ export default function JobDetail() {
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <DetailTile icon={<DollarSign className="h-4 w-4" />} label="Budget" value={formatBudget(job)} />
             {payment && <DetailTile icon={<DollarSign className="h-4 w-4" />} label="Accepted amount" value={formatCentsToAUD(payment.amount)} />}
-            <DetailTile icon={<MapPin className="h-4 w-4" />} label="Location" value={`${job.location}${job.state ? `, ${job.state}` : ''}`} />
+            <DetailTile icon={<MapPin className="h-4 w-4" />} label="Location" value={getPublicJobLocation(job)} />
             <DetailTile icon={<Calendar className="h-4 w-4" />} label="Created" value={new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} />
             <DetailTile icon={<Briefcase className="h-4 w-4" />} label="Job type" value={job.type || 'Standard'} />
             <DetailTile icon={<Clock className="h-4 w-4" />} label="Timeline" value={job.timeline || job.urgency || 'Flexible'} />

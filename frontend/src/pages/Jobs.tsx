@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fetchJobWorkspaceImages, fetchJobs, hydrateJobsWithPublicCustomers } from '../lib/jobs';
+import { fetchJobWorkspaceImages, fetchJobs, getPublicJobLocation, hydrateJobsWithPublicCustomers } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
 import { submitApplication, getMyApplicationForJob, getApplicationsForJob, getMyApplications } from '../lib/applications';
 import type { Application } from '../lib/applications';
@@ -633,7 +633,7 @@ export default function Jobs() {
       if (
         !job.title.toLowerCase().includes(q) &&
         !job.description.toLowerCase().includes(q) &&
-        !job.location.toLowerCase().includes(q) &&
+        !getPublicJobLocation(job).toLowerCase().includes(q) &&
         !categoryMatch
       ) {
         return false;
@@ -1142,7 +1142,7 @@ export default function Jobs() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground font-semibold border-t pt-4">
-                        <span className="flex items-center"><MapPin className="mr-1.5 h-3.5 w-3.5" />{job.location}</span>
+                        <span className="flex items-center"><MapPin className="mr-1.5 h-3.5 w-3.5" />{getPublicJobLocation(job)}</span>
                         <span className="flex items-center"><DollarSign className="mr-1.5 h-3.5 w-3.5" />{formatBudget(job)}</span>
                         {job.workspace_image_count > 0 && (
                           <span className="flex items-center"><ImageIcon className="mr-1.5 h-3.5 w-3.5" />Photos attached</span>
@@ -1465,7 +1465,7 @@ export default function Jobs() {
               <div className="grid grid-cols-2 gap-6 bg-muted/20 border p-5 rounded-2xl">
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Location</span>
-                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><MapPin className="h-4 w-4 text-foreground/60" />{selectedJob.location}</p>
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><MapPin className="h-4 w-4 text-foreground/60" />{getPublicJobLocation(selectedJob)}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Est. Budget</span>

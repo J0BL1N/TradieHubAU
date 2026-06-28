@@ -10,6 +10,7 @@ import {
   submitVerification
 } from '../lib/users';
 import type { UserProfile } from '../lib/users';
+import { formatJobLocation } from '../lib/auLocations';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
 import {
   createPortfolioItem,
@@ -34,6 +35,8 @@ interface DisplayJob {
   id: string;
   title: string;
   location: string;
+  suburb: string | null;
+  state: string | null;
   status: string;
   categories: string[];
 }
@@ -274,7 +277,7 @@ export default function Profile() {
         // Customer active and past posted jobs
         const { data: customerJobs, error: jobsErr } = await supabase
           .from('jobs')
-          .select('id, title, location, status, categories')
+          .select('id, title, location, suburb, state, status, categories')
           .eq('customer_id', targetId);
 
         if (!jobsErr && customerJobs) {
@@ -290,7 +293,7 @@ export default function Profile() {
           .from('applications')
           .select(`
             status,
-            job:jobs(id, title, location, status, categories)
+            job:jobs(id, title, location, suburb, state, status, categories)
           `)
           .eq('tradie_id', targetId)
           .eq('status', 'accepted');
@@ -1841,7 +1844,7 @@ export default function Profile() {
                         <div>
                           <h4 className="font-bold text-sm text-foreground">{job.title}</h4>
                           <span className="text-xs text-muted-foreground font-semibold flex items-center mt-1">
-                            <MapPin className="h-3.5 w-3.5 mr-1" /> {job.location}
+                            <MapPin className="h-3.5 w-3.5 mr-1" /> {formatJobLocation(job.suburb, job.state) || job.location}
                           </span>
                         </div>
                         <span className="bg-amber-500/10 text-amber-500 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">
@@ -1871,7 +1874,7 @@ export default function Profile() {
                         <div>
                           <h4 className="font-bold text-sm text-foreground">{job.title}</h4>
                           <span className="text-xs text-muted-foreground font-semibold flex items-center mt-1">
-                            <MapPin className="h-3.5 w-3.5 mr-1" /> {job.location}
+                            <MapPin className="h-3.5 w-3.5 mr-1" /> {formatJobLocation(job.suburb, job.state) || job.location}
                           </span>
                         </div>
                         <span className="bg-green-500/10 text-green-600 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">

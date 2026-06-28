@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { supabase } from '../lib/supabase';
 import { uploadJobWorkspaceImages, validateWorkspaceImage } from '../lib/jobs';
+import { australianLocationOptions, findAustralianLocationOption, formatJobLocation } from '../lib/auLocations';
 import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase, ImagePlus, Trash2 } from 'lucide-react';
 
 export default function PostJob() {
@@ -16,6 +17,7 @@ export default function PostJob() {
   const [jobType, setJobType] = useState('one-off');
   const [suburb, setSuburb] = useState('');
   const [state, setState] = useState('');
+  const [postcode, setPostcode] = useState('');
   const [timeline, setTimeline] = useState('');
   const [estimatedBudget, setEstimatedBudget] = useState('');
   const [budgetType, setBudgetType] = useState<'rough_estimate' | 'fixed_budget' | 'need_quotes'>('rough_estimate');
@@ -101,6 +103,7 @@ export default function PostJob() {
     setJobType('one-off');
     setSuburb('');
     setState('');
+    setPostcode('');
     setTimeline('');
     setEstimatedBudget('');
     setBudgetType('rough_estimate');
@@ -157,7 +160,9 @@ export default function PostJob() {
 
   const selectedTradeLabel = tradeCategories.find(trade => trade.id === category)?.label || category;
   const trimmedTimeline = timeline.trim() || 'Flexible';
-  const locationSummary = [suburb.trim(), state].filter(Boolean).join(', ');
+  const trimmedSuburb = suburb.trim().replace(/\s+/g, ' ');
+  const trimmedPostcode = postcode.trim();
+  const locationSummary = formatJobLocation(trimmedSuburb, state);
   const estimatedBudgetValue = estimatedBudget ? parseInt(estimatedBudget) : null;
   const budgetTypeLabel = budgetType === 'rough_estimate'
     ? 'Rough estimate'
@@ -184,13 +189,32 @@ export default function PostJob() {
       return false;
     }
 
-    if (!suburb.trim()) {
+    if (!trimmedSuburb) {
       setError('Please enter a suburb.');
+      return false;
+    }
+
+    if (!/^[A-Za-z][A-Za-z .'-]{1,79}$/.test(trimmedSuburb)) {
+      setError('Please enter a valid suburb name. Do not include a street address.');
       return false;
     }
 
     if (!state) {
       setError('Please select a state.');
+      return false;
+    }
+
+    if (!/^\d{4}$/.test(trimmedPostcode)) {
+      setError('Please enter a valid 4-digit postcode.');
+      return false;
+    }
+
+    const knownLocation = australianLocationOptions.find(option =>
+      option.suburb.toLowerCase() === trimmedSuburb.toLowerCase() &&
+      option.state === state
+    );
+    if (knownLocation && knownLocation.postcode !== trimmedPostcode) {
+      setError(`The postcode for ${knownLocation.suburb}, ${knownLocation.state} should be ${knownLocation.postcode}.`);
       return false;
     }
 
@@ -241,7 +265,10 @@ export default function PostJob() {
           description: description.trim(),
           categories: [category],
           location: locationSummary,
+          suburb: trimmedSuburb,
           state: state,
+          postcode: trimmedPostcode,
+          location_label: locationSummary,
           budget_min: compatibleBudget,
           budget_max: compatibleBudget,
           estimated_budget: compatibleBudget,
@@ -373,17 +400,33 @@ export default function PostJob() {
             <MapPin className="h-5 w-5 text-primary" /> 2. Location & Schedule
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb / Location</label>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
               <input
                 type="text"
+                list="job-suburb-options"
                 placeholder="e.g. Richmond"
                 value={suburb}
-                onChange={(e) => setSuburb(e.target.value)}
+                onChange={(e) => {
+                  const nextSuburb = e.target.value;
+                  setSuburb(nextSuburb);
+                  const selectedLocation = findAustralianLocationOption(nextSuburb);
+                  if (selectedLocation) {
+                    setSuburb(selectedLocation.suburb);
+                    setState(selectedLocation.state);
+                    setPostcode(selectedLocation.postcode);
+                  }
+                }}
                 className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
                 required
               />
+              <datalist id="job-suburb-options">
+                {australianLocationOptions.map(option => (
+                  <option key={`${option.suburb}-${option.state}-${option.postcode}`} value={`${option.suburb}, ${option.state} ${option.postcode}`} />
+                ))}
+              </datalist>
+              <p className="text-[11px] font-semibold text-muted-foreground">Start with suburb only. Street addresses are not collected here.</p>
             </div>
 
             <div className="space-y-2">
@@ -404,6 +447,21 @@ export default function PostJob() {
                 <option value="ACT">ACT</option>
                 <option value="NT">NT</option>
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Postcode</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{4}"
+                maxLength={4}
+                placeholder="e.g. 3121"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+                required
+              />
             </div>
           </div>
 

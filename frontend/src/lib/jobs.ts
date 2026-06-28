@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { getPublicProfilesByIds } from './users';
+import { formatJobLocation } from './auLocations';
 
 export interface Customer {
   id: string;
@@ -18,7 +19,10 @@ export interface Job {
   description: string;
   categories: string[];
   location: string;
+  suburb: string | null;
   state: string;
+  postcode: string | null;
+  location_label: string | null;
   budget_min: number | null;
   budget_max: number | null;
   estimated_budget: number | null;
@@ -73,6 +77,10 @@ export interface GetJobsFilters {
   urgency?: string;
   status?: string;
   search?: string;
+}
+
+export function getPublicJobLocation(job: Pick<Job, 'suburb' | 'state' | 'location'>) {
+  return formatJobLocation(job.suburb, job.state) || job.location;
 }
 
 /** Attach public customer profiles without requiring a PostgREST relationship to the view. */
