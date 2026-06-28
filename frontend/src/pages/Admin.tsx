@@ -785,20 +785,60 @@ export default function Admin() {
 
   // ─── Verification handlers ─────────────────────────────────────────────────
 
-  const handleApproveIdentity = async (id: string) => {
+  const handleApproveIdentity = async (id: string, userId?: string) => {
     setActionLoadingId(id);
     const { error: err } = await approveIdentityVerification(id);
+
+    let wasWhitelisted = false;
+    if (!err && userId) {
+      const { data: updatedUser } = await supabase
+        .from('users')
+        .select('tradie_verified')
+        .eq('id', userId)
+        .single();
+      if (updatedUser?.tradie_verified) {
+        wasWhitelisted = true;
+      }
+    }
+
     setActionLoadingId(null);
     if (err) showToast(err.message || 'Failed to approve identity verification.', 'error');
-    else { showToast('Identity verification approved.', 'success'); loadData(); }
+    else {
+      if (wasWhitelisted) {
+        showToast('All required proofs approved. Tradie has been whitelisted.', 'success');
+      } else {
+        showToast('Identity verification approved.', 'success');
+      }
+      loadData();
+    }
   };
 
-  const handleApproveDocumentOnly = async (id: string) => {
+  const handleApproveDocumentOnly = async (id: string, userId?: string) => {
     setActionLoadingId(id);
     const { error: err } = await approveDocumentOnly(id);
+
+    let wasWhitelisted = false;
+    if (!err && userId) {
+      const { data: updatedUser } = await supabase
+        .from('users')
+        .select('tradie_verified')
+        .eq('id', userId)
+        .single();
+      if (updatedUser?.tradie_verified) {
+        wasWhitelisted = true;
+      }
+    }
+
     setActionLoadingId(null);
     if (err) showToast(err.message || 'Failed to approve document.', 'error');
-    else { showToast('Document approved.', 'success'); loadData(); }
+    else {
+      if (wasWhitelisted) {
+        showToast('All required proofs approved. Tradie has been whitelisted.', 'success');
+      } else {
+        showToast('Document approved.', 'success');
+      }
+      loadData();
+    }
   };
 
   const handleWhitelistTradie = async (userId: string) => {
@@ -1104,7 +1144,7 @@ export default function Admin() {
                                   Reject
                                 </button>
                                 <button
-                                  onClick={() => handleApproveIdentity(item.id)}
+                                  onClick={() => handleApproveIdentity(item.id, item.user_id)}
                                   disabled={isActionLoading}
                                   className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all shadow-sm disabled:opacity-50 inline-flex items-center gap-1"
                                 >
@@ -1250,7 +1290,7 @@ export default function Admin() {
                                             </button>
                                             {IDENTITY_DOCUMENT_TYPES.includes(doc.document_type) ? (
                                               <button
-                                                onClick={() => handleApproveIdentity(doc.id)}
+                                                onClick={() => handleApproveIdentity(doc.id, doc.user_id)}
                                                 disabled={isActionLoading}
                                                 className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50 inline-flex items-center gap-1"
                                               >
@@ -1259,7 +1299,7 @@ export default function Admin() {
                                               </button>
                                             ) : (
                                               <button
-                                                onClick={() => handleApproveDocumentOnly(doc.id)}
+                                                onClick={() => handleApproveDocumentOnly(doc.id, doc.user_id)}
                                                 disabled={isActionLoading}
                                                 className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50 inline-flex items-center gap-1"
                                               >
