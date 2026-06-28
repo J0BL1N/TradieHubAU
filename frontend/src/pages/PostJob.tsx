@@ -447,7 +447,7 @@ export default function PostJob() {
             <MapPin className="h-5 w-5 text-primary" /> 2. Location & Schedule
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
               <select
@@ -470,7 +470,7 @@ export default function PostJob() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Region / Council Area</label>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Region</label>
               <select
                 value={region}
                 onChange={(e) => {
@@ -482,7 +482,7 @@ export default function PostJob() {
                 disabled={!state || locationLoading}
                 required
               >
-                <option value="">{state ? 'Region / Council Area' : 'Select state first'}</option>
+                <option value="">{state ? 'Region' : 'Select state first'}</option>
                 {regionOptions.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
@@ -532,17 +532,18 @@ export default function PostJob() {
           <p className="text-[11px] font-semibold text-muted-foreground">Select suburb-level job location only. Street addresses are not collected here.</p>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-foreground uppercase tracking-wider">Timeline / Start Date</label>
+            <label className="text-xs font-bold text-foreground uppercase tracking-wider">Preferred Start Date &amp; Time</label>
             <div className="relative">
               <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
-                type="text"
-                placeholder="e.g. Next month, or specific date (e.g. 25 June)"
+                type="datetime-local"
+                step="900"
                 value={timeline}
                 onChange={(e) => setTimeline(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-sm font-semibold transition-all"
               />
             </div>
+            <p className="text-[11px] font-semibold text-muted-foreground">Optional preferred start time. Leave blank if you are flexible.</p>
           </div>
         </section>
 
@@ -691,7 +692,7 @@ export default function PostJob() {
                 <p className="mt-1 font-bold text-foreground">{locationSummary}</p>
               </div>
               <div className="rounded-2xl border bg-background p-4">
-                <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Timeline / Start Date</p>
+                <p className="text-xs font-black uppercase tracking-wider text-muted-foreground">Preferred Start Date &amp; Time</p>
                 <p className="mt-1 font-bold text-foreground">{trimmedTimeline}</p>
               </div>
               <div className="rounded-2xl border bg-background p-4">
