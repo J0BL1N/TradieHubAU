@@ -159,6 +159,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Application guard | this commit | Blocked job owners from quoting/applying on their own jobs in the UI and applications insert policy. |
 | In progress | Completed work portfolio | this commit | Switched tradie profile completed work to real completed/released TradieHubAU jobs with opt-in proof images, safe public job metadata, and no manual portfolio upload UI. |
 | In progress | Migration cleanup | this commit | Renamed `054_completed_work_portfolio_foundation.sql` to `058_completed_work_portfolio_foundation.sql` with no schema logic change; frontend build passed; live Supabase should run `058_completed_work_portfolio_foundation.sql`, not the old duplicate `054`. |
+| In progress | Real job reviews | this commit | Added customer-to-tradie reviews for completed/released jobs only; changed files include `Jobs.tsx`, `PublicTradieProfile.tsx`, `Profile.tsx`, `BrowseTradies.tsx`, `reviews.ts`, and migration `059_real_job_reviews.sql`; frontend build passed. |
+| In progress | Review privacy rules | this commit | Public review RPCs expose rating, optional text, safe customer display/avatar, submitted date, job category, suburb, and state only; customer contact details, street addresses, payment details, private messages, dispute evidence, and admin notes remain excluded. Known limitation: review UI/RPCs require live Supabase migration `059_real_job_reviews.sql`. |
 | 20:31:21 | Job Location & Schedule | 7c2579d | Polish post job schedule fields: Renamed 'Region / Council Area' to 'Region', improved desktop grid columns layout to 4 columns, set preferred start date & time to datetime-local input with 15-minute increments (step=900), and updated region validation error message. |
 | 20:38:00 | Location Filters | this commit | Updated browse/search location filters in Jobs.tsx to support State, Region, and Suburb cascading selects. Deferred Browse Tradies due to lacking reliable region/suburb profile fields. |
 | 20:50:00 | Tradie Directory Access | this commit | Restored public tradie directory access by resetting public.public_profiles to security definer mode (security_invoker = false), enabling guests and customers to view safe sanitized profiles. |
@@ -188,6 +190,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Post Job Polish | No migration | No database migration was added; changes are purely frontend layout, labels, and inputs. |
 | Browse Location Filters | No migration | No database migration was added; filtering is executed on the client side using in-memory dataset search. |
 | `057_restore_public_profiles_directory_access.sql` | Created | Resets security_invoker on public.public_profiles view and grants SELECT to anon and authenticated. |
+| `059_real_job_reviews.sql` | Created | Hardens review eligibility to the original customer reviewing the contracted tradie only after job `completed`, payment `released`, and no open dispute; adds safe public review/detail and summary RPCs. Live Supabase must run this migration before the review UI/RPCs work. |
 
 ### Validation
 
@@ -202,6 +205,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Public completion proof publishing | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 | Profile trust live schema hotfix | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation unavailable because `supabase`/`psql` were not installed and Docker daemon was not running. |
 | Profile trust SQL deployment pack | Embedded SQL matched `047_repair_profile_trust_live_schema.sql`; `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
+| Real job reviews | `npm run build` passed; `git diff --check` passed with line-ending warnings only. SQL validation pending local Supabase/psql availability. |
 | Profile avatar refresh polish | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Post-job confirmation and quote edit lock | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |
 | Workspace images and simplified budget | `npm run build` passed; `git diff --check` passed with line-ending warnings only. |

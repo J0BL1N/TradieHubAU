@@ -11,7 +11,7 @@ import {
   SlidersHorizontal, X, Clock, User, Filter, RefreshCw,
   Bookmark, BookmarkCheck, Send, CheckCircle, AlertCircle,
   FileText, Loader2, Lock, Upload, Mail, Phone, MessageSquare,
-  Image as ImageIcon
+  Image as ImageIcon, Star
 } from 'lucide-react';
 import { 
   acceptQuote, submitCompletionProof, raiseJobIssue, approveJobCompletion, 
@@ -27,6 +27,11 @@ import {
   formatSuburbOption
 } from '../lib/auLocations';
 import type { AustralianLocationOption } from '../lib/auLocations';
+import {
+  getMyTradieReviewForJob,
+  submitTradieReview,
+} from '../lib/reviews';
+import type { MyReview } from '../lib/reviews';
 
 // ─── Application Modal ────────────────────────────────────────────────────────
 
@@ -340,6 +345,7 @@ export default function Jobs() {
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [reviewModalJob, setReviewModalJob] = useState<Job | null>(null);
+  const [tradieReviewModalJob, setTradieReviewModalJob] = useState<Job | null>(null);
   const [applyJob, setApplyJob] = useState<Job | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [completionModalJob, setCompletionModalJob] = useState<Job | null>(null);
@@ -349,7 +355,7 @@ export default function Jobs() {
 
   // Prevent body scroll when details or other modals are open
   useEffect(() => {
-    if (selectedJob || reviewModalJob || completionModalJob || applyJob) {
+    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -357,7 +363,7 @@ export default function Jobs() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedJob, reviewModalJob, completionModalJob, applyJob]);
+  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob]);
 
   // Escape key close for details modal
   useEffect(() => {
@@ -1005,6 +1011,22 @@ export default function Jobs() {
         />
       )}
 
+      {tradieReviewModalJob && (
+        <LeaveTradieReviewModal
+          job={tradieReviewModalJob}
+          onClose={() => setTradieReviewModalJob(null)}
+          onSuccess={() => {
+            setTradieReviewModalJob(null);
+            showToast('Review submitted. It now appears on the tradie profile.', 'success');
+            if (selectedJob && selectedJob.id === tradieReviewModalJob.id) {
+              fetchJobLifecycleDetails(selectedJob.id);
+            }
+            loadJobs();
+          }}
+          showToast={showToast}
+        />
+      )}
+
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight">Active Jobs Board</h1>
@@ -1389,10 +1411,10 @@ export default function Jobs() {
                               if (job.status === 'completed') {
                                 return (
                                   <button
-                                    disabled
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-emerald-600 text-white cursor-default whitespace-nowrap"
+                                    onClick={() => setTradieReviewModalJob(job)}
+                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-nowrap"
                                   >
-                                    Completed ✓
+                                    Leave Review
                                   </button>
                                 );
                               }
@@ -1434,7 +1456,7 @@ export default function Jobs() {
                                       disabled
                                       className="text-sm font-bold px-4 py-2.5 rounded-xl bg-emerald-600 text-white cursor-default whitespace-nowrap"
                                     >
-                                      Completed ✓
+                                      Completed
                                     </button>
                                   );
                                 }
@@ -1768,6 +1790,12 @@ export default function Jobs() {
                                       <p className="text-sm text-foreground/80 leading-relaxed font-medium">
                                         This job is completed and the secure payment has been successfully released to the tradie. Thank you for hiring on TradieHubAU!
                                       </p>
+                                      <button
+                                        onClick={() => setTradieReviewModalJob(selectedJob)}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground shadow-sm transition-all hover:bg-primary/95 active:scale-95"
+                                      >
+                                        <Star className="h-4 w-4 fill-current" /> Leave Review
+                                      </button>
                                     </div>
                                   )}
                                 </>
@@ -1930,7 +1958,7 @@ export default function Jobs() {
                                         disabled
                                         className="w-full bg-emerald-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
                                       >
-                                        Completed ✓
+                                        Completed
                                       </button>
                                     ) : (
                                       <button
@@ -2330,6 +2358,219 @@ export default function Jobs() {
 }
 
 // ─── Live Review Countdown Timer ─────────────────────────────────────────────
+
+interface LeaveTradieReviewModalProps {
+  job: Job;
+  onClose: () => void;
+  onSuccess: () => void;
+  showToast: (text: string, type?: 'success' | 'error') => void;
+}
+
+function LeaveTradieReviewModal({ job, onClose, onSuccess, showToast }: LeaveTradieReviewModalProps) {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [text, setText] = useState('');
+  const [tradieId, setTradieId] = useState<string | null>(null);
+  const [existingReview, setExistingReview] = useState<MyReview | null>(null);
+  const [eligibilityMessage, setEligibilityMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReviewState() {
+      setLoading(true);
+      setEligibilityMessage(null);
+      setExistingReview(null);
+      setTradieId(null);
+
+      try {
+        if (!user) {
+          setEligibilityMessage('Sign in to leave a review.');
+          return;
+        }
+
+        if (job.customer_id !== user.id) {
+          setEligibilityMessage('Only the customer who posted this job can review the tradie.');
+          return;
+        }
+
+        if (job.status !== 'completed') {
+          setEligibilityMessage('Reviews become available after the job is completed and payment is released.');
+          return;
+        }
+
+        const { data: payment, error: paymentError } = await getPaymentForJob(job.id);
+        if (paymentError) throw paymentError;
+        if (!payment || payment.status !== 'released' || !payment.payee_id) {
+          setEligibilityMessage('Reviews become available after the protected payment has been released.');
+          return;
+        }
+
+        const { data: issues, error: issuesError } = await getIssuesForJob(job.id);
+        if (issuesError) throw issuesError;
+        if ((issues || []).some(issue => issue.status === 'open')) {
+          setEligibilityMessage('Reviews are blocked while a dispute or issue is still open.');
+          return;
+        }
+
+        const { data: review, error: reviewError } = await getMyTradieReviewForJob(job.id, payment.payee_id);
+        if (reviewError) throw reviewError;
+
+        if (!cancelled) {
+          setTradieId(payment.payee_id);
+          setExistingReview(review);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setEligibilityMessage(err.message || 'Review eligibility could not be checked.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadReviewState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [job, user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tradieId || existingReview || eligibilityMessage) return;
+    if (rating < 1 || rating > 5) {
+      showToast('Choose a rating from 1 to 5.', 'error');
+      return;
+    }
+    if (text.trim().length > 1000) {
+      showToast('Review text must be 1000 characters or fewer.', 'error');
+      return;
+    }
+
+    setSubmitting(true);
+    const { error } = await submitTradieReview({
+      jobId: job.id,
+      tradieId,
+      rating,
+      text,
+    });
+    setSubmitting(false);
+
+    if (error) {
+      if ((error as any).code === '23505') {
+        setEligibilityMessage('You have already reviewed this tradie for this job.');
+        return;
+      }
+      showToast(error.message || 'Review could not be submitted.', 'error');
+      return;
+    }
+
+    onSuccess();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+        <div className="p-6 border-b flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-extrabold text-foreground">Review Tradie</h3>
+            <p className="text-sm text-muted-foreground font-semibold mt-0.5 line-clamp-1">{job.title}</p>
+          </div>
+          <button onClick={onClose} disabled={submitting} className="p-1.5 rounded-lg border hover:bg-muted text-muted-foreground shrink-0 disabled:opacity-50">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {loading ? (
+            <div className="flex items-center gap-3 rounded-2xl border bg-muted/30 p-4 text-sm font-semibold text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              Checking review eligibility...
+            </div>
+          ) : existingReview ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-2xl border border-green-500/20 bg-green-500/10 p-4 text-green-700">
+                <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-extrabold">Already reviewed</h4>
+                  <p className="mt-1 text-sm font-semibold">You have already reviewed this tradie for this completed job.</p>
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-background p-4 space-y-2">
+                <div className="flex items-center gap-1 text-amber-600 font-bold text-sm">
+                  <Star className="h-4 w-4 fill-amber-500" /> {existingReview.rating} / 5
+                </div>
+                {existingReview.text && <p className="text-sm text-muted-foreground font-medium leading-6 whitespace-pre-line">{existingReview.text}</p>}
+                <p className="text-xs text-muted-foreground font-semibold">{new Date(existingReview.submitted_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+          ) : eligibilityMessage ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-900">
+              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-extrabold">Review not available</h4>
+                <p className="mt-1 text-sm font-semibold leading-6">{eligibilityMessage}</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="rounded-2xl border bg-muted/30 p-4 text-xs font-semibold leading-5 text-muted-foreground">
+                Reviews are only accepted from the original customer after a TradieHubAU job is completed, payment is released, and no dispute is open.
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(value => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setRating(value)}
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-xl border text-sm font-black transition-all ${
+                        rating >= value
+                          ? 'border-amber-500/40 bg-amber-500/10 text-amber-600'
+                          : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                      }`}
+                      aria-label={`${value} star rating`}
+                    >
+                      <Star className={`h-5 w-5 ${rating >= value ? 'fill-amber-500' : ''}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Review text optional</label>
+                <textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  maxLength={1000}
+                  rows={4}
+                  placeholder="Share a brief review of the completed work..."
+                  className="w-full rounded-xl border bg-background px-4 py-3 text-sm font-medium leading-6 outline-none transition-all focus:border-primary/50"
+                />
+                <p className="text-xs font-semibold text-muted-foreground">{text.length}/1000 characters</p>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t pt-5">
+                <button type="button" onClick={onClose} disabled={submitting} className="px-4 py-2.5 border rounded-xl text-xs font-bold hover:bg-muted text-muted-foreground transition-all disabled:opacity-50">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:bg-primary/95 transition-all shadow-md active:scale-95 disabled:opacity-50">
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Submit Review
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ReviewCountdown({ deadline }: { deadline: string }) {
   const [timeLeft, setTimeLeft] = useState<string>('');

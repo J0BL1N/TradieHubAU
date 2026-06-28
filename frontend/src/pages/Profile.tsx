@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import {
   getUserProfile,
   getPublicUserProfile,
-  getPublicProfilesByIds,
   updateUserProfile,
   submitVerification
 } from '../lib/users';
@@ -19,6 +18,7 @@ import {
   validateTrustImage,
 } from '../lib/profileTrust';
 import type { CompletionProofPortfolioItem } from '../lib/profileTrust';
+import { fetchPublicTradieReviews } from '../lib/reviews';
 import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
   Upload, Loader2, Award, Star, Briefcase, Clock,
@@ -246,40 +246,22 @@ export default function Profile() {
       const isTradie = targetProfile.role === 'tradie' || targetProfile.role === 'dual';
       const isCustomer = targetProfile.role === 'customer' || targetProfile.role === 'dual';
 
-      // 1. Fetch Reviews
-      const { data: reviewsData, error: reviewsErr } = await supabase
-        .from('reviews')
-        .select(`
-          id,
-          rating,
-          text,
-          submitted_at,
-          reviewer_id
-        `)
-        .eq('reviewee_id', targetId)
-        .eq('unlocked', true)
-        .order('submitted_at', { ascending: false });
+      // 1. Fetch real public reviews from completed/released TradieHubAU jobs.
+      const { data: reviewsData, error: reviewsErr } = await fetchPublicTradieReviews(targetId);
 
       if (!reviewsErr && reviewsData) {
-        const { data: reviewerProfiles, error: reviewerProfilesErr } = await getPublicProfilesByIds(
-          reviewsData.map(review => review.reviewer_id)
-        );
-        const reviewersById = new Map(reviewerProfiles.map(profile => [profile.id, profile]));
-
-        if (reviewerProfilesErr) {
-          console.error('Error fetching reviewer public profiles:', reviewerProfilesErr);
-        }
-
-        setReviews(reviewsData.map(({ reviewer_id, ...review }) => {
-          const reviewer = reviewersById.get(reviewer_id);
-          return {
-            ...review,
-            reviewer: reviewer ? {
-              display_name: reviewer.display_name,
-              avatar_url: reviewer.avatar_url,
-            } : null,
-          };
-        }));
+        setReviews(reviewsData.map(review => ({
+          id: review.id,
+          rating: review.rating,
+          text: review.text || '',
+          submitted_at: review.submitted_at,
+          reviewer: {
+            display_name: review.reviewer_display_name || 'Verified customer',
+            avatar_url: review.reviewer_avatar_url,
+          },
+        })));
+      } else if (reviewsErr) {
+        console.error('Error fetching public tradie reviews:', reviewsErr);
       }
 
       // 2. Fetch Jobs
@@ -1716,7 +1698,7 @@ export default function Profile() {
                     <Loader2 className="h-6 w-6 text-primary animate-spin" />
                   </div>
                 ) : reviews.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-medium">No client reviews submitted yet.</p>
+                  <p className="text-sm text-muted-foreground font-medium">Reviews from completed TradieHubAU jobs will appear here.</p>
                 ) : (
                   <div className="divide-y space-y-4">
                     {reviews.map(review => (

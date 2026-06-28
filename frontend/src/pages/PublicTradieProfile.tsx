@@ -1,23 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Award, Briefcase, Calendar, ExternalLink, Loader2, MapPin, ShieldCheck, Star } from 'lucide-react';
-import { getPublicProfilesByIds, getPublicUserProfile } from '../lib/users';
+import { getPublicUserProfile } from '../lib/users';
 import type { UserProfile } from '../lib/users';
-import { supabase } from '../lib/supabase';
 import { fetchPublicProofGallery } from '../lib/profileTrust';
 import type { PublicProofImage } from '../lib/profileTrust';
-
-interface Review {
-  id: string;
-  rating: number;
-  text: string | null;
-  submitted_at: string;
-  reviewer_id: string;
-  reviewer?: {
-    display_name: string;
-    avatar_url: string | null;
-  } | null;
-}
+import { fetchPublicTradieReviews } from '../lib/reviews';
+import type { PublicTradieReview } from '../lib/reviews';
 
 const tradeLabels: Record<string, string> = {
   electrical: 'Electrical',
@@ -41,7 +30,7 @@ export default function PublicTradieProfile() {
   const { userId } = useParams<{ userId: string }>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [proofGallery, setProofGallery] = useState<PublicProofImage[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<PublicTradieReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,32 +54,14 @@ export default function PublicTradieProfile() {
         reviewsResult,
       ] = await Promise.all([
         fetchPublicProofGallery(userId),
-        supabase
-          .from('reviews')
-          .select('id, rating, text, submitted_at, reviewer_id')
-          .eq('reviewee_id', userId)
-          .eq('unlocked', true)
-          .order('submitted_at', { ascending: false }),
+        fetchPublicTradieReviews(userId),
       ]);
 
       if (proofResult.error) throw proofResult.error;
       if (reviewsResult.error) throw reviewsResult.error;
 
       setProofGallery(proofResult.data);
-
-      const reviewRows = (reviewsResult.data || []) as Review[];
-      const { data: reviewerProfiles } = await getPublicProfilesByIds(reviewRows.map(review => review.reviewer_id));
-      const reviewersById = new Map(reviewerProfiles.map(reviewer => [reviewer.id, reviewer]));
-      setReviews(reviewRows.map(review => {
-        const reviewer = reviewersById.get(review.reviewer_id);
-        return {
-          ...review,
-          reviewer: reviewer ? {
-            display_name: reviewer.display_name,
-            avatar_url: reviewer.avatar_url,
-          } : null,
-        };
-      }));
+      setReviews(reviewsResult.data);
     } catch (err: any) {
       console.error('Public tradie profile load error:', err.message);
       setError(err.message || 'Public tradie profile could not be loaded.');
@@ -248,7 +219,7 @@ export default function PublicTradieProfile() {
       <section className="bg-card border rounded-3xl p-6 space-y-5">
         <h2 className="text-xl font-black flex items-center gap-2"><Star className="h-5 w-5 text-primary" /> Reviews</h2>
         {reviews.length === 0 ? (
-          <p className="text-sm text-muted-foreground font-medium">No reviews yet. Reviews appear after completed jobs.</p>
+          <p className="text-sm text-muted-foreground font-medium">Reviews from completed TradieHubAU jobs will appear here.</p>
         ) : (
           <div className="divide-y">
             {reviews.map(review => (
@@ -256,11 +227,22 @@ export default function PublicTradieProfile() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black overflow-hidden">
-                      {review.reviewer?.avatar_url ? <img src={review.reviewer.avatar_url} alt="" className="h-full w-full object-cover" /> : (review.reviewer?.display_name || 'U').charAt(0).toUpperCase()}
+                      {review.reviewer_avatar_url ? <img src={review.reviewer_avatar_url} alt="" className="h-full w-full object-cover" /> : (review.reviewer_display_name || 'V').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-bold">{review.reviewer?.display_name || 'Verified customer'}</p>
-                      <p className="text-xs text-muted-foreground font-medium">{new Date(review.submitted_at).toLocaleDateString()}</p>
+                      <p className="text-sm font-bold">{review.reviewer_display_name || 'Verified customer'}</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {new Date(review.submitted_at).toLocaleDateString()}
+                        {(review.job_categories?.[0] || review.job_suburb || review.job_state) && (
+                          <>
+                            {' | '}
+                            {[
+                              review.job_categories?.[0] ? (tradeLabels[review.job_categories[0]] || review.job_categories[0]) : null,
+                              [review.job_suburb, review.job_state].filter(Boolean).join(', ') || null,
+                            ].filter(Boolean).join(' | ')}
+                          </>
+                        )}
+                      </p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-600 px-2.5 py-1 text-xs font-bold">

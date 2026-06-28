@@ -2,10 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchTradies } from '../lib/users';
 import type { UserProfile } from '../lib/users';
+import { fetchPublicTradieReviewSummaries } from '../lib/reviews';
+import type { ReviewSummary } from '../lib/reviews';
 import { Star, ShieldCheck, MapPin, Award, Search, SlidersHorizontal, X, Filter, RefreshCw, Loader2 } from 'lucide-react';
 
 export default function BrowseTradies() {
   const [tradies, setTradies] = useState<UserProfile[]>([]);
+  const [reviewSummaries, setReviewSummaries] = useState<Map<string, ReviewSummary>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +46,13 @@ export default function BrowseTradies() {
       setError(fetchErr.message || 'Failed to fetch tradies list.');
     } else {
       setTradies(data);
+      const { data: summaries, error: summariesError } = await fetchPublicTradieReviewSummaries(data.map(tradie => tradie.id));
+      if (summariesError) {
+        console.error('Failed to fetch tradie review summaries:', summariesError);
+        setReviewSummaries(new Map());
+      } else {
+        setReviewSummaries(new Map(summaries.map(summary => [summary.tradie_id, summary])));
+      }
     }
     setLoading(false);
   }, [selectedState, selectedCategories, verifiedOnly, searchText]);
@@ -213,6 +223,7 @@ export default function BrowseTradies() {
                   : 'General Contractor';
                 const locationParts = [tradie.suburb, tradie.state].filter(Boolean);
                 const locationStr = locationParts.length > 0 ? locationParts.join(', ') : 'Australia';
+                const reviewSummary = reviewSummaries.get(tradie.id);
 
                 return (
                   <div key={tradie.id} className="bg-card border rounded-2xl p-6 hover:shadow-md transition-all flex flex-col justify-between space-y-6">
@@ -242,6 +253,13 @@ export default function BrowseTradies() {
                         <MapPin className="mr-1.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
                         {locationStr}
                       </div>
+
+                      {reviewSummary && reviewSummary.review_count > 0 && (
+                        <div className="flex items-center text-xs font-bold text-amber-600">
+                          <Star className="mr-1.5 h-4 w-4 shrink-0 fill-amber-500 text-amber-500" />
+                          {Number(reviewSummary.average_rating).toFixed(1)} ({reviewSummary.review_count} reviews)
+                        </div>
+                      )}
 
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {tradie.trades?.slice(0, 3).map((tid) => {
