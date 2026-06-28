@@ -1477,7 +1477,7 @@ export default function Profile() {
                   </div>
                 ) : completionProofItems.length === 0 ? (
                   <p className="text-sm text-muted-foreground font-medium">
-                    Completed jobs will appear here once work is finished and approved.
+                    Completed jobs will appear here after a customer accepts your completion proof and payment is released.
                   </p>
                 ) : (
                   <div className="space-y-4">
@@ -1559,15 +1559,20 @@ export default function Profile() {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                              <label className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                                <input
-                                  type="checkbox"
-                                  checked={draft.isPublic}
-                                  onChange={(e) => updateCompletionProofDraft(item.id, { isPublic: e.target.checked })}
-                                  className="rounded border-border text-primary"
-                                />
-                                Show this completed job on my public profile
-                              </label>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-muted-foreground">Publication Status:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateCompletionProofDraft(item.id, { isPublic: !draft.isPublic })}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                    draft.isPublic
+                                      ? 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/15'
+                                      : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80'
+                                  }`}
+                                >
+                                  {draft.isPublic ? 'Show on public profile' : 'Hidden from public profile'}
+                                </button>
+                              </div>
                               <button
                                 type="button"
                                 disabled={savingThisProof}

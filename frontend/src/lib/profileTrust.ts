@@ -134,7 +134,7 @@ export async function fetchEligibleCompletionProofPortfolioItems() {
 }
 
 export async function updateCompletionProofPortfolioItem(proofId: string, input: CompletionProofPortfolioInput) {
-  const { data, error } = await supabase.rpc('set_completion_proof_public_portfolio', {
+  const { data, error } = await supabase.rpc('update_completion_proof_portfolio_publication', {
     p_proof_id: proofId,
     p_is_public_portfolio: input.is_public_portfolio,
     p_portfolio_title: input.portfolio_title || null,

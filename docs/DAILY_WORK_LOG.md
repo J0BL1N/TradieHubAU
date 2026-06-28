@@ -157,7 +157,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Admin verification | this commit | Grouped identity and tradie proof review into one tradie approval case and kept approved credential rows visible until final tradie whitelisting. |
 | In progress | Verification UI polish | this commit | Replaced applicant document-type dropdowns with explicit upload cards and converted tradie admin approval cases from a table to case review cards. |
 | In progress | Application guard | this commit | Blocked job owners from quoting/applying on their own jobs in the UI and applications insert policy. |
-| In progress | Completed work portfolio | this commit | Switched tradie profile completed work to real completed/released TradieHubAU jobs with opt-in proof images, safe public job metadata, and no manual portfolio upload UI. |
+| 00:10:00 | Completed work portfolio | this commit | Switched tradie profile completed work to real completed/released TradieHubAU jobs with opt-in proof images, safe public job metadata, and no manual portfolio upload UI. Changed files: Profile.tsx, profileTrust.ts. No new migration added; build passed; no live Supabase action required. |
 | In progress | Migration cleanup | this commit | Renamed `054_completed_work_portfolio_foundation.sql` to `058_completed_work_portfolio_foundation.sql` with no schema logic change; frontend build passed; live Supabase should run `058_completed_work_portfolio_foundation.sql`, not the old duplicate `054`. |
 | In progress | Real job reviews | this commit | Added customer-to-tradie reviews for completed/released jobs only; changed files include `Jobs.tsx`, `PublicTradieProfile.tsx`, `Profile.tsx`, `BrowseTradies.tsx`, `reviews.ts`, and migration `059_real_job_reviews.sql`; frontend build passed. |
 | In progress | Review privacy rules | this commit | Public review RPCs expose rating, optional text, safe customer display/avatar, submitted date, job category, suburb, and state only; customer contact details, street addresses, payment details, private messages, dispute evidence, and admin notes remain excluded. Known limitation: review UI/RPCs require live Supabase migration `059_real_job_reviews.sql`. |
@@ -217,6 +217,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Job location & schedule polish | `npm run build` passed; layout and 15-minute step input verified. |
 | Structured location browse filters | `npm run build` passed. Cascading dropdown behavior and filtering on state/region/suburb verified on client side. Deferred Browse Tradies (documented limitation). |
 | Public tradie directory access | `npm run build` passed. Verified public_profiles view does not contain private fields like email/phone, ensuring safety. |
+| Completed work portfolio | `npm run build` passed; verified real completed platform job visibility toggles and safe public directory details. |
 
 ### Remaining / Next
 
