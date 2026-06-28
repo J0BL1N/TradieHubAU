@@ -47,6 +47,17 @@ export default function Layout() {
             {/* Desktop Middle Navigation */}
             <nav className="hidden md:flex items-center gap-6">
               <NavLink
+                to="/how-it-works"
+                className={({ isActive }) =>
+                  `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
+                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  }`
+                }
+              >
+                How It Works
+              </NavLink>
+
+              <NavLink
                 to="/jobs"
                 className={({ isActive }) =>
                   `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
@@ -205,6 +216,14 @@ export default function Layout() {
           
           <div className="w-full max-w-sm flex flex-col gap-3">
             <Link
+              to="/how-it-works"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 bg-card border rounded-xl hover:border-primary/40 text-base font-bold text-foreground transition-all"
+            >
+              How It Works
+            </Link>
+
+            <Link
               to="/jobs"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 bg-card border rounded-xl hover:border-primary/40 text-base font-bold text-foreground transition-all"
@@ -318,6 +337,7 @@ export default function Layout() {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-end">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+            <Link to="/how-it-works" className="hover:text-primary transition-colors">How It Works</Link>
             <Link to="/protected-payments" className="hover:text-primary transition-colors">Protected Payments</Link>
             <Link to="/trust-and-safety" className="hover:text-primary transition-colors">Trust &amp; Safety</Link>
             <Link to="/support" className="hover:text-primary transition-colors">Contact Support</Link>

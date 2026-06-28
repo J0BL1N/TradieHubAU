@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
 import Layout from './components/Layout';
 import Home from './pages/Home';
+import HowItWorks from './pages/HowItWorks';
 import Jobs from './pages/Jobs';
 import JobDetail from './pages/JobDetail';
 import PostJob from './pages/PostJob';
@@ -31,6 +32,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
+            <Route path="how-it-works" element={<HowItWorks />} />
             <Route path="jobs" element={<Jobs />} />
             <Route path="jobs/:jobId" element={<JobDetail />} />
             <Route path="post-job" element={<PostJob />} />
