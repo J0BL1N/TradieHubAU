@@ -168,6 +168,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 20:38:00 | Location Filters | this commit | Updated browse/search location filters in Jobs.tsx to support State, Region, and Suburb cascading selects. Deferred Browse Tradies due to lacking reliable region/suburb profile fields. |
 | 20:50:00 | Tradie Directory Access | this commit | Restored public tradie directory access by resetting public.public_profiles to security definer mode (security_invoker = false), enabling guests and customers to view safe sanitized profiles. |
 | 00:20:00 | Website Analytics Foundation | this commit | Implemented website analytics foundation for admin users. Created get_admin_analytics RPC, added tab-switching logic to Admin.tsx, and displayed Marketplace Snapshot, Job Funnel, and Beta Activity indicators with All-time/30-day/7-day windows. |
+| 00:30:00 | Admin Analytics Polish | this commit | Polished admin marketplace analytics with 30s silent background auto-refresh interval, a Last Updated timestamp, a manual Refresh button, live activity strip (pulsating indicator), Donut charts for breakdown data (User breakdown, Job Status, and Verification status), and a sorted Category horizontal bar chart. |
+
 
 
 
@@ -197,6 +199,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `057_restore_public_profiles_directory_access.sql` | Created | Resets security_invoker on public.public_profiles view and grants SELECT to anon and authenticated. |
 | `059_real_job_reviews.sql` | Created | Hardens review eligibility to the original customer reviewing the contracted tradie only after job `completed`, payment `released`, and no open dispute; adds safe public review/detail and summary RPCs. Live Supabase must run this migration before the review UI/RPCs work. |
 | `060_admin_analytics_rpc.sql` | Created | Adds public.get_admin_analytics RPC, checking admin role and compiling aggregate marketplace snapshot, job funnel, and beta activity metrics. |
+| `061_admin_analytics_polish.sql` | Created | Extends public.get_admin_analytics RPC to support active user counters, today's logs, and user, job, verification, and category breakdowns. |
+
 
 
 ### Validation
@@ -223,6 +227,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Public tradie directory access | `npm run build` passed. Verified public_profiles view does not contain private fields like email/phone, ensuring safety. |
 | Completed work portfolio | `npm run build` passed; verified real completed platform job visibility toggles and safe public directory details. |
 | Website analytics foundation | `npm run build` passed. Verified aggregate statistics generation, time-window support, and tab-selector interface. |
+| Website analytics polish | `npm run build` passed. Verified aggregate statistics generation, 30s background refresh, manual refresh, and visual SVG donut/bar breakdowns. |
+
 
 
 ### Remaining / Next

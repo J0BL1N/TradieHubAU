@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import {
@@ -11,7 +11,7 @@ import {
   ShieldCheck, UserCheck, ShieldAlert, Award, Loader2, AlertTriangle,
   Check, FileText, CheckCircle, AlertCircle, X, Image as ImageIcon,
   ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
-  Camera, TrendingUp, DollarSign
+  Camera, TrendingUp, DollarSign, RefreshCw, Activity
 } from 'lucide-react';
 import { getDisputedJobs, recordAdminDisputeAction, resolveDispute } from '../lib/payments';
 
@@ -699,6 +699,156 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
   );
 }
 
+// ─── Analytics Helper Components ─────────────────────────────────────────────
+
+interface DonutChartItem {
+  label: string;
+  value: number;
+  color: string;
+}
+
+interface DonutChartProps {
+  title: string;
+  data: DonutChartItem[];
+}
+
+function DonutChart({ title, data }: DonutChartProps) {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  let accumulated = 0;
+  const slices = data.map((item) => {
+    const percentage = total > 0 ? (item.value / total) * 100 : 0;
+    const offset = 100 - accumulated + 25; // start at 12 o'clock
+    accumulated += percentage;
+    return {
+      ...item,
+      percentage,
+      dashArray: `${percentage} ${100 - percentage}`,
+      dashOffset: offset % 100,
+    };
+  });
+
+  return (
+    <div className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm flex flex-col justify-between">
+      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</h4>
+      {total === 0 ? (
+        <div className="h-44 flex items-center justify-center text-xs text-muted-foreground font-semibold">
+          No data available
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-center gap-6 py-2">
+          <div className="relative h-32 w-32 shrink-0">
+            <svg viewBox="0 0 36 36" className="w-full h-full transform -scale-x-100">
+              {/* Background circle */}
+              <circle
+                cx="18"
+                cy="18"
+                r="15.915"
+                fill="transparent"
+                stroke="var(--muted)"
+                strokeWidth="3"
+                className="opacity-20"
+              />
+              {slices.map((slice, index) => slice.value > 0 && (
+                <circle
+                  key={index}
+                  cx="18"
+                  cy="18"
+                  r="15.915"
+                  fill="transparent"
+                  stroke={slice.color}
+                  strokeWidth="3.8"
+                  strokeDasharray={slice.dashArray}
+                  strokeDashoffset={slice.dashOffset}
+                  className="transition-all duration-500 ease-out"
+                />
+              ))}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-xl font-black text-foreground">{total}</span>
+              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Total</span>
+            </div>
+          </div>
+          <div className="flex-1 w-full space-y-2">
+            {slices.map((slice, index) => (
+              <div key={index} className="flex items-center justify-between text-xs font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                  <span className="text-muted-foreground truncate max-w-[120px]">{slice.label}</span>
+                </div>
+                <span className="text-foreground shrink-0">{slice.value} ({Math.round(slice.percentage)}%)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CategoryBarChartProps {
+  categories: Record<string, number>;
+}
+
+function CategoryBarChart({ categories }: CategoryBarChartProps) {
+  const categoryLabels: Record<string, string> = {
+    plumbing: 'Plumbing',
+    electrical: 'Electrical',
+    carpentry: 'Carpentry',
+    handyman: 'Handyman',
+    tiling: 'Tiling',
+    painting: 'Painting',
+    roofing: 'Roofing',
+    landscaping: 'Landscaping',
+    plastering: 'Plastering',
+    bricklaying: 'Bricklaying',
+    concreting: 'Concreting',
+    fencing: 'Fencing',
+    demolition: 'Demolition',
+    cleaning: 'Cleaning',
+    other: 'Other'
+  };
+
+  const items = Object.entries(categories || {})
+    .map(([key, value]) => ({
+      label: categoryLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      value,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const max = items.reduce((m, item) => Math.max(m, item.value), 0);
+
+  return (
+    <div className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
+      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Job Categories</h4>
+      {items.length === 0 ? (
+        <div className="h-44 flex items-center justify-center text-xs text-muted-foreground font-semibold">
+          No job category data in this window
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {items.slice(0, 8).map((item, index) => {
+            const pct = max > 0 ? (item.value / max) * 100 : 0;
+            return (
+              <div key={index} className="space-y-1 text-xs font-semibold">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{item.label}</span>
+                  <span className="text-foreground">{item.value} {item.value === 1 ? 'job' : 'jobs'}</span>
+                </div>
+                <div className="h-2 w-full bg-muted/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Admin Page ───────────────────────────────────────────────────────────────
 
 export default function Admin() {
@@ -729,6 +879,8 @@ export default function Admin() {
   const [analyticsTimeWindow, setAnalyticsTimeWindow] = useState('all');
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const isRefreshingRef = useRef(false);
 
   // ─── Toast helper ──────────────────────────────────────────────────────────
 
@@ -786,9 +938,11 @@ export default function Admin() {
     }
   }, [isAdmin]);
 
-  const loadAnalytics = useCallback(async (window: string) => {
+  const loadAnalytics = useCallback(async (window: string, silent = false) => {
     if (!isAdmin) return;
-    setAnalyticsLoading(true);
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
+    if (!silent) setAnalyticsLoading(true);
     setAnalyticsError(null);
     try {
       const { data, error: err } = await supabase.rpc('get_admin_analytics', {
@@ -796,10 +950,12 @@ export default function Admin() {
       });
       if (err) throw err;
       setAnalyticsData(data);
+      setLastUpdated(new Date());
     } catch (err: any) {
       setAnalyticsError(err.message || 'Failed to load marketplace analytics.');
     } finally {
-      setAnalyticsLoading(false);
+      if (!silent) setAnalyticsLoading(false);
+      isRefreshingRef.current = false;
     }
   }, [isAdmin]);
 
@@ -809,7 +965,15 @@ export default function Admin() {
 
   useEffect(() => {
     if (isAdmin && adminTab === 'analytics') {
-      loadAnalytics(analyticsTimeWindow);
+      // Load initially (full spinner)
+      loadAnalytics(analyticsTimeWindow, false);
+
+      // Auto-refresh every 30 seconds (silently in background)
+      const interval = setInterval(() => {
+        loadAnalytics(analyticsTimeWindow, true);
+      }, 30000);
+
+      return () => clearInterval(interval);
     }
   }, [isAdmin, adminTab, analyticsTimeWindow, loadAnalytics]);
 
@@ -1568,7 +1732,7 @@ export default function Admin() {
       )}
 
       {adminTab === 'analytics' && (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in duration-300">
           {/* Time window selector and header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card border p-6 rounded-3xl">
             <div>
@@ -1591,6 +1755,42 @@ export default function Admin() {
             </div>
           </div>
 
+          {/* Live Activity Strip */}
+          {analyticsData && (
+            <div className="bg-card border px-6 py-3 rounded-2xl flex flex-wrap gap-y-2 items-center justify-between text-xs font-bold text-muted-foreground shadow-sm">
+              <div className="flex flex-wrap gap-x-6 gap-y-1">
+                <span className="flex items-center gap-1.5 text-foreground font-black">
+                  <Activity className="h-3.5 w-3.5 text-green-500 animate-pulse" />
+                  Live Now: <span className="text-green-500">{analyticsData.live_now?.active_users_5m || 0} active users</span>
+                </span>
+                <span className="border-r border-border h-4 self-center hidden sm:inline" />
+                <span>Today:</span>
+                <span>{analyticsData.today?.jobs_posted_today || 0} jobs posted</span>
+                <span>{analyticsData.today?.messages_sent_today || 0} messages sent</span>
+                <span>
+                  {analyticsData.today?.quotes_submitted_today || 0}{' '}
+                  {(analyticsData.today?.quotes_submitted_today || 0) === 1 ? 'quote' : 'quotes'} submitted
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {lastUpdated && (
+                  <span className="text-[10px] text-muted-foreground">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={analyticsLoading}
+                  onClick={() => void loadAnalytics(analyticsTimeWindow, false)}
+                  className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all disabled:opacity-50"
+                  title="Manual Refresh"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Error Banner */}
           {analyticsError && (
             <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-center gap-2">
@@ -1599,7 +1799,7 @@ export default function Admin() {
             </div>
           )}
 
-          {analyticsLoading ? (
+          {analyticsLoading && !analyticsData ? (
             <div className="flex flex-col items-center justify-center p-12 bg-card border rounded-3xl gap-4">
               <Loader2 className="h-8 w-8 text-primary animate-spin" />
               <p className="text-sm font-semibold text-muted-foreground">Compiling aggregate statistics...</p>
@@ -1660,61 +1860,104 @@ export default function Admin() {
                 </div>
               </section>
 
-              {/* Verification Pipeline & Portfolios */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Verification Pipeline</h3>
-                  <div className="divide-y text-sm">
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">Pending Docs/Files</span>
-                      <span className="text-foreground">{analyticsData.marketplace_snapshot.pending_verifications}</span>
-                    </div>
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">Pending Review Cases</span>
-                      <span className="text-foreground">{analyticsData.marketplace_snapshot.pending_verification_cases}</span>
-                    </div>
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">Active Public Portfolios</span>
-                      <span className="text-foreground">{analyticsData.marketplace_snapshot.public_portfolios} items</span>
-                    </div>
-                  </div>
-                </section>
+              {/* Donut Chart Breakdowns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <DonutChart
+                  title="User Breakdown"
+                  data={[
+                    { label: 'Customers', value: analyticsData.user_breakdown?.customers || 0, color: '#f97316' },
+                    { label: 'Tradies', value: analyticsData.user_breakdown?.tradies || 0, color: '#0f172a' },
+                    { label: 'Dual-Role', value: analyticsData.user_breakdown?.dual || 0, color: '#8b5cf6' },
+                    { label: 'Admins', value: analyticsData.user_breakdown?.admins || 0, color: '#ef4444' }
+                  ]}
+                />
 
-                {/* Beta Activity Indicators */}
-                <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Beta Activity ({analyticsTimeWindow === 'all' ? 'Cumulative' : analyticsTimeWindow === '30days' ? 'Last 30d' : 'Last 7d'})</h3>
-                  <div className="divide-y text-sm">
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">New Registrations</span>
-                      <span className="text-foreground flex items-center gap-1.5 font-bold">
-                        <User className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_users}
-                      </span>
+                <DonutChart
+                  title="Job Status Breakdown"
+                  data={[
+                    { label: 'Open', value: analyticsData.job_status_breakdown?.open || 0, color: '#22c55e' },
+                    { label: 'Accepted', value: analyticsData.job_status_breakdown?.accepted || 0, color: '#3b82f6' },
+                    { label: 'Funded Active', value: analyticsData.job_status_breakdown?.funded || 0, color: '#6366f1' },
+                    { label: 'Completion Review', value: analyticsData.job_status_breakdown?.review || 0, color: '#f59e0b' },
+                    { label: 'Completed', value: analyticsData.job_status_breakdown?.completed || 0, color: '#10b981' },
+                    { label: 'Disputed', value: analyticsData.job_status_breakdown?.disputed || 0, color: '#ef4444' }
+                  ]}
+                />
+
+                <DonutChart
+                  title="Verification Breakdown"
+                  data={[
+                    { label: 'Verified Tradies', value: analyticsData.verification_breakdown?.verified || 0, color: '#22c55e' },
+                    { label: 'Pending Docs', value: analyticsData.verification_breakdown?.pending || 0, color: '#f59e0b' },
+                    { label: 'Unverified Tradies', value: analyticsData.verification_breakdown?.unverified || 0, color: '#94a3b8' }
+                  ]}
+                />
+              </div>
+
+              {/* Category Bar Chart & Verification Pipeline */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <CategoryBarChart categories={analyticsData.job_categories} />
+                </div>
+
+                <div className="space-y-6">
+                  {/* Verification Pipeline */}
+                  <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Verification Pipeline</h4>
+                    <div className="divide-y text-sm">
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">Pending Docs/Files</span>
+                        <span className="text-foreground">{analyticsData.marketplace_snapshot.pending_verifications}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">Pending Review Cases</span>
+                        <span className="text-foreground">{analyticsData.marketplace_snapshot.pending_verification_cases}</span>
+                      </div>
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">Active Public Portfolios</span>
+                        <span className="text-foreground">{analyticsData.marketplace_snapshot.public_portfolios} items</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">New Jobs Posted</span>
-                      <span className="text-foreground flex items-center gap-1.5 font-bold">
-                        <Briefcase className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_jobs}
-                      </span>
+                  </section>
+
+                  {/* Beta Activity Indicators */}
+                  <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      Live Counters ({analyticsTimeWindow === 'all' ? 'Cumulative' : analyticsTimeWindow === '30days' ? 'Last 30d' : 'Last 7d'})
+                    </h4>
+                    <div className="divide-y text-sm">
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">New Registrations</span>
+                        <span className="text-foreground flex items-center gap-1.5 font-bold">
+                          <User className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_users}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">New Jobs Posted</span>
+                        <span className="text-foreground flex items-center gap-1.5 font-bold">
+                          <Briefcase className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_jobs}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">Messages Sent</span>
+                        <span className="text-foreground flex items-center gap-1.5 font-bold">
+                          <MessageSquare className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_messages}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2.5 font-semibold">
+                        <span className="text-muted-foreground">New Reviews Posted</span>
+                        <span className="text-foreground flex items-center gap-1.5 font-bold">
+                          <CheckCircle className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_reviews}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">Messages Swapped</span>
-                      <span className="text-foreground flex items-center gap-1.5 font-bold">
-                        <MessageSquare className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_messages}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-2.5 font-semibold">
-                      <span className="text-muted-foreground">New Reviews Posted</span>
-                      <span className="text-foreground flex items-center gap-1.5 font-bold">
-                        <CheckCircle className="h-3.5 w-3.5 text-primary" /> {analyticsData.beta_activity.new_reviews}
-                      </span>
-                    </div>
-                  </div>
-                </section>
+                  </section>
+                </div>
               </div>
 
               {/* Job Funnel */}
               <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Job Funnel ({analyticsTimeWindow === 'all' ? 'Cumulative' : analyticsTimeWindow === '30days' ? 'Last 30d' : 'Last 7d'})</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Job Funnel ({analyticsTimeWindow === 'all' ? 'Cumulative' : analyticsTimeWindow === '30days' ? 'Last 30d' : 'Last 7d'})</h3>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center font-bold">
                   <div className="p-4 bg-muted/20 border rounded-xl space-y-1 shadow-sm">
                     <p className="text-[10px] text-muted-foreground uppercase">Jobs Posted</p>
