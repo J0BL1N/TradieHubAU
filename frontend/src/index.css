@@ -140,3 +140,10 @@
   width: auto;
   object-fit: contain;
 }
+
+/* Form options styling */
+select option {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+

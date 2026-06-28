@@ -244,7 +244,7 @@ export default function PostJob() {
     }
 
     if (!trimmedRegion) {
-      setError('Please select a region or council area.');
+      setError('Please select a region.');
       return false;
     }
 
@@ -447,7 +447,7 @@ export default function PostJob() {
             <MapPin className="h-5 w-5 text-primary" /> 2. Location & Schedule
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
               <select
