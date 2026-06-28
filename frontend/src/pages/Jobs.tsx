@@ -1876,7 +1876,7 @@ export default function Jobs() {
                       )}
 
                       {/* 3. Customer Actions: Protected Payment Funding Simulation */}
-                      {selectedJob.customer_id === user.id && selectedJob.status === 'accepted' && jobPayment && (
+                      {((selectedJob.customer_id === user?.id) || profile?.is_admin) && selectedJob.status === 'accepted' && jobPayment && (
                         <div className="p-5 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-3 font-semibold">
                           <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-amber-500" /> Protected Payment Required — Fund Contract
@@ -1904,8 +1904,9 @@ export default function Jobs() {
                             }}
                             className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-xs py-3 rounded-xl transition-all shadow-md active:scale-95"
                           >
-                            Simulate Protected Payment Funding
+                            Simulate Payment Funding
                           </button>
+                          <p className="text-[10px] text-amber-600/80 text-center mt-1">Beta only — no real payment will be taken.</p>
                         </div>
                       )}
 
@@ -2098,8 +2099,9 @@ export default function Jobs() {
                                     </button>
                                   </div>
                                 )}
-                                {v.status === 'approved_awaiting_payment' && selectedJob.customer_id === user.id && (
-                                  <button
+                                 {v.status === 'approved_awaiting_payment' && ((selectedJob.customer_id === user?.id) || profile?.is_admin) && (
+                                   <>
+                                     <button
                                     onClick={() => {
                                       setModalConfirmConfig({
                                         title: "Fund Variation",
@@ -2117,9 +2119,11 @@ export default function Jobs() {
                                     }}
                                     className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[10px] py-1.5 rounded-lg transition shadow mt-1"
                                   >
-                                    Simulate Variation Payment
+                                    Simulate Variation Funding
                                   </button>
-                                )}
+                                  <p className="text-[9px] text-amber-600/80 text-center mt-1">Beta only — no real payment will be taken.</p>
+                                </>
+)}
                               </div>
                             ))}
                           </div>
