@@ -1,4 +1,4 @@
--- Migration: 054_completed_work_portfolio_foundation.sql
+-- Migration: 058_completed_work_portfolio_foundation.sql
 -- Description: Expose completed-work portfolio entries from real completed jobs only.
 
 DROP FUNCTION IF EXISTS public.list_public_tradie_gallery(uuid);

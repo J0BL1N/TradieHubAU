@@ -27,7 +27,7 @@ export interface CompletionProofPortfolioInput {
 }
 
 const signedUrlTtlSeconds = 3600;
-const setupRepairMessage = 'Profile trust setup is incomplete. Ask an admin to run migrations 047_repair_profile_trust_live_schema.sql and 054_completed_work_portfolio_foundation.sql in Supabase.';
+const setupRepairMessage = 'Profile trust setup is incomplete. Ask an admin to run migrations 047_repair_profile_trust_live_schema.sql and 058_completed_work_portfolio_foundation.sql in Supabase.';
 
 function profileTrustError(error: any) {
   const message = String(error?.message || error || '');
