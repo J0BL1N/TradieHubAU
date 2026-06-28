@@ -667,6 +667,25 @@ export default function Jobs() {
     setApplyJob(null);
     setShowSuccess(true);
   };
+  const openReviewModalIfEligible = useCallback(async (job: Job) => {
+    if (!user || job.customer_id !== user.id) return;
+    if (job.status !== 'completed') return;
+
+    try {
+      const { data: payment, error: paymentError } = await getPaymentForJob(job.id);
+      if (paymentError || !payment || payment.status !== 'released' || !payment.payee_id) return;
+
+      const { data: issues, error: issuesError } = await getIssuesForJob(job.id);
+      if (issuesError || (issues || []).some(issue => issue.status === 'open')) return;
+
+      const { data: existingReview, error: reviewError } = await getMyTradieReviewForJob(job.id, payment.payee_id);
+      if (reviewError || existingReview) return;
+
+      setTradieReviewModalJob(job);
+    } catch (err) {
+      console.error('Review auto-open eligibility check failed:', err);
+    }
+  }, [user]);
 
   // ─── Filters ────────────────────────────────────────────────────────────────
   const filteredJobs = jobs.filter((job) => {
@@ -998,13 +1017,17 @@ export default function Jobs() {
         <ReviewCompletionModal
           job={reviewModalJob}
           onClose={() => setReviewModalJob(null)}
-          onSuccess={(newStatus) => {
+          onSuccess={async (newStatus) => {
+            const completedJob = { ...reviewModalJob, status: newStatus };
             setReviewModalJob(null);
             if (selectedJob && selectedJob.id === reviewModalJob.id) {
               setSelectedJob(prev => prev ? { ...prev, status: newStatus } : null);
               fetchJobLifecycleDetails(reviewModalJob.id);
             }
             loadJobs();
+            if (newStatus === 'completed') {
+              await openReviewModalIfEligible(completedJob);
+            }
           }}
           showToast={showToast}
           setModalConfirmConfig={setModalConfirmConfig}
