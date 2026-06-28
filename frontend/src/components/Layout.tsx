@@ -41,7 +41,7 @@ export default function Layout() {
           {/* Logo & Middle Menu Section */}
           <div className="flex items-center gap-8">
             <Link to="/" className="nav-logo" aria-label="TradieHubAU home">
-              <img src="/assets/tradiehubau-logo-no-slogan.png" alt="TradieHubAU" className="nav-logo-img" />
+              <img src="/assets/tradiehubau-logo-nav-clean.png" alt="TradieHubAU" className="nav-logo-img" />
             </Link>
 
             {/* Desktop Middle Navigation */}
