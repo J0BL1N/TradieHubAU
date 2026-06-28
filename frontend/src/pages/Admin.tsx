@@ -49,6 +49,18 @@ function formatDocumentType(raw: string): string {
   return raw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+const IDENTITY_DOCUMENT_TYPES = ['drivers_license', 'passport', 'proof_of_age', 'other_identity'];
+const TRADIE_DOCUMENT_TYPES = ['contractor_license', 'insurance', 'trade_certificate', 'other_trade_credential'];
+
+interface VerificationCase {
+  userId: string;
+  user: VerificationRecord['user'];
+  identityDocs: VerificationRecord[];
+  tradieDocs: VerificationRecord[];
+  latestSubmittedAt: number;
+  pendingCount: number;
+}
+
 function formatJobRef(id: string): string {
   return `#${id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 }
@@ -875,12 +887,37 @@ export default function Admin() {
 
   // ─── Derived data ──────────────────────────────────────────────────────────
 
-  const identityVerifications = verifications.filter(v =>
-    ['drivers_license', 'passport', 'proof_of_age', 'other_identity'].includes(v.document_type)
+  const pendingVerificationCount = verifications.filter(v => v.status === 'pending').length;
+  const verificationCases = Array.from(verifications.reduce((cases, item) => {
+    const existing = cases.get(item.user_id) || {
+      userId: item.user_id,
+      user: item.user,
+      identityDocs: [],
+      tradieDocs: [],
+      latestSubmittedAt: 0,
+      pendingCount: 0,
+    };
+
+    if (!existing.user && item.user) existing.user = item.user;
+    if (IDENTITY_DOCUMENT_TYPES.includes(item.document_type)) existing.identityDocs.push(item);
+    if (TRADIE_DOCUMENT_TYPES.includes(item.document_type)) existing.tradieDocs.push(item);
+    existing.latestSubmittedAt = Math.max(existing.latestSubmittedAt, Date.parse(item.submitted_at) || 0);
+    if (item.status === 'pending') existing.pendingCount += 1;
+
+    cases.set(item.user_id, existing);
+    return cases;
+  }, new Map<string, VerificationCase>()).values()).sort((a, b) => b.latestSubmittedAt - a.latestSubmittedAt);
+
+  const customerIdentityCases = verificationCases.filter(item =>
+    item.tradieDocs.length === 0 && item.identityDocs.some(doc => doc.status === 'pending')
   );
-  const tradieApplications = verifications.filter(v =>
-    ['contractor_license', 'insurance', 'trade_certificate', 'other_trade_credential'].includes(v.document_type)
+  const tradieApprovalCases = verificationCases.filter(item =>
+    item.tradieDocs.length > 0 && (!item.user?.tradie_verified || item.pendingCount > 0)
   );
+  const identityVerifications = customerIdentityCases.flatMap(item =>
+    item.identityDocs.filter(doc => doc.status === 'pending')
+  );
+  const tradieApplications = tradieApprovalCases;
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -909,7 +946,7 @@ export default function Admin() {
           <div>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pending Approvals</p>
             <h3 className="text-3xl font-extrabold text-foreground mt-1">
-              {loading ? <Loader2 className="h-6 w-6 text-primary animate-spin" /> : verifications.length}
+              {loading ? <Loader2 className="h-6 w-6 text-primary animate-spin" /> : pendingVerificationCount}
             </h3>
           </div>
           <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -1084,12 +1121,12 @@ export default function Admin() {
           <div className="bg-card border rounded-3xl overflow-hidden shadow-sm">
             <div className="p-6 border-b bg-muted/10 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-extrabold text-foreground">Pending Tradie Whitelist Applications</h3>
-                <p className="text-xs text-muted-foreground mt-0.5 font-medium">Verify contractor licences, public liability insurance, ABNs, and whitelist profiles.</p>
+                <h3 className="text-lg font-extrabold text-foreground">Tradie Approval Cases</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 font-medium">Review identity status, trade credentials, ABNs, insurance, and final tradie whitelisting in one place.</p>
               </div>
               {tradieApplications.length > 0 && (
                 <span className="text-xs font-black bg-amber-500/10 text-amber-700 border border-amber-500/20 px-3 py-1 rounded-full">
-                  {tradieApplications.length} pending
+                  {tradieApplications.length} case{tradieApplications.length === 1 ? '' : 's'}
                 </span>
               )}
             </div>
@@ -1106,49 +1143,100 @@ export default function Admin() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-muted/30 text-[10px] font-bold text-muted-foreground border-b uppercase tracking-wider">
-                      <th className="p-4 pl-6">Tradie Candidate</th>
-                      <th className="p-4">ABN & Licence</th>
-                      <th className="p-4">Document / File</th>
-                      <th className="p-4">Submitted</th>
+                      <th className="p-4 pl-6">Applicant</th>
+                      <th className="p-4">Profile Details</th>
+                      <th className="p-4">Verification Proofs</th>
+                      <th className="p-4">Approval Status</th>
                       <th className="p-4 pr-6 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y text-sm font-semibold">
                     {tradieApplications.map((item) => {
-                      const isActionLoading = actionLoadingId === item.id || actionLoadingId === item.user_id;
-                      const isRejecting = rejectingId === item.id;
-                      const isAlreadyWhitelisted = item.user?.tradie_verified;
+                      const user = item.user;
+                      const allDocs = [...item.identityDocs, ...item.tradieDocs]
+                        .sort((a, b) => Date.parse(a.submitted_at) - Date.parse(b.submitted_at));
+                      const pendingDocs = allDocs.filter(doc => doc.status === 'pending');
+                      const isActionLoading = actionLoadingId === item.userId || allDocs.some(doc => actionLoadingId === doc.id);
+                      const isRejecting = allDocs.some(doc => rejectingId === doc.id);
+                      const isAlreadyWhitelisted = !!user?.tradie_verified;
+                      const hasIdentityApproval = !!user?.identity_verified;
+                      const hasApprovedLicenceProof = item.tradieDocs.some(doc => doc.document_type === 'contractor_license' && doc.status === 'approved');
+                      const hasApprovedInsuranceProof = item.tradieDocs.some(doc => doc.document_type === 'insurance' && doc.status === 'approved');
+                      const hasAbn = !!user?.abn?.trim();
+                      const hasLicenceNumber = !!user?.license_number?.trim();
+                      const missingWhitelistRequirements = [
+                        !hasIdentityApproval && 'Approve ID first',
+                        !hasAbn && 'ABN missing',
+                        !hasLicenceNumber && 'Licence number missing',
+                        !hasApprovedLicenceProof && 'Licence proof not approved',
+                        !hasApprovedInsuranceProof && 'Insurance proof not approved',
+                      ].filter(Boolean) as string[];
+                      const canWhitelist = !isAlreadyWhitelisted && missingWhitelistRequirements.length === 0;
+                      const rejectingDoc = allDocs.find(doc => rejectingId === doc.id);
+
                       return (
-                        <tr key={item.id} className="hover:bg-muted/5">
+                        <tr key={item.userId} className="hover:bg-muted/5 align-top">
                           <td className="p-4 pl-6">
-                            <div className="font-bold text-foreground">{item.user?.display_name || 'Unknown User'}</div>
-                            <div className="text-xs text-muted-foreground font-medium">{item.user?.email}</div>
+                            <div className="font-bold text-foreground">{user?.display_name || 'Unknown User'}</div>
+                            <div className="text-xs text-muted-foreground font-medium">{user?.email}</div>
+                            <div className="text-[10px] text-muted-foreground/75 font-semibold mt-0.5">
+                              UUID: <span className="font-mono text-blue-500/80">{item.userId}</span>
+                            </div>
                             {isAlreadyWhitelisted && (
-                              <span className="inline-flex items-center text-[10px] font-bold bg-green-500/15 text-green-600 px-2 py-0.5 rounded mt-1.5">Whitelisted ✓</span>
+                              <span className="inline-flex items-center text-[10px] font-bold bg-green-500/15 text-green-600 px-2 py-0.5 rounded mt-1.5">Whitelisted</span>
                             )}
                           </td>
                           <td className="p-4 text-xs font-semibold">
-                            <div className="text-foreground"><span className="text-muted-foreground">ABN:</span> {item.user?.abn || 'N/A'}</div>
-                            <div className="text-foreground mt-0.5"><span className="text-muted-foreground">Licence:</span> {item.user?.license_number || 'N/A'}</div>
-                            <div className="text-foreground mt-0.5"><span className="text-muted-foreground">Trades:</span> {item.user?.trades?.join(', ') || 'None'}</div>
+                            <div className="text-foreground"><span className="text-muted-foreground">Role:</span> {user?.role || 'N/A'}</div>
+                            <div className="text-foreground mt-0.5"><span className="text-muted-foreground">ABN:</span> {user?.abn || 'N/A'}</div>
+                            <div className="text-foreground mt-0.5"><span className="text-muted-foreground">Licence:</span> {user?.license_number || 'N/A'}</div>
+                            <div className="text-foreground mt-0.5"><span className="text-muted-foreground">Trades:</span> {user?.trades?.join(', ') || 'None'}</div>
                           </td>
                           <td className="p-4">
-                            <div className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded w-fit font-bold mb-1.5">
-                              {formatDocumentType(item.document_type)}
+                            <div className="space-y-2">
+                              {allDocs.map((doc) => (
+                                <div key={doc.id} className="flex flex-col gap-1 rounded-xl border border-border/70 bg-background/50 p-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded w-fit font-bold">
+                                      {formatDocumentType(doc.document_type)}
+                                    </span>
+                                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                                      doc.status === 'approved'
+                                        ? 'bg-green-500/10 text-green-600'
+                                        : 'bg-amber-500/10 text-amber-700'
+                                    }`}>
+                                      {doc.status}
+                                    </span>
+                                  </div>
+                                  <button onClick={() => handleViewFile(doc.document_url)} className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 focus:outline-none w-fit">
+                                    <FileText className="h-3.5 w-3.5" /> View Upload
+                                  </button>
+                                  <div className="text-[10px] text-muted-foreground font-semibold">
+                                    Submitted {new Date(doc.submitted_at).toLocaleDateString('en-AU')}{' '}
+                                    {new Date(doc.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <button onClick={() => handleViewFile(item.document_url)} className="text-xs text-primary font-bold hover:underline inline-flex items-center gap-1 focus:outline-none">
-                              <FileText className="h-3.5 w-3.5" /> View Upload
-                            </button>
                           </td>
-                          <td className="p-4 text-xs font-semibold text-muted-foreground">
-                            {new Date(item.submitted_at).toLocaleDateString('en-AU')}{' '}
-                            {new Date(item.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <td className="p-4 text-xs font-semibold">
+                            <div className="flex flex-col gap-1">
+                              <span className={hasIdentityApproval ? 'text-green-600' : 'text-amber-700'}>ID: {hasIdentityApproval ? 'approved' : 'needs approval'}</span>
+                              <span className={hasApprovedLicenceProof ? 'text-green-600' : 'text-amber-700'}>Trade licence proof: {hasApprovedLicenceProof ? 'approved' : 'required'}</span>
+                              <span className={hasApprovedInsuranceProof ? 'text-green-600' : 'text-amber-700'}>Insurance proof: {hasApprovedInsuranceProof ? 'approved' : 'required'}</span>
+                              <span className={isAlreadyWhitelisted ? 'text-green-600' : 'text-muted-foreground'}>Tradie whitelist: {isAlreadyWhitelisted ? 'approved' : 'pending'}</span>
+                            </div>
+                            {missingWhitelistRequirements.length > 0 && (
+                              <div className="mt-2 rounded-xl bg-amber-500/10 border border-amber-500/20 p-2 text-[10px] font-bold text-amber-700">
+                                {missingWhitelistRequirements.join(', ')}
+                              </div>
+                            )}
                           </td>
                           <td className="p-4 pr-6 text-right">
-                            {isRejecting ? (
+                            {isRejecting && rejectingDoc ? (
                               <div className="flex flex-col gap-2 max-w-xs ml-auto">
                                 <textarea
-                                  placeholder="Reason for rejection..."
+                                  placeholder={`Reason for rejecting ${formatDocumentType(rejectingDoc.document_type)}...`}
                                   value={rejectNotes}
                                   onChange={(e) => setRejectNotes(e.target.value)}
                                   rows={2}
@@ -1157,7 +1245,7 @@ export default function Admin() {
                                 <div className="flex justify-end gap-1.5">
                                   <button onClick={() => setRejectingId(null)} className="px-2 py-1 border rounded-md text-[10px] font-bold text-muted-foreground hover:bg-muted">Cancel</button>
                                   <button
-                                    onClick={() => handleRejectSubmit(item.id)}
+                                    onClick={() => handleRejectSubmit(rejectingDoc.id)}
                                     disabled={isActionLoading}
                                     className="px-2.5 py-1 bg-destructive text-white rounded-md text-[10px] font-bold hover:bg-destructive/90 transition-all flex items-center gap-1 disabled:opacity-50"
                                   >
@@ -1167,28 +1255,42 @@ export default function Admin() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex flex-col sm:flex-row justify-end items-end sm:items-center gap-2">
+                              <div className="flex flex-col items-end gap-2">
+                                {pendingDocs.map((doc) => (
+                                  <div key={doc.id} className="flex flex-wrap justify-end gap-2">
+                                    <button
+                                      onClick={() => { setRejectingId(doc.id); setRejectNotes(''); }}
+                                      disabled={isActionLoading}
+                                      className="bg-destructive/10 hover:bg-destructive/15 text-destructive font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
+                                    >
+                                      Reject {formatDocumentType(doc.document_type)}
+                                    </button>
+                                    {IDENTITY_DOCUMENT_TYPES.includes(doc.document_type) ? (
+                                      <button
+                                        onClick={() => handleApproveIdentity(doc.id)}
+                                        disabled={isActionLoading}
+                                        className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
+                                      >
+                                        Approve ID
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleApproveDocumentOnly(doc.id)}
+                                        disabled={isActionLoading}
+                                        className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
+                                      >
+                                        Approve Proof
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
                                 <button
-                                  onClick={() => { setRejectingId(item.id); setRejectNotes(''); }}
-                                  disabled={isActionLoading}
-                                  className="bg-destructive/10 hover:bg-destructive/15 text-destructive font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
-                                >
-                                  Reject Doc
-                                </button>
-                                <button
-                                  onClick={() => handleApproveDocumentOnly(item.id)}
-                                  disabled={isActionLoading}
-                                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-bold px-3 py-1.5 rounded-xl text-xs transition-all disabled:opacity-50"
-                                >
-                                  Approve Doc
-                                </button>
-                                <button
-                                  onClick={() => handleWhitelistTradie(item.user_id)}
-                                  disabled={isActionLoading || isAlreadyWhitelisted}
+                                  onClick={() => handleWhitelistTradie(item.userId)}
+                                  disabled={isActionLoading || !canWhitelist}
                                   className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold px-3.5 py-1.5 rounded-xl text-xs transition-all shadow-md disabled:opacity-50 inline-flex items-center gap-1"
                                 >
-                                  {isActionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-                                  Whitelist Tradie
+                                  {actionLoadingId === item.userId && <Loader2 className="h-3 w-3 animate-spin" />}
+                                  Approve Tradie / Whitelist
                                 </button>
                               </div>
                             )}

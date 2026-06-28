@@ -154,6 +154,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | In progress | Job location structure | this commit | Added structured suburb/state/postcode job fields, local suburb autocomplete foundation, compatibility writes, and suburb/state-only public displays. |
 | In progress | Job location selector | this commit | Replaced suburb-first job posting with Australia-wide state, region/council area, suburb, and postcode selector backed by a generated public postcode dataset. |
 | In progress | Verification storage hotfix | this commit | Added private `verifications` storage bucket repair migration for identity and tradie credential uploads. |
+| In progress | Admin verification | this commit | Grouped identity and tradie proof review into one tradie approval case and kept approved credential rows visible until final tradie whitelisting. |
 
 ### Migrations / Deployments
 

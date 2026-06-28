@@ -92,6 +92,8 @@ export interface VerificationRecord {
     abn: string | null;
     license_number: string | null;
     trades: string[] | null;
+    verified: boolean;
+    identity_verified: boolean;
     tradie_verified: boolean;
   };
 }
@@ -252,7 +254,8 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 }
 
 /**
- * Fetch all pending verifications (admin only)
+ * Fetch verification records needed for the admin approval queue.
+ * Includes approved records so a tradie case stays visible until final whitelisting.
  */
 export async function getPendingVerifications() {
   try {
@@ -260,9 +263,9 @@ export async function getPendingVerifications() {
       .from('verifications')
       .select(`
         *,
-        user:users!user_id(display_name, email, role, abn, license_number, trades, tradie_verified)
+        user:users!user_id(display_name, email, role, abn, license_number, trades, verified, identity_verified, tradie_verified)
       `)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
       .order('submitted_at', { ascending: true });
 
     if (error) throw error;
