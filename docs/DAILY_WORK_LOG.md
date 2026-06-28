@@ -170,6 +170,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 00:20:00 | Website Analytics Foundation | this commit | Implemented website analytics foundation for admin users. Created get_admin_analytics RPC, added tab-switching logic to Admin.tsx, and displayed Marketplace Snapshot, Job Funnel, and Beta Activity indicators with All-time/30-day/7-day windows. |
 | 00:30:00 | Admin Analytics Polish | this commit | Polished admin marketplace analytics with 30s silent background auto-refresh interval, a Last Updated timestamp, a manual Refresh button, live activity strip (pulsating indicator), Donut charts for breakdown data (User breakdown, Job Status, and Verification status), and a sorted Category horizontal bar chart. |
 | 00:40:00 | Invoicing Foundation | this commit | Added safe invoicing foundation based on real completed/released platform jobs and payments. Created job_invoices table, select RLS policies, automatic trigger-based invoice generation on payment release, idempotent numbering, existing job backfills, invoices.ts helper, "View Receipt" (customer) & "View Payout Statement" (tradie) buttons on Jobs.tsx, interactive modal preview, and print stylesheets. |
+| 00:20:00 | Fix Invoices Generation | this commit | Fixed trigger race condition during completion approval/payment release by moving to dual status triggers on both jobs and payments, creating ensure_job_invoices self-healing function, secure get_my_job_invoice RPC, error message overrides in Jobs.tsx, and backfill. |
+
 
 
 
@@ -203,6 +205,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `060_admin_analytics_rpc.sql` | Created | Adds public.get_admin_analytics RPC, checking admin role and compiling aggregate marketplace snapshot, job funnel, and beta activity metrics. |
 | `061_admin_analytics_polish.sql` | Created | Extends public.get_admin_analytics RPC to support active user counters, today's logs, and user, job, verification, and category breakdowns. |
 | `062_invoicing_foundation.sql` | Created | Creates job_invoices table, RLS, trigger-based invoice generation on payments release, idempotent number generation, and idempotent backfills. |
+| `063_fix_invoice_generation_for_completed_jobs.sql` | Created | Replaces payment release trigger with secure ensure_job_invoices function, triggers on both jobs and payments status updates, secure get_my_job_invoice RPC, and backfills missing invoices. |
+
 
 
 
@@ -233,6 +237,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Website analytics foundation | `npm run build` passed. Verified aggregate statistics generation, time-window support, and tab-selector interface. |
 | Website analytics polish | `npm run build` passed. Verified aggregate statistics generation, 30s background refresh, manual refresh, and visual SVG donut/bar breakdowns. |
 | Invoicing foundation | `npm run build` passed. Verified automatic trigger-based generation, customer/tradie RLS SELECT security checks, modal document preview, and custom `@media print` layout formatting. |
+| Invoice generation fix | `npm run build` passed. Verified get_my_job_invoice RPC returns correct role-filtered data, auto-heals missing invoices, and triggers on both jobs & payments table status updates. |
+
 
 
 

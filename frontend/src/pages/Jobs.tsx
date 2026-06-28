@@ -344,18 +344,30 @@ export default function Jobs() {
   const [activeInvoice, setActiveInvoice] = useState<any>(null);
   const [invoiceModalLoading, setInvoiceModalLoading] = useState(false);
 
-  const handleOpenInvoice = async (jobId: string) => {
+  const handleOpenInvoice = async (jobId: string, invoiceType: 'customer_receipt' | 'tradie_payout_statement', jobStatus: string) => {
+    if (jobStatus !== 'completed') {
+      showToast("Invoice is available after the job is completed and payment is released.", 'error');
+      return;
+    }
+
     setInvoiceModalLoading(true);
     try {
-      const { data, error: err } = await fetchInvoiceDetailsByJob(jobId);
-      if (err) throw err;
+      const { data, error: err } = await fetchInvoiceDetailsByJob(jobId, invoiceType);
+      if (err) {
+        if (err.code === 'PGRST116' || err.message?.includes('permission') || err.message?.includes('authorized') || err.message?.includes('RLS')) {
+          showToast("You do not have permission to view this invoice.", 'error');
+        } else {
+          showToast(err.message || "Failed to fetch invoice details.", 'error');
+        }
+        return;
+      }
       if (data && data.length > 0) {
         setActiveInvoice(data[0]);
       } else {
         showToast("Invoice/receipt not found or you are not authorized to view it.", 'error');
       }
     } catch (err: any) {
-      showToast(err.message || "Failed to fetch invoice details.", 'error');
+      showToast("Failed to fetch invoice details.", 'error');
     } finally {
       setInvoiceModalLoading(false);
     }
@@ -1664,7 +1676,7 @@ export default function Jobs() {
                                     <button
                                       type="button"
                                       disabled={invoiceModalLoading}
-                                      onClick={() => handleOpenInvoice(job.id)}
+                                      onClick={() => handleOpenInvoice(job.id, 'customer_receipt', job.status)}
                                       className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-nowrap w-full text-center disabled:opacity-50"
                                     >
                                       {invoiceModalLoading ? 'Loading...' : 'View Receipt'}
@@ -1709,7 +1721,7 @@ export default function Jobs() {
                                     <button
                                       type="button"
                                       disabled={invoiceModalLoading}
-                                      onClick={() => handleOpenInvoice(job.id)}
+                                      onClick={() => handleOpenInvoice(job.id, 'tradie_payout_statement', job.status)}
                                       className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-50"
                                     >
                                       {invoiceModalLoading ? 'Loading...' : 'View Payout Statement'}

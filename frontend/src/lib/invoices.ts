@@ -22,12 +22,13 @@ export interface JobInvoice {
   payee_name?: string;
 }
 
-export async function fetchInvoiceDetailsByJob(jobId: string) {
-  // Query invoices for this job. RLS ensures customer sees REC and tradie sees PAY.
+export async function fetchInvoiceDetailsByJob(jobId: string, invoiceType: 'customer_receipt' | 'tradie_payout_statement') {
+  // Query invoices for this job via RPC. RLS ensures customer sees REC and tradie sees PAY.
   const { data, error } = await supabase
-    .from('job_invoices')
-    .select('*')
-    .eq('job_id', jobId);
+    .rpc('get_my_job_invoice', {
+      p_job_id: jobId,
+      p_invoice_type: invoiceType
+    });
 
   if (error) return { data: null, error };
   if (!data || data.length === 0) return { data: [], error: null };
