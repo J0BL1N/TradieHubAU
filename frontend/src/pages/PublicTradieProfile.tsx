@@ -4,8 +4,8 @@ import { Award, Briefcase, Calendar, ExternalLink, Loader2, MapPin, ShieldCheck,
 import { getPublicProfilesByIds, getPublicUserProfile } from '../lib/users';
 import type { UserProfile } from '../lib/users';
 import { supabase } from '../lib/supabase';
-import { fetchPortfolioItems, fetchPublicProofGallery } from '../lib/profileTrust';
-import type { PortfolioItem, PublicProofImage } from '../lib/profileTrust';
+import { fetchPublicProofGallery } from '../lib/profileTrust';
+import type { PublicProofImage } from '../lib/profileTrust';
 
 interface Review {
   id: string;
@@ -40,7 +40,6 @@ function formatMonth(value: string | null) {
 export default function PublicTradieProfile() {
   const { userId } = useParams<{ userId: string }>();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [proofGallery, setProofGallery] = useState<PublicProofImage[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,11 +61,9 @@ export default function PublicTradieProfile() {
       setProfile(profileData);
 
       const [
-        portfolioResult,
         proofResult,
         reviewsResult,
       ] = await Promise.all([
-        fetchPortfolioItems(userId, false),
         fetchPublicProofGallery(userId),
         supabase
           .from('reviews')
@@ -76,11 +73,9 @@ export default function PublicTradieProfile() {
           .order('submitted_at', { ascending: false }),
       ]);
 
-      if (portfolioResult.error) throw portfolioResult.error;
       if (proofResult.error) throw proofResult.error;
       if (reviewsResult.error) throw reviewsResult.error;
 
-      setPortfolio(portfolioResult.data);
       setProofGallery(proofResult.data);
 
       const reviewRows = (reviewsResult.data || []) as Review[];
@@ -202,44 +197,9 @@ export default function PublicTradieProfile() {
       </section>
 
       <section className="bg-card border rounded-3xl p-6 space-y-5">
-        <h2 className="text-xl font-black flex items-center gap-2"><Briefcase className="h-5 w-5 text-primary" /> Previous Work</h2>
-        {portfolio.length === 0 ? (
-          <p className="text-sm text-muted-foreground font-medium">No previous work added yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {portfolio.map(item => (
-              <article key={item.id} className="border rounded-2xl overflow-hidden bg-background">
-                {item.image_urls && item.image_urls.length > 0 && (
-                  <img src={item.image_urls[0]} alt={item.title} className="h-48 w-full object-cover" />
-                )}
-                <div className="p-5 space-y-3">
-                  <div>
-                    <h3 className="font-bold text-foreground">{item.title}</h3>
-                    <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground font-semibold">
-                      {item.trade_category && <span>{tradeLabels[item.trade_category] || item.trade_category}</span>}
-                      {item.suburb && <span>{item.suburb}</span>}
-                      {item.completion_month && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatMonth(item.completion_month)}</span>}
-                    </div>
-                  </div>
-                  {item.description && <p className="text-sm text-muted-foreground leading-6 font-medium">{item.description}</p>}
-                  {item.image_urls && item.image_urls.length > 1 && (
-                    <div className="grid grid-cols-4 gap-2">
-                      {item.image_urls.slice(1, 5).map(url => (
-                        <img key={url} src={url} alt="" className="aspect-square rounded-lg object-cover" />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="bg-card border rounded-3xl p-6 space-y-5">
-        <h2 className="text-xl font-black flex items-center gap-2"><Award className="h-5 w-5 text-primary" /> Completed Work Gallery</h2>
+        <h2 className="text-xl font-black flex items-center gap-2"><Award className="h-5 w-5 text-primary" /> Completed Work</h2>
         {proofGallery.length === 0 ? (
-          <p className="text-sm text-muted-foreground font-medium">No public completed work photos yet.</p>
+          <p className="text-sm text-muted-foreground font-medium">No public completed work yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {proofGallery.map(proof => (
@@ -253,14 +213,18 @@ export default function PublicTradieProfile() {
                 )}
                 <div className="p-5 space-y-3">
                   <div>
-                    <h3 className="font-bold text-foreground">{proof.portfolio_title || 'Completed work'}</h3>
+                    <h3 className="font-bold text-foreground">{proof.portfolio_title || proof.job_title || 'Completed TradieHubAU job'}</h3>
                     <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground font-semibold">
-                      {proof.portfolio_trade_category && (
-                        <span>{tradeLabels[proof.portfolio_trade_category] || proof.portfolio_trade_category}</span>
+                      {(proof.portfolio_trade_category || proof.job_categories?.[0]) && (() => {
+                        const trade = proof.portfolio_trade_category || proof.job_categories?.[0] || '';
+                        return <span>{tradeLabels[trade] || trade}</span>;
+                      })()}
+                      {[proof.job_suburb, proof.job_state].filter(Boolean).length > 0 && (
+                        <span>{[proof.job_suburb, proof.job_state].filter(Boolean).join(', ')}</span>
                       )}
                       <span className="inline-flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {new Date(proof.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                        {formatMonth(proof.completed_at || proof.created_at)}
                       </span>
                     </div>
                   </div>

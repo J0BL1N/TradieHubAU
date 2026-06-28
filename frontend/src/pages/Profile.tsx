@@ -13,22 +13,17 @@ import type { UserProfile } from '../lib/users';
 import { formatJobLocation } from '../lib/auLocations';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
 import {
-  createPortfolioItem,
-  deletePortfolioItem,
   fetchEligibleCompletionProofPortfolioItems,
-  fetchPortfolioItems,
   updateCompletionProofPortfolioItem,
-  updatePortfolioItem,
   uploadAvatar,
-  uploadPortfolioImages,
   validateTrustImage,
 } from '../lib/profileTrust';
-import type { CompletionProofPortfolioItem, PortfolioItem } from '../lib/profileTrust';
+import type { CompletionProofPortfolioItem } from '../lib/profileTrust';
 import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
   Upload, Loader2, Award, Star, Briefcase, Clock,
   Bookmark, BookmarkCheck, AlertCircle, CheckCircle, Send,
-  ImagePlus, Trash2, Pencil, Eye, Globe
+  ImagePlus, Eye, Globe, Calendar
 } from 'lucide-react';
 
 interface DisplayJob {
@@ -125,19 +120,7 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  // Portfolio edit state
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
-  const [portfolioLoading, setPortfolioLoading] = useState(false);
-  const [portfolioSaving, setPortfolioSaving] = useState(false);
-  const [portfolioError, setPortfolioError] = useState<string | null>(null);
-  const [editingPortfolioId, setEditingPortfolioId] = useState<string | null>(null);
-  const [portfolioTitle, setPortfolioTitle] = useState('');
-  const [portfolioTrade, setPortfolioTrade] = useState('');
-  const [portfolioSuburb, setPortfolioSuburb] = useState('');
-  const [portfolioDescription, setPortfolioDescription] = useState('');
-  const [portfolioMonth, setPortfolioMonth] = useState('');
-  const [portfolioPublic, setPortfolioPublic] = useState(true);
-  const [portfolioFiles, setPortfolioFiles] = useState<File[]>([]);
+  // Completed work portfolio state
   const [completionProofItems, setCompletionProofItems] = useState<CompletionProofPortfolioItem[]>([]);
   const [completionProofDrafts, setCompletionProofDrafts] = useState<Record<string, {
     isPublic: boolean;
@@ -223,18 +206,6 @@ export default function Profile() {
     }
     setProfileLoading(false);
   }, [targetId, isSelf]);
-
-  const loadPortfolioItems = useCallback(async () => {
-    if (!targetId || !isSelf || !targetProfile || targetProfile.role === 'customer') return;
-    setPortfolioLoading(true);
-    const { data, error: portfolioErr } = await fetchPortfolioItems(targetId, true);
-    if (portfolioErr) {
-      setPortfolioError(portfolioErr.message || 'Failed to load previous work.');
-    } else {
-      setPortfolioItems(data);
-    }
-    setPortfolioLoading(false);
-  }, [targetId, isSelf, targetProfile]);
 
   const loadCompletionProofPortfolioItems = useCallback(async () => {
     if (!isSelf || !targetProfile || targetProfile.role === 'customer') return;
@@ -427,10 +398,9 @@ export default function Profile() {
   useEffect(() => {
     if (targetProfile) {
       loadJobsAndReviews();
-      loadPortfolioItems();
       loadCompletionProofPortfolioItems();
     }
-  }, [targetProfile, loadJobsAndReviews, loadPortfolioItems, loadCompletionProofPortfolioItems]);
+  }, [targetProfile, loadJobsAndReviews, loadCompletionProofPortfolioItems]);
 
   // Handle profile edit submission
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -541,88 +511,6 @@ export default function Profile() {
     } finally {
       setAvatarUploading(false);
     }
-  };
-
-  const resetPortfolioForm = () => {
-    setEditingPortfolioId(null);
-    setPortfolioTitle('');
-    setPortfolioTrade('');
-    setPortfolioSuburb('');
-    setPortfolioDescription('');
-    setPortfolioMonth('');
-    setPortfolioPublic(true);
-    setPortfolioFiles([]);
-  };
-
-  const startEditPortfolio = (item: PortfolioItem) => {
-    setEditingPortfolioId(item.id);
-    setPortfolioTitle(item.title);
-    setPortfolioTrade(item.trade_category || '');
-    setPortfolioSuburb(item.suburb || '');
-    setPortfolioDescription(item.description || '');
-    setPortfolioMonth(item.completion_month ? item.completion_month.slice(0, 7) : '');
-    setPortfolioPublic(item.is_public);
-    setPortfolioFiles([]);
-  };
-
-  const handleSavePortfolio = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !targetProfile || targetProfile.role === 'customer') return;
-    if (!portfolioTitle.trim()) {
-      setPortfolioError('Previous work title is required.');
-      return;
-    }
-
-    setPortfolioSaving(true);
-    setPortfolioError(null);
-
-    try {
-      const existingItem = editingPortfolioId
-        ? portfolioItems.find(item => item.id === editingPortfolioId)
-        : null;
-      let imagePaths = existingItem?.image_paths || [];
-
-      if (portfolioFiles.length > 0) {
-        const { data: uploadedPaths, error: uploadErr } = await uploadPortfolioImages(user.id, portfolioFiles.slice(0, 6));
-        if (uploadErr) throw uploadErr;
-        imagePaths = [...imagePaths, ...uploadedPaths].slice(0, 8);
-      }
-
-      const payload = {
-        title: portfolioTitle.trim(),
-        trade_category: portfolioTrade || null,
-        suburb: portfolioSuburb.trim() || null,
-        description: portfolioDescription.trim() || null,
-        completion_month: portfolioMonth ? `${portfolioMonth}-01` : null,
-        image_paths: imagePaths,
-        is_public: portfolioPublic,
-      };
-
-      const { error: saveErr } = editingPortfolioId
-        ? await updatePortfolioItem(editingPortfolioId, payload)
-        : await createPortfolioItem(user.id, payload);
-
-      if (saveErr) throw saveErr;
-
-      resetPortfolioForm();
-      await loadPortfolioItems();
-    } catch (err: any) {
-      console.error('Portfolio save error:', err);
-      setPortfolioError(err.message || 'Failed to save previous work.');
-    } finally {
-      setPortfolioSaving(false);
-    }
-  };
-
-  const handleDeletePortfolio = async (itemId: string) => {
-    if (!window.confirm('Delete this previous work entry?')) return;
-    setPortfolioError(null);
-    const { error: deleteErr } = await deletePortfolioItem(itemId);
-    if (deleteErr) {
-      setPortfolioError(deleteErr.message || 'Failed to delete previous work.');
-      return;
-    }
-    await loadPortfolioItems();
   };
 
   const updateCompletionProofDraft = (
@@ -1577,9 +1465,9 @@ export default function Profile() {
               <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
                 <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Previous Work</h3>
+                    <h3 className="text-xl font-bold text-foreground">Completed Work</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Add real portfolio examples for your public tradie profile. Do not upload private customer documents.
+                      Only completed TradieHubAU jobs with approved completion proof can appear on your public profile.
                     </p>
                   </div>
                   <Link
@@ -1591,193 +1479,26 @@ export default function Profile() {
                   </Link>
                 </div>
 
-                {portfolioError && (
+                <div className="rounded-2xl border bg-muted/10 p-4 text-xs font-semibold text-muted-foreground leading-relaxed">
+                  Completed jobs become eligible here only after the job is completed, the protected payment is released, completion proof photos exist, and no dispute is open. Customer names, contact details, private addresses, payment details, and private job notes are never shown on the public profile.
+                </div>
+
+                {completionProofError && (
                   <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
-                    {portfolioError}
+                    {completionProofError}
                   </div>
                 )}
 
-                <form onSubmit={handleSavePortfolio} className="space-y-5 rounded-2xl border bg-muted/10 p-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-foreground uppercase tracking-wider">Title</label>
-                      <input
-                        type="text"
-                        value={portfolioTitle}
-                        onChange={(e) => setPortfolioTitle(e.target.value)}
-                        placeholder="Bathroom renovation"
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-foreground uppercase tracking-wider">Trade / Category</label>
-                      <select
-                        value={portfolioTrade}
-                        onChange={(e) => setPortfolioTrade(e.target.value)}
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
-                      >
-                        <option value="">Select...</option>
-                        {categoryOptions.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb / General Location</label>
-                      <input
-                        type="text"
-                        value={portfolioSuburb}
-                        onChange={(e) => setPortfolioSuburb(e.target.value)}
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-foreground uppercase tracking-wider">Completion Month</label>
-                      <input
-                        type="month"
-                        value={portfolioMonth}
-                        onChange={(e) => setPortfolioMonth(e.target.value)}
-                        className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-foreground uppercase tracking-wider">Short Description</label>
-                    <textarea
-                      rows={3}
-                      value={portfolioDescription}
-                      onChange={(e) => setPortfolioDescription(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold resize-none"
-                    />
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-                    <label className="inline-flex items-center justify-center gap-2 bg-background border border-border text-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-muted/40 text-xs cursor-pointer">
-                      <ImagePlus className="h-4 w-4 text-primary" />
-                      Add Images
-                      <input
-                        type="file"
-                        className="hidden"
-                        multiple
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={(e) => setPortfolioFiles(Array.from(e.target.files || []).slice(0, 6))}
-                      />
-                    </label>
-                    <label className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        checked={portfolioPublic}
-                        onChange={(e) => setPortfolioPublic(e.target.checked)}
-                        className="rounded border-border text-primary"
-                      />
-                      Show on public profile
-                    </label>
-                  </div>
-
-                  {portfolioFiles.length > 0 && (
-                    <p className="text-xs font-semibold text-muted-foreground">
-                      {portfolioFiles.length} image{portfolioFiles.length === 1 ? '' : 's'} selected.
-                    </p>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                      type="submit"
-                      disabled={portfolioSaving}
-                      className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 disabled:opacity-50"
-                    >
-                      {portfolioSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      {editingPortfolioId ? 'Update Previous Work' : 'Add Previous Work'}
-                    </button>
-                    {editingPortfolioId && (
-                      <button
-                        type="button"
-                        onClick={resetPortfolioForm}
-                        className="inline-flex items-center justify-center border border-border text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-muted/40"
-                      >
-                        Cancel Edit
-                      </button>
-                    )}
-                  </div>
-                </form>
-
-                {portfolioLoading ? (
+                {completionProofLoading ? (
                   <div className="flex justify-center p-6">
                     <Loader2 className="h-6 w-6 text-primary animate-spin" />
                   </div>
-                ) : portfolioItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-medium">No previous work added yet.</p>
+                ) : completionProofItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Completed jobs will appear here once work is finished and approved.
+                  </p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {portfolioItems.map(item => (
-                      <div key={item.id} className="border rounded-2xl overflow-hidden bg-background">
-                        {item.image_urls && item.image_urls.length > 0 && (
-                          <img src={item.image_urls[0]} alt={item.title} className="h-36 w-full object-cover" />
-                        )}
-                        <div className="p-4 space-y-3">
-                          <div>
-                            <h4 className="font-bold text-foreground">{item.title}</h4>
-                            <p className="text-xs text-muted-foreground font-semibold">
-                              {[item.suburb, item.trade_category && (categoryOptions.find(cat => cat.id === item.trade_category)?.label || item.trade_category)].filter(Boolean).join(' - ')}
-                            </p>
-                          </div>
-                          {item.description && <p className="text-xs text-muted-foreground leading-5 font-medium">{item.description}</p>}
-                          <div className="flex items-center justify-between gap-2 pt-2">
-                            <span className={`text-[10px] font-black uppercase tracking-wider ${item.is_public ? 'text-primary' : 'text-muted-foreground'}`}>
-                              {item.is_public ? 'Public' : 'Private draft'}
-                            </span>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => startEditPortfolio(item)}
-                                className="p-2 rounded-lg border hover:bg-muted/40"
-                                title="Edit previous work"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void handleDeletePortfolio(item.id)}
-                                className="p-2 rounded-lg border text-red-500 hover:bg-red-500/5"
-                                title="Delete previous work"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="border-t pt-6 space-y-4">
-                  <div>
-                    <h4 className="text-base font-bold text-foreground">Completed Work Proofs</h4>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium">
-                      Publish approved completion proof photos only when they are safe for your public gallery.
-                    </p>
-                  </div>
-
-                  {completionProofError && (
-                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
-                      {completionProofError}
-                    </div>
-                  )}
-
-                  {completionProofLoading ? (
-                    <div className="flex justify-center p-6">
-                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
-                    </div>
-                  ) : completionProofItems.length === 0 ? (
-                    <p className="text-sm text-muted-foreground font-medium">
-                      No eligible completed work proof images yet. Photos appear here after a job is completed and payment is released.
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
+                  <div className="space-y-4">
                       {completionProofItems.map(item => {
                         const draft = completionProofDrafts[item.id] || {
                           isPublic: item.is_public_portfolio,
@@ -1789,6 +1510,24 @@ export default function Profile() {
 
                         return (
                           <div key={item.id} className="border rounded-2xl bg-background p-4 space-y-4">
+                            <div className="space-y-1">
+                              <h4 className="font-black text-foreground">{item.job_title || item.portfolio_title || 'Completed TradieHubAU job'}</h4>
+                              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground font-semibold">
+                                {item.job_categories?.[0] && (
+                                  <span>{categoryOptions.find(cat => cat.id === item.job_categories?.[0])?.label || item.job_categories[0]}</span>
+                                )}
+                                {[item.job_suburb, item.job_state].filter(Boolean).length > 0 && (
+                                  <span>{[item.job_suburb, item.job_state].filter(Boolean).join(', ')}</span>
+                                )}
+                                {(item.completed_at || item.created_at) && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(item.completed_at || item.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                               {(item.image_urls || []).slice(0, 4).map((url, index) => (
                                 <img
@@ -1802,7 +1541,7 @@ export default function Profile() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Title</label>
+                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Title Override</label>
                                 <input
                                   type="text"
                                   value={draft.title}
@@ -1845,7 +1584,7 @@ export default function Profile() {
                                   onChange={(e) => updateCompletionProofDraft(item.id, { isPublic: e.target.checked })}
                                   className="rounded border-border text-primary"
                                 />
-                                Show these proof photos on my public profile
+                                Show this completed job on my public profile
                               </label>
                               <button
                                 type="button"
@@ -1861,8 +1600,7 @@ export default function Profile() {
                         );
                       })}
                     </div>
-                  )}
-                </div>
+                )}
               </div>
             )}
           </div>
