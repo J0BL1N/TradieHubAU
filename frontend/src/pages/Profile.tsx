@@ -581,20 +581,41 @@ export default function Profile() {
     }));
   };
 
-  const handleSaveCompletionProofPublication = async (proofId: string) => {
-    const draft = completionProofDrafts[proofId];
-    if (!draft) return;
+  const handleSaveCompletionProofPublication = async (
+    proofId: string,
+    directOverrides?: Partial<{ isPublic: boolean; title: string; caption: string; trade: string }>
+  ) => {
+    const item = completionProofItems.find(i => i.id === proofId);
+    const existingDraft = completionProofDrafts[proofId] || {
+      isPublic: item?.is_public_portfolio ?? false,
+      title: item?.portfolio_title || '',
+      caption: item?.portfolio_caption || '',
+      trade: item?.portfolio_trade_category || '',
+    };
+
+    const merged = {
+      ...existingDraft,
+      ...directOverrides,
+    };
+
     setCompletionProofSavingId(proofId);
     setCompletionProofError(null);
 
     try {
       const { error: saveErr } = await updateCompletionProofPortfolioItem(proofId, {
-        is_public_portfolio: draft.isPublic,
-        portfolio_title: draft.title.trim() || null,
-        portfolio_caption: draft.caption.trim() || null,
-        portfolio_trade_category: draft.trade || null,
+        is_public_portfolio: merged.isPublic,
+        portfolio_title: merged.title.trim() || null,
+        portfolio_caption: merged.caption.trim() || null,
+        portfolio_trade_category: merged.trade || null,
       });
       if (saveErr) throw saveErr;
+
+      // Update draft state locally so it stays in sync
+      setCompletionProofDrafts(prev => ({
+        ...prev,
+        [proofId]: merged,
+      }));
+
       await loadCompletionProofPortfolioItems();
     } catch (err: any) {
       console.error('Completion proof publication save error:', err);
@@ -2386,22 +2407,26 @@ export default function Profile() {
 
             {targetProfile.role !== 'customer' && activeProfileTab === 'completed-work' && (
               <div className="space-y-5">
-                <div className="grid gap-4 xl:grid-cols-[1.1fr_0.8fr_0.8fr]">
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-card p-4 shadow-sm">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase">Published:</span>
+                      <span className="text-lg font-black text-foreground">{publishedCompletionProofCount}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-muted-foreground/30"></span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase">Hidden:</span>
+                      <span className="text-lg font-black text-foreground">{hiddenCompletionProofCount}</span>
+                    </div>
+                  </div>
                   <Link
                     to={`/tradies/${targetProfile.id}`}
-                    className="inline-flex min-h-24 items-center justify-center gap-2 rounded-3xl border bg-primary px-5 py-4 text-sm font-black text-primary-foreground shadow-sm hover:bg-primary/95"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground hover:bg-primary/95 shadow-sm transition-all"
                   >
-                    <Eye className="h-4 w-4" />
-                    Preview public profile
+                    <Eye className="h-3.5 w-3.5" />
+                    Preview Public Profile
                   </Link>
-                  <div className="rounded-3xl border bg-card p-5 shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Published</p>
-                    <p className="mt-2 text-3xl font-black text-foreground">{publishedCompletionProofCount}</p>
-                  </div>
-                  <div className="rounded-3xl border bg-card p-5 shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Hidden</p>
-                    <p className="mt-2 text-3xl font-black text-foreground">{hiddenCompletionProofCount}</p>
-                  </div>
                 </div>
 
                 <div className="rounded-2xl border bg-muted/10 p-4 text-xs font-semibold leading-relaxed text-muted-foreground">
@@ -2499,13 +2524,17 @@ export default function Profile() {
                               <div className="flex flex-wrap gap-2 pt-1">
                                 <button
                                   type="button"
-                                  onClick={() => updateCompletionProofDraft(item.id, { isPublic: !draft.isPublic })}
-                                  className={`rounded-xl border px-3 py-2 text-xs font-black transition-colors ${
+                                  disabled={savingThisProof}
+                                  onClick={() => void handleSaveCompletionProofPublication(item.id, { isPublic: !draft.isPublic })}
+                                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black transition-colors ${
                                     draft.isPublic
                                       ? 'border-border bg-muted text-muted-foreground hover:text-foreground'
                                       : 'border-green-500/20 bg-green-500/10 text-green-600 hover:bg-green-500/15'
-                                  }`}
+                                  } disabled:opacity-50`}
                                 >
+                                  {savingThisProof && (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  )}
                                   {draft.isPublic ? 'Hide' : 'Publish'}
                                 </button>
                                 <button
@@ -2514,15 +2543,6 @@ export default function Profile() {
                                   className="rounded-xl border border-border px-3 py-2 text-xs font-black text-foreground hover:bg-muted/40"
                                 >
                                   {isExpanded ? 'Close details' : 'Edit details'}
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={savingThisProof}
-                                  onClick={() => void handleSaveCompletionProofPublication(item.id)}
-                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-black text-primary-foreground hover:bg-primary/95 disabled:opacity-50"
-                                >
-                                  {savingThisProof ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
-                                  Save
                                 </button>
                               </div>
                             </div>
