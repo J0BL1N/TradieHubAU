@@ -300,7 +300,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Profile Verification Checklist Polish | `7e81d9f` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
 | 2026-06-30 | Profile Verification Summary Polish | `cd986ed` | Replaced the two-card verification summary with one compact status banner connected to the checklist rows. |
 | 2026-06-30 | Profile Verification Summary Layout Hotfix | `f462e9f` | Fixed top verification summary text collapsing vertically by correcting flex/grid sizing and chip wrapping. |
-| 2026-06-30 | Admin Credential Recheck Controls | `750b0b2` | Audited/fixed admin recheck controls so licence, insurance, and trade certificate credentials can be individually requested for recheck/resubmission. |
+| 2026-06-30 | Admin Credential Recheck Controls | `fda4e11` | Audited/fixed admin recheck controls so licence, insurance, and trade certificate credentials can be individually requested for recheck/resubmission. |
 
 ### Migrations / Deployments
 
