@@ -9,6 +9,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import InfoHubTabs from '../components/InfoHubTabs';
+import InfoPageHeader from '../components/InfoPageHeader';
 
 type InfoSection = {
   title: string;
@@ -17,7 +18,7 @@ type InfoSection = {
 
 type InfoPageProps = {
   icon: ReactNode;
-  eyebrow: string;
+  badge: string;
   title: string;
   intro: string;
   sections: InfoSection[];
@@ -43,21 +44,12 @@ function BetaNotice() {
   );
 }
 
-function InfoPage({ icon, eyebrow, title, intro, sections }: InfoPageProps) {
+function InfoPage({ icon, badge, title, intro, sections }: InfoPageProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <InfoHubTabs />
 
-      <header className="space-y-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          {icon}
-        </div>
-        <div>
-          <p className="text-sm font-extrabold uppercase tracking-wider text-primary">{eyebrow}</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-foreground sm:text-4xl">{title}</h1>
-          <p className="mt-4 max-w-3xl text-base font-medium leading-7 text-muted-foreground">{intro}</p>
-        </div>
-      </header>
+      <InfoPageHeader title={title} badge={badge} icon={icon} subtitle={intro} />
 
       <BetaNotice />
 
@@ -97,8 +89,8 @@ function InfoPage({ icon, eyebrow, title, intro, sections }: InfoPageProps) {
 export function ContactSupport() {
   return (
     <InfoPage
-      icon={<Headphones className="h-6 w-6" />}
-      eyebrow="Beta help"
+      icon={<Headphones className="h-4 w-4" />}
+      badge="Support"
       title="Contact Support"
       intro="Support is handled manually during controlled beta preparation so issues can be reviewed carefully."
       sections={[
@@ -147,8 +139,8 @@ export function ContactSupport() {
 export function ProtectedPaymentExplainer() {
   return (
     <InfoPage
-      icon={<CircleDollarSign className="h-6 w-6" />}
-      eyebrow="Payment foundation"
+      icon={<CircleDollarSign className="h-4 w-4" />}
+      badge="Payment Protection"
       title="How Protected Payment Works in the Local MVP"
       intro="The current flow demonstrates secure job payment states without moving real money."
       sections={[
@@ -197,8 +189,8 @@ export function ProtectedPaymentExplainer() {
 export function TrustAndSafetyExplainer() {
   return (
     <InfoPage
-      icon={<ShieldCheck className="h-6 w-6" />}
-      eyebrow="Safer local jobs"
+      icon={<ShieldCheck className="h-4 w-4" />}
+      badge="Trust & Safety Checks"
       title="Trust and Safety"
       intro="TradieHubAU combines account boundaries, verification workflows, job records, and controlled contact sharing to support safer local job coordination."
       sections={[
@@ -247,8 +239,8 @@ export function TrustAndSafetyExplainer() {
 export function DisputeProcessExplainer() {
   return (
     <InfoPage
-      icon={<Handshake className="h-6 w-6" />}
-      eyebrow="Completion review"
+      icon={<Handshake className="h-4 w-4" />}
+      badge="Dispute Support"
       title="Dispute Process"
       intro="The local MVP includes a structured review path for a customer who has concerns after completion proof is submitted."
       sections={[
@@ -291,8 +283,8 @@ export function DisputeProcessExplainer() {
 export function TradieVerificationExplainer() {
   return (
     <InfoPage
-      icon={<BadgeCheck className="h-6 w-6" />}
-      eyebrow="Tradie checks"
+      icon={<BadgeCheck className="h-4 w-4" />}
+      badge="Tradie Verification"
       title="Tradie Verification"
       intro="Tradie verification supports controlled beta access to quoting and job workflows; it is not a guarantee of future conduct or workmanship."
       sections={[
@@ -340,8 +332,8 @@ export function TradieVerificationExplainer() {
 export function CustomerVerificationExplainer() {
   return (
     <InfoPage
-      icon={<UserCheck className="h-6 w-6" />}
-      eyebrow="Customer checks"
+      icon={<UserCheck className="h-4 w-4" />}
+      badge="Customer Verification"
       title="Customer Verification"
       intro="Customer verification is a beta-prep trust measure intended to support clearer participant accountability."
       sections={[
