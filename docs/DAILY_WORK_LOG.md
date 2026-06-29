@@ -296,6 +296,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Compact Completed Work Manager | `7b3a2e2` | Reworked Completed Work tab into compact gallery manager with filters, counts, compact cards, and one-card edit expansion. |
 | 2026-06-30 | Fix Profile Verification Card Layout | `25c32ea` | Replaced cramped skinny verification columns with readable wide stacked cards. |
 | 2026-06-30 | Polish Completed Work Controls | `2cacf93` | Wired Publish/Hide to autosave immediately, removed redundant Save, and made summary and preview controls more compact. |
+| 2026-06-30 | Profile Verification Tab Redesign | `1d4149d` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
 
 ### Migrations / Deployments
 
@@ -506,6 +507,20 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Completed Work Tab updates | - Redesigned the gallery settings manager to allow immediate auto-saving upon clicking `Publish` or `Hide`. <br> - Removed the redundant outer `Save` button; kept the `Save Gallery Settings` action exclusively inside the **Edit details** expanded drawer. <br> - Condensed the top summary row from bulky grid blocks into a single horizontal bar showing inline published/hidden counts and a compact profile preview button. |
 | Migrations required | None. |
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully for all modifications. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+
+### Profile Verification Tab Redesign
+
+| Item | Notes |
+| --- | --- |
+| Area | Profile Verification Tab Redesign |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Summary | Redesigned the Verification tab in Profile.tsx into wider sectioned cards/rows for identity and tradie credentials. This fixes the cramped credential layout while preserving upload and recheck behaviors. |
+| Section headers | Added explicit headers: "Identity Verification" and "Tradie Credentials" (or "Apply as a Contractor" if customer). |
+| Cards layout | Rendered each document card (Photo ID, Liveness Selfie, Contractor Licence, Public Liability Insurance, Trade Certificate / Other) as a full-width card with desktop 2-column split (details/status badge on the left, upload form/controls on the right). Stacks on mobile. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
 

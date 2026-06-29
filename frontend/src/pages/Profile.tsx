@@ -1060,7 +1060,8 @@ export default function Profile() {
   })();
 
   const compactVerificationDashboard = (
-    <div className="space-y-5">
+    <div className="space-y-8">
+      {/* 1. Top Summary Row */}
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-3xl border bg-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
@@ -1109,14 +1110,17 @@ export default function Profile() {
         </section>
       </div>
 
-      <div className="space-y-5">
+      {/* 2. Identity Verification Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-black text-foreground border-b pb-2">Identity Verification</h3>
+
         {/* Photo ID Card */}
         <section className="rounded-3xl border bg-card p-6 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
             {/* Left column: Title, helper, status badge, status/action messages */}
             <div className="md:col-span-1 space-y-4">
               <div>
-                <h3 className="text-base font-black text-foreground">Photo ID</h3>
+                <h4 className="text-base font-black text-foreground">Photo ID</h4>
                 <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{IDENTITY_DOCUMENT_CARD.helper}</p>
               </div>
               <div className="flex flex-col gap-2">
@@ -1185,7 +1189,7 @@ export default function Profile() {
             {/* Left column: Info & status */}
             <div className="md:col-span-1 space-y-4">
               <div>
-                <h3 className="text-base font-black text-foreground">Liveness Selfie</h3>
+                <h4 className="text-base font-black text-foreground">Liveness Selfie</h4>
                 <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
                   Upload a clear selfie holding up 4 fingers next to your face.
                 </p>
@@ -1246,38 +1250,24 @@ export default function Profile() {
             </div>
           </div>
         </section>
+      </div>
 
-        {/* Professional Credentials Card */}
-        <section className="rounded-3xl border bg-card p-6 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
-            {/* Left column: Info & status */}
-            <div className="md:col-span-1 space-y-4">
-              <div>
-                <h3 className="text-base font-black text-foreground">Professional Credentials</h3>
-                <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
-                  Licence, insurance, and supporting trade checks for quoting access.
+      {/* 3. Tradie Credentials Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-black text-foreground border-b pb-2">
+          {targetProfile.role === 'customer' ? 'Apply as a Contractor' : 'Tradie Credentials'}
+        </h3>
+
+        {targetProfile.role === 'customer' && (
+          <section className="rounded-3xl border bg-card p-6 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
+              <div className="md:col-span-1 space-y-2">
+                <h4 className="text-base font-black text-foreground">Submit Application</h4>
+                <p className="text-xs font-semibold leading-5 text-muted-foreground">
+                  Provide your ABN and licence number to apply for contractor status.
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
-                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(tradieVerificationStatus)}`}>
-                  {getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}
-                </span>
-                <div className="text-xs font-semibold leading-5 text-muted-foreground">
-                  {targetProfile.role !== 'customer' && currentTradieVerified && !credentialsNeedAction && (
-                    <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Professional credentials verified.</p>
-                  )}
-                  {targetProfile.role !== 'customer' && credentialsNeedAction && (
-                    <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
-                      Action required. Upload current licence and insurance documents.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right column: Form or Credentials List */}
-            <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
-              {targetProfile.role === 'customer' && (
+              <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
                 <form onSubmit={handleApplyAsTradie} className="space-y-4 max-w-md">
                   {uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your credentials have been submitted for review.</p>}
                   {uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
@@ -1298,71 +1288,97 @@ export default function Profile() {
                       className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
                       disabled={tradieVerificationStatus === 'pending'}
                     />
+                    <button
+                      type="submit"
+                      disabled={uploadingDoc || !abn || !licenseNumber || tradieVerificationStatus === 'pending'}
+                      className="w-full inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                    >
+                      Apply Now
+                    </button>
                   </div>
                 </form>
-              )}
+              </div>
+            </div>
+          </section>
+        )}
 
-              {targetProfile.role !== 'customer' && (
-                <div className="space-y-4">
-                  {uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Document uploaded and submitted to review queue successfully.</p>}
-                  {uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
+        {targetProfile.role !== 'customer' && (
+          <div className="space-y-4">
+            {uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Document uploaded and submitted to review queue successfully.</p>}
+            {uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
 
-                  {/* Internal grid: 2-column or 3-card layout on desktop, stacking on mobile */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {TRADIE_DOCUMENT_CARDS.map((doc) => {
-                      const status = getDocumentStatus(doc.type);
-                      const selectedFile = tradieFiles[doc.type];
-                      return (
-                        <div key={doc.type} className="rounded-2xl border bg-muted/10 p-4 flex flex-col justify-between space-y-4">
-                          <div className="space-y-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-black text-foreground text-sm">{doc.title}</p>
-                              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border w-fit ${getStatusClass(status)}`}>
-                                {getStatusLabel(status, doc.required)}
-                              </span>
+            {/* Render each credential document as a full-width row/card using desktop 2-column split */}
+            {TRADIE_DOCUMENT_CARDS.map((doc) => {
+              const status = getDocumentStatus(doc.type);
+              const selectedFile = tradieFiles[doc.type];
+              return (
+                <section key={doc.type} className="rounded-3xl border bg-card p-6 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
+                    {/* Left side: title, helper, status badge, recheck note */}
+                    <div className="md:col-span-1 space-y-4">
+                      <div>
+                        <h4 className="text-base font-black text-foreground">{doc.title}</h4>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{doc.helper}</p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(status)}`}>
+                          {getStatusLabel(status, doc.required)}
+                        </span>
+                        <div className="text-xs font-semibold leading-5 text-muted-foreground">
+                          {status === 'approved' && (
+                            <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Document verified and approved.</p>
+                          )}
+                          {status === 'pending' && (
+                            <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">Waiting for administrator review.</p>
+                          )}
+                          {status !== 'approved' && status !== 'pending' && status !== 'none' && (
+                            <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
+                              Action required. Please upload a clear replacement document.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right side: choose file + submit button */}
+                    <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
+                      {status !== 'approved' && status !== 'pending' && (
+                        <div className="space-y-4 max-w-md">
+                          {selectedFile && (
+                            <div className="flex items-center gap-2 p-3 bg-muted/20 border rounded-2xl">
+                              <span className="truncate text-foreground font-semibold">{selectedFile.name}</span>
                             </div>
-                            <p className="text-[11px] leading-4 text-muted-foreground">{doc.helper}</p>
-                          </div>
-
-                          <div className="space-y-3 mt-auto">
-                            {selectedFile && (
-                              <p className="text-[11px] text-foreground font-semibold truncate bg-background p-2 border rounded-xl">
-                                {selectedFile.name}
-                              </p>
-                            )}
-                            {status !== 'approved' && status !== 'pending' && (
-                              <div className="flex flex-col gap-2">
-                                <label className="inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-3 py-2 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
-                                  <Upload className="h-4 w-4" /> Choose File
-                                  <input
-                                    type="file"
-                                    onChange={(e) => setTradieCardFile(doc.type, e.target.files?.[0] || null)}
-                                    disabled={uploadingDoc}
-                                    className="hidden"
-                                    accept="image/*,application/pdf"
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => void handleApplyAsTradie(undefined, doc.type, selectedFile || null)}
-                                  disabled={uploadingDoc || !selectedFile}
-                                  className="inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-3 py-2 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50 w-full"
-                                >
-                                  {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                                  Submit
-                                </button>
-                              </div>
-                            )}
+                          )}
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                              <Upload className="h-4 w-4" /> Choose File
+                              <input
+                                type="file"
+                                onChange={(e) => setTradieCardFile(doc.type, e.target.files?.[0] || null)}
+                                disabled={uploadingDoc}
+                                className="hidden"
+                                accept="image/*,application/pdf"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => void handleApplyAsTradie(undefined, doc.type, selectedFile || null)}
+                              disabled={uploadingDoc || !selectedFile}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                            >
+                              {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                              Submit Document
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                </section>
+              );
+            })}
           </div>
-        </section>
+        )}
       </div>
     </div>
   );
