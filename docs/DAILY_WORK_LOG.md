@@ -290,6 +290,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 23:30:00 | Phase 6 / Chunk L — Job Evidence Timeline | `d4fc10c` | Created read-only job evidence timeline RPC function, added authorization verification checks, and rendered compact bullet-style timeline card. |
 | 23:45:00 | Phase 6 / Chunk M — Admin Evidence Pack | `9bc7e5b` | Created read-only get_admin_job_evidence_pack RPC function compiling full job evidence history, frontend helper, and admin panel with markdown export. |
 | 23:59:00 | Phase 6 / Chunk N — Enforcement Actions | `3f25006` | Created admin enforcement actions table, user restriction columns, creation/resolution RPCs, and admin safety panel UI. |
+| 23:59:59 | Phase 7 / Chunk O — Tradie Risk Controls | `511f260` | Created tradie_risk_signals table, risk score calculator RPC, and admin-only risk panel UI. |
 
 ### Migrations / Deployments
 
@@ -306,6 +307,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `074_job_evidence_timeline.sql` | Created | Creates read-only public.get_job_evidence_timeline function with secure user/admin checks and revokes public execute grants. |
 | `075_admin_job_evidence_pack.sql` | Created | Creates read-only public.get_admin_job_evidence_pack function compiling job, parties, quotes, variations, early releases, payments, invoices, completion proofs, and timeline details with strict admin checks. |
 | `076_admin_enforcement_actions.sql` | Created | Creates admin enforcement actions tables, user restriction columns, RPC creation/resolution helpers, and hardens application and quote RLS policies. |
+| `077_tradie_risk_signals.sql` | Created | Creates the tradie_risk_signals table, RLS policies, and get_admin_tradie_risk_summary calculator RPC. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -431,6 +433,23 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `git diff --check` result | Passed. |
 | Live Supabase action required | Apply `supabase/migrations/076_admin_enforcement_actions.sql` after migration `075_admin_job_evidence_pack.sql`. |
 | Commit hash after commit | `3f25006` |
+
+### Phase 7 / Chunk O — Tradie Risk Controls
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/077_tradie_risk_signals.sql`, `frontend/src/lib/payments.ts`, `frontend/src/pages/Admin.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `077_tradie_risk_signals.sql`. |
+| RPC/action summary | Created `public.tradie_risk_signals` table to log manual and system risk indicators. Built `public.get_admin_tradie_risk_summary(p_tradie_id uuid)` RPC function which dynamically calculates numerical risk scores and categories based on disputes, enforcements, rechecks, and recent requests. |
+| Access control summary | The table and RPC are restricted to administrators only. RLS is enabled, public execute grants are revoked, and callers must verify as admins inside the RPC. |
+| Risk scoring rules | Low signal: +5, Medium: +15, High: +30, Critical: +50. Active Account Review Hold: +40. Active Quote/App Restrictions: +25. Open disputes: +20. Unresolved rechecks: +15. Recent requests: +10/+20. Level ranges: 0-19: Low, 20-49: Medium, 50-79: High, 80+: Critical. |
+| UI summary | Displays color-coded risk badge and score in Contractor card of expanded dispute case file. Integrates collapsible factors breakdown and recent signals log. Permits admins to log manual risk signals and resolve/ignore active signals. |
+| Public/privacy safety | All risk signals, scores, levels, and manual logs are kept internal and never exposed to customers, non-admin tradies, browse tradies, public profiles, homepage, or public APIs. |
+| Non-goals | No automatic suspensions or restrictions based on score. No payment release, payout, or invoice changes. No money movement. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Apply `supabase/migrations/077_tradie_risk_signals.sql` after migration `076_admin_enforcement_actions.sql`. |
+| Commit hash after commit | `511f260` |
 
 
 ### Privacy Notes

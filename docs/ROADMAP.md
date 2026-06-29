@@ -783,17 +783,17 @@ Status: **Implementation complete / pushed. Live SQL has been run.**
 
 # Phase 6 Chunk N — Enforcement Actions
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL has been run.**
 
 * [x] Add enforcement actions for resolved disputes.
 
 ---
 
-# Phase 6 Chunk O — Tradie Risk Controls (upcoming)
+# Phase 6 Chunk O — Tradie Risk Controls
 
-Status: **Upcoming**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Add operational risk controls and reputation checks.
+* [x] Add operational risk controls and reputation checks.
 
 ---
 

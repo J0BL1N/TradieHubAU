@@ -368,3 +368,72 @@ export async function getAdminUserEnforcementHistory(targetUserId: string) {
   });
   return { data: data || null, error };
 }
+
+/**
+ * Fetches internal safety risk summary for a tradie.
+ */
+export async function getAdminTradieRiskSummary(tradieId: string) {
+  const { data, error } = await supabase.rpc('get_admin_tradie_risk_summary', {
+    p_tradie_id: tradieId
+  });
+  return { data: data || null, error };
+}
+
+/**
+ * Creates a manual risk signal for a tradie.
+ */
+export async function createAdminRiskSignal(payload: {
+  tradieId: string;
+  signalType: string;
+  severity: string;
+  reason: string;
+  sourceType: string;
+  relatedJobId?: string;
+  metadata?: any;
+}) {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData?.user?.id;
+
+  const { data, error } = await supabase
+    .from('tradie_risk_signals')
+    .insert({
+      tradie_id: payload.tradieId,
+      signal_type: payload.signalType,
+      severity: payload.severity,
+      reason: payload.reason,
+      source_type: payload.sourceType,
+      related_job_id: payload.relatedJobId || null,
+      created_by: userId || null,
+      metadata: payload.metadata || {}
+    })
+    .select()
+    .maybeSingle();
+
+  return { data, error };
+}
+
+/**
+ * Resolves or ignores an active risk signal.
+ */
+export async function resolveAdminRiskSignal(
+  signalId: string,
+  status: 'resolved' | 'ignored',
+  note?: string
+) {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData?.user?.id;
+
+  const { data, error } = await supabase
+    .from('tradie_risk_signals')
+    .update({
+      status,
+      resolution_note: note || null,
+      resolved_at: new Date().toISOString(),
+      resolved_by: userId || null
+    })
+    .eq('id', signalId)
+    .select()
+    .maybeSingle();
+
+  return { data, error };
+}

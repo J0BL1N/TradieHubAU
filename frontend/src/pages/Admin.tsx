@@ -14,7 +14,7 @@ import {
   ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
   Camera, TrendingUp, DollarSign, RefreshCw, Activity, Copy, Scale
 } from 'lucide-react';
-import { getDisputedJobs, recordAdminDisputeAction, resolveDispute, getAdminJobEvidencePack, createAdminEnforcementAction, resolveAdminEnforcementAction, getAdminUserEnforcementHistory } from '../lib/payments';
+import { getDisputedJobs, recordAdminDisputeAction, resolveDispute, getAdminJobEvidencePack, createAdminEnforcementAction, resolveAdminEnforcementAction, getAdminUserEnforcementHistory, getAdminTradieRiskSummary, createAdminRiskSignal, resolveAdminRiskSignal } from '../lib/payments';
 
 // ─── Local Types ─────────────────────────────────────────────────────────────
 
@@ -400,6 +400,79 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
   const [resolvingEnforcementId, setResolvingEnforcementId] = useState<string | null>(null);
   const [enforcementResolutionNote, setEnforcementResolutionNote] = useState('');
 
+  // Risk controls state
+  const [riskSummary, setRiskSummary] = useState<any | null>(null);
+  const [riskLoading, setRiskLoading] = useState(false);
+  const [riskError, setRiskError] = useState<string | null>(null);
+  const [showCreateRiskSignal, setShowCreateRiskSignal] = useState(false);
+  const [riskSignalType, setRiskSignalType] = useState('manual_admin_flag');
+  const [riskSignalSeverity, setRiskSignalSeverity] = useState('medium');
+  const [riskSignalReason, setRiskSignalReason] = useState('');
+  const [submittingRiskSignal, setSubmittingRiskSignal] = useState(false);
+  const [resolvingSignalId, setResolvingSignalId] = useState<string | null>(null);
+  const [signalResolutionNote, setSignalResolutionNote] = useState('');
+
+  const loadRiskSummary = async () => {
+    if (!contractor?.id) return;
+    setRiskLoading(true);
+    setRiskError(null);
+    try {
+      const { data, error } = await getAdminTradieRiskSummary(contractor.id);
+      if (error) throw error;
+      setRiskSummary(data);
+    } catch (err: any) {
+      setRiskError(err.message || 'Failed to load risk summary.');
+    } finally {
+      setRiskLoading(false);
+    }
+  };
+
+  const handleCreateRiskSignal = async () => {
+    if (!contractor?.id) return;
+    if (!riskSignalReason.trim()) {
+      showToast('Please provide a reason for the risk signal.', 'error');
+      return;
+    }
+    setSubmittingRiskSignal(true);
+    try {
+      const { error } = await createAdminRiskSignal({
+        tradieId: contractor.id,
+        signalType: riskSignalType,
+        severity: riskSignalSeverity,
+        reason: riskSignalReason.trim(),
+        sourceType: 'manual',
+        relatedJobId: dispute.id || undefined
+      });
+      if (error) throw error;
+      showToast('Manual risk signal logged successfully.', 'success');
+      setShowCreateRiskSignal(false);
+      setRiskSignalReason('');
+      loadRiskSummary();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to log manual risk signal.', 'error');
+    } finally {
+      setSubmittingRiskSignal(false);
+    }
+  };
+
+  const handleResolveRiskSignal = async (signalId: string, action: 'resolved' | 'ignored') => {
+    setResolvingSignalId(signalId);
+    try {
+      const { error } = await resolveAdminRiskSignal(
+        signalId,
+        action,
+        signalResolutionNote.trim() || undefined
+      );
+      if (error) throw error;
+      showToast(`Risk signal marked as ${action}.`, 'success');
+      setResolvingSignalId(null);
+      setSignalResolutionNote('');
+      loadRiskSummary();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to resolve risk signal.', 'error');
+    }
+  };
+
   const loadEnforcementHistory = async () => {
     setEnforcementsLoading(true);
     try {
@@ -429,6 +502,7 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
   useEffect(() => {
     if (expanded) {
       loadEnforcementHistory();
+      loadRiskSummary();
     }
   }, [expanded]);
 
@@ -730,7 +804,7 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                   {contractor.id && (
                     <p className="text-[10px] font-mono text-muted-foreground/60 pt-1 break-all">{contractor.id}</p>
                   )}
-                  <div className="pt-2 border-t mt-2 flex justify-end">
+                  <div className="pt-2 border-t mt-2 flex justify-between items-center">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -742,6 +816,121 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                     >
                       <ShieldAlert className="h-3 w-3" /> Safety Actions
                     </button>
+                  </div>
+
+                  {/* Internal Risk Controls Section (Visible to Admins Only) */}
+                  <div className="mt-3 pt-3 border-t space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Internal Risk Controls</span>
+                      {riskSummary && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border uppercase ${
+                          riskSummary.risk_level === 'critical' ? 'bg-red-500/15 text-red-700 border-red-500/30' :
+                          riskSummary.risk_level === 'high' ? 'bg-orange-500/15 text-orange-700 border-orange-500/30' :
+                          riskSummary.risk_level === 'medium' ? 'bg-amber-500/15 text-amber-700 border-amber-500/30' :
+                          'bg-green-500/15 text-green-700 border-green-500/30'
+                        }`}>
+                          {riskSummary.risk_level} ({riskSummary.risk_score})
+                        </span>
+                      )}
+                    </div>
+
+                    {riskLoading ? (
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-semibold py-1">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Loading risk signals...
+                      </div>
+                    ) : riskError ? (
+                      <p className="text-[10px] text-destructive font-semibold">{riskError}</p>
+                    ) : riskSummary ? (
+                      <div className="space-y-2">
+                        {/* Risk Factors Breakdown */}
+                        <div className="grid grid-cols-2 gap-1.5 text-[9px] font-semibold text-foreground/80 bg-muted/20 p-2 rounded-lg font-bold">
+                          <div>Disputes: <span className="font-bold text-foreground">{riskSummary.open_dispute_count}</span></div>
+                          <div>Restrictions: <span className="font-bold text-foreground">{riskSummary.active_enforcement_count}</span></div>
+                          <div>Rechecks: <span className="font-bold text-foreground">{riskSummary.verification_recheck_count}</span></div>
+                          <div>Signals: <span className="font-bold text-foreground">{riskSummary.active_signal_count}</span></div>
+                          <div className="col-span-2 border-t pt-1 mt-1 text-[8px] text-muted-foreground">
+                            Last 60d: {riskSummary.recent_early_release_request_count} early rel | {riskSummary.recent_variation_request_count} var reqs
+                          </div>
+                        </div>
+
+                        {/* Latest Signals */}
+                        {riskSummary.latest_signals && riskSummary.latest_signals.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-[9px] font-bold text-muted-foreground">Recent Signals:</p>
+                            <div className="space-y-1 max-h-[100px] overflow-y-auto pr-1">
+                              {riskSummary.latest_signals.map((sig: any) => (
+                                <div key={sig.id} className="p-1.5 border rounded-lg bg-card text-[9px] space-y-1">
+                                  <div className="flex justify-between items-baseline font-bold">
+                                    <span className="capitalize text-foreground">{sig.signal_type.replace(/_/g, ' ')}</span>
+                                    <span className="uppercase text-[7px] text-muted-foreground">{sig.severity}</span>
+                                  </div>
+                                  <p className="text-muted-foreground italic font-medium leading-normal">"{sig.reason}"</p>
+                                  {sig.status === 'active' ? (
+                                    <div className="flex gap-2 pt-1 border-t border-muted/50 mt-1">
+                                      {resolvingSignalId === sig.id ? (
+                                        <div className="flex flex-col gap-1 w-full">
+                                          <input
+                                            type="text"
+                                            value={signalResolutionNote}
+                                            onChange={(e) => setSignalResolutionNote(e.target.value)}
+                                            placeholder="Resolution/Ignore note..."
+                                            className="w-full text-[8px] bg-background border rounded px-1 py-0.5"
+                                          />
+                                          <div className="flex gap-1 justify-end">
+                                            <button
+                                              onClick={() => handleResolveRiskSignal(sig.id, 'resolved')}
+                                              className="text-[8px] bg-green-600 text-white font-bold px-1.5 py-0.5 rounded hover:bg-green-700"
+                                            >
+                                              Resolve
+                                            </button>
+                                            <button
+                                              onClick={() => handleResolveRiskSignal(sig.id, 'ignored')}
+                                              className="text-[8px] bg-gray-500 text-white font-bold px-1.5 py-0.5 rounded hover:bg-gray-600"
+                                            >
+                                              Ignore
+                                            </button>
+                                            <button
+                                              onClick={() => setResolvingSignalId(null)}
+                                              className="text-[8px] text-muted-foreground font-bold px-1 py-0.5 hover:underline"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => setResolvingSignalId(sig.id)}
+                                          className="text-[8px] text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                                        >
+                                          Resolve/Ignore Signal
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-[8px] font-bold text-green-600 mt-0.5">Status: {sig.status}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Trigger Manual Signal Creation */}
+                        <div className="pt-1 flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowCreateRiskSignal(true);
+                            }}
+                            className="bg-primary/10 hover:bg-primary/20 text-primary text-[9px] font-black px-2 py-1.5 rounded-lg transition-colors flex items-center gap-1 w-full justify-center"
+                          >
+                            <ShieldAlert className="h-3 w-3" /> Log Manual Risk Signal
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground italic font-semibold">No risk summary loaded.</p>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -1758,6 +1947,97 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
               >
                 {submittingEnforcement && <Loader2 className="h-4 w-4 animate-spin" />}
                 Log &amp; Apply Action
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateRiskSignal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="bg-card border w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b bg-muted/10 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-primary" /> Log Manual Risk Signal
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Target Tradie: <span className="font-bold text-foreground">{contractor?.display_name || 'Contractor'}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateRiskSignal(false)}
+                className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-sm text-foreground overflow-y-auto max-h-[60vh]">
+              {/* Signal Type */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Signal Type</label>
+                <select
+                  value={riskSignalType}
+                  onChange={(e) => setRiskSignalType(e.target.value)}
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="manual_admin_flag">Manual Admin Flag (Log Only)</option>
+                  <option value="evidence_preservation">Evidence Preservation (Log Only)</option>
+                  <option value="dispute_opened">Dispute Opened (Log Only)</option>
+                  <option value="dispute_escalated">Dispute Escalated (Log Only)</option>
+                  <option value="repeated_rejections">Repeated Rejections (Log Only)</option>
+                  <option value="early_release_overuse">Early Release Overuse (Log Only)</option>
+                  <option value="variation_overuse">Variation Overuse (Log Only)</option>
+                </select>
+              </div>
+
+              {/* Severity selection */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Severity</label>
+                <select
+                  value={riskSignalSeverity}
+                  onChange={(e) => setRiskSignalSeverity(e.target.value)}
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+
+              {/* Reason */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Reason (Required)</label>
+                <textarea
+                  value={riskSignalReason}
+                  onChange={(e) => setRiskSignalReason(e.target.value)}
+                  placeholder="Explain the background/reason for logging this risk indicator..."
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                  rows={4}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t bg-muted/10 flex justify-end gap-3">
+              <button
+                onClick={() => setShowCreateRiskSignal(false)}
+                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateRiskSignal}
+                disabled={submittingRiskSignal}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5"
+              >
+                {submittingRiskSignal && <Loader2 className="h-4 w-4 animate-spin" />}
+                Log Risk Signal
               </button>
             </div>
           </div>
