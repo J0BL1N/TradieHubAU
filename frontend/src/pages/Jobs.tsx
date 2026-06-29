@@ -31,10 +31,15 @@ import {
 } from 'lucide-react';
 import { 
   acceptQuote, submitCompletionProof, raiseJobIssue, approveJobCompletion, 
-  submitVariationRequest, approveVariation, rejectVariation, getPaymentForJob, 
-  getVariationsForJob, getCompletionProofsForJob, getIssuesForJob, simulatePaymentFunding,
-  getLedgerForPayment, simulateVariationFunding
+  getPaymentForJob, getCompletionProofsForJob, getIssuesForJob, simulatePaymentFunding,
+  getLedgerForPayment
 } from '../lib/payments';
+import {
+  fetchVariationRequestsForJob,
+  createVariationRequest,
+  cancelVariationRequest
+} from '../lib/variations';
+import type { VariationLineType, VariationRequest } from '../lib/variations';
 import { supabase } from '../lib/supabase';
 import { fetchInvoiceDetailsByJob } from '../lib/invoices';
 import {
@@ -64,6 +69,14 @@ interface FormLineItem {
   quantity: number;
   unit_price: number;
   line_type: 'labour' | 'materials' | 'callout' | 'disposal' | 'other';
+}
+
+interface VariationFormLineItem {
+  label: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  line_type: VariationLineType;
 }
 
 function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModalProps) {
@@ -740,6 +753,119 @@ export default function Jobs() {
     }
   };
 
+  const resetVariationForm = () => {
+    setVariationTitle('');
+    setVariationReason('');
+    setVariationLineItems([
+      { label: '', description: '', quantity: 1, unit_price: 0, line_type: 'labour' }
+    ]);
+  };
+
+  const handleAddVariationLine = () => {
+    setVariationLineItems(prev => [
+      ...prev,
+      { label: '', description: '', quantity: 1, unit_price: 0, line_type: 'labour' }
+    ]);
+  };
+
+  const handleRemoveVariationLine = (index: number) => {
+    setVariationLineItems(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleVariationLineChange = (
+    index: number,
+    field: keyof VariationFormLineItem,
+    value: string | number
+  ) => {
+    setVariationLineItems(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  const refreshVariationRequests = async (jobId: string) => {
+    const { data } = await fetchVariationRequestsForJob(jobId);
+    setJobVariations(data);
+  };
+
+  const handleCreateVariationRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedJob) return;
+
+    if (!variationTitle.trim()) {
+      showToast('Variation title is required.', 'error');
+      return;
+    }
+
+    if (variationLineItems.length === 0) {
+      showToast('Please add at least one variation line item.', 'error');
+      return;
+    }
+
+    for (let i = 0; i < variationLineItems.length; i++) {
+      const item = variationLineItems[i];
+      if (!item.label.trim()) {
+        showToast(`Variation line #${i + 1} needs a label.`, 'error');
+        return;
+      }
+      if ((Number(item.quantity) || 0) <= 0) {
+        showToast(`Variation line #${i + 1} needs a quantity greater than 0.`, 'error');
+        return;
+      }
+      if ((Number(item.unit_price) || 0) < 0) {
+        showToast(`Variation line #${i + 1} cannot have a negative unit price.`, 'error');
+        return;
+      }
+    }
+
+    if (variationFormTotal <= 0) {
+      showToast('Variation total must be greater than $0.', 'error');
+      return;
+    }
+
+    setSubmittingVariation(true);
+    try {
+      const { error } = await createVariationRequest({
+        job_id: selectedJob.id,
+        title: variationTitle.trim(),
+        reason: variationReason.trim() || null,
+        line_items: variationLineItems.map(item => ({
+          label: item.label.trim(),
+          description: item.description.trim() || null,
+          quantity: Number(item.quantity) || 0,
+          unit_price: Number(item.unit_price) || 0,
+          line_type: item.line_type
+        }))
+      });
+      if (error) throw error;
+
+      showToast('Variation request submitted for customer review.', 'success');
+      resetVariationForm();
+      setShowVariationForm(false);
+      await refreshVariationRequests(selectedJob.id);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to submit variation request.', 'error');
+    } finally {
+      setSubmittingVariation(false);
+    }
+  };
+
+  const handleCancelVariationRequest = async (requestId: string) => {
+    if (!selectedJob) return;
+    if (!confirm('Cancel this pending variation request?')) return;
+
+    try {
+      const { error } = await cancelVariationRequest(requestId);
+      if (error) throw error;
+
+      showToast('Variation request cancelled.', 'success');
+      await refreshVariationRequests(selectedJob.id);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to cancel variation request.', 'error');
+    }
+  };
+
   // Applications: map of job_id → Application (for jobs the user has applied to)
   const [myApplications, setMyApplications] = useState<Map<string, Application>>(new Map());
 
@@ -766,6 +892,19 @@ export default function Jobs() {
   const [reviewingEarlyRelease, setReviewingEarlyRelease] = useState<EarlyReleaseRequest | null>(null);
   const [earlyReleaseReviewNote, setEarlyReleaseReviewNote] = useState('');
   const [submittingEarlyReleaseReview, setSubmittingEarlyReleaseReview] = useState<'approved' | 'rejected' | null>(null);
+
+  // Itemised variation form state
+  const [showVariationForm, setShowVariationForm] = useState(false);
+  const [variationTitle, setVariationTitle] = useState('');
+  const [variationReason, setVariationReason] = useState('');
+  const [variationLineItems, setVariationLineItems] = useState<VariationFormLineItem[]>([
+    { label: '', description: '', quantity: 1, unit_price: 0, line_type: 'labour' }
+  ]);
+  const [submittingVariation, setSubmittingVariation] = useState(false);
+  const variationFormTotal = variationLineItems.reduce(
+    (sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)),
+    0
+  );
 
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -845,7 +984,7 @@ export default function Jobs() {
   const [jobApplications, setJobApplications] = useState<any[]>([]);
   const [jobPayment, setJobPayment] = useState<any | null>(null);
   const [jobLedger, setJobLedger] = useState<any[]>([]);
-  const [jobVariations, setJobVariations] = useState<any[]>([]);
+  const [jobVariations, setJobVariations] = useState<VariationRequest[]>([]);
   const [jobProofs, setJobProofs] = useState<any[]>([]);
   const [jobIssues, setJobIssues] = useState<any[]>([]);
   const [loadingLifecycle, setLoadingLifecycle] = useState(false);
@@ -902,7 +1041,7 @@ export default function Jobs() {
         setJobLedger([]);
       }
 
-      const { data: vData } = await getVariationsForJob(jobId);
+      const { data: vData } = await fetchVariationRequestsForJob(jobId);
       setJobVariations(vData);
 
       const { data: prData } = await getCompletionProofsForJob(jobId);
@@ -3413,52 +3552,172 @@ export default function Jobs() {
                             </div>
                           )}
 
-                          {/* Variations form for contracted tradie */}
-                          {selectedJob.status === 'payment_held' && (
+                          {/* Itemised variations form for contracted tradie */}
+                          {['accepted', 'payment_held'].includes(selectedJob.status) && (
                             <div className="p-5 bg-card border rounded-2xl space-y-4 font-semibold">
-                              <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Submit Price Variation Request</h4>
-                              <p className="text-xs text-muted-foreground leading-relaxed">If extra materials or unforeseen work requires modifying the price, request it here. The customer must approve it.</p>
-                              <div className="space-y-3">
-                                <input
-                                  type="text"
-                                  placeholder="Reason (e.g. Extra 5m copper pipe)"
-                                  id="varDesc"
-                                  className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs focus:border-primary/50"
-                                />
-                                <input
-                                  type="number"
-                                  placeholder="Amount ($ e.g. 150)"
-                                  id="varAmount"
-                                  className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs focus:border-primary/50"
-                                />
-                                <button
-                                  onClick={() => {
-                                    const desc = (document.getElementById('varDesc') as HTMLInputElement).value;
-                                    const amount = (document.getElementById('varAmount') as HTMLInputElement).value;
-                                    if (!desc || !amount) {
-                                      showToast("Please enter a description and dollar amount.", 'error');
-                                      return;
-                                    }
-                                    const amountCents = Math.round(parseFloat(amount) * 100);
-                                    setModalConfirmConfig({
-                                      title: "Submit Variation Request",
-                                      message: `Are you sure you want to request a variation of $${amount} for: "${desc}"?`,
-                                      onConfirm: async () => {
-                                        const { error } = await submitVariationRequest(selectedJob.id, desc, amountCents);
-                                        if (error) {
-                                          showToast(error.message, 'error');
-                                        } else {
-                                          showToast("Variation request submitted!", 'success');
-                                          fetchJobLifecycleDetails(selectedJob.id);
-                                        }
-                                      }
-                                    });
-                                  }}
-                                  className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black text-xs py-2 rounded-xl transition-all shadow active:scale-95"
-                                >
-                                  Submit Variation Request
-                                </button>
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Variation Requests</h4>
+                                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                                    Use variations for extra work or materials that were not included in the accepted quote. The customer must approve a variation before it can become chargeable.
+                                  </p>
+                                </div>
+                                {!showVariationForm && (
+                                  <button
+                                    onClick={() => setShowVariationForm(true)}
+                                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1 shrink-0"
+                                  >
+                                    <Plus className="h-3 w-3" /> New Variation
+                                  </button>
+                                )}
                               </div>
+
+                              {showVariationForm && (
+                                <form onSubmit={handleCreateVariationRequest} className="space-y-3 bg-muted/20 border rounded-xl p-3">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-foreground">New Itemised Variation</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowVariationForm(false);
+                                        resetVariationForm();
+                                      }}
+                                      className="text-xs text-muted-foreground hover:text-foreground font-semibold"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Title</label>
+                                    <input
+                                      type="text"
+                                      value={variationTitle}
+                                      onChange={(e) => setVariationTitle(e.target.value)}
+                                      placeholder="e.g. Additional bathroom waterproofing"
+                                      className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs focus:border-primary/50 font-semibold"
+                                      required
+                                    />
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Reason / Notes</label>
+                                    <textarea
+                                      value={variationReason}
+                                      onChange={(e) => setVariationReason(e.target.value)}
+                                      rows={2}
+                                      placeholder="Explain why this extra work or material is needed..."
+                                      className="w-full bg-background border border-border rounded-xl px-3 py-2 outline-none text-xs focus:border-primary/50 font-semibold resize-none"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Line Items</label>
+                                      <button
+                                        type="button"
+                                        onClick={handleAddVariationLine}
+                                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                                      >
+                                        <Plus className="h-3 w-3" /> Add Line
+                                      </button>
+                                    </div>
+
+                                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                      {variationLineItems.map((item, idx) => (
+                                        <div key={idx} className="border rounded-xl p-3 bg-background space-y-2">
+                                          <div className="grid grid-cols-1 md:grid-cols-[1fr_120px] gap-2">
+                                            <input
+                                              type="text"
+                                              value={item.label}
+                                              onChange={(e) => handleVariationLineChange(idx, 'label', e.target.value)}
+                                              placeholder="Line item label"
+                                              className="w-full bg-muted/40 border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-primary/50"
+                                              required
+                                            />
+                                            <select
+                                              value={item.line_type}
+                                              onChange={(e) => handleVariationLineChange(idx, 'line_type', e.target.value as VariationLineType)}
+                                              className="w-full bg-muted/40 border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-primary/50"
+                                            >
+                                              <option value="labour">Labour</option>
+                                              <option value="materials">Materials</option>
+                                              <option value="callout">Callout</option>
+                                              <option value="disposal">Disposal</option>
+                                              <option value="equipment">Equipment</option>
+                                              <option value="permit">Permit</option>
+                                              <option value="other">Other</option>
+                                            </select>
+                                          </div>
+
+                                          <textarea
+                                            value={item.description}
+                                            onChange={(e) => handleVariationLineChange(idx, 'description', e.target.value)}
+                                            placeholder="Optional line description"
+                                            rows={2}
+                                            className="w-full bg-muted/40 border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-primary/50 resize-none"
+                                          />
+
+                                          <div className="grid grid-cols-[80px_1fr_90px_32px] gap-2 items-center">
+                                            <input
+                                              type="number"
+                                              min="0.0001"
+                                              step="any"
+                                              value={item.quantity}
+                                              onChange={(e) => handleVariationLineChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                              className="w-full bg-muted/40 border border-border rounded-lg px-2 py-1.5 text-xs font-semibold text-center outline-none focus:border-primary/50"
+                                              required
+                                            />
+                                            <div className="relative">
+                                              <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={item.unit_price || ''}
+                                                onChange={(e) => handleVariationLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-muted/40 border border-border rounded-lg pl-6 pr-2 py-1.5 text-xs font-semibold outline-none focus:border-primary/50"
+                                                required
+                                              />
+                                            </div>
+                                            <span className="text-xs font-black text-right text-foreground">
+                                              {formatAud((Number(item.quantity) || 0) * (Number(item.unit_price) || 0))}
+                                            </span>
+                                            {variationLineItems.length > 1 ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleRemoveVariationLine(idx)}
+                                                className="p-1 rounded-lg text-red-600 hover:bg-red-500/10"
+                                              >
+                                                <Trash2 className="h-4 w-4" />
+                                              </button>
+                                            ) : (
+                                              <span />
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center justify-between border-t pt-3 text-xs">
+                                    <span className="font-bold text-muted-foreground uppercase tracking-wider">Variation Total</span>
+                                    <span className="text-lg font-black text-primary">{formatAud(variationFormTotal)}</span>
+                                  </div>
+
+                                  <button
+                                    type="submit"
+                                    disabled={submittingVariation}
+                                    className="w-full bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg hover:bg-primary/95 transition-all shadow-sm flex justify-center items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {submittingVariation ? (
+                                      <><Loader2 className="h-3 w-3 animate-spin" /> Submitting...</>
+                                    ) : (
+                                      <>Submit Variation Request</>
+                                    )}
+                                  </button>
+                                </form>
+                              )}
                             </div>
                           )}
                         </div>
@@ -3498,100 +3757,80 @@ export default function Jobs() {
                         </div>
                       )}
 
-                      {/* 7. Display variations list to customer & tradie */}
+                      {/* 7. Display itemised variation requests to customer & tradie */}
                       {jobVariations.length > 0 && (
                         <div className="space-y-4">
-                          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Price Variation Requests</h4>
+                          <div className="space-y-1">
+                            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Variation Requests</h4>
+                            {selectedJob.customer_id === user.id && (
+                              <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed">
+                                Customer approval and funding controls will be added in the next chunk.
+                              </p>
+                            )}
+                          </div>
                           <div className="space-y-3">
-                            {jobVariations.map((v) => (
+                            {jobVariations.map((v) => {
+                              const lineItems = v.line_items || [];
+                              const variationTotal = lineItems.reduce((sum, item) => sum + Number(item.line_total || 0), 0);
+                              return (
                               <div key={v.id} className="border p-4 rounded-2xl space-y-3 bg-muted/10 font-semibold">
                                 <div className="flex justify-between items-start">
                                   <div>
-                                    <p className="text-xs text-foreground/80 leading-relaxed font-medium">"{v.description}"</p>
+                                    <h5 className="text-sm font-black text-foreground truncate">{v.title}</h5>
+                                    {v.reason && (
+                                      <p className="text-xs text-foreground/80 leading-relaxed font-medium mt-1 whitespace-pre-wrap">{v.reason}</p>
+                                    )}
                                     <span className={`inline-block text-[9px] font-extrabold px-1.5 py-0.5 rounded mt-1.5 uppercase ${
                                       v.status === 'approved' ? 'bg-green-500/10 text-green-600' :
-                                      v.status === 'approved_awaiting_payment' ? 'bg-amber-500/10 text-amber-500' :
-                                      v.status === 'rejected' ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'
+                                      v.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
+                                      v.status === 'cancelled' ? 'bg-secondary text-secondary-foreground' : 'bg-blue-500/10 text-blue-500'
                                     }`}>
-                                      {
-                                        v.status === 'approved' ? 'Extra payment funded' :
-                                        v.status === 'approved_awaiting_payment' ? 'Variation approved, awaiting payment' :
-                                        v.status === 'rejected' ? 'Rejected' : 'Pending Approval'
-                                      }
+                                      {v.status === 'pending' ? 'Pending customer approval' : v.status}
                                     </span>
                                   </div>
                                   <div className="text-right">
-                                    <span className="text-sm font-extrabold text-foreground">{formatCentsToAud(v.amount_cents)}</span>
+                                    <span className="text-sm font-extrabold text-foreground">{formatAud(variationTotal)}</span>
+                                    <p className="text-[9px] text-muted-foreground font-bold">{new Date(v.requested_at).toLocaleDateString()}</p>
                                   </div>
                                 </div>
-                                {v.status === 'pending' && selectedJob.customer_id === user.id && (
-                                  <div className="grid grid-cols-2 gap-3 pt-1">
+                                {lineItems.length > 0 && (
+                                  <div className="space-y-1.5 border-t pt-2">
+                                    {lineItems.map((line) => (
+                                      <div key={line.id} className="flex justify-between gap-3 bg-background border rounded-xl p-2 text-xs">
+                                        <div className="min-w-0">
+                                          <span className="font-bold text-foreground truncate block">{line.label}</span>
+                                          <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                                            {line.line_type} | {line.quantity} x ${line.unit_price.toLocaleString()}
+                                          </span>
+                                          {line.description && (
+                                            <p className="text-[10px] text-foreground/70 mt-1 leading-relaxed">{line.description}</p>
+                                          )}
+                                        </div>
+                                        <span className="font-black text-foreground shrink-0">{formatAud(Number(line.line_total || 0))}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {v.review_note && (
+                                  <div className="text-[10px] bg-background p-2 rounded-lg border border-border/50 font-medium">
+                                    <span className="font-bold text-foreground/90 block">Review Note:</span>
+                                    <span className="text-foreground/70">{v.review_note}</span>
+                                  </div>
+                                )}
+
+                                {jobPayment?.payee_id === user.id && v.status === 'pending' && (
+                                  <div className="flex justify-end pt-1">
                                     <button
-                                      onClick={() => {
-                                        setModalConfirmConfig({
-                                          title: "Approve Variation",
-                                          message: "Approve this variation of " + formatCentsToAud(v.amount_cents) + "? The variation will then require protected funding payment.",
-                                          onConfirm: async () => {
-                                            const { error } = await approveVariation(v.id);
-                                            if (error) {
-                                              showToast(error.message, 'error');
-                                            } else {
-                                              showToast("Variation approved! Awaiting secure job payment.", 'success');
-                                              fetchJobLifecycleDetails(selectedJob.id);
-                                            }
-                                          }
-                                        });
-                                      }}
-                                      className="bg-primary hover:bg-primary/95 text-primary-foreground font-black text-[10px] py-1.5 rounded-lg transition shadow"
+                                      onClick={() => handleCancelVariationRequest(v.id)}
+                                      className="text-[10px] text-red-600 hover:text-red-700 font-bold flex items-center gap-0.5"
                                     >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        const reason = window.prompt("Reason for rejection:");
-                                        if (reason !== null) {
-                                          const { error } = await rejectVariation(v.id, reason);
-                                          if (error) {
-                                            showToast(error.message, 'error');
-                                          } else {
-                                            showToast("Variation rejected.", 'success');
-                                            fetchJobLifecycleDetails(selectedJob.id);
-                                          }
-                                        }
-                                      }}
-                                      className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black text-[10px] py-1.5 rounded-lg transition"
-                                    >
-                                      Reject
+                                      <X className="h-3 w-3" /> Cancel Variation
                                     </button>
                                   </div>
                                 )}
-                                 {v.status === 'approved_awaiting_payment' && ((selectedJob.customer_id === user?.id) || profile?.is_admin) && (
-                                   <>
-                                     <button
-                                    onClick={() => {
-                                      setModalConfirmConfig({
-                                        title: "Fund Variation",
-                                        message: "Simulate protected funding for this approved variation of " + formatCentsToAud(v.amount_cents) + "?",
-                                        onConfirm: async () => {
-                                          const { error } = await simulateVariationFunding(v.id);
-                                          if (error) {
-                                            showToast(error.message, 'error');
-                                          } else {
-                                            showToast("Variation protected payment funded successfully!", 'success');
-                                            fetchJobLifecycleDetails(selectedJob.id);
-                                          }
-                                        }
-                                      });
-                                    }}
-                                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-[10px] py-1.5 rounded-lg transition shadow mt-1"
-                                  >
-                                    Simulate Variation Funding
-                                  </button>
-                                  <p className="text-[9px] text-amber-600/80 text-center mt-1">Beta only — no real payment will be taken.</p>
-                                </>
-)}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}

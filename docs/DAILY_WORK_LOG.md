@@ -283,7 +283,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 18:30:00 | Phase 2 / Chunk E — Lock Accepted Quote Lines | `0b5f9f6` | Snapshotted accepted quote line items into an immutable table upon acceptance, locked original quote lines from edit/delete after pending status, and rendered breakdowns. |
 | 19:15:00 | Phase 3 / Chunk F — Early Release Request Foundation | `1d8cf68` | Created the early release request database schema, RLS policies, context-matching insert triggers, resolved update locks, and implemented tradie request forms and customer tracking displays. |
 | 20:10:00 | Phase 3 / Chunk G — Early Release Caps | `a8c2305` | Added DB-enforced early release caps, a permission-checked cap summary RPC, and UI guidance for remaining job and accepted quote line caps. |
-| 20:45:00 | Phase 3 / Chunk H — Customer Approval Modal | `pending` | Added customer/admin early release review RPC, hardened review field updates, and built the customer approval/rejection modal with cap context. |
+| 20:45:00 | Phase 3 / Chunk H — Customer Approval Modal | `c9e385d` | Added customer/admin early release review RPC, hardened review field updates, and built the customer approval/rejection modal with cap context. |
+| 21:30:00 | Phase 4 / Chunk I — Itemised Variation Requests | `pending` | Added itemised variation request tables/RPCs, typed frontend helpers, and an itemised contract variation UI without funding or invoice changes. |
 
 ### Migrations / Deployments
 
@@ -294,6 +295,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `068_early_release_requests.sql` | Created | Creates early_release_requests table, validation triggers, and RLS policies to allow tradie requests and customer/admin views on active jobs. |
 | `069_early_release_caps.sql` | Created | Enforces early release caps on insert and approval updates, adds accepted quote line linking rules, and exposes a permission-checked cap summary RPC. |
 | `070_early_release_review_rpc.sql` | Created | Adds the review_early_release_request RPC and hardens early release review field/status update rules. |
+| `071_itemised_variation_requests.sql` | Created | Creates itemised variation request and line-item tables, RLS, immutable line handling, and create/cancel RPCs. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -325,6 +327,22 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
 | `git diff --check` result | Passed with line-ending warnings only. |
 | Live Supabase action required | Apply `supabase/migrations/070_early_release_review_rpc.sql` after migration `069_early_release_caps.sql`. |
+| Commit hash after commit | Recorded in final report after push. |
+
+### Phase 4 / Chunk I — Itemised Variation Requests
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/071_itemised_variation_requests.sql`, `frontend/src/lib/variations.ts`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `071_itemised_variation_requests.sql`. |
+| Schema/RLS summary | Added `job_variation_requests` headers and immutable `job_variation_line_items` with generated `line_total`. Select RLS is limited to the contracted tradie, job customer, and admins. Direct client writes are not exposed; create/cancel use RPCs. |
+| Validation summary | Creation requires authenticated contracted tradie, accepted application, job status `accepted` or `payment_held`, non-empty title, at least one valid line, quantity > 0, unit price >= 0, allowed line type, and total > $0. Completed, cancelled, disputed, and review-stage jobs are blocked. |
+| UI summary | Active contract details now show itemised variation requests. Contracted tradies can create/cancel pending itemised requests. Customers can view request status and itemised line breakdown with a notice that approval/funding controls come later. |
+| Privacy/security notes | Variation requests are not exposed through public profiles, Browse Tradies, public job cards, homepage, invoices, reviews, analytics, messaging, or Completed Work Portfolio. |
+| Non-goals | No variation funding, release, payment status changes, payout records, invoice itemisation, accepted quote snapshot changes, early release changes, reviews, messaging, homepage, OAuth, analytics, or portfolio changes. |
+| Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
+| `git diff --check` result | Passed with line-ending warnings only. |
+| Live Supabase action required | Apply `supabase/migrations/071_itemised_variation_requests.sql` after migration `070_early_release_review_rpc.sql`. |
 | Commit hash after commit | Recorded in final report after push. |
 
 ### Privacy Notes

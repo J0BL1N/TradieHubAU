@@ -709,12 +709,41 @@ Status: **Implementation complete / pushed. Live SQL should be run before Chunk 
 
 # Phase 3 Chunk H — Customer Approval Modal
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL should be run after Chunk G.**
 
 * [x] Build customer approval/rejection modal for early release requests.
 * [x] Add permission-checked review RPC for customer/admin approval decisions.
 * [x] Re-run cap validation at approval time.
 * [x] Keep approval tracking separate from actual payment/fund release.
+
+---
+
+# Phase 4 Chunk I — Itemised Variation Requests
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Add itemised variation request tables and line-item storage.
+* [x] Add contracted-tradie create/cancel RPCs with DB validation.
+* [x] Render itemised variation request creation for contracted tradies.
+* [x] Render customer-visible itemised variation request details.
+* [x] Keep variation funding, release, and invoice itemisation out of this chunk.
+
+---
+
+# Phase 4 Chunk J — Variation Funding + Release (upcoming)
+
+Status: **Upcoming**
+
+* [ ] Add customer approval/funding controls for itemised variation requests.
+* [ ] Keep payment movement behind explicit customer funding.
+
+---
+
+# Phase 4 Chunk K — Final Invoice Itemisation (later)
+
+Status: **Later**
+
+* [ ] Add approved/funded variation lines to final invoice/receipt itemisation.
 
 ---
 
