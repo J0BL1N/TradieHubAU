@@ -1065,7 +1065,7 @@ export default function Profile() {
     <div className="space-y-6">
       {/* 1. Top Summary Banner */}
       <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 rounded-3xl border bg-card p-5 shadow-sm">
-        <div className="flex items-start gap-4 min-w-0">
+        <div className="flex items-start gap-4 flex-1 w-full min-w-0">
           {isVerificationComplete ? (
             <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
           ) : (

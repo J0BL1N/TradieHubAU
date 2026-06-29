@@ -299,6 +299,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Profile Verification Tab Redesign | `fcd3d39` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
 | 2026-06-30 | Profile Verification Checklist Polish | `7e81d9f` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
 | 2026-06-30 | Profile Verification Summary Polish | `cd986ed` | Replaced the two-card verification summary with one compact status banner connected to the checklist rows. |
+| 2026-06-30 | Profile Verification Summary Layout Hotfix | `61044ba` | Fixed top verification summary text collapsing vertically by correcting flex/grid sizing and chip wrapping. |
 
 ### Migrations / Deployments
 
@@ -548,6 +549,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
 | Summary | Replaced the two separate verification summary cards with a single unified status banner. Connects the status overview and next action directly to the checklist sections using a clean responsive layout with progress chips. |
 | Banner details | - Unified Title and body text inside a single card container with check/warning status icons. <br> - Includes an optional success helper line ("You're ready to quote...") when verification is complete. <br> - Renders compact progress chips for Photo ID, Liveness, and Credentials on the right-hand side. <br> - Adapts seamlessly to vertical stack on mobile viewports. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+
+### Profile Verification Summary Layout Hotfix
+
+| Item | Notes |
+| --- | --- |
+| Area | Profile Verification Tab Summary Layout Hotfix |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Summary | Fixed a layout bug where the top verification summary text collapsed into a single character column by adding flex sizing properties (`flex-1 w-full min-w-0`) to the left text container. |
+| Layout details | - Added `flex-1` and `w-full` to the left-hand text column in the summary banner card. <br> - Ensured the summary title and body text render horizontally left-to-right on all viewport resolutions. <br> - Kept status chips layout wrapping safely without squeezing the main text column. |
 | Migrations required | None. |
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
