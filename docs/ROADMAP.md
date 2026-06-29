@@ -751,7 +751,7 @@ Status: **Upcoming**
 
 # Phase 5 Chunk K — Final Invoice Itemisation
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL has been run.**
 
 * [x] Add trusted invoice line item table generated from approved sources only.
 * [x] Include accepted quote snapshot lines in Customer Receipts and Payout Statements.
@@ -760,17 +760,40 @@ Status: **Implementation complete / awaiting manual review.**
 * [x] Exclude pending/rejected/cancelled variations and early release requests from invoice charge lines.
 * [x] Keep payment movement, release logic, payment status rules, GST support, and Tax Invoice naming out of this chunk.
 
-# Phase 5 Chunk L — Evidence / Enforcement Packs (upcoming)
+---
+
+# Phase 6 Chunk L — Job Evidence Timeline
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Create database migration to collect chronological job lifecycle, quote, payment, early release, variation, and invoice events.
+* [x] Verify permissions securely: check caller is customer, contracted tradie, or admin.
+* [x] Create frontend helpers and render read-only chronological timeline card inside Jobs details modal.
+* [x] Support backwards compatibility for older/legacy jobs with minimal logged events.
+
+---
+
+# Phase 6 Chunk M — Admin Evidence Pack (upcoming)
 
 Status: **Upcoming**
 
-* [ ] Add structured evidence and enforcement packs for disputes/admin review.
+* [ ] Add admin export and evidence pack generation for disputes/admin review.
 
-# Phase 5 Chunk M — Risk Controls (upcoming)
+---
+
+# Phase 6 Chunk N — Enforcement Actions (upcoming)
 
 Status: **Upcoming**
 
-* [ ] Add further operational risk controls after invoice itemisation manual review.
+* [ ] Add enforcement actions for resolved disputes.
+
+---
+
+# Phase 6 Chunk O — Tradie Risk Controls (upcoming)
+
+Status: **Upcoming**
+
+* [ ] Add operational risk controls and reputation checks.
 
 ---
 

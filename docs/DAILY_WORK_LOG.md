@@ -286,7 +286,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 20:45:00 | Phase 3 / Chunk H — Customer Approval Modal | `c9e385d` | Added customer/admin early release review RPC, hardened review field updates, and built the customer approval/rejection modal with cap context. |
 | 21:30:00 | Phase 4 / Chunk I — Itemised Variation Requests | `07e9399` | Added itemised variation request tables/RPCs, typed frontend helpers, and an itemised contract variation UI without funding or invoice changes. |
 | 22:05:00 | Phase 4 / Chunk J — Variation Approval + Funding Groundwork | `8a51d25` | Added customer/admin variation review RPC, immutable approved variation line snapshots, and customer variation review UI without payment movement. |
-| 22:45:00 | Phase 5 / Chunk K — Final Invoice Itemisation | `pending` | Added trusted final document line itemisation from accepted quote snapshots and approved variation snapshots, with legacy fallback and no payment movement. |
+| 22:45:00 | Phase 5 / Chunk K — Final Invoice Itemisation | `61520a1` | Added trusted final document line itemisation from accepted quote snapshots and approved variation snapshots, with legacy fallback and no payment movement. |
+| 23:30:00 | Phase 6 / Chunk L — Job Evidence Timeline | `66d7c18` | Created read-only job evidence timeline RPC function, added authorization verification checks, and rendered compact bullet-style timeline card. |
 
 ### Migrations / Deployments
 
@@ -300,6 +301,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `071_itemised_variation_requests.sql` | Created | Creates itemised variation request and line-item tables, RLS, immutable line handling, and create/cancel RPCs. |
 | `072_variation_approval_review.sql` | Created | Adds approved variation line snapshots, review RPC, review status rules, and RLS for approved variation lines. |
 | `073_itemise_final_invoice_documents.sql` | Created | Adds trusted job invoice line items sourced from accepted quote snapshots and approved variation snapshots, updates invoice generation/RPC self-healing, and preserves legacy accepted quote fallback. |
+| `074_job_evidence_timeline.sql` | Created | Creates read-only public.get_job_evidence_timeline function with secure user/admin checks and revokes public execute grants. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 

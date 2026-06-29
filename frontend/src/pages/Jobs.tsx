@@ -21,6 +21,8 @@ import {
   reviewEarlyReleaseRequest
 } from '../lib/earlyReleases';
 import type { EarlyReleaseRequest, EarlyReleaseRequestPayload, EarlyReleaseCapSummary } from '../lib/earlyReleases';
+import { fetchJobEvidenceTimeline } from '../lib/timeline';
+import type { TimelineEvent } from '../lib/timeline';
 import { useAuth } from '../components/AuthProvider';
 import {
   Search, MapPin, DollarSign, Briefcase, AlertTriangle,
@@ -917,6 +919,10 @@ export default function Jobs() {
   const [earlyReleaseCapSummary, setEarlyReleaseCapSummary] = useState<EarlyReleaseCapSummary | null>(null);
   const [loadingEarlyReleases, setLoadingEarlyReleases] = useState(false);
 
+  // Job evidence timeline state
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
+  const [loadingTimeline, setLoadingTimeline] = useState(false);
+
   // Early release form state
   const [erRequestType, setErRequestType] = useState<'materials' | 'fuel' | 'mobilisation' | 'permit' | 'equipment' | 'other'>('materials');
   const [erTitle, setErTitle] = useState('');
@@ -1143,12 +1149,29 @@ export default function Jobs() {
         setEarlyReleaseRequests([]);
         setEarlyReleaseCapSummary(null);
       }
+
+      if (selectedJob) {
+        const isOwner = selectedJob.customer_id === userId;
+        const isAcceptedTradie = myApplications.get(jobId)?.status === 'accepted';
+        const isAdmin = profile?.is_admin;
+
+        if (isOwner || isAcceptedTradie || isAdmin) {
+          setLoadingTimeline(true);
+          const { data: timelineData } = await fetchJobEvidenceTimeline(jobId);
+          setTimelineEvents(timelineData || []);
+          setLoadingTimeline(false);
+        } else {
+          setTimelineEvents([]);
+        }
+      } else {
+        setTimelineEvents([]);
+      }
     } catch (err: any) {
       setLifecycleError(err.message || 'Failed to load details.');
     } finally {
       setLoadingLifecycle(false);
     }
-  }, [userId, selectedJob]);
+  }, [userId, selectedJob, myApplications, profile]);
 
   useEffect(() => {
     if (selectedJob) {
@@ -3555,6 +3578,63 @@ export default function Jobs() {
                         </div>
                       );
                     })()}
+
+                      {/* Job Evidence Timeline Card */}
+                      {((selectedJob.customer_id === user?.id) ||
+                        (jobPayment && jobPayment.payee_id === user?.id) ||
+                        profile?.is_admin) && (
+                        <div className="p-4 bg-muted/30 border rounded-2xl space-y-3 text-sm">
+                          <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block border-b pb-1 font-black">
+                            Job Evidence Timeline
+                          </span>
+                          {loadingTimeline ? (
+                            <div className="flex justify-center py-4">
+                              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            </div>
+                          ) : timelineEvents.length > 0 ? (
+                            <div className="relative pl-4 border-l border-border/60 ml-2 space-y-4 py-1 mt-2">
+                              {timelineEvents.map((event) => (
+                                <div key={event.event_id} className="relative group">
+                                  {/* Bullet indicator */}
+                                  <div className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border border-primary bg-background shadow-sm" />
+
+                                  <div className="space-y-1">
+                                    <div className="flex flex-wrap items-baseline gap-x-2">
+                                      <span className="text-xs font-bold text-foreground">{event.event_label}</span>
+                                      {event.amount !== null && event.amount !== undefined && (
+                                        <span className="text-[10px] font-black text-primary">
+                                          ${event.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                      )}
+                                      {event.status && (
+                                        <span className={`uppercase text-[8px] px-1.5 py-0.5 rounded font-black border ${
+                                          event.status === 'pending' || event.status === 'open' ? 'bg-amber-500/10 text-amber-800 border-amber-500/30' :
+                                          ['approved', 'released', 'resolved_payout', 'resolved_refund', 'resolved_split'].includes(event.status) ? 'bg-green-500/10 text-green-800 border-green-500/30' :
+                                          'bg-red-500/10 text-red-800 border-red-500/30'
+                                        }`}>
+                                          {event.status}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {event.event_description && (
+                                      <p className="text-[11px] text-foreground/70 leading-relaxed font-medium">
+                                        {event.event_description}
+                                      </p>
+                                    )}
+
+                                    <span className="text-[9px] text-muted-foreground block font-bold">
+                                      {new Date(event.occurred_at).toLocaleString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">No evidence events logged for this job yet.</p>
+                          )}
+                        </div>
+                      )}
 
                       {/* 2. Customer Actions: Quote Selection */}
                       {selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
