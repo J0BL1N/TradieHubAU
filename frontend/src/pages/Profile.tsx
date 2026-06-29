@@ -1060,217 +1060,233 @@ export default function Profile() {
   })();
 
   const compactVerificationDashboard = (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* 1. Top Summary Row */}
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-3xl border bg-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-lg font-black text-foreground">Verification Status Overview</h3>
-              <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
-                Current review state for the documents needed on your account.
+              <h3 className="text-sm font-black text-foreground">Verification Status Overview</h3>
+              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
+                Current review state for required verification documents.
               </p>
             </div>
             <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border bg-muted/10 p-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border bg-muted/10 p-3 flex flex-col justify-between">
               <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Photo ID</p>
-              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(effectiveIdVerificationStatus)}`}>
+              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2 py-0.5 rounded-full border w-fit ${getStatusClass(effectiveIdVerificationStatus)}`}>
                 {getStatusLabel(effectiveIdVerificationStatus)}
               </span>
             </div>
-            <div className="rounded-2xl border bg-muted/10 p-3">
+            <div className="rounded-2xl border bg-muted/10 p-3 flex flex-col justify-between">
               <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Liveness</p>
-              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
+              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border w-fit ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
                 {getStatusLabel(effectiveLivenessVerificationStatus)}
               </span>
             </div>
-            <div className="rounded-2xl border bg-muted/10 p-3">
+            <div className="rounded-2xl border bg-muted/10 p-3 flex flex-col justify-between">
               <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Credentials</p>
-              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(tradieVerificationStatus)}`}>
+              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border w-fit ${getStatusClass(tradieVerificationStatus)}`}>
                 {getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}
               </span>
             </div>
           </div>
         </section>
 
-        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+        <section className="rounded-3xl border bg-card p-5 shadow-sm flex flex-col justify-center">
           <div className="flex items-start gap-3">
             {nextVerificationAction.title === 'Verification complete' ? (
               <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
             ) : (
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             )}
-            <div>
-              <h3 className="text-lg font-black text-foreground">{nextVerificationAction.title}</h3>
-              <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{nextVerificationAction.body}</p>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-foreground break-words">{nextVerificationAction.title}</h3>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground break-words">{nextVerificationAction.body}</p>
             </div>
           </div>
         </section>
       </div>
 
       {/* 2. Identity Verification Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-black text-foreground border-b pb-2">Identity Verification</h3>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b pb-2">
+          <h3 className="text-base font-black text-foreground">Identity Verification</h3>
+          <span className="text-[10px] font-bold text-muted-foreground">STEP 1 OF 2</span>
+        </div>
 
-        {/* Photo ID Card */}
-        <section className="rounded-3xl border bg-card p-6 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
-            {/* Left column: Title, helper, status badge, status/action messages */}
-            <div className="md:col-span-1 space-y-4">
-              <div>
-                <h4 className="text-base font-black text-foreground">Photo ID</h4>
-                <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{IDENTITY_DOCUMENT_CARD.helper}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(effectiveIdVerificationStatus)}`}>
-                  {getStatusLabel(effectiveIdVerificationStatus)}
-                </span>
-                <div className="text-xs font-semibold leading-5 text-muted-foreground">
-                  {effectiveIdVerificationStatus === 'approved' && (
-                    <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Identity document verified.</p>
-                  )}
-                  {effectiveIdVerificationStatus === 'pending' && (
-                    <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">Photo ID is waiting for admin review.</p>
-                  )}
-                  {effectiveIdVerificationStatus !== 'approved' && effectiveIdVerificationStatus !== 'pending' && effectiveIdVerificationStatus !== 'none' && (
-                    <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
-                      Action required. Upload a clear replacement photo ID.
-                    </p>
-                  )}
-                </div>
+        {/* Photo ID Compact Row */}
+        <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              {effectiveIdVerificationStatus === 'approved' ? (
+                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+              ) : effectiveIdVerificationStatus === 'pending' ? (
+                <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              )}
+              <div className="min-w-0">
+                <h4 className="text-sm font-black text-foreground break-words">Photo ID</h4>
+                <p className="mt-1 text-xs font-semibold text-muted-foreground leading-normal break-words">
+                  {IDENTITY_DOCUMENT_CARD.helper}
+                </p>
               </div>
             </div>
-
-            {/* Right column: Upload / Replace controls */}
-            <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
-              {effectiveIdVerificationStatus !== 'approved' && effectiveIdVerificationStatus !== 'pending' && (
-                <form onSubmit={handleIdentityUpload} className="space-y-4 max-w-md">
-                  {idUploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your ID document has been submitted for verification.</p>}
-                  {idUploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{idUploadError}</p>}
-                  {idFile && (
-                    <div className="flex items-center gap-2 p-3 bg-muted/20 border rounded-2xl">
-                      <span className="truncate text-foreground font-semibold">{idFile.name}</span>
-                    </div>
-                  )}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
-                      <Upload className="h-4 w-4" /> Choose File
-                      <input
-                        type="file"
-                        onChange={(e) => {
-                          setIdDocType(IDENTITY_DOCUMENT_CARD.type);
-                          setIdFile(e.target.files?.[0] || null);
-                        }}
-                        disabled={uploadingDoc}
-                        className="hidden"
-                        accept="image/*,application/pdf"
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      disabled={uploadingDoc || !idFile}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
-                    >
-                      {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                      Submit ID
-                    </button>
-                  </div>
-                </form>
-              )}
+            <div className="shrink-0">
+              <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(effectiveIdVerificationStatus)}`}>
+                {getStatusLabel(effectiveIdVerificationStatus)}
+              </span>
             </div>
           </div>
-        </section>
 
-        {/* Liveness Selfie Card */}
-        <section className="rounded-3xl border bg-card p-6 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
-            {/* Left column: Info & status */}
-            <div className="md:col-span-1 space-y-4">
-              <div>
-                <h4 className="text-base font-black text-foreground">Liveness Selfie</h4>
-                <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
+          {effectiveIdVerificationStatus !== 'approved' && effectiveIdVerificationStatus !== 'pending' && (
+            <div className="border-t border-border/60 pt-3 space-y-3">
+              {(idVerificationRecheckReason || idVerificationNotes) ? (
+                <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-relaxed text-amber-700 break-words">
+                  {idVerificationRecheckReason || idVerificationNotes}
+                </p>
+              ) : (
+                effectiveIdVerificationStatus !== 'none' && (
+                  <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-relaxed text-amber-700 break-words">
+                    Action required. Upload a clear replacement photo ID.
+                  </p>
+                )
+              )}
+              <form onSubmit={handleIdentityUpload} className="space-y-3 max-w-md">
+                {idUploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600">Your ID document has been submitted for verification.</p>}
+                {idUploadError && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500">{idUploadError}</p>}
+                {idFile && (
+                  <div className="flex items-center gap-2 p-2 bg-muted/20 border rounded-xl">
+                    <span className="truncate text-foreground font-semibold text-xs">{idFile.name}</span>
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-3 py-2 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                    <Upload className="h-4 w-4" /> Choose File
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        setIdDocType(IDENTITY_DOCUMENT_CARD.type);
+                        setIdFile(e.target.files?.[0] || null);
+                      }}
+                      disabled={uploadingDoc}
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={uploadingDoc || !idFile}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-3 py-2 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                  >
+                    {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Submit ID
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+
+        {/* Liveness Selfie Compact Row */}
+        <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              {effectiveLivenessVerificationStatus === 'approved' ? (
+                <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+              ) : effectiveLivenessVerificationStatus === 'pending' ? (
+                <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              )}
+              <div className="min-w-0">
+                <h4 className="text-sm font-black text-foreground break-words">Liveness Selfie</h4>
+                <p className="mt-1 text-xs font-semibold text-muted-foreground leading-normal break-words">
                   Upload a clear selfie holding up 4 fingers next to your face.
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
-                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
-                  {getStatusLabel(effectiveLivenessVerificationStatus)}
-                </span>
-                <div className="text-xs font-semibold leading-5 text-muted-foreground">
-                  {effectiveLivenessVerificationStatus === 'approved' && (
-                    <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Liveness selfie verified.</p>
-                  )}
-                  {effectiveLivenessVerificationStatus === 'pending' && (
-                    <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">Selfie is waiting for admin review.</p>
-                  )}
-                  {effectiveLivenessVerificationStatus !== 'approved' && effectiveLivenessVerificationStatus !== 'pending' && effectiveLivenessVerificationStatus !== 'none' && (
-                    <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
-                      Action required. Upload a replacement liveness selfie.
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
-
-            {/* Right column: Upload controls */}
-            <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
-              {effectiveLivenessVerificationStatus !== 'approved' && effectiveLivenessVerificationStatus !== 'pending' && (
-                <form onSubmit={handleLivenessUpload} className="space-y-4 max-w-md">
-                  {livenessUploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your selfie has been submitted for review.</p>}
-                  {livenessUploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{livenessUploadError}</p>}
-                  {livenessFile && (
-                    <div className="flex items-center gap-2 p-3 bg-muted/20 border rounded-2xl">
-                      <span className="truncate text-foreground font-semibold">{livenessFile.name}</span>
-                    </div>
-                  )}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
-                      <Camera className="h-4 w-4" /> Take / Choose Photo
-                      <input
-                        type="file"
-                        onChange={(e) => setLivenessFile(e.target.files?.[0] || null)}
-                        disabled={livenessUploading}
-                        className="hidden"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      disabled={livenessUploading || !livenessFile}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
-                    >
-                      {livenessUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                      Submit Selfie
-                    </button>
-                  </div>
-                </form>
-              )}
+            <div className="shrink-0">
+              <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
+                {getStatusLabel(effectiveLivenessVerificationStatus)}
+              </span>
             </div>
           </div>
-        </section>
+
+          {effectiveLivenessVerificationStatus !== 'approved' && effectiveLivenessVerificationStatus !== 'pending' && (
+            <div className="border-t border-border/60 pt-3 space-y-3">
+              {(livenessVerificationRecheckReason || livenessVerificationNotes) ? (
+                <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-relaxed text-amber-700 break-words">
+                  {livenessVerificationRecheckReason || livenessVerificationNotes}
+                </p>
+              ) : (
+                effectiveLivenessVerificationStatus !== 'none' && (
+                  <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-relaxed text-amber-700 break-words">
+                    Action required. Upload a replacement liveness selfie.
+                  </p>
+                )
+              )}
+              <form onSubmit={handleLivenessUpload} className="space-y-3 max-w-md">
+                {livenessUploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600">Your selfie has been submitted for review.</p>}
+                {livenessUploadError && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500">{livenessUploadError}</p>}
+                {livenessFile && (
+                  <div className="flex items-center gap-2 p-2 bg-muted/20 border rounded-xl">
+                    <span className="truncate text-foreground font-semibold text-xs">{livenessFile.name}</span>
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-3 py-2 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                    <Camera className="h-4 w-4" /> Take / Choose Photo
+                    <input
+                      type="file"
+                      onChange={(e) => setLivenessFile(e.target.files?.[0] || null)}
+                      disabled={livenessUploading}
+                      className="hidden"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={livenessUploading || !livenessFile}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-3 py-2 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                  >
+                    {livenessUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Submit Selfie
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 3. Tradie Credentials Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-black text-foreground border-b pb-2">
-          {targetProfile.role === 'customer' ? 'Apply as a Contractor' : 'Tradie Credentials'}
-        </h3>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b pb-2">
+          <h3 className="text-base font-black text-foreground">
+            {targetProfile.role === 'customer' ? 'Apply as a Contractor' : 'Tradie Credentials'}
+          </h3>
+          {targetProfile.role !== 'customer' && (
+            <span className="text-[10px] font-bold text-muted-foreground">STEP 2 OF 2</span>
+          )}
+        </div>
 
         {targetProfile.role === 'customer' && (
-          <section className="rounded-3xl border bg-card p-6 shadow-sm">
+          <section className="rounded-3xl border bg-card p-5 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
               <div className="md:col-span-1 space-y-2">
-                <h4 className="text-base font-black text-foreground">Submit Application</h4>
-                <p className="text-xs font-semibold leading-5 text-muted-foreground">
+                <h4 className="text-sm font-black text-foreground">Submit Application</h4>
+                <p className="text-[11px] font-semibold leading-relaxed text-muted-foreground">
                   Provide your ABN and licence number to apply for contractor status.
                 </p>
               </div>
               <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
-                <form onSubmit={handleApplyAsTradie} className="space-y-4 max-w-md">
-                  {uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your credentials have been submitted for review.</p>}
-                  {uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
+                <form onSubmit={handleApplyAsTradie} className="space-y-3 max-w-md">
+                  {uploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600">Your credentials have been submitted for review.</p>}
+                  {uploadError && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500">{uploadError}</p>}
                   <div className="grid gap-3">
                     <input
                       type="text"
@@ -1303,78 +1319,96 @@ export default function Profile() {
         )}
 
         {targetProfile.role !== 'customer' && (
-          <div className="space-y-4">
-            {uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Document uploaded and submitted to review queue successfully.</p>}
-            {uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
+          <div className="space-y-3">
+            {uploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600">Document uploaded and submitted to review queue successfully.</p>}
+            {uploadError && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500">{uploadError}</p>}
 
-            {/* Render each credential document as a full-width row/card using desktop 2-column split */}
+            {/* Render each credential document as a compact checklist row */}
             {TRADIE_DOCUMENT_CARDS.map((doc) => {
               const status = getDocumentStatus(doc.type);
               const selectedFile = tradieFiles[doc.type];
+              const docSummary = verificationSummaries[doc.type];
+              const recheckReason = docSummary?.recheck_reason || null;
+              const adminNotes = docSummary?.admin_notes || null;
+              const reasonText = recheckReason || adminNotes;
+
+              const isComplete = status === 'approved' || status === 'pending';
+
               return (
-                <section key={doc.type} className="rounded-3xl border bg-card p-6 shadow-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
-                    {/* Left side: title, helper, status badge, recheck note */}
-                    <div className="md:col-span-1 space-y-4">
-                      <div>
-                        <h4 className="text-base font-black text-foreground">{doc.title}</h4>
-                        <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{doc.helper}</p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(status)}`}>
-                          {getStatusLabel(status, doc.required)}
-                        </span>
-                        <div className="text-xs font-semibold leading-5 text-muted-foreground">
-                          {status === 'approved' && (
-                            <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Document verified and approved.</p>
-                          )}
-                          {status === 'pending' && (
-                            <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">Waiting for administrator review.</p>
-                          )}
-                          {status !== 'approved' && status !== 'pending' && status !== 'none' && (
-                            <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
-                              Action required. Please upload a clear replacement document.
-                            </p>
+                <div key={doc.type} className="rounded-2xl border bg-card p-4 shadow-sm space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3 min-w-0">
+                      {status === 'approved' ? (
+                        <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                      ) : status === 'pending' ? (
+                        <Clock className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                      ) : status === 'none' && !doc.required ? (
+                        <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-sm font-black text-foreground break-words">{doc.title}</h4>
+                          {!doc.required && (
+                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Optional</span>
                           )}
                         </div>
+                        <p className="mt-1 text-xs font-semibold text-muted-foreground leading-relaxed break-words">
+                          {doc.helper}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Right side: choose file + submit button */}
-                    <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
-                      {status !== 'approved' && status !== 'pending' && (
-                        <div className="space-y-4 max-w-md">
-                          {selectedFile && (
-                            <div className="flex items-center gap-2 p-3 bg-muted/20 border rounded-2xl">
-                              <span className="truncate text-foreground font-semibold">{selectedFile.name}</span>
-                            </div>
-                          )}
-                          <div className="flex flex-col sm:flex-row gap-3">
-                            <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
-                              <Upload className="h-4 w-4" /> Choose File
-                              <input
-                                type="file"
-                                onChange={(e) => setTradieCardFile(doc.type, e.target.files?.[0] || null)}
-                                disabled={uploadingDoc}
-                                className="hidden"
-                                accept="image/*,application/pdf"
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => void handleApplyAsTradie(undefined, doc.type, selectedFile || null)}
-                              disabled={uploadingDoc || !selectedFile}
-                              className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
-                            >
-                              {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                              Submit Document
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                    <div className="shrink-0">
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(status)}`}>
+                        {getStatusLabel(status, doc.required)}
+                      </span>
                     </div>
                   </div>
-                </section>
+
+                  {!isComplete && (
+                    <div className="border-t border-border/60 pt-3 space-y-3">
+                      {reasonText && (
+                        <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-relaxed text-amber-700 break-words">
+                          {reasonText}
+                        </p>
+                      )}
+                      {status !== 'none' && !reasonText && (
+                        <p className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs font-semibold leading-relaxed text-amber-700 break-words">
+                          Action required. Please upload a clear replacement document.
+                        </p>
+                      )}
+                      <div className="space-y-3 max-w-md">
+                        {selectedFile && (
+                          <div className="flex items-center gap-2 p-2 bg-muted/20 border rounded-xl">
+                            <span className="truncate text-foreground font-semibold text-xs">{selectedFile.name}</span>
+                          </div>
+                        )}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <label className="flex-1 inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-3 py-2 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                            <Upload className="h-4 w-4" /> Choose File
+                            <input
+                              type="file"
+                              onChange={(e) => setTradieCardFile(doc.type, e.target.files?.[0] || null)}
+                              disabled={uploadingDoc}
+                              className="hidden"
+                              accept="image/*,application/pdf"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => void handleApplyAsTradie(undefined, doc.type, selectedFile || null)}
+                            disabled={uploadingDoc || !selectedFile}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-3 py-2 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                          >
+                            {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            Submit
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

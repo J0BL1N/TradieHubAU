@@ -297,6 +297,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Fix Profile Verification Card Layout | `25c32ea` | Replaced cramped skinny verification columns with readable wide stacked cards. |
 | 2026-06-30 | Polish Completed Work Controls | `2cacf93` | Wired Publish/Hide to autosave immediately, removed redundant Save, and made summary and preview controls more compact. |
 | 2026-06-30 | Profile Verification Tab Redesign | `fcd3d39` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
+| 2026-06-30 | Profile Verification Checklist Polish | `0db6249` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
 
 ### Migrations / Deployments
 
@@ -519,6 +520,20 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Summary | Redesigned the Verification tab in Profile.tsx into wider sectioned cards/rows for identity and tradie credentials. This fixes the cramped credential layout while preserving upload and recheck behaviors. |
 | Section headers | Added explicit headers: "Identity Verification" and "Tradie Credentials" (or "Apply as a Contractor" if customer). |
 | Cards layout | Rendered each document card (Photo ID, Liveness Selfie, Contractor Licence, Public Liability Insurance, Trade Certificate / Other) as a full-width card with desktop 2-column split (details/status badge on the left, upload form/controls on the right). Stacks on mobile. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+
+### Profile Verification Checklist Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Profile Verification Tab Polish & Checklist Redesign |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Summary | Replaced bulky verification document cards with compact checklist rows. We hide upload controls for approved and pending documents, fixed text overlap/overflow, and only expand upload fields and alerts for documents needing action. |
+| Verification row layouts | - Approved and pending documents show check/status icons (green check or amber clock), document titles, and helpers in a neat row. <br> - Documents needing action (recheck, expired, revoked, rejected, none) display inline expanded forms with warning messages and choose-file/submit controls. <br> - Muted optional badges on Trade Certificates to distinguish them from required actions. |
+| Overflow fixes | Utilized wrapping text structures (`break-words`), inline block alerts, and flexible layout parameters to prevent badge and label overlaps on smaller screens. |
 | Migrations required | None. |
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
