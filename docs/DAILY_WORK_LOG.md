@@ -279,10 +279,11 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | --- | --- | --- | --- |
 | 15:30:00 | Phase 2 / Chunk D — Itemised Quote Lines | `391fbdb` | Added itemised quote lines database schema, constraints, RLS policies, frontend APIs, dynamic quote list builder, customer review dashboard, and legacy fallbacks. |
 | 16:15:00 | Homepage Polish | `bc9a960` | Polished the hero area, improved category icon contrast, loaded real verified tradies (weekly seeded randomization), and loaded real open jobs with deep linking. |
+| 17:45:00 | Homepage Category Icon Polish | `6ccb00c` | Refined the Popular Categories icon styling and colors to alternate between crisp navy and orange accents, resolving mud/low-contrast badge issues. |
 
 ### Migrations / Deployments
 
-No database migrations were added for the Homepage Polish.
+No database migrations were added for the Homepage Polish or Category Icon Polish.
 
 | Item | Status | Notes |
 | --- | --- | --- |
