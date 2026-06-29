@@ -732,7 +732,7 @@ Status: **Implementation complete / pushed. Live SQL should be run before Chunk 
 
 # Phase 4 Chunk J — Variation Approval + Funding Groundwork
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL should be run before Chunk K manual QA.**
 
 * [x] Add customer approval/rejection controls for itemised variation requests.
 * [x] Snapshot approved variation line items immutably.
@@ -749,11 +749,28 @@ Status: **Upcoming**
 
 ---
 
-# Phase 4 Chunk K — Final Invoice Itemisation (upcoming)
+# Phase 5 Chunk K — Final Invoice Itemisation
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Add trusted invoice line item table generated from approved sources only.
+* [x] Include accepted quote snapshot lines in Customer Receipts and Payout Statements.
+* [x] Include approved variation snapshot lines in a separate Approved Variations section.
+* [x] Keep a legacy accepted quote total fallback for old completed/released jobs without snapshots.
+* [x] Exclude pending/rejected/cancelled variations and early release requests from invoice charge lines.
+* [x] Keep payment movement, release logic, payment status rules, GST support, and Tax Invoice naming out of this chunk.
+
+# Phase 5 Chunk L — Evidence / Enforcement Packs (upcoming)
 
 Status: **Upcoming**
 
-* [ ] Add approved/funded variation lines to final invoice/receipt itemisation.
+* [ ] Add structured evidence and enforcement packs for disputes/admin review.
+
+# Phase 5 Chunk M — Risk Controls (upcoming)
+
+Status: **Upcoming**
+
+* [ ] Add further operational risk controls after invoice itemisation manual review.
 
 ---
 

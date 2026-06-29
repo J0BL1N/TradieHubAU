@@ -1,8 +1,20 @@
-/**
- * Note: Invoice itemisation will be upgraded in Phase 2 / Chunk K.
- * Currently, this module handles basic invoice generation, preview modals, and print sheets.
- */
 import { supabase } from './supabase';
+
+export interface JobInvoiceLineItem {
+  id: string;
+  invoice_id: string;
+  job_id: string;
+  source_type: 'accepted_quote' | 'approved_variation';
+  source_line_id: string | null;
+  label: string;
+  description: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  line_type: 'labour' | 'materials' | 'callout' | 'disposal' | 'equipment' | 'permit' | 'other';
+  sort_order: number;
+  created_at: string;
+}
 
 export interface JobInvoice {
   id: string;
@@ -18,6 +30,9 @@ export interface JobInvoice {
   issued_at: string;
   created_at: string;
   updated_at: string;
+  line_items: JobInvoiceLineItem[];
+  accepted_quote_subtotal: number;
+  approved_variation_subtotal: number;
   job_title?: string;
   job_categories?: string[];
   job_suburb?: string;
@@ -40,6 +55,15 @@ export async function fetchInvoiceDetailsByJob(jobId: string, invoiceType: 'cust
   if (!data || data.length === 0) return { data: [], error: null };
 
   const inv = data[0];
+  const lineItems = Array.isArray(inv.line_items)
+    ? inv.line_items.map((item: any) => ({
+        ...item,
+        quantity: Number(item.quantity || 0),
+        unit_price: Number(item.unit_price || 0),
+        line_total: Number(item.line_total || 0),
+        sort_order: Number(item.sort_order || 0),
+      }))
+    : [];
   
   // Resolve profiles safely using public_profiles boundary to avoid exposure
   const [payerRes, payeeRes, jobRes] = await Promise.all([
@@ -51,6 +75,9 @@ export async function fetchInvoiceDetailsByJob(jobId: string, invoiceType: 'cust
   return {
     data: [{
       ...inv,
+      line_items: lineItems,
+      accepted_quote_subtotal: Number(inv.accepted_quote_subtotal || 0),
+      approved_variation_subtotal: Number(inv.approved_variation_subtotal || 0),
       job_title: jobRes.data?.title,
       job_categories: jobRes.data?.categories,
       job_suburb: jobRes.data?.suburb,

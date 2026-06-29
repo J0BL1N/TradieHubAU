@@ -285,7 +285,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 20:10:00 | Phase 3 / Chunk G — Early Release Caps | `a8c2305` | Added DB-enforced early release caps, a permission-checked cap summary RPC, and UI guidance for remaining job and accepted quote line caps. |
 | 20:45:00 | Phase 3 / Chunk H — Customer Approval Modal | `c9e385d` | Added customer/admin early release review RPC, hardened review field updates, and built the customer approval/rejection modal with cap context. |
 | 21:30:00 | Phase 4 / Chunk I — Itemised Variation Requests | `07e9399` | Added itemised variation request tables/RPCs, typed frontend helpers, and an itemised contract variation UI without funding or invoice changes. |
-| 22:05:00 | Phase 4 / Chunk J — Variation Approval + Funding Groundwork | `pending` | Added customer/admin variation review RPC, immutable approved variation line snapshots, and customer variation review UI without payment movement. |
+| 22:05:00 | Phase 4 / Chunk J — Variation Approval + Funding Groundwork | `8a51d25` | Added customer/admin variation review RPC, immutable approved variation line snapshots, and customer variation review UI without payment movement. |
+| 22:45:00 | Phase 5 / Chunk K — Final Invoice Itemisation | `pending` | Added trusted final document line itemisation from accepted quote snapshots and approved variation snapshots, with legacy fallback and no payment movement. |
 
 ### Migrations / Deployments
 
@@ -298,6 +299,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `070_early_release_review_rpc.sql` | Created | Adds the review_early_release_request RPC and hardens early release review field/status update rules. |
 | `071_itemised_variation_requests.sql` | Created | Creates itemised variation request and line-item tables, RLS, immutable line handling, and create/cancel RPCs. |
 | `072_variation_approval_review.sql` | Created | Adds approved variation line snapshots, review RPC, review status rules, and RLS for approved variation lines. |
+| `073_itemise_final_invoice_documents.sql` | Created | Adds trusted job invoice line items sourced from accepted quote snapshots and approved variation snapshots, updates invoice generation/RPC self-healing, and preserves legacy accepted quote fallback. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -361,6 +363,23 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
 | `git diff --check` result | Passed with line-ending warnings only. |
 | Live Supabase action required | Apply `supabase/migrations/072_variation_approval_review.sql` after migration `071_itemised_variation_requests.sql`. |
+| Commit hash after commit | Recorded in final report after push. |
+
+### Phase 5 / Chunk K — Final Invoice Itemisation
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/073_itemise_final_invoice_documents.sql`, `frontend/src/lib/invoices.ts`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `073_itemise_final_invoice_documents.sql`. |
+| Source-of-truth summary | Final Customer Receipt and Payout Statement line items are generated server-side into `job_invoice_line_items` only from `accepted_quote_line_items` and `approved_variation_line_items`. Clients have SELECT-only access through RLS and no arbitrary invoice line insert/update/delete path. |
+| Accepted quote line summary | Accepted quote snapshot lines are copied into invoice line items for each final document. Legacy completed/released jobs without snapshots receive a single fallback line labelled `Accepted quote total` using the accepted application estimate or trusted released payment amount. |
+| Approved variation line summary | Approved variation snapshot lines are copied into invoice line items and displayed in a separate Approved Variations section. Pending, rejected, cancelled, unapproved, and early release requests are not invoice charge lines. |
+| Legacy fallback summary | Old jobs keep a clear one-line accepted quote total instead of fake detailed labour/material lines. |
+| Privacy/security notes | Invoice line item details are not public and are not exposed through public profiles, Browse Tradies, public job cards, homepage, messaging, reviews, analytics, or Completed Work Portfolio. RLS limits reads to the customer receipt owner, contracted tradie payout statement owner, and admins for completed/released jobs only. |
+| Non-goals | No manual invoice line entry, arbitrary additions, payment movement, release/payout changes, payment status changes, GST support, Tax Invoice naming, reviews, messaging, homepage, OAuth, analytics, or portfolio changes. |
+| Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
+| `git diff --check` result | Passed with line-ending warnings only. |
+| Live Supabase action required | Apply `supabase/migrations/073_itemise_final_invoice_documents.sql` after migration `072_variation_approval_review.sql`. |
 | Commit hash after commit | Recorded in final report after push. |
 
 ### Privacy Notes

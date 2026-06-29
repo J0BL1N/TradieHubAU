@@ -43,6 +43,7 @@ import {
 import type { VariationLineType, VariationRequest } from '../lib/variations';
 import { supabase } from '../lib/supabase';
 import { fetchInvoiceDetailsByJob } from '../lib/invoices';
+import type { JobInvoiceLineItem } from '../lib/invoices';
 import {
   getRegionsForState,
   getSuburbsForRegion,
@@ -1034,6 +1035,10 @@ export default function Jobs() {
 
   const formatAud = (amount: number) => {
     return amount.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
+  };
+
+  const formatInvoiceLineType = (lineType: string) => {
+    return lineType.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
   };
 
   const getSelectedEarlyReleaseLineCap = () => {
@@ -2147,79 +2152,122 @@ export default function Jobs() {
               <hr className="border-border" />
 
               {/* Job Details / Line Items Table */}
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Line Items</span>
-                <div className="border border-border rounded-2xl overflow-hidden bg-muted/5">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-muted/10 border-b border-border font-bold text-muted-foreground">
-                        <th className="p-3">Description</th>
-                        <th className="p-3 text-center w-16">Qty</th>
-                        <th className="p-3 text-right w-28">Unit Price</th>
-                        <th className="p-3 text-right w-28">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="border-b border-border">
-                        <td className="p-3 font-semibold text-foreground">
-                          <p className="font-bold">{activeInvoice.job_title}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Category: {activeInvoice.job_categories?.join(', ')}
-                          </p>
-                        </td>
-                        <td className="p-3 text-center text-foreground font-semibold">1</td>
-                        <td className="p-3 text-right text-foreground font-semibold font-mono">
-                          ${(activeInvoice.amount_cents / 100).toFixed(2)}
-                        </td>
-                        <td className="p-3 text-right text-foreground font-semibold font-mono">
-                          ${(activeInvoice.amount_cents / 100).toFixed(2)}
-                        </td>
-                      </tr>
+              {(() => {
+                const lineItems = (activeInvoice.line_items || []) as JobInvoiceLineItem[];
+                const acceptedLines = lineItems.filter(line => line.source_type === 'accepted_quote');
+                const variationLines = lineItems.filter(line => line.source_type === 'approved_variation');
+                const acceptedSubtotal = Number(activeInvoice.accepted_quote_subtotal || 0);
+                const variationSubtotal = Number(activeInvoice.approved_variation_subtotal || 0);
 
-                      {activeInvoice.invoice_type === 'tradie_payout_statement' ? (
-                        <>
+                const renderLineRows = (lines: JobInvoiceLineItem[]) => lines.map(line => (
+                  <tr key={line.id} className="border-b border-border">
+                    <td className="p-3 font-semibold text-foreground align-top">
+                      <p className="font-bold">{line.label}</p>
+                      {line.description ? (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{line.description}</p>
+                      ) : null}
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {formatInvoiceLineType(line.line_type)}
+                      </p>
+                    </td>
+                    <td className="p-3 text-center text-foreground font-semibold align-top">{Number(line.quantity).toLocaleString('en-AU')}</td>
+                    <td className="p-3 text-right text-foreground font-semibold font-mono align-top">{formatAud(Number(line.unit_price))}</td>
+                    <td className="p-3 text-right text-foreground font-semibold font-mono align-top">{formatAud(Number(line.line_total))}</td>
+                  </tr>
+                ));
+
+                return (
+                  <div className="space-y-3">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Line Items</span>
+                      <p className="text-[10px] text-muted-foreground font-semibold">
+                        Final document lines are sourced from accepted quote snapshots and customer-approved variation snapshots only.
+                      </p>
+                    </div>
+                    <div className="border border-border rounded-2xl overflow-hidden bg-muted/5">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-muted/10 border-b border-border font-bold text-muted-foreground">
+                            <th className="p-3">Description</th>
+                            <th className="p-3 text-center w-16">Qty</th>
+                            <th className="p-3 text-right w-28">Unit Price</th>
+                            <th className="p-3 text-right w-28">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="bg-muted/20 border-b border-border">
+                            <td colSpan={4} className="p-3">
+                              <p className="text-[10px] uppercase tracking-wider font-black text-muted-foreground">Accepted Quote</p>
+                              <p className="text-xs font-bold text-foreground mt-0.5">{activeInvoice.job_title}</p>
+                              {activeInvoice.job_categories?.length ? (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Category: {activeInvoice.job_categories.join(', ')}
+                                </p>
+                              ) : null}
+                            </td>
+                          </tr>
+                          {acceptedLines.length > 0 ? renderLineRows(acceptedLines) : (
+                            <tr className="border-b border-border">
+                              <td colSpan={4} className="p-3 text-muted-foreground font-semibold italic">
+                                Accepted quote line details are not available for this legacy job.
+                              </td>
+                            </tr>
+                          )}
                           <tr className="border-b border-border bg-muted/5 font-mono text-xs">
-                            <td colSpan={3} className="p-3 text-right text-muted-foreground font-sans font-semibold">Subtotal:</td>
-                            <td className="p-3 text-right text-foreground font-semibold">
-                              ${(activeInvoice.amount_cents / 100).toFixed(2)}
-                            </td>
+                            <td colSpan={3} className="p-3 text-right text-muted-foreground font-sans font-semibold">Accepted quote subtotal:</td>
+                            <td className="p-3 text-right text-foreground font-semibold">{formatAud(acceptedSubtotal)}</td>
                           </tr>
-                          <tr className="border-b border-border bg-muted/5 font-mono text-xs text-red-500">
-                            <td colSpan={3} className="p-3 text-right font-sans font-semibold">Platform Fee deduction:</td>
-                            <td className="p-3 text-right font-bold">
-                              -${(activeInvoice.platform_fee_cents / 100).toFixed(2)}
-                            </td>
-                          </tr>
-                          <tr className="bg-primary/5 font-black text-primary font-mono text-sm">
-                            <td colSpan={3} className="p-3 text-right uppercase font-sans">Net Contractor Payout:</td>
-                            <td className="p-3 text-right">
-                              ${(activeInvoice.payout_amount_cents / 100).toFixed(2)} AUD
-                            </td>
-                          </tr>
-                        </>
-                      ) : (
-                        <>
-                          <tr className="border-b border-border bg-muted/5 font-mono text-xs">
-                            <td colSpan={3} className="p-3 text-right text-muted-foreground font-sans font-semibold">Subtotal:</td>
-                            <td className="p-3 text-right text-foreground font-semibold">
-                              ${(activeInvoice.amount_cents / 100).toFixed(2)}
-                            </td>
-                          </tr>
-                          <tr className="bg-primary/5 font-black text-primary font-mono text-sm">
-                            <td colSpan={3} className="p-3 text-right uppercase font-sans">Total Paid:</td>
-                            <td className="p-3 text-right">
-                              ${(activeInvoice.amount_cents / 100).toFixed(2)} AUD
-                            </td>
-                          </tr>
-                        </>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[9px] text-muted-foreground font-semibold italic mt-1">
-                  * Note: Real itemised quote line items and materials breakdown support will be added in a future roadmap update.
-                </p>
-              </div>
+
+                          {variationLines.length > 0 ? (
+                            <>
+                              <tr className="bg-muted/20 border-b border-border">
+                                <td colSpan={4} className="p-3 text-[10px] uppercase tracking-wider font-black text-muted-foreground">
+                                  Approved Variations
+                                </td>
+                              </tr>
+                              {renderLineRows(variationLines)}
+                              <tr className="border-b border-border bg-muted/5 font-mono text-xs">
+                                <td colSpan={3} className="p-3 text-right text-muted-foreground font-sans font-semibold">Approved variations subtotal:</td>
+                                <td className="p-3 text-right text-foreground font-semibold">{formatAud(variationSubtotal)}</td>
+                              </tr>
+                            </>
+                          ) : null}
+
+                          {activeInvoice.invoice_type === 'tradie_payout_statement' ? (
+                            <>
+                              <tr className="border-b border-border bg-muted/5 font-mono text-xs">
+                                <td colSpan={3} className="p-3 text-right text-muted-foreground font-sans font-semibold">Gross released amount:</td>
+                                <td className="p-3 text-right text-foreground font-semibold">
+                                  {formatCentsToAud(activeInvoice.amount_cents)}
+                                </td>
+                              </tr>
+                              <tr className="border-b border-border bg-muted/5 font-mono text-xs text-red-500">
+                                <td colSpan={3} className="p-3 text-right font-sans font-semibold">Platform Fee deduction:</td>
+                                <td className="p-3 text-right font-bold">
+                                  -{formatCentsToAud(activeInvoice.platform_fee_cents)}
+                                </td>
+                              </tr>
+                              <tr className="bg-primary/5 font-black text-primary font-mono text-sm">
+                                <td colSpan={3} className="p-3 text-right uppercase font-sans">Net Contractor Payout:</td>
+                                <td className="p-3 text-right">
+                                  {formatCentsToAud(activeInvoice.payout_amount_cents)} AUD
+                                </td>
+                              </tr>
+                            </>
+                          ) : (
+                            <tr className="bg-primary/5 font-black text-primary font-mono text-sm">
+                              <td colSpan={3} className="p-3 text-right uppercase font-sans">Total Paid:</td>
+                              <td className="p-3 text-right">
+                                {formatCentsToAud(activeInvoice.amount_cents)} AUD
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Payment Reference Details */}
               <div className="bg-muted/5 border border-border rounded-2xl p-4 text-xs space-y-2 font-semibold">
