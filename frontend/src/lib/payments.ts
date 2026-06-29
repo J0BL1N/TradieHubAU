@@ -321,3 +321,50 @@ export async function getAdminJobEvidencePack(jobId: string) {
   });
   return { data: data || null, error };
 }
+
+/**
+ * Creates a new account/tradie restriction or warning record.
+ */
+export async function createAdminEnforcementAction(payload: {
+  targetUserId: string;
+  actionType: string;
+  severity: string;
+  reason: string;
+  internalNote?: string;
+  relatedJobId?: string;
+  relatedDisputeId?: string;
+  expiresAt?: string;
+}) {
+  const { data, error } = await supabase.rpc('create_admin_enforcement_action', {
+    p_target_user_id: payload.targetUserId,
+    p_action_type: payload.actionType,
+    p_severity: payload.severity,
+    p_reason: payload.reason,
+    p_internal_note: payload.internalNote || null,
+    p_related_job_id: payload.relatedJobId || null,
+    p_related_dispute_id: payload.relatedDisputeId || null,
+    p_expires_at: payload.expiresAt || null
+  });
+  return { data: data || null, error };
+}
+
+/**
+ * Resolves an active enforcement action.
+ */
+export async function resolveAdminEnforcementAction(actionId: string, resolutionNote?: string) {
+  const { data, error } = await supabase.rpc('resolve_admin_enforcement_action', {
+    p_action_id: actionId,
+    p_resolution_note: resolutionNote || null
+  });
+  return { data: data || null, error };
+}
+
+/**
+ * Fetches safety enforcement logs for a user.
+ */
+export async function getAdminUserEnforcementHistory(targetUserId: string) {
+  const { data, error } = await supabase.rpc('get_admin_user_enforcement_history', {
+    p_target_user_id: targetUserId
+  });
+  return { data: data || null, error };
+}

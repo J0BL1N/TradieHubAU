@@ -288,7 +288,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 22:05:00 | Phase 4 / Chunk J — Variation Approval + Funding Groundwork | `8a51d25` | Added customer/admin variation review RPC, immutable approved variation line snapshots, and customer variation review UI without payment movement. |
 | 22:45:00 | Phase 5 / Chunk K — Final Invoice Itemisation | `61520a1` | Added trusted final document line itemisation from accepted quote snapshots and approved variation snapshots, with legacy fallback and no payment movement. |
 | 23:30:00 | Phase 6 / Chunk L — Job Evidence Timeline | `d4fc10c` | Created read-only job evidence timeline RPC function, added authorization verification checks, and rendered compact bullet-style timeline card. |
-| 23:45:00 | Phase 6 / Chunk M — Admin Evidence Pack | `d28fcc3` | Created read-only get_admin_job_evidence_pack RPC function compiling full job evidence history, frontend helper, and admin panel with markdown export. |
+| 23:45:00 | Phase 6 / Chunk M — Admin Evidence Pack | `9bc7e5b` | Created read-only get_admin_job_evidence_pack RPC function compiling full job evidence history, frontend helper, and admin panel with markdown export. |
+| 23:59:00 | Phase 6 / Chunk N — Enforcement Actions | `3f25006` | Created admin enforcement actions table, user restriction columns, creation/resolution RPCs, and admin safety panel UI. |
 
 ### Migrations / Deployments
 
@@ -304,6 +305,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `073_itemise_final_invoice_documents.sql` | Created | Adds trusted job invoice line items sourced from accepted quote snapshots and approved variation snapshots, updates invoice generation/RPC self-healing, and preserves legacy accepted quote fallback. |
 | `074_job_evidence_timeline.sql` | Created | Creates read-only public.get_job_evidence_timeline function with secure user/admin checks and revokes public execute grants. |
 | `075_admin_job_evidence_pack.sql` | Created | Creates read-only public.get_admin_job_evidence_pack function compiling job, parties, quotes, variations, early releases, payments, invoices, completion proofs, and timeline details with strict admin checks. |
+| `076_admin_enforcement_actions.sql` | Created | Creates admin enforcement actions tables, user restriction columns, RPC creation/resolution helpers, and hardens application and quote RLS policies. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -410,7 +412,25 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build result | `npm run build` passed. |
 | `git diff --check` result | Passed. |
 | Live Supabase action required | Apply `supabase/migrations/075_admin_job_evidence_pack.sql` after migration `074_job_evidence_timeline.sql`. |
-| Commit hash after commit | `d28fcc3` |
+| Commit hash after commit | `9bc7e5b` |
+
+### Phase 6 / Chunk N — Enforcement Actions
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/076_admin_enforcement_actions.sql`, `frontend/src/lib/payments.ts`, `frontend/src/components/AuthProvider.tsx`, `frontend/src/pages/Admin.tsx`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `076_admin_enforcement_actions.sql`. |
+| RPC/action summary | Added columns to `public.users` table for restriction periods and status flags. Created `public.admin_enforcement_actions` table, and RPC functions `create_admin_enforcement_action`, `resolve_admin_enforcement_action`, and `get_admin_user_enforcement_history` to write, resolve, and trace actions safely under strict admin verification. |
+| Access control summary | RLS restricts access to admins only. Direct writes are disabled; creation/resolution requires RPC validation. Public execute permissions are revoked. |
+| Enforcement effects | warnings, manual review notes, escalation/preservation flags are record-only. Verification recheck flags documents and de-whitelists instantly. Quote/Application/Review Hold set restriction timestamps on profiles, blocking users via database RLS policies. |
+| UI summary | Adds "Safety Actions" buttons in Dispute Case party details, opening a modal to create enforcements. Renders safety actions logs table inside DisputeCaseFile body. Allows resolving active enforcements with notes. |
+| User warning messaging | Restricted tradies attempting to apply or quote receive a clear error: "Your account is under admin review and cannot submit new quotes right now." |
+| Privacy/security notes | Enforcement logs and user restriction parameters are private and not exposed to normal users, public profiles, browse tradies, public job cards, homepage, invoices, completed portfolios, or public APIs. |
+| Non-goals | No automated risk scoring (upcoming Chunk O). No money movement, payment state alterations, or invoice updates. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Apply `supabase/migrations/076_admin_enforcement_actions.sql` after migration `075_admin_job_evidence_pack.sql`. |
+| Commit hash after commit | `3f25006` |
 
 
 ### Privacy Notes

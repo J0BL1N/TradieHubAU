@@ -12,9 +12,9 @@ import {
   ShieldCheck, UserCheck, ShieldAlert, Award, Loader2, AlertTriangle,
   Check, FileText, CheckCircle, AlertCircle, X, Image as ImageIcon,
   ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
-  Camera, TrendingUp, DollarSign, RefreshCw, Activity, Copy
+  Camera, TrendingUp, DollarSign, RefreshCw, Activity, Copy, Scale
 } from 'lucide-react';
-import { getDisputedJobs, recordAdminDisputeAction, resolveDispute, getAdminJobEvidencePack } from '../lib/payments';
+import { getDisputedJobs, recordAdminDisputeAction, resolveDispute, getAdminJobEvidencePack, createAdminEnforcementAction, resolveAdminEnforcementAction, getAdminUserEnforcementHistory } from '../lib/payments';
 
 // ─── Local Types ─────────────────────────────────────────────────────────────
 
@@ -385,6 +385,106 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
   const [manualSplit, setManualSplit] = useState<ManualSplitAmounts>({ contractorPayout: '', customerRefund: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  // Enforcement actions state
+  const [enforcements, setEnforcements] = useState<any[]>([]);
+  const [enforcementsLoading, setEnforcementsLoading] = useState(false);
+  const [showCreateEnforcement, setShowCreateEnforcement] = useState(false);
+  const [enforcementTargetId, setEnforcementTargetId] = useState('');
+  const [enforcementTargetName, setEnforcementTargetName] = useState('');
+  const [enforcementType, setEnforcementType] = useState('warning');
+  const [enforcementSeverity, setEnforcementSeverity] = useState('medium');
+  const [enforcementReason, setEnforcementReason] = useState('');
+  const [enforcementInternalNote, setEnforcementInternalNote] = useState('');
+  const [enforcementExpiresAt, setEnforcementExpiresAt] = useState('');
+  const [submittingEnforcement, setSubmittingEnforcement] = useState(false);
+  const [resolvingEnforcementId, setResolvingEnforcementId] = useState<string | null>(null);
+  const [enforcementResolutionNote, setEnforcementResolutionNote] = useState('');
+
+  const loadEnforcementHistory = async () => {
+    setEnforcementsLoading(true);
+    try {
+      const promises = [];
+      if (dispute.customer?.id) {
+        promises.push(getAdminUserEnforcementHistory(dispute.customer.id));
+      }
+      if (contractor?.id) {
+        promises.push(getAdminUserEnforcementHistory(contractor.id));
+      }
+      const results = await Promise.all(promises);
+      let combined: any[] = [];
+      results.forEach(res => {
+        if (res.data) {
+          combined = [...combined, ...res.data];
+        }
+      });
+      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setEnforcements(combined);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to load safety history.', 'error');
+    } finally {
+      setEnforcementsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (expanded) {
+      loadEnforcementHistory();
+    }
+  }, [expanded]);
+
+  const handleCreateEnforcement = async () => {
+    if (!enforcementReason.trim()) {
+      showToast('Please provide a reason for the enforcement action.', 'error');
+      return;
+    }
+    setSubmittingEnforcement(true);
+    try {
+      const { error } = await createAdminEnforcementAction({
+        targetUserId: enforcementTargetId,
+        actionType: enforcementType,
+        severity: enforcementSeverity,
+        reason: enforcementReason.trim(),
+        internalNote: enforcementInternalNote.trim() || undefined,
+        relatedJobId: dispute.id,
+        relatedDisputeId: issue?.id || undefined,
+        expiresAt: enforcementExpiresAt || undefined
+      });
+      if (error) throw error;
+      showToast('Enforcement action successfully recorded and applied.', 'success');
+      setShowCreateEnforcement(false);
+      setEnforcementReason('');
+      setEnforcementInternalNote('');
+      setEnforcementExpiresAt('');
+      loadEnforcementHistory();
+      if (onResolved) {
+        onResolved();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create enforcement action.', 'error');
+    } finally {
+      setSubmittingEnforcement(false);
+    }
+  };
+
+  const handleResolveEnforcement = async (actionId: string) => {
+    setSubmittingEnforcement(true);
+    try {
+      const { error } = await resolveAdminEnforcementAction(actionId, enforcementResolutionNote.trim() || undefined);
+      if (error) throw error;
+      showToast('Enforcement action resolved.', 'success');
+      setResolvingEnforcementId(null);
+      setEnforcementResolutionNote('');
+      loadEnforcementHistory();
+      if (onResolved) {
+        onResolved();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to resolve action.', 'error');
+    } finally {
+      setSubmittingEnforcement(false);
+    }
+  };
+
   // Evidence/proof image URLs
   const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
   const [proofUrls, setProofUrls] = useState<string[]>([]);
@@ -591,6 +691,19 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                 {dispute.customer?.id && (
                   <p className="text-[10px] font-mono text-muted-foreground/60 pt-1 break-all">{dispute.customer.id}</p>
                 )}
+                <div className="pt-2 border-t mt-2 flex justify-end">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEnforcementTargetId(dispute.customer.id);
+                      setEnforcementTargetName(dispute.customer.display_name || 'Customer');
+                      setShowCreateEnforcement(true);
+                    }}
+                    className="bg-destructive/10 hover:bg-destructive/20 text-destructive text-[10px] font-black px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
+                  >
+                    <ShieldAlert className="h-3 w-3" /> Safety Actions
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -617,6 +730,19 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                   {contractor.id && (
                     <p className="text-[10px] font-mono text-muted-foreground/60 pt-1 break-all">{contractor.id}</p>
                   )}
+                  <div className="pt-2 border-t mt-2 flex justify-end">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEnforcementTargetId(contractor.id);
+                        setEnforcementTargetName(contractor.display_name || 'Contractor');
+                        setShowCreateEnforcement(true);
+                      }}
+                      className="bg-destructive/10 hover:bg-destructive/20 text-destructive text-[10px] font-black px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
+                    >
+                      <ShieldAlert className="h-3 w-3" /> Safety Actions
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground font-semibold italic">No contractor linked to payment record.</p>
@@ -744,6 +870,120 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground font-semibold">No internal admin case note has been saved.</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Account Safety & Enforcement Actions ── */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+              <Scale className="h-3.5 w-3.5" /> Account Safety &amp; Enforcement Actions
+            </div>
+            <div className="border border-border rounded-2xl bg-card overflow-hidden">
+              {enforcementsLoading ? (
+                <div className="flex items-center justify-center p-6 gap-2 text-xs text-muted-foreground font-semibold">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading safety history...
+                </div>
+              ) : enforcements.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground font-semibold italic">
+                  No active or resolved safety enforcement actions logged for this case's participants.
+                </div>
+              ) : (
+                <div className="divide-y text-xs">
+                  {enforcements.map((action: any) => {
+                    const isTargetCustomer = action.target_user_id === dispute.customer?.id;
+                    const targetName = isTargetCustomer
+                      ? (dispute.customer?.display_name || 'Customer')
+                      : (contractor?.display_name || 'Contractor');
+                    const expiresStr = action.metadata?.expires_at
+                      ? new Date(action.metadata.expires_at).toLocaleString('en-AU')
+                      : 'Indefinite';
+                    return (
+                      <div key={action.id} className="p-4 space-y-2">
+                        <div className="flex items-baseline justify-between flex-wrap gap-2">
+                          <span className="font-extrabold text-foreground">
+                            {targetName} &bull; <span className="font-mono text-muted-foreground text-[10px]">{action.target_user_id.slice(0, 8)}...</span>
+                          </span>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border uppercase ${
+                            action.status === 'active' ? 'bg-red-500/10 text-red-700 border-red-500/20' :
+                            'bg-green-500/10 text-green-700 border-green-500/20'
+                          }`}>
+                            {action.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-semibold text-muted-foreground bg-muted/20 p-2 rounded-lg font-bold">
+                          <div>
+                            Type: <span className="text-foreground capitalize">{action.action_type.replace(/_/g, ' ')}</span>
+                          </div>
+                          <div>
+                            Severity: <span className="text-foreground capitalize">{action.severity}</span>
+                          </div>
+                          <div>
+                            Expiry: <span className="text-foreground">{expiresStr}</span>
+                          </div>
+                          <div>
+                            Logged: <span className="text-foreground">{new Date(action.created_at).toLocaleDateString('en-AU')}</span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-foreground/80 font-medium whitespace-pre-wrap">
+                          <span className="font-extrabold text-foreground">Reason:</span> "{action.reason}"
+                        </div>
+
+                        {action.internal_note && (
+                          <div className="text-[10px] text-muted-foreground/90 bg-muted/40 p-2 rounded border border-border/40 font-semibold italic">
+                            Internal note: {action.internal_note}
+                          </div>
+                        )}
+
+                        {action.status === 'resolved' ? (
+                          <div className="border-t pt-2 mt-2 space-y-1 text-[10px]">
+                            <p className="font-extrabold text-green-600">Resolved at {new Date(action.resolved_at).toLocaleString('en-AU')}</p>
+                            {action.resolution_note && (
+                              <p className="font-medium text-foreground/80">Resolution Note: "{action.resolution_note}"</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="border-t pt-2 mt-2 flex justify-end">
+                            {resolvingEnforcementId === action.id ? (
+                              <div className="w-full space-y-2">
+                                <textarea
+                                  value={enforcementResolutionNote}
+                                  onChange={(e) => setEnforcementResolutionNote(e.target.value)}
+                                  placeholder="Enter resolution note/remediation comments..."
+                                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                                  rows={2}
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    onClick={() => handleResolveEnforcement(action.id)}
+                                    disabled={submittingEnforcement}
+                                    className="bg-green-600 hover:bg-green-700 text-white font-black px-3 py-1.5 rounded-lg text-[10px] transition disabled:opacity-40"
+                                  >
+                                    Confirm Resolve
+                                  </button>
+                                  <button
+                                    onClick={() => { setResolvingEnforcementId(null); setEnforcementResolutionNote(''); }}
+                                    className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-3 py-1.5 rounded-lg text-[10px] transition"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setResolvingEnforcementId(action.id)}
+                                className="bg-green-600/10 hover:bg-green-600/20 text-green-600 font-extrabold text-[10px] px-2.5 py-1.5 rounded-lg transition"
+                              >
+                                Resolve Restriction
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
@@ -1400,6 +1640,124 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                 className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateEnforcement && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="bg-card border w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b bg-muted/10 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-destructive" /> Create Enforcement Action
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Target User: <span className="font-bold text-foreground">{enforcementTargetName}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateEnforcement(false)}
+                className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-sm text-foreground overflow-y-auto max-h-[60vh]">
+              {/* Type selection */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Action Type</label>
+                <select
+                  value={enforcementType}
+                  onChange={(e) => setEnforcementType(e.target.value)}
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="warning">Warning (Log Only)</option>
+                  <option value="verification_recheck_required">Verification Recheck (De-Whitelist &amp; Flag Docs)</option>
+                  <option value="tradie_quote_restricted">Quote Restricted (Block New Quotes/Bids)</option>
+                  <option value="tradie_application_restricted">Application Restricted (Block New Job Applications)</option>
+                  <option value="account_review_hold">Account Review Hold (Block New Applications/Quotes)</option>
+                  <option value="dispute_escalation_flag">Dispute Escalation Flag (Log Only)</option>
+                  <option value="evidence_preservation_flag">Evidence Preservation Flag (Log Only)</option>
+                  <option value="manual_review_note">Manual Review Note (Log Only)</option>
+                </select>
+              </div>
+
+              {/* Severity selection */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Severity</label>
+                <select
+                  value={enforcementSeverity}
+                  onChange={(e) => setEnforcementSeverity(e.target.value)}
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+
+              {/* Expiry Date (only for restriction actions) */}
+              {['tradie_quote_restricted', 'tradie_application_restricted', 'account_review_hold'].includes(enforcementType) && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Expires At (Optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={enforcementExpiresAt}
+                    onChange={(e) => setEnforcementExpiresAt(e.target.value)}
+                    className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <p className="text-[10px] text-muted-foreground font-semibold">Leave blank for indefinite restriction.</p>
+                </div>
+              )}
+
+              {/* Reason */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Reason (Required)</label>
+                <textarea
+                  value={enforcementReason}
+                  onChange={(e) => setEnforcementReason(e.target.value)}
+                  placeholder="Explain why this safety/enforcement action is being taken..."
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* Internal Notes */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Internal notes (Optional)</label>
+                <textarea
+                  value={enforcementInternalNote}
+                  onChange={(e) => setEnforcementInternalNote(e.target.value)}
+                  placeholder="Private notes for staff admin review only..."
+                  className="w-full text-xs font-semibold bg-background border rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t bg-muted/10 flex justify-end gap-3">
+              <button
+                onClick={() => setShowCreateEnforcement(false)}
+                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateEnforcement}
+                disabled={submittingEnforcement}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-black px-5 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5"
+              >
+                {submittingEnforcement && <Loader2 className="h-4 w-4 animate-spin" />}
+                Log &amp; Apply Action
               </button>
             </div>
           </div>

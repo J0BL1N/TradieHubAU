@@ -2700,6 +2700,15 @@ export default function Jobs() {
                             return (
                               <button
                                 onClick={() => {
+                                  const now = new Date();
+                                  const isAppRestricted = profile?.application_restricted_until && new Date(profile.application_restricted_until) > now;
+                                  const isQuoteRestricted = profile?.quote_restricted_until && new Date(profile.quote_restricted_until) > now;
+                                  const isAccountHold = profile?.account_review_hold_until && new Date(profile.account_review_hold_until) > now;
+
+                                  if (isAppRestricted || isQuoteRestricted || isAccountHold) {
+                                    showToast("Your account is under admin review and cannot submit new quotes right now.", 'error');
+                                    return;
+                                  }
                                   if (!isVerifiedTradie) {
                                     showToast("Verification Required: Only verified tradies can quote on jobs. Please visit your Profile to submit your verification details.", 'error');
                                     return;
@@ -4206,6 +4215,15 @@ export default function Jobs() {
                     ) : profile?.role !== 'customer' ? (
                       <button
                         onClick={() => {
+                          const now = new Date();
+                          const isAppRestricted = profile?.application_restricted_until && new Date(profile.application_restricted_until) > now;
+                          const isQuoteRestricted = profile?.quote_restricted_until && new Date(profile.quote_restricted_until) > now;
+                          const isAccountHold = profile?.account_review_hold_until && new Date(profile.account_review_hold_until) > now;
+
+                          if (isAppRestricted || isQuoteRestricted || isAccountHold) {
+                            showToast("Your account is under admin review and cannot submit new quotes right now.", 'error');
+                            return;
+                          }
                           if (!isVerifiedTradie) {
                             showToast("Verification Required: Only verified tradies can quote on jobs. Please visit your Profile to submit your verification details.", 'error');
                             return;

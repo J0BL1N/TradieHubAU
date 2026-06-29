@@ -27,6 +27,10 @@ export interface UserProfile {
   years_experience: number | null;
   service_areas: string[] | null;
   website_url: string | null;
+  application_restricted_until?: string | null;
+  quote_restricted_until?: string | null;
+  account_review_hold_until?: string | null;
+  enforcement_status?: string | null;
 }
 
 interface AuthContextType {

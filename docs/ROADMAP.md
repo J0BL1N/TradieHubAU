@@ -775,17 +775,17 @@ Status: **Implementation complete / pushed. Live SQL has been run.**
 
 # Phase 6 Chunk M — Admin Evidence Pack
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL has been run.**
 
 * [x] Add admin export and evidence pack generation for disputes/admin review.
 
 ---
 
-# Phase 6 Chunk N — Enforcement Actions (upcoming)
+# Phase 6 Chunk N — Enforcement Actions
 
-Status: **Upcoming**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Add enforcement actions for resolved disputes.
+* [x] Add enforcement actions for resolved disputes.
 
 ---
 
