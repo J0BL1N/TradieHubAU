@@ -819,9 +819,21 @@ export default function Profile() {
   const roleLabel = targetProfile.role ? (targetProfile.role.charAt(0).toUpperCase() + targetProfile.role.slice(1)) : 'Customer';
   const locationParts = [targetProfile.suburb, targetProfile.state].filter(Boolean);
   const displayLocation = locationParts.length > 0 ? locationParts.join(', ') : 'No location specified';
+  const effectiveIdVerificationStatus: VerificationStatus =
+    idVerificationStatus === 'approved' && !targetProfile.identity_verified ? 'recheck' : idVerificationStatus;
+  const effectiveLivenessVerificationStatus: VerificationStatus =
+    livenessVerificationStatus === 'approved' && !targetProfile.identity_verified ? 'recheck' : livenessVerificationStatus;
+  const currentIdentityVerified =
+    targetProfile.identity_verified &&
+    effectiveIdVerificationStatus === 'approved' &&
+    effectiveLivenessVerificationStatus === 'approved';
+  const currentTradieVerified =
+    targetProfile.tradie_verified &&
+    currentIdentityVerified &&
+    tradieVerificationStatus === 'approved';
   const isVerified = targetProfile.role === 'customer' 
-    ? targetProfile.identity_verified 
-    : targetProfile.tradie_verified;
+    ? currentIdentityVerified
+    : currentTradieVerified;
 
   // Average review calculation
   const totalReviews = reviews.length;
@@ -1209,7 +1221,7 @@ export default function Profile() {
                   </div>
 
                   {/* Verification document status / uploads */}
-                  {targetProfile.tradie_verified && !['recheck', 'expired'].includes(tradieVerificationStatus) ? (
+                  {currentTradieVerified && !['recheck', 'expired', 'rejected'].includes(tradieVerificationStatus) ? (
                     <div className="space-y-4 border-t pt-5">
                       <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
                         <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
@@ -1337,10 +1349,10 @@ export default function Profile() {
                     </p>
                   </div>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(idVerificationStatus)}`}>
-                      {getStatusLabel(idVerificationStatus)}
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(effectiveIdVerificationStatus)}`}>
+                      {getStatusLabel(effectiveIdVerificationStatus)}
                     </span>
-                    {idVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    {effectiveIdVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
                   </div>
                 </div>
 
@@ -1353,10 +1365,10 @@ export default function Profile() {
                     </p>
                   </div>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(livenessVerificationStatus)}`}>
-                      {getStatusLabel(livenessVerificationStatus)}
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
+                      {getStatusLabel(effectiveLivenessVerificationStatus)}
                     </span>
-                    {livenessVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    {effectiveLivenessVerificationStatus === 'approved' && <CheckCircle className="h-4 w-4 text-green-500" />}
                   </div>
                 </div>
 
@@ -1383,13 +1395,13 @@ export default function Profile() {
               <div className="text-xs font-semibold leading-relaxed p-4 rounded-2xl bg-primary/5 text-primary border border-primary/10">
                 {targetProfile.role === 'customer' ? (
                   <p>
-                    {idVerificationStatus === 'approved' && livenessVerificationStatus === 'approved'
+                    {currentIdentityVerified
                       ? "✓ Your customer identity verification is complete. You are fully verified!"
                       : "Please submit both your Photo ID and Liveness Selfie to verify your account."}
                   </p>
                 ) : (
                   <p>
-                    {targetProfile.tradie_verified
+                    {currentTradieVerified
                       ? "✓ Your professional tradie profile is whitelisted and approved!"
                       : "Submit Photo ID, Liveness Selfie, ABN, contractor license, and insurance to get whitelisted."}
                   </p>
@@ -1404,7 +1416,7 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground mt-1">Verify your basic photo ID to build trust across TradieHubAU.</p>
               </div>
 
-              {idVerificationStatus === 'approved' ? (
+              {effectiveIdVerificationStatus === 'approved' ? (
                 <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
                   <div>
@@ -1414,7 +1426,7 @@ export default function Profile() {
                     </p>
                   </div>
                 </div>
-              ) : idVerificationStatus === 'pending' ? (
+              ) : effectiveIdVerificationStatus === 'pending' ? (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-semibold flex items-start gap-2">
                   <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                   <div>
@@ -1426,7 +1438,7 @@ export default function Profile() {
                 </div>
               ) : (
                 <form onSubmit={handleIdentityUpload} className="space-y-4">
-                  {idVerificationStatus === 'recheck' && (
+                  {effectiveIdVerificationStatus === 'recheck' && (
                     <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                       <div>
@@ -1438,7 +1450,7 @@ export default function Profile() {
                     </div>
                   )}
 
-                  {idVerificationStatus === 'expired' && (
+                  {effectiveIdVerificationStatus === 'expired' && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                       <div>
@@ -1450,7 +1462,7 @@ export default function Profile() {
                     </div>
                   )}
 
-                  {idVerificationStatus === 'rejected' && (
+                  {effectiveIdVerificationStatus === 'rejected' && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                       <div>
@@ -1483,8 +1495,8 @@ export default function Profile() {
                           <h5 className="text-sm font-black text-foreground">{IDENTITY_DOCUMENT_CARD.title}</h5>
                           <p className="text-xs text-muted-foreground font-semibold mt-0.5">{IDENTITY_DOCUMENT_CARD.helper}</p>
                         </div>
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(idVerificationStatus)}`}>
-                          {getStatusLabel(idVerificationStatus)}
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(effectiveIdVerificationStatus)}`}>
+                          {getStatusLabel(effectiveIdVerificationStatus)}
                         </span>
                       </div>
 
@@ -1529,7 +1541,7 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground mt-1">Verify that you are physically present to complete your identity setup.</p>
               </div>
 
-              {livenessVerificationStatus === 'approved' ? (
+              {effectiveLivenessVerificationStatus === 'approved' ? (
                 <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
                   <div>
@@ -1539,7 +1551,7 @@ export default function Profile() {
                     </p>
                   </div>
                 </div>
-              ) : livenessVerificationStatus === 'pending' ? (
+              ) : effectiveLivenessVerificationStatus === 'pending' ? (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 text-xs font-semibold flex items-start gap-2">
                   <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                   <div>
@@ -1551,7 +1563,7 @@ export default function Profile() {
                 </div>
               ) : (
                 <form onSubmit={handleLivenessUpload} className="space-y-4">
-                  {livenessVerificationStatus === 'recheck' && (
+                  {effectiveLivenessVerificationStatus === 'recheck' && (
                     <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                       <div>
@@ -1563,7 +1575,7 @@ export default function Profile() {
                     </div>
                   )}
 
-                  {livenessVerificationStatus === 'expired' && (
+                  {effectiveLivenessVerificationStatus === 'expired' && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                       <div>
@@ -1575,7 +1587,7 @@ export default function Profile() {
                     </div>
                   )}
 
-                  {livenessVerificationStatus === 'rejected' && (
+                  {effectiveLivenessVerificationStatus === 'rejected' && (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
                       <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                       <div>
@@ -1613,8 +1625,8 @@ export default function Profile() {
                             This helps us confirm the person submitting the ID is physically present. It is used only for verification and is not shown publicly.
                           </p>
                         </div>
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(livenessVerificationStatus)}`}>
-                          {getStatusLabel(livenessVerificationStatus)}
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
+                          {getStatusLabel(effectiveLivenessVerificationStatus)}
                         </span>
                       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fetchJobWorkspaceImages, fetchJobs, getPublicJobLocation, hydrateJobsWithPublicCustomers } from '../lib/jobs';
+import { fetchJobById, fetchJobWorkspaceImages, fetchJobs, getPublicJobLocation, hydrateJobsWithPublicCustomers } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
 import {
   submitApplication,
@@ -1077,6 +1077,21 @@ export default function Jobs() {
   };
 
   const fetchJobLifecycleDetails = useCallback(async (jobId: string) => {
+    if (!userId) {
+      setJobPayment(null);
+      setJobLedger([]);
+      setJobVariations([]);
+      setJobProofs([]);
+      setJobIssues([]);
+      setJobApplications([]);
+      setAcceptedQuoteLines([]);
+      setEarlyReleaseRequests([]);
+      setEarlyReleaseCapSummary(null);
+      setTimelineEvents([]);
+      setLifecycleError(null);
+      return;
+    }
+
     setLoadingLifecycle(true);
     setLifecycleError(null);
     try {
@@ -1255,14 +1270,10 @@ export default function Jobs() {
     if (jobIdParam) {
       const fetchAndOpenJob = async () => {
         try {
-          const { data, error } = await supabase
-            .from('jobs')
-            .select('*')
-            .eq('id', jobIdParam)
-            .maybeSingle();
+          const { data, error } = await fetchJobById(jobIdParam);
           if (error) throw error;
-          if (data) {
-            setSelectedJob(data as Job);
+          if (data?.job) {
+            setSelectedJob(data.job);
           }
         } catch (err) {
           console.error('Failed to auto-open job from parameter:', err);

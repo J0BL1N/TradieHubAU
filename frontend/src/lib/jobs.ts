@@ -118,7 +118,7 @@ export async function hydrateJobsWithPublicCustomers<T extends { customer_id: st
 export async function fetchJobs(filters: GetJobsFilters = {}) {
   try {
     let query = supabase
-      .from('jobs')
+      .from('public_open_jobs')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -164,11 +164,20 @@ export async function fetchJobs(filters: GetJobsFilters = {}) {
 
 export async function fetchJobById(jobId: string) {
   try {
-    const { data: job, error: jobError } = await supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', jobId)
-      .maybeSingle();
+    const { data: { user } } = await supabase.auth.getUser();
+    const isGuest = !user;
+
+    const { data: job, error: jobError } = isGuest
+      ? await supabase
+          .from('public_open_jobs')
+          .select('*')
+          .eq('id', jobId)
+          .maybeSingle()
+      : await supabase
+          .from('jobs')
+          .select('*')
+          .eq('id', jobId)
+          .maybeSingle();
 
     if (jobError) throw jobError;
     if (!job) return { data: null as JobDetailData | null, error: null };
@@ -177,6 +186,17 @@ export async function fetchJobById(jobId: string) {
     if (profilesError) throw profilesError;
 
     const hydratedJob = hydratedJobs[0] as Job;
+    if (isGuest) {
+      return {
+        data: {
+          job: hydratedJob,
+          payment: null,
+          workspace_images: [],
+        },
+        error: null,
+      };
+    }
+
     const { data: payment, error: paymentError } = await supabase
       .from('payments')
       .select('id, job_id, payer_id, payee_id, amount, platform_fee, status, created_at, updated_at')
