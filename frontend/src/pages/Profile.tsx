@@ -48,13 +48,14 @@ interface UserReview {
   } | null;
 }
 
-type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'recheck' | 'expired';
+type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'revoked' | 'recheck' | 'expired' | 'requested_more_info';
 
 interface VerificationSummary {
   document_type: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'revoked' | 'requested_more_info';
   admin_notes: string | null;
   submitted_at: string;
+  reviewed_at?: string | null;
   expires_at?: string | null;
   recheck_requested_at?: string | null;
   recheck_reason?: string | null;
@@ -63,12 +64,30 @@ interface VerificationSummary {
 
 const deriveDocumentStatus = (summary: any): VerificationStatus => {
   if (!summary) return 'none';
+  if (summary.status === 'revoked') return 'revoked';
+  if (summary.status === 'requested_more_info') return 'requested_more_info';
   if (summary.status === 'rejected') return 'rejected';
   if (summary.recheck_requested_at) return 'recheck';
   if (summary.expires_at && new Date(summary.expires_at) < new Date()) return 'expired';
   if (summary.status === 'pending') return 'pending';
   if (summary.status === 'approved') return 'approved';
   return 'none';
+};
+
+const getVerificationEventTime = (summary: VerificationSummary) => {
+  const timestamps = [
+    summary.recheck_requested_at,
+    summary.reviewed_at,
+    summary.expires_at && new Date(summary.expires_at) < new Date() ? summary.expires_at : null,
+    summary.submitted_at,
+  ].filter(Boolean) as string[];
+
+  return Math.max(...timestamps.map(value => new Date(value).getTime()).filter(value => !Number.isNaN(value)));
+};
+
+const getCurrentVerificationSummary = (summaries: VerificationSummary[]) => {
+  if (summaries.length === 0) return null;
+  return [...summaries].sort((a, b) => getVerificationEventTime(b) - getVerificationEventTime(a))[0];
 };
 
 const IDENTITY_DOCUMENT_CARD = {
@@ -335,7 +354,7 @@ export default function Profile() {
     try {
       const { data: allVerificationData, error: allVerificationErr } = await supabase
         .from('verifications')
-        .select('document_type, status, admin_notes, submitted_at, expires_at, recheck_requested_at, recheck_reason')
+        .select('document_type, status, admin_notes, submitted_at, reviewed_at, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .in('document_type', [
           'drivers_license',
@@ -361,16 +380,16 @@ export default function Profile() {
       // Query latest identity verification status
       const { data: idData, error: idErr } = await supabase
         .from('verifications')
-        .select('status, admin_notes, expires_at, recheck_requested_at, recheck_reason')
+        .select('document_type, status, admin_notes, submitted_at, reviewed_at, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .in('document_type', ['drivers_license', 'passport', 'proof_of_age', 'other_identity'])
-        .order('submitted_at', { ascending: false })
-        .limit(1);
+        .order('submitted_at', { ascending: false });
 
       if (!idErr && idData && idData.length > 0) {
-        setIdVerificationStatus(deriveDocumentStatus(idData[0]));
-        setIdVerificationNotes(idData[0].admin_notes);
-        setIdVerificationRecheckReason(idData[0].recheck_reason);
+        const currentId = getCurrentVerificationSummary(idData as VerificationSummary[]);
+        setIdVerificationStatus(deriveDocumentStatus(currentId));
+        setIdVerificationNotes(currentId?.admin_notes || null);
+        setIdVerificationRecheckReason(currentId?.recheck_reason || null);
       } else {
         setIdVerificationStatus('none');
         setIdVerificationNotes(null);
@@ -380,16 +399,16 @@ export default function Profile() {
       // Query latest liveness selfie verification status
       const { data: livenessData, error: livenessErr } = await supabase
         .from('verifications')
-        .select('status, admin_notes, expires_at, recheck_requested_at, recheck_reason')
+        .select('document_type, status, admin_notes, submitted_at, reviewed_at, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .eq('document_type', 'liveness_selfie')
-        .order('submitted_at', { ascending: false })
-        .limit(1);
+        .order('submitted_at', { ascending: false });
 
       if (!livenessErr && livenessData && livenessData.length > 0) {
-        setLivenessVerificationStatus(deriveDocumentStatus(livenessData[0]));
-        setLivenessVerificationNotes(livenessData[0].admin_notes);
-        setLivenessVerificationRecheckReason(livenessData[0].recheck_reason);
+        const currentLiveness = getCurrentVerificationSummary(livenessData as VerificationSummary[]);
+        setLivenessVerificationStatus(deriveDocumentStatus(currentLiveness));
+        setLivenessVerificationNotes(currentLiveness?.admin_notes || null);
+        setLivenessVerificationRecheckReason(currentLiveness?.recheck_reason || null);
       } else {
         setLivenessVerificationStatus('none');
         setLivenessVerificationNotes(null);
@@ -399,15 +418,15 @@ export default function Profile() {
       // Query latest tradie credential verification status
       const { data: trData, error: trErr } = await supabase
         .from('verifications')
-        .select('status, admin_notes, expires_at, recheck_requested_at, recheck_reason')
+        .select('document_type, status, admin_notes, submitted_at, reviewed_at, expires_at, recheck_requested_at, recheck_reason')
         .eq('user_id', targetId)
         .in('document_type', ['contractor_license', 'insurance', 'trade_certificate', 'other_trade_credential'])
-        .order('submitted_at', { ascending: false })
-        .limit(1);
+        .order('submitted_at', { ascending: false });
 
       if (!trErr && trData && trData.length > 0) {
-        setTradieVerificationStatus(deriveDocumentStatus(trData[0]));
-        setTradieVerificationNotes(trData[0].admin_notes);
+        const currentTradieCredential = getCurrentVerificationSummary(trData as VerificationSummary[]);
+        setTradieVerificationStatus(deriveDocumentStatus(currentTradieCredential));
+        setTradieVerificationNotes(currentTradieCredential?.admin_notes || null);
       } else {
         setTradieVerificationStatus('none');
         setTradieVerificationNotes(null);
@@ -747,6 +766,8 @@ export default function Profile() {
   const getStatusLabel = (status: VerificationStatus, required = true) => {
     if (status === 'none') return required ? 'Required' : 'Optional';
     if (status === 'recheck') return 'Recheck Requested';
+    if (status === 'requested_more_info') return 'More Info Requested';
+    if (status === 'revoked') return 'Revoked';
     if (status === 'expired') return 'Expired';
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
@@ -755,7 +776,8 @@ export default function Profile() {
     if (status === 'approved') return 'bg-green-500/10 text-green-600 border-green-500/20';
     if (status === 'pending') return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
     if (status === 'recheck') return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
-    if (status === 'rejected' || status === 'expired') return 'bg-red-500/10 text-red-500 border-red-500/20';
+    if (status === 'requested_more_info') return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+    if (status === 'rejected' || status === 'expired' || status === 'revoked') return 'bg-red-500/10 text-red-500 border-red-500/20';
     return 'bg-muted text-muted-foreground border-border';
   };
 
@@ -1445,6 +1467,30 @@ export default function Profile() {
                         <p className="font-bold">Identity Recheck Requested</p>
                         <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
                           An administrator has requested a recheck of your photo ID. Reason: <strong className="text-foreground">{idVerificationRecheckReason}</strong>. Please upload a new ID.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {effectiveIdVerificationStatus === 'requested_more_info' && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">More Information Required</p>
+                        <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                          An administrator needs an updated or clearer photo ID. Please upload a replacement ID.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {effectiveIdVerificationStatus === 'revoked' && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Identity Verification Revoked</p>
+                        <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                          Your previous photo ID is no longer accepted. Please upload a replacement ID.
                         </p>
                       </div>
                     </div>
