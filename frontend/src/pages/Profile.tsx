@@ -50,6 +50,7 @@ interface UserReview {
 
 type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'revoked' | 'recheck' | 'expired' | 'requested_more_info';
 type ProfileTab = 'account' | 'verification' | 'tradie-profile' | 'completed-work';
+type CompletedWorkFilter = 'all' | 'published' | 'hidden';
 
 interface VerificationSummary {
   document_type: string;
@@ -166,6 +167,8 @@ export default function Profile() {
   const [completionProofLoading, setCompletionProofLoading] = useState(false);
   const [completionProofSavingId, setCompletionProofSavingId] = useState<string | null>(null);
   const [completionProofError, setCompletionProofError] = useState<string | null>(null);
+  const [completedWorkFilter, setCompletedWorkFilter] = useState<CompletedWorkFilter>('all');
+  const [expandedCompletionProofId, setExpandedCompletionProofId] = useState<string | null>(null);
 
   // Public view details state
   const [activeJobs, setActiveJobs] = useState<DisplayJob[]>([]);
@@ -862,6 +865,13 @@ export default function Profile() {
   // Average review calculation
   const totalReviews = reviews.length;
   const averageRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) : null;
+  const publishedCompletionProofCount = completionProofItems.filter(item => item.is_public_portfolio).length;
+  const hiddenCompletionProofCount = completionProofItems.length - publishedCompletionProofCount;
+  const filteredCompletionProofItems = completionProofItems.filter(item => {
+    if (completedWorkFilter === 'published') return item.is_public_portfolio;
+    if (completedWorkFilter === 'hidden') return !item.is_public_portfolio;
+    return true;
+  });
   const profileTabs: Array<{ id: ProfileTab; label: string }> = [
     { id: 'account', label: 'Account' },
     { id: 'verification', label: 'Verification' },
@@ -2329,25 +2339,48 @@ export default function Profile() {
             )}
 
             {targetProfile.role !== 'customer' && activeProfileTab === 'completed-work' && (
-              <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
-                <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">Completed Work</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Only completed TradieHubAU jobs with approved completion proof can appear on your public profile.
-                    </p>
-                  </div>
+              <div className="space-y-5">
+                <div className="grid gap-4 xl:grid-cols-[1.1fr_0.8fr_0.8fr]">
                   <Link
                     to={`/tradies/${targetProfile.id}`}
-                    className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95"
+                    className="inline-flex min-h-24 items-center justify-center gap-2 rounded-3xl border bg-primary px-5 py-4 text-sm font-black text-primary-foreground shadow-sm hover:bg-primary/95"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <Eye className="h-4 w-4" />
                     Preview public profile
                   </Link>
+                  <div className="rounded-3xl border bg-card p-5 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Published</p>
+                    <p className="mt-2 text-3xl font-black text-foreground">{publishedCompletionProofCount}</p>
+                  </div>
+                  <div className="rounded-3xl border bg-card p-5 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Hidden</p>
+                    <p className="mt-2 text-3xl font-black text-foreground">{hiddenCompletionProofCount}</p>
+                  </div>
                 </div>
 
-                <div className="rounded-2xl border bg-muted/10 p-4 text-xs font-semibold text-muted-foreground leading-relaxed">
-                  Completed jobs become eligible here only after the job is completed, the protected payment is released, completion proof photos exist, and no dispute is open. Customer names, contact details, private addresses, payment details, and private job notes are never shown on the public profile.
+                <div className="rounded-2xl border bg-muted/10 p-4 text-xs font-semibold leading-relaxed text-muted-foreground">
+                  Only completed TradieHubAU jobs with approved completion proof can appear publicly. Customer names, contact details, private addresses, payment details, and private job notes are never shown on the public profile.
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { id: 'all', label: 'All', count: completionProofItems.length },
+                    { id: 'published', label: 'Published', count: publishedCompletionProofCount },
+                    { id: 'hidden', label: 'Hidden', count: hiddenCompletionProofCount },
+                  ] as Array<{ id: CompletedWorkFilter; label: string; count: number }>).map(filter => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setCompletedWorkFilter(filter.id)}
+                      className={`rounded-xl border px-4 py-2 text-xs font-black transition-colors ${
+                        completedWorkFilter === filter.id
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      }`}
+                    >
+                      {filter.label} ({filter.count})
+                    </button>
+                  ))}
                 </div>
 
                 {completionProofError && (
@@ -2357,121 +2390,152 @@ export default function Profile() {
                 )}
 
                 {completionProofLoading ? (
-                  <div className="flex justify-center p-6">
+                  <div className="flex justify-center rounded-3xl border bg-card p-8">
                     <Loader2 className="h-6 w-6 text-primary animate-spin" />
                   </div>
                 ) : completionProofItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <div className="rounded-3xl border bg-card p-6 text-sm font-semibold text-muted-foreground">
                     Completed jobs will appear here after a customer accepts your completion proof and payment is released.
-                  </p>
+                  </div>
+                ) : filteredCompletionProofItems.length === 0 ? (
+                  <div className="rounded-3xl border bg-card p-6 text-sm font-semibold text-muted-foreground">
+                    No completed work matches this filter.
+                  </div>
                 ) : (
-                  <div className="space-y-4">
-                      {completionProofItems.map(item => {
-                        const draft = completionProofDrafts[item.id] || {
-                          isPublic: item.is_public_portfolio,
-                          title: item.portfolio_title || '',
-                          caption: item.portfolio_caption || '',
-                          trade: item.portfolio_trade_category || '',
-                        };
-                        const savingThisProof = completionProofSavingId === item.id;
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    {filteredCompletionProofItems.map(item => {
+                      const draft = completionProofDrafts[item.id] || {
+                        isPublic: item.is_public_portfolio,
+                        title: item.portfolio_title || '',
+                        caption: item.portfolio_caption || '',
+                        trade: item.portfolio_trade_category || '',
+                      };
+                      const savingThisProof = completionProofSavingId === item.id;
+                      const isExpanded = expandedCompletionProofId === item.id;
+                      const title = draft.title || item.portfolio_title || item.job_title || 'Completed TradieHubAU job';
+                      const categoryId = draft.trade || item.portfolio_trade_category || item.job_categories?.[0] || '';
+                      const categoryLabel = categoryOptions.find(cat => cat.id === categoryId)?.label || categoryId || 'Trade not set';
+                      const dateLabel = item.completed_at || item.created_at
+                        ? new Date(item.completed_at || item.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+                        : 'Date unavailable';
+                      const thumbUrl = (item.image_urls || [])[0];
 
-                        return (
-                          <div key={item.id} className="border rounded-2xl bg-background p-4 space-y-4">
-                            <div className="space-y-1">
-                              <h4 className="font-black text-foreground">{item.job_title || item.portfolio_title || 'Completed TradieHubAU job'}</h4>
-                              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground font-semibold">
-                                {item.job_categories?.[0] && (
-                                  <span>{categoryOptions.find(cat => cat.id === item.job_categories?.[0])?.label || item.job_categories[0]}</span>
-                                )}
-                                {[item.job_suburb, item.job_state].filter(Boolean).length > 0 && (
-                                  <span>{[item.job_suburb, item.job_state].filter(Boolean).join(', ')}</span>
-                                )}
-                                {(item.completed_at || item.created_at) && (
-                                  <span className="inline-flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(item.completed_at || item.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                                  </span>
-                                )}
+                      return (
+                        <div key={item.id} className="rounded-3xl border bg-card p-4 shadow-sm">
+                          <div className="flex gap-4">
+                            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border bg-muted">
+                              {thumbUrl ? (
+                                <img src={thumbUrl} alt="Eligible completed work proof" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                  <ImagePlus className="h-6 w-6" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="line-clamp-2 text-sm font-black text-foreground">{title}</h4>
+                                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase ${
+                                  draft.isPublic
+                                    ? 'border-green-500/20 bg-green-500/10 text-green-600'
+                                    : 'border-border bg-muted text-muted-foreground'
+                                }`}>
+                                  {draft.isPublic ? 'Published' : 'Hidden'}
+                                </span>
                               </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {(item.image_urls || []).slice(0, 4).map((url, index) => (
-                                <img
-                                  key={url}
-                                  src={url}
-                                  alt={index === 0 ? 'Eligible completed work proof' : ''}
-                                  className="aspect-square rounded-xl object-cover border"
-                                />
-                              ))}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Title Override</label>
-                                <input
-                                  type="text"
-                                  value={draft.title}
-                                  onChange={(e) => updateCompletionProofDraft(item.id, { title: e.target.value })}
-                                  maxLength={120}
-                                  placeholder="Completed kitchen tiling"
-                                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
-                                />
+                              <div className="flex flex-wrap gap-2 text-[11px] font-bold text-muted-foreground">
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {dateLabel}
+                                </span>
+                                <span>{categoryLabel}</span>
                               </div>
-                              <div className="space-y-2">
-                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Trade / Category</label>
-                                <select
-                                  value={draft.trade}
-                                  onChange={(e) => updateCompletionProofDraft(item.id, { trade: e.target.value })}
-                                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
-                                >
-                                  <option value="">Select...</option>
-                                  {categoryOptions.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Caption</label>
-                              <textarea
-                                rows={2}
-                                value={draft.caption}
-                                onChange={(e) => updateCompletionProofDraft(item.id, { caption: e.target.value })}
-                                maxLength={280}
-                                placeholder="Keep this public-facing. Do not include customer names, addresses, contact details, or private job notes."
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold resize-none"
-                              />
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-muted-foreground">Publication Status:</span>
+                              <div className="flex flex-wrap gap-2 pt-1">
                                 <button
                                   type="button"
                                   onClick={() => updateCompletionProofDraft(item.id, { isPublic: !draft.isPublic })}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                                  className={`rounded-xl border px-3 py-2 text-xs font-black transition-colors ${
                                     draft.isPublic
-                                      ? 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/15'
-                                      : 'bg-muted text-muted-foreground border-transparent hover:bg-muted/80'
+                                      ? 'border-border bg-muted text-muted-foreground hover:text-foreground'
+                                      : 'border-green-500/20 bg-green-500/10 text-green-600 hover:bg-green-500/15'
                                   }`}
                                 >
-                                  {draft.isPublic ? 'Show on public profile' : 'Hidden from public profile'}
+                                  {draft.isPublic ? 'Hide' : 'Publish'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedCompletionProofId(isExpanded ? null : item.id)}
+                                  className="rounded-xl border border-border px-3 py-2 text-xs font-black text-foreground hover:bg-muted/40"
+                                >
+                                  {isExpanded ? 'Close details' : 'Edit details'}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={savingThisProof}
+                                  onClick={() => void handleSaveCompletionProofPublication(item.id)}
+                                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-black text-primary-foreground hover:bg-primary/95 disabled:opacity-50"
+                                >
+                                  {savingThisProof ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
+                                  Save
                                 </button>
                               </div>
+                            </div>
+                          </div>
+
+                          {isExpanded && (
+                            <div className="mt-4 space-y-4 border-t pt-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Title Override</label>
+                                  <input
+                                    type="text"
+                                    value={draft.title}
+                                    onChange={(e) => updateCompletionProofDraft(item.id, { title: e.target.value })}
+                                    maxLength={120}
+                                    placeholder="Completed kitchen tiling"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <label className="text-xs font-bold text-foreground uppercase tracking-wider">Trade / Category</label>
+                                  <select
+                                    value={draft.trade}
+                                    onChange={(e) => updateCompletionProofDraft(item.id, { trade: e.target.value })}
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
+                                  >
+                                    <option value="">Select...</option>
+                                    {categoryOptions.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Public Caption</label>
+                                <textarea
+                                  rows={3}
+                                  value={draft.caption}
+                                  onChange={(e) => updateCompletionProofDraft(item.id, { caption: e.target.value })}
+                                  maxLength={280}
+                                  placeholder="Keep this public-facing. Do not include customer names, addresses, contact details, or private job notes."
+                                  className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold resize-none"
+                                />
+                              </div>
+
                               <button
                                 type="button"
                                 disabled={savingThisProof}
                                 onClick={() => void handleSaveCompletionProofPublication(item.id)}
-                                className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 disabled:opacity-50"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground hover:bg-primary/95 disabled:opacity-50 sm:w-auto"
                               >
                                 {savingThisProof ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
                                 Save Gallery Settings
                               </button>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
