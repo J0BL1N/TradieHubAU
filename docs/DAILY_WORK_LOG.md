@@ -297,7 +297,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Fix Profile Verification Card Layout | `25c32ea` | Replaced cramped skinny verification columns with readable wide stacked cards. |
 | 2026-06-30 | Polish Completed Work Controls | `2cacf93` | Wired Publish/Hide to autosave immediately, removed redundant Save, and made summary and preview controls more compact. |
 | 2026-06-30 | Profile Verification Tab Redesign | `fcd3d39` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
-| 2026-06-30 | Profile Verification Checklist Polish | `0db6249` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
+| 2026-06-30 | Profile Verification Checklist Polish | `7e81d9f` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
 
 ### Migrations / Deployments
 
