@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle,
   BadgeCheck,
   Briefcase,
   CheckCircle,
@@ -66,14 +65,12 @@ export default function HowItWorks() {
       icon={<ShieldCheck className="h-4 w-4" />}
       subtitle="A safer way to hire, quote, complete, and pay for trade work, with clear beta-stage checks and job records."
     >
-      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5 text-sm font-semibold leading-6 text-amber-900">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          <p>
-            TradieHubAU is in controlled beta preparation. The app contains protected-payment workflow states, but
-            real payment provider processing is not live unless the job screen explicitly says otherwise.
-          </p>
-        </div>
+      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-5 text-sm leading-6 text-foreground">
+        <p className="font-extrabold">Controlled beta preparation</p>
+        <p className="mt-1 text-muted-foreground">
+          TradieHubAU is a local MVP being prepared for a controlled beta in South East Melbourne and outer
+          south-east Melbourne. Real payment provider processing is not live.
+        </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
