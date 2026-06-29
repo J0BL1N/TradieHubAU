@@ -300,6 +300,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Profile Verification Checklist Polish | `7e81d9f` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
 | 2026-06-30 | Profile Verification Summary Polish | `cd986ed` | Replaced the two-card verification summary with one compact status banner connected to the checklist rows. |
 | 2026-06-30 | Profile Verification Summary Layout Hotfix | `f462e9f` | Fixed top verification summary text collapsing vertically by correcting flex/grid sizing and chip wrapping. |
+| 2026-06-30 | Admin Credential Recheck Controls | `750b0b2` | Audited/fixed admin recheck controls so licence, insurance, and trade certificate credentials can be individually requested for recheck/resubmission. |
 
 ### Migrations / Deployments
 
@@ -563,6 +564,20 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Summary | Fixed a layout bug where the top verification summary text collapsed into a single character column by adding flex sizing properties (`flex-1 w-full min-w-0`) to the left text container. |
 | Layout details | - Added `flex-1` and `w-full` to the left-hand text column in the summary banner card. <br> - Ensured the summary title and body text render horizontally left-to-right on all viewport resolutions. <br> - Kept status chips layout wrapping safely without squeezing the main text column. |
 | Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+
+### Admin Credential Recheck Controls
+
+| Item | Notes |
+| --- | --- |
+| Area | Admin Credential Recheck Controls |
+| Files changed | `frontend/src/pages/Admin.tsx`, `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Summary | Audited and updated the admin dashboard and profile page so that Contractor Licence, Insurance, and Trade Certificate / Other credentials can be individually rechecked or revoked by admins. |
+| Verification case logic | - Updated `tradieApprovalCases` queue query to include whitelisted tradies who have active/unresolved recheck requests on their latest documents, keeping their cases visible in the queue for tracing. <br> - Introduced `getLatestDocOfType` case validation helper to compute hasApprovedLicenceProof, hasApprovedInsuranceProof, and hasApprovedLiveness based on the latest submitted document of each type. <br> - Separated case documents list into `activeDocs` (current active documents mapped by type, which display action buttons like Approve, Reject, Request Recheck) and `historyDocs` (older outdated uploads, which are rendered as read-only references inside a collapsible "View Document History" container). |
+| Profile tab alignment | - Refined `credentialsNeedAction` logic in `Profile.tsx` to include optional credentials, ensuring the top summary banner correctly triggers "Credentials action required" when any credential is marked for recheck. |
+| Migrations required | None (the database schema and backend RPC `requestVerificationRecheck` already support per-document recheck updates). |
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 

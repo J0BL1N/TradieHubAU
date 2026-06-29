@@ -1012,12 +1012,10 @@ export default function Profile() {
   ) : null;
 
   const actionStatuses: VerificationStatus[] = ['none', 'recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'];
-  const requiredCredentialStatuses = TRADIE_DOCUMENT_CARDS
-    .filter(doc => doc.required)
-    .map(doc => getDocumentStatus(doc.type));
+  const allCredentialStatuses = TRADIE_DOCUMENT_CARDS.map(doc => getDocumentStatus(doc.type));
   const credentialsNeedAction =
     targetProfile.role !== 'customer' &&
-    (actionStatuses.includes(tradieVerificationStatus) || requiredCredentialStatuses.some(status => actionStatuses.includes(status)));
+    (actionStatuses.includes(tradieVerificationStatus) || allCredentialStatuses.some(status => actionStatuses.includes(status)));
   const nextVerificationAction = (() => {
     if (actionStatuses.includes(effectiveIdVerificationStatus)) {
       return {

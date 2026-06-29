@@ -2523,9 +2523,24 @@ export default function Admin() {
   const customerIdentityCases = verificationCases.filter(item =>
     item.tradieDocs.length === 0 && item.identityDocs.some(doc => doc.status === 'pending')
   );
-  const tradieApprovalCases = verificationCases.filter(item =>
-    item.tradieDocs.length > 0 && (!item.user?.tradie_verified || item.pendingCount > 0)
-  );
+  const tradieApprovalCases = verificationCases.filter(item => {
+    if (item.tradieDocs.length === 0) return false;
+    if (!item.user?.tradie_verified) return true;
+    if (item.pendingCount > 0) return true;
+
+    // Show if any of their latest documents has active recheck requested
+    const latestDocsMap = new Map<string, any>();
+    const allDocs = [...item.identityDocs, ...item.tradieDocs];
+    allDocs.forEach(d => {
+      const existing = latestDocsMap.get(d.document_type);
+      if (!existing || Date.parse(d.submitted_at) > Date.parse(existing.submitted_at)) {
+        latestDocsMap.set(d.document_type, d);
+      }
+    });
+
+    const hasActiveRecheck = Array.from(latestDocsMap.values()).some(d => d.recheck_requested_at && d.status === 'approved');
+    return hasActiveRecheck;
+  });
   const identityVerifications = customerIdentityCases.flatMap(item =>
     item.identityDocs.filter(doc => doc.status === 'pending')
   );
@@ -2820,8 +2835,41 @@ export default function Admin() {
                       const user = item.user;
                       const allDocs = [...item.identityDocs, ...item.tradieDocs]
                         .sort((a, b) => Date.parse(a.submitted_at) - Date.parse(b.submitted_at));
+
+                      const latestDocsMap = new Map<string, string>();
+                      allDocs.forEach(doc => {
+                        latestDocsMap.set(doc.document_type, doc.id);
+                      });
+
+                      const activeDocs = allDocs.filter(doc => latestDocsMap.get(doc.document_type) === doc.id);
+                      const historyDocs = allDocs.filter(doc => latestDocsMap.get(doc.document_type) !== doc.id);
+
+                      const docOrder = [
+                        'drivers_license',
+                        'passport',
+                        'proof_of_age',
+                        'other_identity',
+                        'liveness_selfie',
+                        'contractor_license',
+                        'insurance',
+                        'trade_certificate',
+                        'other_trade_credential'
+                      ];
+
+                      activeDocs.sort((a, b) => {
+                        const indexA = docOrder.indexOf(a.document_type);
+                        const indexB = docOrder.indexOf(b.document_type);
+                        return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
+                      });
+
                       const isActionLoading = actionLoadingId === item.userId || allDocs.some(doc => actionLoadingId === doc.id);
                       const isAlreadyWhitelisted = !!user?.tradie_verified;
+
+                      const getLatestDocOfType = (docs: any[], type: string) => {
+                        const matching = docs.filter(d => d.document_type === type);
+                        if (matching.length === 0) return null;
+                        return [...matching].sort((a, b) => Date.parse(a.submitted_at) - Date.parse(b.submitted_at))[matching.length - 1];
+                      };
 
                       const isDocValid = (doc: any) => {
                         if (!doc) return false;
@@ -2835,9 +2883,9 @@ export default function Admin() {
                         doc => doc.document_type !== 'liveness_selfie'
                           && (doc.recheck_requested_at || (doc.expires_at && new Date(doc.expires_at) < new Date()))
                       );
-                      const hasApprovedLicenceProof = item.tradieDocs.some(doc => doc.document_type === 'contractor_license' && isDocValid(doc));
-                      const hasApprovedInsuranceProof = item.tradieDocs.some(doc => doc.document_type === 'insurance' && isDocValid(doc));
-                      const hasApprovedLiveness = item.identityDocs.some(doc => doc.document_type === 'liveness_selfie' && isDocValid(doc));
+                      const hasApprovedLicenceProof = isDocValid(getLatestDocOfType(item.tradieDocs, 'contractor_license'));
+                      const hasApprovedInsuranceProof = isDocValid(getLatestDocOfType(item.tradieDocs, 'insurance'));
+                      const hasApprovedLiveness = isDocValid(getLatestDocOfType(item.identityDocs, 'liveness_selfie'));
                       const hasAbn = !!user?.abn?.trim();
                       const hasLicenceNumber = !!user?.license_number?.trim();
                       const missingWhitelistRequirements = [
@@ -2901,7 +2949,7 @@ export default function Admin() {
                           <div className="space-y-3">
                             <h5 className="text-xs font-black uppercase tracking-wider text-foreground">Verification Proofs</h5>
                             <div className="grid gap-2">
-                              {allDocs.map((doc) => {
+                              {activeDocs.map((doc) => {
                                 const isDocLoading = actionLoadingId === doc.id;
                                 const isDocRejecting = rejectingId === doc.id;
                                 const isDocRechecking = recheckId === doc.id;
@@ -3026,6 +3074,43 @@ export default function Admin() {
                                   </div>
                                 );
                               })}
+
+                              {historyDocs.length > 0 && (
+                                <div className="mt-4 border-t border-border/60 pt-3 space-y-2">
+                                  <details className="group">
+                                    <summary className="text-[10px] font-black uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground select-none flex items-center gap-1 focus:outline-none">
+                                      <span>View Document History ({historyDocs.length})</span>
+                                    </summary>
+                                    <div className="grid gap-2 mt-2 pl-3 border-l-2 border-muted/50 group-open:animate-fadeIn">
+                                      {historyDocs.map((doc) => {
+                                        const displayStatus = verificationDisplayStatus(doc);
+                                        return (
+                                          <div key={doc.id} className="rounded-xl border bg-muted/5 p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                                            <div className="min-w-0">
+                                              <div className="flex flex-wrap items-center gap-2">
+                                                <span className="text-xs font-bold text-muted-foreground">{formatDocumentType(doc.document_type)}</span>
+                                                <span className="text-[9px] font-black uppercase bg-muted text-muted-foreground px-1.5 py-0.5 rounded border border-border/40">
+                                                  Outdated History
+                                                </span>
+                                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${verificationStatusClass(displayStatus)}`}>
+                                                  {displayStatus}
+                                                </span>
+                                              </div>
+                                              <p className="text-[9px] text-muted-foreground/80 font-semibold mt-1">
+                                                Submitted {new Date(doc.submitted_at).toLocaleDateString('en-AU')}{' '}
+                                                {new Date(doc.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                              </p>
+                                            </div>
+                                            <button onClick={() => handleViewFile(doc.document_url)} className="text-[11px] text-primary font-bold hover:underline inline-flex items-center gap-1 focus:outline-none">
+                                              <FileText className="h-3 w-3" /> View Upload
+                                            </button>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </details>
+                                </div>
+                              )}
                             </div>
                           </div>
 
