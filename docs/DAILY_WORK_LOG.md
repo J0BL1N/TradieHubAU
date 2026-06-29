@@ -311,6 +311,27 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `077_tradie_risk_signals.sql` | Created | Creates the tradie_risk_signals table, RLS policies, and get_admin_tradie_risk_summary calculator RPC. |
 | `078_revoke_public_execute_on_definers.sql` | Created | Revokes anon and PUBLIC execution permissions from security definer admin functions, developer simulation scripts, and trigger validations. |
 
+## 2026-06-30
+
+### Recent QA Hotfixes And Polish Catch-Up
+
+| Area | Commit | Summary |
+| --- | --- | --- |
+| Guest jobs | `e998a77` | Fixed logged-out `/jobs` anon loading by avoiding unsafe public profile hydration. |
+| Verification profile state | `e1b0eb2` | Revoked/recheck/rejected ID now shows action required and allows replacement upload. |
+| Info hub navigation | `185e508` | Simplified the footer and moved help/explainer links into info hub tabs. |
+| README status | `9998fff` | Updated README with current project status. |
+| Info hub layout | `aab63dd` | Added a shared info hub shell so tabs/header layout stay consistent between pages. |
+| Public README rewrite | `391fa99` | Rewrote README as a public/product-facing overview with internal details removed. |
+
+### Validation / Status Notes
+
+* Build passed for code changes where reported.
+* `git diff --check` passed with CRLF warnings only.
+* No Supabase migrations were required for these changes.
+* Manual QA/polish is ongoing.
+* These items are not marked fully approved unless Jay separately confirms browser/manual QA.
+
 ### Phase 3 / Chunk G — Early Release Caps
 
 | Item | Notes |
