@@ -292,6 +292,10 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 23:59:00 | Phase 6 / Chunk N — Enforcement Actions | `3f25006` | Created admin enforcement actions table, user restriction columns, creation/resolution RPCs, and admin safety panel UI. |
 | 23:59:59 | Phase 7 / Chunk O — Tradie Risk Controls | `511f260` | Created tradie_risk_signals table, risk score calculator RPC, and admin-only risk panel UI. |
 | 23:59:59 | Security Lint Cleanup Pass | `d07a665` | Revoked PUBLIC and anon execution grants from security definer admin RPCs, internal triggers, and validations. |
+| 2026-06-30 | Profile Verification Tab Polish | `52093da` | Reworked Verification tab into a compact dashboard with status overview, next action, and verification cards. |
+| 2026-06-30 | Compact Completed Work Manager | `7b3a2e2` | Reworked Completed Work tab into compact gallery manager with filters, counts, compact cards, and one-card edit expansion. |
+| 2026-06-30 | Fix Profile Verification Card Layout | `25c32ea` | Replaced cramped skinny verification columns with readable wide stacked cards. |
+| 2026-06-30 | Polish Completed Work Controls | `2cacf93` | Wired Publish/Hide to autosave immediately, removed redundant Save, and made summary and preview controls more compact. |
 
 ### Migrations / Deployments
 
@@ -489,6 +493,20 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `git diff --check` result | Passed. |
 | Live Supabase action required | Apply `supabase/migrations/078_revoke_public_execute_on_definers.sql` after migration `077_tradie_risk_signals.sql`. |
 | Commit hash after commit | `d07a665` |
+
+
+### Profile Page UX Polish (2026-06-30 Entries)
+
+| Item | Notes |
+| --- | --- |
+| Commits included | `52093da` ("Compact profile verification tab"), `7b3a2e2` ("Compact completed work manager"), `25c32ea` ("Fix profile verification card layout"), and `2cacf93` ("Polish completed work controls"). |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Rationale & polish details | Reworked layout structures in both the Verification and Completed Work tabs on the profile page to eliminate cramped desktop displays, reduce visual bloat, and improve state change responsiveness. |
+| Verification Tab updates | - Reworked layout from skinny vertical columns into wide, readable stacked cards utilizing a clean 2-column split (information on left, controls on right) on desktop. <br> - Preserved the top summary status overview, next action block, document upload/replace states, and mobile responsiveness. |
+| Completed Work Tab updates | - Redesigned the gallery settings manager to allow immediate auto-saving upon clicking `Publish` or `Hide`. <br> - Removed the redundant outer `Save` button; kept the `Save Gallery Settings` action exclusively inside the **Edit details** expanded drawer. <br> - Condensed the top summary row from bulky grid blocks into a single horizontal bar showing inline published/hidden counts and a compact profile preview button. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully for all modifications. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
 
 ### Privacy Notes
