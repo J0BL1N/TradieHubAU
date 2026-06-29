@@ -35,6 +35,27 @@ export interface EarlyReleaseRequestPayload {
   amount: number;
 }
 
+export interface EarlyReleaseLineCap {
+  accepted_quote_line_item_id: string;
+  line_total: number;
+  used: number;
+  remaining: number;
+}
+
+export interface EarlyReleaseCapSummary {
+  job_id: string;
+  application_id: string;
+  contract_total: number;
+  job_cap: number;
+  job_used: number;
+  job_remaining: number;
+  cap_source: 'accepted_quote_line_items' | 'legacy_application_estimate' | 'unavailable';
+  requires_quote_line_link: boolean;
+  can_request: boolean;
+  unavailable_reason: string | null;
+  line_caps: EarlyReleaseLineCap[];
+}
+
 /**
  * Fetch all early release requests for a specific job.
  */
@@ -73,4 +94,17 @@ export async function cancelEarlyReleaseRequest(requestId: string) {
     .single();
 
   return { data: data as EarlyReleaseRequest | null, error };
+}
+
+/**
+ * Fetch the DB-authoritative early release cap summary for a job.
+ * The RPC is permission-checked and only returns data to the contracted tradie,
+ * job customer, admins, or service role.
+ */
+export async function fetchEarlyReleaseCapSummaryForJob(jobId: string) {
+  const { data, error } = await supabase
+    .rpc('get_early_release_cap_summary', { p_job_id: jobId })
+    .maybeSingle();
+
+  return { data: data as EarlyReleaseCapSummary | null, error };
 }

@@ -282,6 +282,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 17:45:00 | Homepage Category Icon Polish | `6ccb00c` | Refined the Popular Categories icon styling and colors to alternate between crisp navy and orange accents, resolving mud/low-contrast badge issues. |
 | 18:30:00 | Phase 2 / Chunk E — Lock Accepted Quote Lines | `0b5f9f6` | Snapshotted accepted quote line items into an immutable table upon acceptance, locked original quote lines from edit/delete after pending status, and rendered breakdowns. |
 | 19:15:00 | Phase 3 / Chunk F — Early Release Request Foundation | `1d8cf68` | Created the early release request database schema, RLS policies, context-matching insert triggers, resolved update locks, and implemented tradie request forms and customer tracking displays. |
+| 20:10:00 | Phase 3 / Chunk G — Early Release Caps | `pending` | Added DB-enforced early release caps, a permission-checked cap summary RPC, and UI guidance for remaining job and accepted quote line caps. |
 
 ### Migrations / Deployments
 
@@ -290,6 +291,23 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `066_add_quote_line_items.sql` | Created | Creates the quote_line_items table, CHECK constraints for positive quantities and non-negative prices, and RLS policies for tradies/customers/admins. |
 | `067_lock_accepted_quote_lines.sql` | Created | Creates the accepted_quote_line_items table, trigger to copy snapshots upon status='accepted', and validation trigger to prevent modifying lines once status is not 'pending'. |
 | `068_early_release_requests.sql` | Created | Creates early_release_requests table, validation triggers, and RLS policies to allow tradie requests and customer/admin views on active jobs. |
+| `069_early_release_caps.sql` | Created | Enforces early release caps on insert and approval updates, adds accepted quote line linking rules, and exposes a permission-checked cap summary RPC. |
+
+### Phase 3 / Chunk G — Early Release Caps
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/069_early_release_caps.sql`, `frontend/src/lib/earlyReleases.ts`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Cap rules implemented | Amount must be greater than $0. Accepted quote line snapshots are the source of truth where present. Modern accepted jobs with snapshots require a linked accepted quote line. Each linked request must be within that line total, and pending + approved requests for the same line cannot exceed the line total. Pending + approved job requests cannot exceed 30% of accepted contract value. Rejected and cancelled requests do not count. |
+| Legacy behavior | If no accepted quote line snapshots exist, unlinked requests can use the accepted application estimate as the conservative contract source. If that estimate is missing or non-positive, early release requests are blocked with a helpful message. |
+| DB validation summary | `check_early_release_caps` is called by insert validation and again when a pending request is approved. It rejects cross-job quote line links, over-line amounts, over-line pending/approved totals, and over-job-cap pending/approved totals. No payment, invoice, or release logic was changed. |
+| UI summary | The early release panel shows contract total, 30% job cap, remaining job cap, selected quote-line remaining amount, and blocks visibly over-cap submissions while still relying on DB validation. |
+| Privacy/security notes | Cap summary RPC is `SECURITY DEFINER`, fixed `search_path`, and only returns data to the contracted tradie, job customer, admins, or service role. Public/anon and unrelated users cannot read request/cap information. |
+| Non-goals | No money release, payment status changes, final invoice changes, customer approval controls, variation work, homepage, OAuth, analytics, reviews, messaging, or portfolio changes. |
+| Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
+| `git diff --check` result | Passed with line-ending warnings only. |
+| Live Supabase action required | Apply `supabase/migrations/069_early_release_caps.sql` to the live Supabase database. |
+| Commit hash after commit | Recorded in final report after push. |
 
 ### Privacy Notes
 - **Verified Tradies**: The homepage utilizes only the public-safe database fields (`display_name`, `business_name`, `avatar_url`, `suburb`, `state`, `trades`, and verified indicators). No private contact information, documents, or personal records are exposed.

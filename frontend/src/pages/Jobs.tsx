@@ -16,9 +16,10 @@ import { toggleSavedItem, getSavedItemIds } from '../lib/saved';
 import {
   fetchEarlyReleaseRequestsForJob,
   createEarlyReleaseRequest,
-  cancelEarlyReleaseRequest
+  cancelEarlyReleaseRequest,
+  fetchEarlyReleaseCapSummaryForJob
 } from '../lib/earlyReleases';
-import type { EarlyReleaseRequest, EarlyReleaseRequestPayload } from '../lib/earlyReleases';
+import type { EarlyReleaseRequest, EarlyReleaseRequestPayload, EarlyReleaseCapSummary } from '../lib/earlyReleases';
 import { useAuth } from '../components/AuthProvider';
 import {
   Search, MapPin, DollarSign, Briefcase, AlertTriangle,
@@ -593,6 +594,32 @@ export default function Jobs() {
       return;
     }
 
+    if (!earlyReleaseCapSummary?.can_request) {
+      showToast(
+        earlyReleaseCapSummary?.unavailable_reason ||
+        "Early release requests are unavailable for this job.",
+        'error'
+      );
+      return;
+    }
+
+    if (earlyReleaseCapSummary.requires_quote_line_link && !erSelectedLineId) {
+      showToast("Please link this request to an accepted quote line item.", 'error');
+      return;
+    }
+
+    const selectedLineCap = getSelectedEarlyReleaseLineCap();
+    if (selectedLineCap && amt > selectedLineCap.remaining) {
+      showToast("This request exceeds the allowed early release cap for this job or quote line.", 'error');
+      return;
+    }
+
+    const visibleLimit = getVisibleEarlyReleaseLimit();
+    if (visibleLimit !== null && amt > visibleLimit) {
+      showToast("This request exceeds the allowed early release cap for this job or quote line.", 'error');
+      return;
+    }
+
     const app = myApplications.get(selectedJob.id);
     if (!app || app.status !== 'accepted') {
       showToast("Cannot create request: accepted application not found.", 'error');
@@ -623,10 +650,20 @@ export default function Jobs() {
       setErSelectedLineId('');
       setShowErForm(false);
 
-      const { data: erRequests } = await fetchEarlyReleaseRequestsForJob(selectedJob.id);
+      const [{ data: erRequests }, { data: capSummary }] = await Promise.all([
+        fetchEarlyReleaseRequestsForJob(selectedJob.id),
+        fetchEarlyReleaseCapSummaryForJob(selectedJob.id)
+      ]);
       setEarlyReleaseRequests(erRequests || []);
+      setEarlyReleaseCapSummary(capSummary || null);
     } catch (err: any) {
-      showToast(err.message || 'Failed to submit early release request.', 'error');
+      const message = err.message || 'Failed to submit early release request.';
+      showToast(
+        message.includes('cap') || message.includes('quote line')
+          ? "This request exceeds the allowed early release cap for this job or quote line."
+          : message,
+        'error'
+      );
     } finally {
       setIsSubmittingEr(false);
     }
@@ -641,8 +678,12 @@ export default function Jobs() {
       if (error) throw error;
 
       showToast("Early release request cancelled.", 'success');
-      const { data: erRequests } = await fetchEarlyReleaseRequestsForJob(selectedJob.id);
+      const [{ data: erRequests }, { data: capSummary }] = await Promise.all([
+        fetchEarlyReleaseRequestsForJob(selectedJob.id),
+        fetchEarlyReleaseCapSummaryForJob(selectedJob.id)
+      ]);
       setEarlyReleaseRequests(erRequests || []);
+      setEarlyReleaseCapSummary(capSummary || null);
     } catch (err: any) {
       showToast(err.message || 'Failed to cancel request.', 'error');
     }
@@ -660,6 +701,7 @@ export default function Jobs() {
 
   // Early release requests state
   const [earlyReleaseRequests, setEarlyReleaseRequests] = useState<EarlyReleaseRequest[]>([]);
+  const [earlyReleaseCapSummary, setEarlyReleaseCapSummary] = useState<EarlyReleaseCapSummary | null>(null);
   const [loadingEarlyReleases, setLoadingEarlyReleases] = useState(false);
 
   // Early release form state
@@ -759,6 +801,25 @@ export default function Jobs() {
     return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
   };
 
+  const formatAud = (amount: number) => {
+    return amount.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
+  };
+
+  const getSelectedEarlyReleaseLineCap = () => {
+    if (!erSelectedLineId || !earlyReleaseCapSummary) return null;
+    return earlyReleaseCapSummary.line_caps.find(
+      line => line.accepted_quote_line_item_id === erSelectedLineId
+    ) || null;
+  };
+
+  const getVisibleEarlyReleaseLimit = () => {
+    const selectedLineCap = getSelectedEarlyReleaseLineCap();
+    if (selectedLineCap) {
+      return Math.min(earlyReleaseCapSummary?.job_remaining ?? 0, selectedLineCap.remaining);
+    }
+    return earlyReleaseCapSummary?.job_remaining ?? null;
+  };
+
   const fetchJobLifecycleDetails = useCallback(async (jobId: string) => {
     setLoadingLifecycle(true);
     setLifecycleError(null);
@@ -820,12 +881,17 @@ export default function Jobs() {
         setLoadingAcceptedLines(false);
 
         setLoadingEarlyReleases(true);
-        const { data: erRequests } = await fetchEarlyReleaseRequestsForJob(jobId);
+        const [{ data: erRequests }, { data: capSummary }] = await Promise.all([
+          fetchEarlyReleaseRequestsForJob(jobId),
+          fetchEarlyReleaseCapSummaryForJob(jobId)
+        ]);
         setEarlyReleaseRequests(erRequests || []);
+        setEarlyReleaseCapSummary(capSummary || null);
         setLoadingEarlyReleases(false);
       } else {
         setAcceptedQuoteLines([]);
         setEarlyReleaseRequests([]);
+        setEarlyReleaseCapSummary(null);
       }
     } catch (err: any) {
       setLifecycleError(err.message || 'Failed to load details.');
@@ -2667,8 +2733,36 @@ export default function Jobs() {
                               </div>
 
                               <p className="text-xs text-muted-foreground leading-relaxed">
-                                Request an early release for approved materials, fuel, or mobilisation. The customer must approve this before any funds can be released.
+                                Early release requests are capped for safety. Pending and approved requests count toward the cap. Cancelled or rejected requests do not.
                               </p>
+
+                              {earlyReleaseCapSummary ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div className="bg-background border rounded-xl p-2">
+                                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Contract Total</span>
+                                    <span className="text-xs font-black text-foreground">{formatAud(earlyReleaseCapSummary.contract_total)}</span>
+                                  </div>
+                                  <div className="bg-background border rounded-xl p-2">
+                                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Job Cap (30%)</span>
+                                    <span className="text-xs font-black text-foreground">{formatAud(earlyReleaseCapSummary.job_cap)}</span>
+                                  </div>
+                                  <div className="bg-background border rounded-xl p-2">
+                                    <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Remaining</span>
+                                    <span className="text-xs font-black text-primary">{formatAud(earlyReleaseCapSummary.job_remaining)}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-2.5 bg-background border rounded-xl text-[11px] text-muted-foreground font-semibold">
+                                  Early release cap details are not available yet.
+                                </div>
+                              )}
+
+                              {earlyReleaseCapSummary?.unavailable_reason && (
+                                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 text-[11px] font-semibold leading-relaxed flex items-start gap-2">
+                                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                                  <span>{earlyReleaseCapSummary.unavailable_reason}</span>
+                                </div>
+                              )}
 
                               {/* Form for Tradie */}
                               {isContractedTradie && showErForm && (
@@ -2742,13 +2836,14 @@ export default function Jobs() {
                                   {/* Linked Quote Line Selector */}
                                   {acceptedQuoteLines.length > 0 && (
                                     <div className="space-y-1">
-                                      <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Link to Quote Line (Optional)</label>
+                                      <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Accepted Quote Line</label>
                                       <select
                                         value={erSelectedLineId}
                                         onChange={(e) => setErSelectedLineId(e.target.value)}
                                         className="w-full bg-muted/50 border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
+                                        required={earlyReleaseCapSummary?.requires_quote_line_link}
                                       >
-                                        <option value="">-- No link (unlisted line or legacy job) --</option>
+                                        <option value="">Select accepted quote line</option>
                                         {acceptedQuoteLines.map((line) => (
                                           <option key={line.id} value={line.id}>
                                             {line.label} ({line.line_type} - ${line.line_total.toLocaleString()})
@@ -2758,9 +2853,40 @@ export default function Jobs() {
                                     </div>
                                   )}
 
+                                  {(() => {
+                                    const selectedLineCap = getSelectedEarlyReleaseLineCap();
+                                    const visibleLimit = getVisibleEarlyReleaseLimit();
+                                    const requestedAmount = parseFloat(erAmount);
+                                    const overVisibleCap = !isNaN(requestedAmount) && visibleLimit !== null && requestedAmount > visibleLimit;
+
+                                    return (
+                                      <div className={`p-2.5 rounded-xl border text-[11px] font-semibold leading-relaxed ${
+                                        overVisibleCap
+                                          ? 'bg-red-500/10 border-red-500/25 text-red-600'
+                                          : 'bg-primary/5 border-primary/15 text-primary'
+                                      }`}>
+                                        {selectedLineCap ? (
+                                          <span>
+                                            Remaining for selected line: {formatAud(selectedLineCap.remaining)}. Remaining job cap: {formatAud(earlyReleaseCapSummary?.job_remaining ?? 0)}.
+                                          </span>
+                                        ) : earlyReleaseCapSummary?.requires_quote_line_link ? (
+                                          <span>Select an accepted quote line to see the available line amount.</span>
+                                        ) : visibleLimit !== null ? (
+                                          <span>Available for this job: {formatAud(visibleLimit)}.</span>
+                                        ) : (
+                                          <span>Cap availability will be checked before submission.</span>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+
                                   <button
                                     type="submit"
-                                    disabled={isSubmittingEr}
+                                    disabled={isSubmittingEr || !earlyReleaseCapSummary?.can_request || (earlyReleaseCapSummary?.requires_quote_line_link && !erSelectedLineId) || (() => {
+                                      const requestedAmount = parseFloat(erAmount);
+                                      const visibleLimit = getVisibleEarlyReleaseLimit();
+                                      return !isNaN(requestedAmount) && visibleLimit !== null && requestedAmount > visibleLimit;
+                                    })()}
                                     className="w-full bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg hover:bg-primary/95 transition-all shadow-sm flex justify-center items-center gap-1 disabled:opacity-50"
                                   >
                                     {isSubmittingEr ? (

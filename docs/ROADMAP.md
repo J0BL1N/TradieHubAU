@@ -696,11 +696,14 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
-# Phase 3 Chunk G — Early Release Caps (upcoming)
+# Phase 3 Chunk G — Early Release Caps
 
-Status: **Upcoming**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Enforce release caps so total approved early releases cannot exceed set limits.
+* [x] Enforce early release caps at the database layer.
+* [x] Cap pending + approved requests at 30% of accepted contract value.
+* [x] Cap linked line requests to the accepted quote line total.
+* [x] Show remaining job and quote-line cap guidance in the tradie request UI.
 
 ---
 
