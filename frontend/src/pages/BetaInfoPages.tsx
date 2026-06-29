@@ -47,9 +47,9 @@ function BetaNotice() {
 function InfoPage({ icon, badge, title, intro, sections }: InfoPageProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <InfoHubTabs />
-
       <InfoPageHeader title={title} badge={badge} icon={icon} subtitle={intro} />
+
+      <InfoHubTabs />
 
       <BetaNotice />
 
