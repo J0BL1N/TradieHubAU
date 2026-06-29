@@ -802,6 +802,31 @@ export default function Jobs() {
       newParams.delete('category');
       setSearchParams(newParams, { replace: true });
     }
+
+    const jobIdParam = searchParams.get('jobId');
+    if (jobIdParam) {
+      const fetchAndOpenJob = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('id', jobIdParam)
+            .maybeSingle();
+          if (error) throw error;
+          if (data) {
+            setSelectedJob(data as Job);
+          }
+        } catch (err) {
+          console.error('Failed to auto-open job from parameter:', err);
+        } finally {
+          // Remove jobId from search params so it doesn't loop or block closing
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('jobId');
+          setSearchParams(newParams, { replace: true });
+        }
+      };
+      fetchAndOpenJob();
+    }
   }, [searchParams, setSearchParams]);
 
   // ─── Load Jobs ──────────────────────────────────────────────────────────────

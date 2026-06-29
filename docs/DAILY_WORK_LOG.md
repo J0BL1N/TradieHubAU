@@ -278,12 +278,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Time | Area | Commit | Summary |
 | --- | --- | --- | --- |
 | 15:30:00 | Phase 2 / Chunk D — Itemised Quote Lines | `391fbdb` | Added itemised quote lines database schema, constraints, RLS policies, frontend APIs, dynamic quote list builder, customer review dashboard, and legacy fallbacks. |
+| 16:15:00 | Homepage Polish | `bc9a960` | Polished the hero area, improved category icon contrast, loaded real verified tradies (weekly seeded randomization), and loaded real open jobs with deep linking. |
 
 ### Migrations / Deployments
+
+No database migrations were added for the Homepage Polish.
 
 | Item | Status | Notes |
 | --- | --- | --- |
 | `066_add_quote_line_items.sql` | Created | Creates the quote_line_items table, CHECK constraints for positive quantities and non-negative prices, and RLS policies for tradies/customers/admins. |
+
+### Privacy Notes
+- **Verified Tradies**: The homepage utilizes only the public-safe database fields (`display_name`, `business_name`, `avatar_url`, `suburb`, `state`, `trades`, and verified indicators). No private contact information, documents, or personal records are exposed.
+- **Local Jobs**: Only jobs with `status: 'open'` are loaded. Customer contact information and precise address details remain private.
 
 ### Validation
 

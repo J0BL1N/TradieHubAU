@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -18,8 +18,16 @@ import {
   Play,
   ChevronDown,
   Headphones,
-  Lock
+  Lock,
+  Star,
+  Loader2
 } from 'lucide-react';
+import { fetchTradies } from '../lib/users';
+import type { UserProfile } from '../lib/users';
+import { fetchPublicTradieReviewSummaries } from '../lib/reviews';
+import type { ReviewSummary } from '../lib/reviews';
+import { fetchJobs } from '../lib/jobs';
+import type { Job } from '../lib/jobs';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -27,13 +35,91 @@ export default function Home() {
   const [searchLocation, setSearchLocation] = useState('');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
+  // Real marketplace data states
+  const [verifiedTradies, setVerifiedTradies] = useState<UserProfile[]>([]);
+  const [reviewSummaries, setReviewSummaries] = useState<Map<string, ReviewSummary>>(new Map());
+  const [openJobs, setOpenJobs] = useState<Job[]>([]);
+  const [loadingTradies, setLoadingTradies] = useState(true);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+
+  // Deterministic weekly randomization logic
+  const getWeekSeed = () => {
+    const d = new Date();
+    const oneJan = new Date(d.getFullYear(), 0, 1);
+    const numberOfDays = Math.floor((d.getTime() - oneJan.getTime()) / (86400000));
+    const weekNumber = Math.ceil((d.getDay() + 1 + numberOfDays) / 7);
+    return d.getFullYear() * 100 + weekNumber;
+  };
+
+  const seedRandom = (seed: number) => {
+    let x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const shuffleWithSeed = <T,>(array: T[], seed: number): T[] => {
+    const arr = [...array];
+    let m = arr.length, t, i;
+    let currentSeed = seed;
+    while (m) {
+      const r = seedRandom(currentSeed);
+      currentSeed += 1;
+      i = Math.floor(r * m--);
+      t = arr[m];
+      arr[m] = arr[i];
+      arr[i] = t;
+    }
+    return arr;
+  };
+
+  useEffect(() => {
+    async function loadHomepageData() {
+      // 1. Fetch and randomize verified tradies
+      try {
+        const { data, error } = await fetchTradies({ verified: true });
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const seed = getWeekSeed();
+          const shuffled = shuffleWithSeed(data, seed);
+          const selected = shuffled.slice(0, 5);
+          setVerifiedTradies(selected);
+
+          const ids = selected.map((t) => t.id);
+          const { data: summaries, error: summariesError } = await fetchPublicTradieReviewSummaries(ids);
+          if (!summariesError && summaries) {
+            setReviewSummaries(new Map(summaries.map((s) => [s.tradie_id, s])));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load verified tradies:', err);
+      } finally {
+        setLoadingTradies(false);
+      }
+
+      // 2. Fetch public open jobs
+      try {
+        const { data, error } = await fetchJobs({ status: 'open' });
+        if (error) throw error;
+        if (data) {
+          setOpenJobs(data.slice(0, 6));
+        }
+      } catch (err) {
+        console.error('Failed to load open jobs:', err);
+      } finally {
+        setLoadingJobs(false);
+      }
+    }
+
+    loadHomepageData();
+  }, []);
+
   const categories = [
-    { name: 'Plumbing', icon: Droplet, note: 'Available soon', color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400' },
-    { name: 'Electrical', icon: Zap, note: 'Available soon', color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400' },
-    { name: 'Carpentry', icon: HomeIcon, note: 'Available soon', color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400' },
-    { name: 'Landscaping', icon: Sun, note: 'Available soon', color: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400' },
-    { name: 'Painting', icon: Paintbrush, note: 'Available soon', color: 'text-primary bg-primary/10 dark:bg-primary/20 dark:text-primary' },
-    { name: 'View All', icon: Grid, note: 'Browse categories', color: 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-300' }
+    { name: 'Plumbing', icon: Droplet, note: 'Available soon', color: 'text-blue-700 bg-blue-100/90 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40' },
+    { name: 'Electrical', icon: Zap, note: 'Available soon', color: 'text-yellow-700 bg-yellow-100/90 dark:bg-yellow-900/40 dark:text-yellow-300 border border-yellow-200/60 dark:border-yellow-800/40' },
+    { name: 'Carpentry', icon: HomeIcon, note: 'Available soon', color: 'text-amber-700 bg-amber-100/90 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40' },
+    { name: 'Landscaping', icon: Sun, note: 'Available soon', color: 'text-green-700 bg-green-100/90 dark:bg-green-900/40 dark:text-green-300 border border-green-200/60 dark:border-green-800/40' },
+    { name: 'Painting', icon: Paintbrush, note: 'Available soon', color: 'text-primary bg-primary/15 dark:bg-primary/25 dark:text-primary-foreground border border-primary/20' },
+    { name: 'View All', icon: Grid, note: 'Browse categories', color: 'text-gray-700 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700' }
   ];
 
   const faqs = [
@@ -67,7 +153,7 @@ export default function Home() {
   return (
     <div className="space-y-16">
       {/* Hero Section */}
-      <section className="text-center max-w-4xl mx-auto space-y-8 pt-8 pb-4 sm:pt-12">
+      <section className="text-center max-w-4xl mx-auto space-y-5 pt-6 pb-2 sm:pt-8">
         <div className="flex justify-center">
           <img
             src="/assets/tradiehubau-logo.png"
@@ -76,13 +162,6 @@ export default function Home() {
           />
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight text-foreground">
-          Find local tradies <br className="sm:hidden" />
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-amber-600">
-            you can actually trust
-          </span>
-        </h1>
-
         <div className="flex justify-center">
           <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-semibold">
             <span className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></span>
@@ -90,7 +169,7 @@ export default function Home() {
           </span>
         </div>
 
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
+        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
           Connect with verified professionals for any job. Post for free, get quotes, and hire with confidence.
         </p>
 
@@ -164,7 +243,7 @@ export default function Home() {
               className="bg-card border border-border rounded-2xl p-6 hover:border-primary/50 hover:shadow-md transition-all text-center group flex flex-col items-center"
             >
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${cat.color}`}>
-                <cat.icon className="w-6 h-6" />
+                <cat.icon className="w-6 h-6 stroke-[2.5px]" />
               </div>
               <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{cat.name}</h3>
               <p className="text-xs text-muted-foreground mt-1.5 font-medium">{cat.note}</p>
@@ -286,31 +365,106 @@ export default function Home() {
       </section>
 
       {/* Featured Tradies */}
-      <section className="space-y-6">
+      <section className="space-y-6 animate-fade-in">
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Verified Tradies Coming Soon</h2>
-            <p className="text-sm text-muted-foreground font-medium mt-0.5">Approved tradie profiles will appear here as the beta grows.</p>
+            <h2 className="text-2xl font-bold text-foreground">Verified Tradies</h2>
+            <p className="text-sm text-muted-foreground font-medium mt-0.5">Approved local professionals verified by our team.</p>
           </div>
           <Link to="/browse-tradies" className="text-primary hover:text-primary/95 text-sm font-bold flex items-center gap-1">
             View All <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
-        <div className="rounded-3xl border bg-card p-8 text-center shadow-sm">
-          <ShieldCheck className="mx-auto h-10 w-10 text-primary" />
-          <h3 className="mt-4 text-lg font-extrabold text-foreground">No featured tradies yet</h3>
-          <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground">
-            Real approved profiles will be shown here once tradies complete verification and join the beta.
-          </p>
-          <Link to="/browse-tradies" className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold text-foreground hover:bg-muted/40">
-            Browse tradies <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+        {loadingTradies ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : verifiedTradies.length === 0 ? (
+          <div className="rounded-3xl border bg-card p-8 text-center shadow-sm">
+            <ShieldCheck className="mx-auto h-10 w-10 text-primary" />
+            <h3 className="mt-4 text-lg font-extrabold text-foreground">No featured tradies yet</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground">
+              Real approved profiles will be shown here once tradies complete verification and join the beta.
+            </p>
+            <Link to="/browse-tradies" className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold text-foreground hover:bg-muted/40">
+              Browse tradies <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="flex overflow-x-auto gap-5 pb-6 snap-x scrollbar-thin scrollbar-thumb-muted">
+            {verifiedTradies.map((tradie) => {
+              const summary = reviewSummaries.get(tradie.id);
+              const rating = summary ? summary.average_rating : null;
+              const count = summary ? summary.review_count : 0;
+              return (
+                <div
+                  key={tradie.id}
+                  className="bg-card border border-border rounded-2xl p-5 min-w-[280px] sm:min-w-[320px] max-w-[340px] flex flex-col justify-between snap-start hover:border-primary/50 hover:shadow-md transition-all font-semibold"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg overflow-hidden shrink-0 border border-primary/20">
+                        {tradie.avatar_url ? (
+                          <img src={tradie.avatar_url} alt={tradie.display_name} className="w-full h-full object-cover" />
+                        ) : (
+                          tradie.display_name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-foreground text-sm truncate flex items-center gap-1.5">
+                          {tradie.display_name}
+                          {tradie.tradie_verified && (
+                            <ShieldCheck className="h-4 w-4 text-primary fill-current" />
+                          )}
+                        </h4>
+                        <p className="text-xs text-muted-foreground truncate">{tradie.business_name || 'Individual Contractor'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs">
+                      {rating !== null ? (
+                        <>
+                          <div className="flex items-center text-amber-500">
+                            <Star className="w-3.5 h-3.5 fill-current" />
+                            <span className="font-bold ml-1">{rating.toFixed(1)}</span>
+                          </div>
+                          <span className="text-muted-foreground">({count} reviews)</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground bg-muted/35 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">New Tradie</span>
+                      )}
+                    </div>
+
+                    {tradie.trades && tradie.trades.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {tradie.trades.map((t) => (
+                          <span key={t} className="bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-md text-[10px] capitalize font-bold">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t pt-4 mt-4 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                      {tradie.suburb && tradie.state ? `${tradie.suburb}, ${tradie.state}` : tradie.state || 'Australia'}
+                    </span>
+                    <Link to={`/tradies/${tradie.id}`} className="text-primary hover:text-primary/90 font-black">
+                      View Profile
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Recent Jobs */}
-      <section className="space-y-6">
+      <section className="space-y-6 animate-fade-in">
         <div className="flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground">Local Jobs</h2>
@@ -321,16 +475,63 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="rounded-3xl border bg-card p-8 text-center shadow-sm">
-          <MapPin className="mx-auto h-10 w-10 text-primary" />
-          <h3 className="mt-4 text-lg font-extrabold text-foreground">No public job preview yet</h3>
-          <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground">
-            Real posted jobs will appear on the jobs board and homepage once local customers start posting during beta.
-          </p>
-          <Link to="/jobs" className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold text-foreground hover:bg-muted/40">
-            Browse jobs <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+        {loadingJobs ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : openJobs.length === 0 ? (
+          <div className="rounded-3xl border bg-card p-8 text-center shadow-sm">
+            <MapPin className="mx-auto h-10 w-10 text-primary" />
+            <h3 className="mt-4 text-lg font-extrabold text-foreground">No open jobs yet</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm font-medium leading-6 text-muted-foreground">
+              Real posted jobs will appear on the jobs board once local customers start posting during beta.
+            </p>
+            <Link to="/jobs" className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold text-foreground hover:bg-muted/40">
+              Browse jobs <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {openJobs.map((job) => (
+              <Link
+                key={job.id}
+                to={`/jobs?jobId=${job.id}`}
+                className="bg-card border border-border rounded-2xl p-5 hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between font-semibold group"
+              >
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start gap-3">
+                    <span className="bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider">
+                      {job.categories && job.categories[0] ? job.categories[0] : 'General'}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-bold">
+                      {new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <h3 className="font-extrabold text-base text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                      {job.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-medium">
+                      {job.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 mt-4 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground flex items-center gap-1 font-semibold">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    {job.suburb && job.state ? `${job.suburb}, ${job.state}` : job.state || 'Australia'}
+                  </span>
+
+                  <span className="text-primary font-black text-sm">
+                    {job.estimated_budget ? `$${job.estimated_budget.toLocaleString()}` : 'Get Quotes'}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Trust Badges Bar */}
