@@ -1062,14 +1062,14 @@ export default function Profile() {
   const compactVerificationDashboard = (
     <div className="space-y-6">
       {/* 1. Top Summary Banner */}
-      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 rounded-3xl border bg-card p-5 shadow-sm">
-        <div className="flex items-start gap-4 flex-1 w-full min-w-0">
+      <section className="w-full rounded-3xl border bg-card p-5 shadow-sm space-y-4">
+        <div className="flex items-start gap-4 w-full">
           {isVerificationComplete ? (
             <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
           ) : (
             <AlertCircle className="h-6 w-6 text-primary shrink-0 mt-0.5" />
           )}
-          <div className="min-w-0">
+          <div className="flex-1 min-w-0">
             <h3 className="text-sm font-black text-foreground break-words">{nextVerificationAction.title}</h3>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground break-words">{nextVerificationAction.body}</p>
             {isVerificationComplete && (
@@ -1080,7 +1080,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 items-center lg:justify-end shrink-0 border-t lg:border-t-0 pt-4 lg:pt-0 border-border/60">
+        <div className="flex flex-wrap gap-3 items-center w-full border-t border-border/60 pt-4">
           <div className="flex items-center gap-1.5 rounded-xl border bg-muted/10 px-3 py-1.5">
             <span className={`h-1.5 w-1.5 rounded-full ${effectiveIdVerificationStatus === 'approved' ? 'bg-green-500' : effectiveIdVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-muted-foreground/30'}`}></span>
             <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Photo ID:</span>

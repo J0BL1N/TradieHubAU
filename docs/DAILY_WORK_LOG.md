@@ -301,6 +301,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Profile Verification Summary Polish | `cd986ed` | Replaced the two-card verification summary with one compact status banner connected to the checklist rows. |
 | 2026-06-30 | Profile Verification Summary Layout Hotfix | `f462e9f` | Fixed top verification summary text collapsing vertically by correcting flex/grid sizing and chip wrapping. |
 | 2026-06-30 | Admin Credential Recheck Controls | `fda4e11` | Audited/fixed admin recheck controls so licence, insurance, and trade certificate credentials can be individually requested for recheck/resubmission. |
+| 2026-06-30 | Profile Verification Summary Emergency Hotfix | `4350d4d` | Fixed summary banner text collapse by replacing fragile layout with stable block/grid structure. |
 
 ### Migrations / Deployments
 
@@ -578,6 +579,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Verification case logic | - Updated `tradieApprovalCases` queue query to include whitelisted tradies who have active/unresolved recheck requests on their latest documents, keeping their cases visible in the queue for tracing. <br> - Introduced `getLatestDocOfType` case validation helper to compute hasApprovedLicenceProof, hasApprovedInsuranceProof, and hasApprovedLiveness based on the latest submitted document of each type. <br> - Separated case documents list into `activeDocs` (current active documents mapped by type, which display action buttons like Approve, Reject, Request Recheck) and `historyDocs` (older outdated uploads, which are rendered as read-only references inside a collapsible "View Document History" container). |
 | Profile tab alignment | - Refined `credentialsNeedAction` logic in `Profile.tsx` to include optional credentials, ensuring the top summary banner correctly triggers "Credentials action required" when any credential is marked for recheck. |
 | Migrations required | None (the database schema and backend RPC `requestVerificationRecheck` already support per-document recheck updates). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+
+### Profile Verification Summary Emergency Hotfix
+
+| Item | Notes |
+| --- | --- |
+| Area | Profile Verification Tab Summary Emergency Hotfix |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Summary | Fixed a layout bug where the top verification summary text collapsed into a single character column by replacing the fragile side-by-side flex layout with a stable vertically stacked block structure. |
+| Layout details | - Removed the horizontal flex relationship between the text header and the progress chips. <br> - Rendered the header text (icon + title/body) as a full-width block row on top. <br> - Rendered the progress chips as a full-width flex-wrap row below the text, separated by a light border, ensuring the text is never horizontally squeezed. |
+| Migrations required | None. |
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
