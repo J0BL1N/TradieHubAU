@@ -720,7 +720,7 @@ Status: **Implementation complete / pushed. Live SQL should be run after Chunk G
 
 # Phase 4 Chunk I — Itemised Variation Requests
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL should be run before Chunk J manual QA.**
 
 * [x] Add itemised variation request tables and line-item storage.
 * [x] Add contracted-tradie create/cancel RPCs with DB validation.
@@ -730,18 +730,28 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
-# Phase 4 Chunk J — Variation Funding + Release (upcoming)
+# Phase 4 Chunk J — Variation Approval + Funding Groundwork
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Add customer approval/rejection controls for itemised variation requests.
+* [x] Snapshot approved variation line items immutably.
+* [x] Keep payment movement, funding, release, and invoice itemisation out of this chunk.
+
+---
+
+# Phase 4 Chunk J2 — Variation Funding + Release (upcoming)
 
 Status: **Upcoming**
 
-* [ ] Add customer approval/funding controls for itemised variation requests.
+* [ ] Add customer funding controls for approved itemised variation requests.
 * [ ] Keep payment movement behind explicit customer funding.
 
 ---
 
-# Phase 4 Chunk K — Final Invoice Itemisation (later)
+# Phase 4 Chunk K — Final Invoice Itemisation (upcoming)
 
-Status: **Later**
+Status: **Upcoming**
 
 * [ ] Add approved/funded variation lines to final invoice/receipt itemisation.
 

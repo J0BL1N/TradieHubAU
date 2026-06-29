@@ -284,7 +284,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 19:15:00 | Phase 3 / Chunk F — Early Release Request Foundation | `1d8cf68` | Created the early release request database schema, RLS policies, context-matching insert triggers, resolved update locks, and implemented tradie request forms and customer tracking displays. |
 | 20:10:00 | Phase 3 / Chunk G — Early Release Caps | `a8c2305` | Added DB-enforced early release caps, a permission-checked cap summary RPC, and UI guidance for remaining job and accepted quote line caps. |
 | 20:45:00 | Phase 3 / Chunk H — Customer Approval Modal | `c9e385d` | Added customer/admin early release review RPC, hardened review field updates, and built the customer approval/rejection modal with cap context. |
-| 21:30:00 | Phase 4 / Chunk I — Itemised Variation Requests | `pending` | Added itemised variation request tables/RPCs, typed frontend helpers, and an itemised contract variation UI without funding or invoice changes. |
+| 21:30:00 | Phase 4 / Chunk I — Itemised Variation Requests | `07e9399` | Added itemised variation request tables/RPCs, typed frontend helpers, and an itemised contract variation UI without funding or invoice changes. |
+| 22:05:00 | Phase 4 / Chunk J — Variation Approval + Funding Groundwork | `pending` | Added customer/admin variation review RPC, immutable approved variation line snapshots, and customer variation review UI without payment movement. |
 
 ### Migrations / Deployments
 
@@ -296,6 +297,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `069_early_release_caps.sql` | Created | Enforces early release caps on insert and approval updates, adds accepted quote line linking rules, and exposes a permission-checked cap summary RPC. |
 | `070_early_release_review_rpc.sql` | Created | Adds the review_early_release_request RPC and hardens early release review field/status update rules. |
 | `071_itemised_variation_requests.sql` | Created | Creates itemised variation request and line-item tables, RLS, immutable line handling, and create/cancel RPCs. |
+| `072_variation_approval_review.sql` | Created | Adds approved variation line snapshots, review RPC, review status rules, and RLS for approved variation lines. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -343,6 +345,22 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
 | `git diff --check` result | Passed with line-ending warnings only. |
 | Live Supabase action required | Apply `supabase/migrations/071_itemised_variation_requests.sql` after migration `070_early_release_review_rpc.sql`. |
+| Commit hash after commit | Recorded in final report after push. |
+
+### Phase 4 / Chunk J — Variation Approval + Funding Groundwork
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/072_variation_approval_review.sql`, `frontend/src/lib/variations.ts`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `072_variation_approval_review.sql`. |
+| RPC/status update summary | Added `review_job_variation_request(p_variation_request_id, p_decision, p_review_note)` for customer/admin approval or rejection. The RPC requires authenticated customer/admin access, blocks non-admin tradie self-review, requires pending status, normalizes review notes, and updates reviewed metadata through the hardened trigger. |
+| Approved variation snapshot summary | Added immutable `approved_variation_line_items` copied from itemised variation request lines at approval time. Snapshots store copied label, description, quantity, unit price, line total, line type, sort order, and trace back to the original request line. |
+| UI summary | Customer owners can review pending variation requests in a modal, see itemised lines and total, approve/reject with an optional note, and see approved variation breakdowns after approval. Tradies see statuses, review notes, and no approval controls. |
+| Privacy/security notes | Variation review details and approved snapshots are only visible to the contracted tradie, job customer, and admins. No public profile, Browse Tradies, homepage, public job card, invoice, review, analytics, messaging, or Completed Work Portfolio exposure was added. |
+| Non-goals | No funding, payment movement, payment status changes, release logic, partial release flags, payout records, invoice/receipt itemisation, accepted quote snapshot changes, reviews, messaging, homepage, OAuth, analytics, or portfolio changes. |
+| Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
+| `git diff --check` result | Passed with line-ending warnings only. |
+| Live Supabase action required | Apply `supabase/migrations/072_variation_approval_review.sql` after migration `071_itemised_variation_requests.sql`. |
 | Commit hash after commit | Recorded in final report after push. |
 
 ### Privacy Notes

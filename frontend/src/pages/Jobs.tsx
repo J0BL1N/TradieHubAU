@@ -37,7 +37,8 @@ import {
 import {
   fetchVariationRequestsForJob,
   createVariationRequest,
-  cancelVariationRequest
+  cancelVariationRequest,
+  reviewVariationRequest
 } from '../lib/variations';
 import type { VariationLineType, VariationRequest } from '../lib/variations';
 import { supabase } from '../lib/supabase';
@@ -866,6 +867,40 @@ export default function Jobs() {
     }
   };
 
+  const handleOpenVariationReview = (request: VariationRequest) => {
+    setReviewingVariation(request);
+    setVariationReviewNote(request.review_note || '');
+  };
+
+  const handleReviewVariationRequest = async (decision: 'approved' | 'rejected') => {
+    if (!selectedJob || !reviewingVariation) return;
+
+    setSubmittingVariationReview(decision);
+    try {
+      const { error } = await reviewVariationRequest(
+        reviewingVariation.id,
+        decision,
+        variationReviewNote
+      );
+      if (error) throw error;
+
+      showToast(
+        decision === 'approved'
+          ? 'Variation approved. No funds have been released.'
+          : 'Variation rejected.',
+        'success'
+      );
+
+      setReviewingVariation(null);
+      setVariationReviewNote('');
+      await refreshVariationRequests(selectedJob.id);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to review variation request.', 'error');
+    } finally {
+      setSubmittingVariationReview(null);
+    }
+  };
+
   // Applications: map of job_id → Application (for jobs the user has applied to)
   const [myApplications, setMyApplications] = useState<Map<string, Application>>(new Map());
 
@@ -901,6 +936,9 @@ export default function Jobs() {
     { label: '', description: '', quantity: 1, unit_price: 0, line_type: 'labour' }
   ]);
   const [submittingVariation, setSubmittingVariation] = useState(false);
+  const [reviewingVariation, setReviewingVariation] = useState<VariationRequest | null>(null);
+  const [variationReviewNote, setVariationReviewNote] = useState('');
+  const [submittingVariationReview, setSubmittingVariationReview] = useState<'approved' | 'rejected' | null>(null);
   const variationFormTotal = variationLineItems.reduce(
     (sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)),
     0
@@ -919,7 +957,7 @@ export default function Jobs() {
 
   // Prevent body scroll when details or other modals are open
   useEffect(() => {
-    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob || activeInvoice || reviewingEarlyRelease) {
+    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob || activeInvoice || reviewingEarlyRelease || reviewingVariation) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -927,7 +965,7 @@ export default function Jobs() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob, activeInvoice, reviewingEarlyRelease]);
+  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob, activeInvoice, reviewingEarlyRelease, reviewingVariation]);
 
   // Escape key close for details modal
   useEffect(() => {
@@ -1894,6 +1932,120 @@ export default function Jobs() {
                   className="bg-green-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
                   {submittingEarlyReleaseReview === 'approved' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Approving...</> : 'Approve Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {reviewingVariation && (() => {
+        const lineItems = reviewingVariation.line_items || [];
+        const total = lineItems.reduce((sum, item) => sum + Number(item.line_total || 0), 0);
+
+        return (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+            <div className="bg-card border border-border w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
+              <div className="p-5 border-b flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-foreground">Review Variation</h3>
+                  <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                    {reviewingVariation.status === 'pending' ? 'Pending customer review' : reviewingVariation.status}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setReviewingVariation(null);
+                    setVariationReviewNote('');
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                  disabled={!!submittingVariationReview}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 text-primary text-[11px] font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>Approving this variation records your approval for the extra work/materials. Funds are not released in this step.</span>
+                </div>
+
+                <div className="bg-muted/30 border rounded-xl p-3">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Title</span>
+                  <span className="text-sm font-black text-foreground">{reviewingVariation.title}</span>
+                  {reviewingVariation.reason && (
+                    <p className="text-xs font-semibold text-foreground/80 leading-relaxed whitespace-pre-wrap mt-2">
+                      {reviewingVariation.reason}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Itemised variation</span>
+                    <span className="text-sm font-black text-primary">{formatAud(total)}</span>
+                  </div>
+                  {lineItems.map((line) => (
+                    <div key={line.id} className="flex justify-between gap-3 bg-background border rounded-xl p-3 text-xs">
+                      <div className="min-w-0">
+                        <span className="font-bold text-foreground truncate block">{line.label}</span>
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                          {line.line_type} | {line.quantity} x ${line.unit_price.toLocaleString()}
+                        </span>
+                        {line.description && (
+                          <p className="text-[10px] text-foreground/70 mt-1 leading-relaxed">{line.description}</p>
+                        )}
+                      </div>
+                      <span className="font-black text-foreground shrink-0">{formatAud(Number(line.line_total || 0))}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Review Note (Optional)</label>
+                  <textarea
+                    rows={3}
+                    value={variationReviewNote}
+                    onChange={(e) => setVariationReviewNote(e.target.value)}
+                    placeholder="Add a short note for the tradie..."
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50 resize-none"
+                    disabled={!!submittingVariationReview}
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-[11px] font-semibold leading-relaxed">
+                  Rejecting this variation means it will not become chargeable.
+                </div>
+              </div>
+
+              <div className="p-5 border-t flex flex-col sm:flex-row justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReviewingVariation(null);
+                    setVariationReviewNote('');
+                  }}
+                  disabled={!!submittingVariationReview}
+                  className="bg-secondary text-secondary-foreground font-bold px-4 py-2 rounded-xl hover:bg-secondary/80 transition-colors text-xs disabled:opacity-50"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReviewVariationRequest('rejected')}
+                  disabled={!!submittingVariationReview}
+                  className="bg-red-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition-colors text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {submittingVariationReview === 'rejected' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Rejecting...</> : 'Reject Variation'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReviewVariationRequest('approved')}
+                  disabled={!!submittingVariationReview}
+                  className="bg-green-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {submittingVariationReview === 'approved' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Approving...</> : 'Approve Variation'}
                 </button>
               </div>
             </div>
@@ -3764,7 +3916,7 @@ export default function Jobs() {
                             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Variation Requests</h4>
                             {selectedJob.customer_id === user.id && (
                               <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed">
-                                Customer approval and funding controls will be added in the next chunk.
+                                Funding controls will be added later. Approving a variation here does not release funds.
                               </p>
                             )}
                           </div>
@@ -3785,7 +3937,9 @@ export default function Jobs() {
                                       v.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
                                       v.status === 'cancelled' ? 'bg-secondary text-secondary-foreground' : 'bg-blue-500/10 text-blue-500'
                                     }`}>
-                                      {v.status === 'pending' ? 'Pending customer approval' : v.status}
+                                      {v.status === 'pending' ? 'Pending customer review' :
+                                       v.status === 'approved' ? 'Approved by customer' :
+                                       v.status === 'rejected' ? 'Rejected by customer' : 'Cancelled'}
                                     </span>
                                   </div>
                                   <div className="text-right">
@@ -3811,10 +3965,62 @@ export default function Jobs() {
                                     ))}
                                   </div>
                                 )}
+
+                                {v.status === 'approved' && (v.approved_line_items || []).length > 0 && (
+                                  <div className="space-y-1.5 border-t pt-2">
+                                    <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider block">
+                                      Approved Variation Breakdown
+                                    </span>
+                                    {(v.approved_line_items || []).map((line) => (
+                                      <div key={line.id} className="flex justify-between gap-3 bg-green-500/5 border border-green-500/20 rounded-xl p-2 text-xs">
+                                        <div className="min-w-0">
+                                          <span className="font-bold text-foreground truncate block">{line.label}</span>
+                                          <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                                            {line.line_type} | {line.quantity} x ${line.unit_price.toLocaleString()}
+                                          </span>
+                                          {line.description && (
+                                            <p className="text-[10px] text-foreground/70 mt-1 leading-relaxed">{line.description}</p>
+                                          )}
+                                        </div>
+                                        <span className="font-black text-foreground shrink-0">{formatAud(Number(line.line_total || 0))}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
                                 {v.review_note && (
                                   <div className="text-[10px] bg-background p-2 rounded-lg border border-border/50 font-medium">
                                     <span className="font-bold text-foreground/90 block">Review Note:</span>
                                     <span className="text-foreground/70">{v.review_note}</span>
+                                  </div>
+                                )}
+
+                                {v.reviewed_at && (
+                                  <p className="text-[9px] text-muted-foreground font-semibold">
+                                    Reviewed {new Date(v.reviewed_at).toLocaleDateString()}
+                                  </p>
+                                )}
+
+                                {selectedJob.customer_id === user.id && v.status === 'pending' && (
+                                  <div className="flex flex-wrap justify-end gap-2 pt-1">
+                                    <button
+                                      onClick={() => handleOpenVariationReview(v)}
+                                      className="text-[10px] bg-background border border-primary/30 text-primary hover:bg-primary/5 font-bold px-2.5 py-1 rounded-lg"
+                                    >
+                                      Review
+                                    </button>
+                                    <button
+                                      onClick={() => handleOpenVariationReview(v)}
+                                      className="text-[10px] bg-green-600 text-white hover:bg-green-700 font-bold px-2.5 py-1 rounded-lg"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleOpenVariationReview(v)}
+                                      className="text-[10px] bg-red-600 text-white hover:bg-red-700 font-bold px-2.5 py-1 rounded-lg"
+                                    >
+                                      Reject
+                                    </button>
                                   </div>
                                 )}
 
