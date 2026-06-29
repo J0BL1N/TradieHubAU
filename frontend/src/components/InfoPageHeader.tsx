@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 type InfoPageHeaderProps = {
   title: string;
   badge: string;
-  subtitle: string;
+  subtitle?: string;
   icon: ReactNode;
 };
 
@@ -17,9 +17,11 @@ export default function InfoPageHeader({ title, badge, subtitle, icon }: InfoPag
         <span className="shrink-0">{icon}</span>
         <span className="truncate">{badge}</span>
       </div>
-      <p className="mx-auto max-w-3xl text-base font-medium leading-7 text-muted-foreground sm:text-lg">
-        {subtitle}
-      </p>
+      {subtitle && (
+        <p className="mx-auto max-w-3xl text-base font-medium leading-7 text-muted-foreground sm:text-lg">
+          {subtitle}
+        </p>
+      )}
     </header>
   );
 }

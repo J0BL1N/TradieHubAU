@@ -8,8 +8,7 @@ import {
   ShieldCheck,
   UserCheck,
 } from 'lucide-react';
-import InfoHubTabs from '../components/InfoHubTabs';
-import InfoPageHeader from '../components/InfoPageHeader';
+import InfoHubPageShell from '../components/InfoHubPageShell';
 
 type InfoSection = {
   title: string;
@@ -46,11 +45,7 @@ function BetaNotice() {
 
 function InfoPage({ icon, badge, title, intro, sections }: InfoPageProps) {
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <InfoPageHeader title={title} badge={badge} icon={icon} subtitle={intro} />
-
-      <InfoHubTabs />
-
+    <InfoHubPageShell title={title} badge={badge} icon={icon} subtitle={intro}>
       <BetaNotice />
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -82,7 +77,7 @@ function InfoPage({ icon, badge, title, intro, sections }: InfoPageProps) {
           </Link>
         </div>
       </div>
-    </div>
+    </InfoHubPageShell>
   );
 }
 

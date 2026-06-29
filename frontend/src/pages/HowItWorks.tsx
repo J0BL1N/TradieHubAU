@@ -11,8 +11,7 @@ import {
   ShieldCheck,
   UserCheck,
 } from 'lucide-react';
-import InfoHubTabs from '../components/InfoHubTabs';
-import InfoPageHeader from '../components/InfoPageHeader';
+import InfoHubPageShell from '../components/InfoHubPageShell';
 
 const customerSteps = [
   'Post a clear job scope with suburb-level location, timing, budget type, and workspace photos where useful.',
@@ -61,16 +60,12 @@ function BulletList({ items }: { items: string[] }) {
 
 export default function HowItWorks() {
   return (
-    <div className="mx-auto max-w-6xl space-y-10">
-      <InfoPageHeader
-        title="How TradieHubAU Works"
-        badge="Verified & Protected Workflow"
-        icon={<ShieldCheck className="h-4 w-4" />}
-        subtitle="A safer way to hire, quote, complete, and pay for trade work, with clear beta-stage checks and job records."
-      />
-
-      <InfoHubTabs />
-
+    <InfoHubPageShell
+      title="How TradieHubAU Works"
+      badge="Verified & Protected Workflow"
+      icon={<ShieldCheck className="h-4 w-4" />}
+      subtitle="A safer way to hire, quote, complete, and pay for trade work, with clear beta-stage checks and job records."
+    >
       <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5 text-sm font-semibold leading-6 text-amber-900">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -143,6 +138,6 @@ export default function HowItWorks() {
           </Link>
         </div>
       </section>
-    </div>
+    </InfoHubPageShell>
   );
 }
