@@ -665,7 +665,7 @@ Status: **Implementation complete / awaiting manual review.**
 
 # Phase 2 Chunk D — Itemised Quote Lines
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / confirmed working.**
 
 * [x] Create migration `066_add_quote_line_items.sql` with schema, CHECK constraints, indexes, and RLS policies for quote line items.
 * [x] Add `QuoteLineItem` type interfaces and helper functions (`createQuoteLineItems`, `fetchQuoteLineItemsByApplicationIds`, `groupQuoteLineItemsByApplication`) in `frontend/src/lib/applications.ts`.
@@ -678,11 +678,11 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
-# Phase 2 Chunk E — Lock Accepted Quote Lines (upcoming)
+# Phase 2 Chunk E — Lock Accepted Quote Lines
 
-Status: **Upcoming**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Lock accepted quote lines into an immutable table upon acceptance.
+* [x] Lock accepted quote lines into an immutable table upon acceptance.
 
 ---
 

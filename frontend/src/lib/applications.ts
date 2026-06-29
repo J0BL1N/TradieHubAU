@@ -250,3 +250,63 @@ export async function getApplicationsForJob(jobId: string) {
   return { data: applications, error: null };
 }
 
+export interface AcceptedQuoteLineItem {
+  id: string;
+  job_id: string;
+  application_id: string;
+  original_quote_line_item_id: string | null;
+  tradie_id: string;
+  customer_id: string;
+  label: string;
+  description: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  line_type: 'labour' | 'materials' | 'callout' | 'disposal' | 'other';
+  sort_order: number;
+  accepted_at: string;
+  created_at: string;
+}
+
+/**
+ * Fetch accepted quote line items by Job IDs.
+ */
+export async function fetchAcceptedQuoteLineItemsByJobIds(jobIds: string[]) {
+  if (jobIds.length === 0) return { data: [] as AcceptedQuoteLineItem[], error: null };
+  const { data, error } = await supabase
+    .from('accepted_quote_line_items')
+    .select('*')
+    .in('job_id', jobIds)
+    .order('sort_order', { ascending: true });
+
+  return { data: (data as AcceptedQuoteLineItem[]) ?? [], error };
+}
+
+/**
+ * Fetch accepted quote line items by Application IDs.
+ */
+export async function fetchAcceptedQuoteLineItemsByApplicationIds(applicationIds: string[]) {
+  if (applicationIds.length === 0) return { data: [] as AcceptedQuoteLineItem[], error: null };
+  const { data, error } = await supabase
+    .from('accepted_quote_line_items')
+    .select('*')
+    .in('application_id', applicationIds)
+    .order('sort_order', { ascending: true });
+
+  return { data: (data as AcceptedQuoteLineItem[]) ?? [], error };
+}
+
+/**
+ * Helper to group accepted quote line items by Job ID.
+ */
+export function groupAcceptedQuoteLineItemsByJob(items: AcceptedQuoteLineItem[]) {
+  const groups = new Map<string, AcceptedQuoteLineItem[]>();
+  for (const item of items) {
+    if (!groups.has(item.job_id)) {
+      groups.set(item.job_id, []);
+    }
+    groups.get(item.job_id)!.push(item);
+  }
+  return groups;
+}
+

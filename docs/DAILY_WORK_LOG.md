@@ -280,14 +280,14 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 15:30:00 | Phase 2 / Chunk D — Itemised Quote Lines | `391fbdb` | Added itemised quote lines database schema, constraints, RLS policies, frontend APIs, dynamic quote list builder, customer review dashboard, and legacy fallbacks. |
 | 16:15:00 | Homepage Polish | `bc9a960` | Polished the hero area, improved category icon contrast, loaded real verified tradies (weekly seeded randomization), and loaded real open jobs with deep linking. |
 | 17:45:00 | Homepage Category Icon Polish | `6ccb00c` | Refined the Popular Categories icon styling and colors to alternate between crisp navy and orange accents, resolving mud/low-contrast badge issues. |
+| 18:30:00 | Phase 2 / Chunk E — Lock Accepted Quote Lines | `0b5f9f6` | Snapshotted accepted quote line items into an immutable table upon acceptance, locked original quote lines from edit/delete after pending status, and rendered breakdowns. |
 
 ### Migrations / Deployments
-
-No database migrations were added for the Homepage Polish or Category Icon Polish.
 
 | Item | Status | Notes |
 | --- | --- | --- |
 | `066_add_quote_line_items.sql` | Created | Creates the quote_line_items table, CHECK constraints for positive quantities and non-negative prices, and RLS policies for tradies/customers/admins. |
+| `067_lock_accepted_quote_lines.sql` | Created | Creates the accepted_quote_line_items table, trigger to copy snapshots upon status='accepted', and validation trigger to prevent modifying lines once status is not 'pending'. |
 
 ### Privacy Notes
 - **Verified Tradies**: The homepage utilizes only the public-safe database fields (`display_name`, `business_name`, `avatar_url`, `suburb`, `state`, `trades`, and verified indicators). No private contact information, documents, or personal records are exposed.
@@ -304,4 +304,4 @@ No database migrations were added for the Homepage Polish or Category Icon Polis
 
 | Item | Status |
 | --- | --- |
-| Phase 2 / Chunk E — Lock Accepted Quote Lines | Upcoming. |
+| Phase 3 — Early Releases | Upcoming. |

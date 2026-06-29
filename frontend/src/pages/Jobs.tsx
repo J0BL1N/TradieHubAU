@@ -8,9 +8,10 @@ import {
   getApplicationsForJob,
   getMyApplications,
   fetchQuoteLineItemsByApplicationIds,
-  groupQuoteLineItemsByApplication
+  groupQuoteLineItemsByApplication,
+  fetchAcceptedQuoteLineItemsByJobIds
 } from '../lib/applications';
-import type { Application, QuoteLineItem } from '../lib/applications';
+import type { Application, QuoteLineItem, AcceptedQuoteLineItem } from '../lib/applications';
 import { toggleSavedItem, getSavedItemIds } from '../lib/saved';
 import { useAuth } from '../components/AuthProvider';
 import {
@@ -577,6 +578,10 @@ export default function Jobs() {
   // Quote line items: map of application_id → QuoteLineItem[]
   const [quoteLineItems, setQuoteLineItems] = useState<Record<string, QuoteLineItem[]>>({});
 
+  // Accepted quote line items for the active contract
+  const [acceptedQuoteLines, setAcceptedQuoteLines] = useState<AcceptedQuoteLineItem[]>([]);
+  const [loadingAcceptedLines, setLoadingAcceptedLines] = useState(false);
+
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [reviewModalJob, setReviewModalJob] = useState<Job | null>(null);
@@ -717,6 +722,15 @@ export default function Jobs() {
             }));
           }
         }
+      }
+
+      if (selectedJob && selectedJob.status !== 'open' && selectedJob.status !== 'cancelled') {
+        setLoadingAcceptedLines(true);
+        const { data: accLines } = await fetchAcceptedQuoteLineItemsByJobIds([jobId]);
+        setAcceptedQuoteLines(accLines || []);
+        setLoadingAcceptedLines(false);
+      } else {
+        setAcceptedQuoteLines([]);
       }
     } catch (err: any) {
       setLifecycleError(err.message || 'Failed to load details.');
@@ -2498,6 +2512,42 @@ export default function Jobs() {
                                   })}
                                 </div>
                               </div>
+                            )}
+                          </div>
+
+                          {/* Accepted Quote Breakdown */}
+                          <div className="p-4 bg-muted/30 border rounded-2xl space-y-2.5 text-sm">
+                            <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block border-b pb-1 font-black">
+                              Accepted Quote Breakdown
+                            </span>
+                            {loadingAcceptedLines ? (
+                              <div className="flex justify-center py-4">
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                              </div>
+                            ) : acceptedQuoteLines.length > 0 ? (
+                              <div className="space-y-1.5 mt-2">
+                                {acceptedQuoteLines.map((item) => (
+                                  <div key={item.id} className="flex justify-between items-center text-xs font-semibold bg-background border p-2 rounded-xl border-border/50">
+                                    <div className="min-w-0 flex-1 pr-2">
+                                      <span className="text-foreground font-bold truncate block">{item.label}</span>
+                                      <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                                        {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <span className="text-foreground font-extrabold shrink-0">
+                                      ${item.line_total.toLocaleString()}
+                                    </span>
+                                  </div>
+                                ))}
+                                <div className="flex justify-between items-center text-xs pt-1.5 font-bold text-foreground border-t">
+                                  <span>Total Contract Estimate</span>
+                                  <span className="text-primary">${(jobPayment.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground italic mt-2">
+                                Detailed quote breakdown not available for this older accepted quote.
+                              </p>
                             )}
                           </div>
                         </div>
