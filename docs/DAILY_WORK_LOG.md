@@ -296,7 +296,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Compact Completed Work Manager | `7b3a2e2` | Reworked Completed Work tab into compact gallery manager with filters, counts, compact cards, and one-card edit expansion. |
 | 2026-06-30 | Fix Profile Verification Card Layout | `25c32ea` | Replaced cramped skinny verification columns with readable wide stacked cards. |
 | 2026-06-30 | Polish Completed Work Controls | `2cacf93` | Wired Publish/Hide to autosave immediately, removed redundant Save, and made summary and preview controls more compact. |
-| 2026-06-30 | Profile Verification Tab Redesign | `1d4149d` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
+| 2026-06-30 | Profile Verification Tab Redesign | `fcd3d39` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
 
 ### Migrations / Deployments
 
