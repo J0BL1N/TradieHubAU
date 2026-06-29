@@ -287,7 +287,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 21:30:00 | Phase 4 / Chunk I — Itemised Variation Requests | `07e9399` | Added itemised variation request tables/RPCs, typed frontend helpers, and an itemised contract variation UI without funding or invoice changes. |
 | 22:05:00 | Phase 4 / Chunk J — Variation Approval + Funding Groundwork | `8a51d25` | Added customer/admin variation review RPC, immutable approved variation line snapshots, and customer variation review UI without payment movement. |
 | 22:45:00 | Phase 5 / Chunk K — Final Invoice Itemisation | `61520a1` | Added trusted final document line itemisation from accepted quote snapshots and approved variation snapshots, with legacy fallback and no payment movement. |
-| 23:30:00 | Phase 6 / Chunk L — Job Evidence Timeline | `66d7c18` | Created read-only job evidence timeline RPC function, added authorization verification checks, and rendered compact bullet-style timeline card. |
+| 23:30:00 | Phase 6 / Chunk L — Job Evidence Timeline | `d4fc10c` | Created read-only job evidence timeline RPC function, added authorization verification checks, and rendered compact bullet-style timeline card. |
+| 23:45:00 | Phase 6 / Chunk M — Admin Evidence Pack | `d28fcc3` | Created read-only get_admin_job_evidence_pack RPC function compiling full job evidence history, frontend helper, and admin panel with markdown export. |
 
 ### Migrations / Deployments
 
@@ -302,6 +303,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `072_variation_approval_review.sql` | Created | Adds approved variation line snapshots, review RPC, review status rules, and RLS for approved variation lines. |
 | `073_itemise_final_invoice_documents.sql` | Created | Adds trusted job invoice line items sourced from accepted quote snapshots and approved variation snapshots, updates invoice generation/RPC self-healing, and preserves legacy accepted quote fallback. |
 | `074_job_evidence_timeline.sql` | Created | Creates read-only public.get_job_evidence_timeline function with secure user/admin checks and revokes public execute grants. |
+| `075_admin_job_evidence_pack.sql` | Created | Creates read-only public.get_admin_job_evidence_pack function compiling job, parties, quotes, variations, early releases, payments, invoices, completion proofs, and timeline details with strict admin checks. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -383,6 +385,33 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `git diff --check` result | Passed with line-ending warnings only. |
 | Live Supabase action required | Apply `supabase/migrations/073_itemise_final_invoice_documents.sql` after migration `072_variation_approval_review.sql`. |
 | Commit hash after commit | Recorded in final report after push. |
+
+### Phase 6 / Chunk L — Job Evidence Timeline
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/074_job_evidence_timeline.sql`, `frontend/src/lib/timeline.ts`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `074_job_evidence_timeline.sql`. |
+| RPC/data source summary | Created `public.get_job_evidence_timeline(p_job_id)` read-only SECURITY DEFINER RPC. Collects chronological events: Job Posted, Quote Submitted, Quote Accepted, Payment Funded, Completion Proof Submitted, Payment Released, Dispute Raised, Dispute Resolved, Variation Submitted, Variation Resolved, Early Release Submitted, Early Release Resolved, Invoice Generated. |
+| Access control summary | Restricted to contracted tradie, job customer, or admin users. Revoked public execute access. |
+| UI summary | Displays compact bullet-style vertical chronological timeline in Job Detail modal. |
+
+### Phase 6 / Chunk M — Admin Evidence Pack
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/075_admin_job_evidence_pack.sql`, `frontend/src/lib/payments.ts`, `frontend/src/pages/Admin.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `075_admin_job_evidence_pack.sql`. |
+| RPC/data source summary | Created `public.get_admin_job_evidence_pack(p_job_id)` compiling job summary, customer/tradie identities, accepted quote lines, variations, early releases, payments, invoices, completion proofs, disputes, and timeline. |
+| Access control summary | Admin-only security barrier via explicit `public.is_admin(auth.uid())` check. Revoked public execute access. |
+| UI summary | Renders a "Compile Evidence Pack" button in DisputeCaseFile. Opens a modal detailing job info, parties, contract lines, variations, early releases, payments ledgers, invoices, completion proofs, disputes history, and timeline. Includes a "Copy Case Summary" button formatting details into structured Markdown. |
+| Privacy/security notes | Admin-only. No public, guest, customer, or tradie access. All details are kept inside the admin dashboard. |
+| Non-goals | No enforcement actions, no risk scoring, no payment moves, no public export links. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Apply `supabase/migrations/075_admin_job_evidence_pack.sql` after migration `074_job_evidence_timeline.sql`. |
+| Commit hash after commit | `d28fcc3` |
+
 
 ### Privacy Notes
 - **Verified Tradies**: The homepage utilizes only the public-safe database fields (`display_name`, `business_name`, `avatar_url`, `suburb`, `state`, `trades`, and verified indicators). No private contact information, documents, or personal records are exposed.

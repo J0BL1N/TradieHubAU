@@ -12,9 +12,9 @@ import {
   ShieldCheck, UserCheck, ShieldAlert, Award, Loader2, AlertTriangle,
   Check, FileText, CheckCircle, AlertCircle, X, Image as ImageIcon,
   ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
-  Camera, TrendingUp, DollarSign, RefreshCw, Activity
+  Camera, TrendingUp, DollarSign, RefreshCw, Activity, Copy
 } from 'lucide-react';
-import { getDisputedJobs, recordAdminDisputeAction, resolveDispute } from '../lib/payments';
+import { getDisputedJobs, recordAdminDisputeAction, resolveDispute, getAdminJobEvidencePack } from '../lib/payments';
 
 // ─── Local Types ─────────────────────────────────────────────────────────────
 
@@ -133,6 +133,197 @@ const RESOLUTION_ACTIONS: {
   },
 ];
 
+function generateEvidencePackMarkdown(pack: any): string {
+  if (!pack) return '';
+  const job = pack.job || {};
+  const customer = pack.customer || {};
+  const tradie = pack.tradie || {};
+  const quote = pack.quote || {};
+  const variations = pack.variations || [];
+  const earlyReleases = pack.early_releases || [];
+  const invoices = pack.invoices || [];
+  const payments = pack.payments || [];
+  const proofs = pack.completion_proofs || [];
+  const disputes = pack.disputes || [];
+  const timeline = pack.timeline || [];
+
+  const fmtC = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const fmtD = (dollars: number) => `$${Number(dollars).toFixed(2)}`;
+
+  let md = `# CASE EVIDENCE PACK: ${job.title || 'Job details'}\n`;
+  md += `Job Reference ID: ${job.id || 'N/A'}\n`;
+  md += `Current Status: ${job.status || 'N/A'}\n`;
+  md += `Created At: ${job.created_at ? new Date(job.created_at).toLocaleString('en-AU') : 'N/A'}\n\n`;
+
+  md += `## PARTIES\n`;
+  md += `### Customer\n`;
+  md += `- Name: ${customer.display_name || 'N/A'}\n`;
+  md += `- Email: ${customer.email || 'N/A'}\n`;
+  md += `- Phone: ${customer.phone || 'N/A'}\n`;
+  md += `- Identity Verified: ${customer.identity_verified ? 'Yes' : 'No'}\n\n`;
+
+  md += `### Contractor (Tradie)\n`;
+  if (tradie && tradie.id) {
+    md += `- Name: ${tradie.display_name || 'N/A'}\n`;
+    md += `- Email: ${tradie.email || 'N/A'}\n`;
+    md += `- Phone: ${tradie.phone || 'N/A'}\n`;
+    md += `- ABN: ${tradie.abn || 'N/A'}\n`;
+    md += `- Licence Number: ${tradie.license_number || 'N/A'}\n`;
+    md += `- Identity Verified: ${tradie.identity_verified ? 'Yes' : 'No'}\n`;
+    md += `- Profile Whitelisted: ${tradie.tradie_verified ? 'Yes' : 'No'}\n\n`;
+  } else {
+    md += `No contractor is currently linked to this job.\n\n`;
+  }
+
+  md += `## CONTRACT & QUOTE BREAKDOWN\n`;
+  if (quote && quote.id) {
+    md += `Estimate: ${fmtD(quote.estimate)}\n`;
+    md += `Status: ${quote.status || 'N/A'}\n`;
+    md += `Accepted At: ${quote.updated_at ? new Date(quote.updated_at).toLocaleString('en-AU') : 'N/A'}\n\n`;
+    md += `### Quote Line Items:\n`;
+    const lines = quote.line_items || [];
+    if (lines.length > 0) {
+      lines.forEach((line: any, idx: number) => {
+        md += `${idx + 1}. [${line.line_type}] **${line.label}** - ${line.description || 'No description'} (Qty: ${line.quantity} × ${fmtD(line.unit_price)} = ${fmtD(line.line_total)})\n`;
+      });
+    } else {
+      md += `*No line items recorded.*\n`;
+    }
+    md += `\n`;
+  } else {
+    md += `No accepted quote found.\n\n`;
+  }
+
+  md += `## APPROVED VARIATIONS\n`;
+  const approvedVars = variations.filter((v: any) => v.status === 'approved');
+  if (approvedVars.length > 0) {
+    approvedVars.forEach((v: any, idx: number) => {
+      const total = (v.line_items || []).reduce((sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)), 0);
+      md += `### Variation #${idx + 1}: ${v.title}\n`;
+      md += `- Status: ${v.status}\n`;
+      md += `- Amount: ${fmtD(total)}\n`;
+      md += `- Requested: ${v.requested_at ? new Date(v.requested_at).toLocaleString('en-AU') : 'N/A'}\n`;
+      md += `- Approved By: ${v.reviewed_by || 'N/A'}\n`;
+      md += `- Line Items:\n`;
+      const lines = v.line_items || [];
+      if (lines.length > 0) {
+        lines.forEach((line: any, lIdx: number) => {
+          md += `  ${lIdx + 1}. [${line.line_type}] **${line.label}** - ${line.description || 'No description'} (Qty: ${line.quantity} × ${fmtD(line.unit_price)} = ${fmtD(Number(line.quantity) * Number(line.unit_price))})\n`;
+        });
+      } else {
+        md += `  *No line items.*\n`;
+      }
+      md += `\n`;
+    });
+  } else {
+    md += `No approved variations found.\n\n`;
+  }
+
+  md += `## EARLY RELEASE REQUESTS\n`;
+  if (earlyReleases.length > 0) {
+    earlyReleases.forEach((er: any, idx: number) => {
+      md += `- Request #${idx + 1} (${er.request_type}): ${fmtD(er.amount)} [Status: ${er.status}] (Requested: ${new Date(er.requested_at).toLocaleString('en-AU')})\n`;
+      if (er.status !== 'pending') {
+        md += `  - Reviewed At: ${er.reviewed_at ? new Date(er.reviewed_at).toLocaleString('en-AU') : 'N/A'}\n`;
+        md += `  - Rejection Reason/Notes: ${er.rejection_reason || er.notes || 'N/A'}\n`;
+      }
+    });
+    md += `\n`;
+  } else {
+    md += `No early release requests.\n\n`;
+  }
+
+  md += `## PAYMENTS & LEDGER DETAILS\n`;
+  if (payments.length > 0) {
+    payments.forEach((p: any, idx: number) => {
+      md += `### Payment #${idx + 1}\n`;
+      md += `- Amount: ${fmtC(p.amount)}\n`;
+      md += `- Platform Fee: ${fmtC(p.platform_fee)}\n`;
+      md += `- Status: ${p.status}\n`;
+      md += `- Ledger Entries:\n`;
+      const ledgers = p.ledger_entries || [];
+      if (ledgers.length > 0) {
+        ledgers.forEach((l: any, lIdx: number) => {
+          md += `  - ${lIdx + 1}. Type: ${l.transaction_type}, Amount: ${fmtC(l.amount_cents)}, Stripe ID: ${l.stripe_transaction_id || 'N/A'}, Date: ${new Date(l.created_at).toLocaleString('en-AU')}\n`;
+        });
+      } else {
+        md += `  *No ledger entries.*\n`;
+      }
+      md += `\n`;
+    });
+  } else {
+    md += `No payments found.\n\n`;
+  }
+
+  md += `## INVOICES & RECEIPTS\n`;
+  if (invoices.length > 0) {
+    invoices.forEach((inv: any) => {
+      md += `### ${inv.invoice_type === 'customer_receipt' ? 'Customer Receipt' : 'Payout Statement'} (${inv.invoice_number})\n`;
+      md += `- Amount: ${fmtC(inv.amount_cents)}\n`;
+      md += `- Issued At: ${new Date(inv.issued_at).toLocaleString('en-AU')}\n`;
+      md += `- Line Items:\n`;
+      const lines = inv.line_items || [];
+      if (lines.length > 0) {
+        lines.forEach((line: any, lIdx: number) => {
+          md += `  - ${lIdx + 1}. [${line.source_type}] **${line.label}** - ${line.description || 'No description'} (Qty: ${line.quantity} × ${fmtD(line.unit_price)} = ${fmtD(line.line_total)})\n`;
+        });
+      } else {
+        md += `  *No line items.*\n`;
+      }
+      md += `\n`;
+    });
+  } else {
+    md += `No invoices generated yet.\n\n`;
+  }
+
+  md += `## COMPLETION PROOFS\n`;
+  if (proofs.length > 0) {
+    proofs.forEach((p: any, idx: number) => {
+      md += `- Proof #${idx + 1}: ${p.description || 'No notes'} (Submitted: ${new Date(p.created_at).toLocaleString('en-AU')}, Auto-release: ${new Date(p.auto_release_at).toLocaleString('en-AU')})\n`;
+      if (p.attachments && p.attachments.length > 0) {
+        md += `  - Attachments: ${p.attachments.join(', ')}\n`;
+      }
+    });
+    md += `\n`;
+  } else {
+    md += `No completion proofs submitted.\n\n`;
+  }
+
+  md += `## DISPUTES & ISSUES\n`;
+  if (disputes.length > 0) {
+    disputes.forEach((d: any, idx: number) => {
+      md += `### Dispute #${idx + 1}\n`;
+      md += `- Status: ${d.status}\n`;
+      md += `- Description: "${d.description}"\n`;
+      md += `- Raised By: ${d.raised_by}\n`;
+      md += `- Raised At: ${new Date(d.created_at).toLocaleString('en-AU')}\n`;
+      if (d.resolved_at) {
+        md += `- Resolved At: ${new Date(d.resolved_at).toLocaleString('en-AU')}\n`;
+        md += `- Resolved By: ${d.resolved_by || 'N/A'}\n`;
+      }
+      if (d.admin_notes) {
+        md += `- Admin Notes: "${d.admin_notes}"\n`;
+      }
+      md += `\n`;
+    });
+  } else {
+    md += `No dispute issues raised.\n\n`;
+  }
+
+  md += `## CHRONOLOGICAL TIMELINE\n`;
+  if (timeline.length > 0) {
+    timeline.forEach((event: any, idx: number) => {
+      const amtStr = event.amount !== null && event.amount !== undefined ? ` ($${Number(event.amount).toFixed(2)})` : '';
+      const statusStr = event.status ? ` [Status: ${event.status}]` : '';
+      md += `${idx + 1}. [${new Date(event.occurred_at).toLocaleString('en-AU')}] **${event.event_label}**${amtStr}${statusStr}: ${event.event_description || ''}\n`;
+    });
+  } else {
+    md += `*No timeline events logged.*\n`;
+  }
+
+  return md;
+}
+
 // ─── Sub-component: Dispute Case File ────────────────────────────────────────
 
 interface DisputeCaseFileProps {
@@ -159,6 +350,34 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
   // Section expand states
   const [expanded, setExpanded] = useState(true);
   const [showResolution, setShowResolution] = useState(false);
+
+  // Evidence pack state
+  const [showEvidencePack, setShowEvidencePack] = useState(false);
+  const [evidencePack, setEvidencePack] = useState<any | null>(null);
+  const [evidencePackLoading, setEvidencePackLoading] = useState(false);
+  const [evidencePackError, setEvidencePackError] = useState<string | null>(null);
+
+  const loadEvidencePack = async () => {
+    if (evidencePack) return;
+    setEvidencePackLoading(true);
+    setEvidencePackError(null);
+    try {
+      const { data, error } = await getAdminJobEvidencePack(dispute.id);
+      if (error) throw error;
+      setEvidencePack(data);
+    } catch (err: any) {
+      setEvidencePackError(err.message || 'Failed to load evidence pack.');
+    } finally {
+      setEvidencePackLoading(false);
+    }
+  };
+
+  const handleCopySummary = () => {
+    if (!evidencePack) return;
+    const markdown = generateEvidencePackMarkdown(evidencePack);
+    navigator.clipboard.writeText(markdown);
+    showToast('Evidence pack case summary copied to clipboard.', 'success');
+  };
 
   // Resolution state
   const [selectedAction, setSelectedAction] = useState<ResolutionAction>(null);
@@ -334,6 +553,23 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
       {/* Case Body */}
       {expanded && (
         <div className="px-5 pb-6 space-y-5">
+
+          {/* Evidence Pack Actions */}
+          <div className="flex flex-wrap gap-3 justify-end items-center border-b pb-4 pt-2">
+            <span className="text-xs font-bold text-muted-foreground mr-auto">
+              Evidence Pack compiles immutable records for legal &amp; platform review.
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEvidencePack(true);
+                loadEvidencePack();
+              }}
+              className="bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5"
+            >
+              <FileText className="h-4 w-4" /> Compile Evidence Pack
+            </button>
+          </div>
 
           {/* ── Row: Customer + Contractor ─────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -700,6 +936,473 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showEvidencePack && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <div className="bg-card border w-full max-w-4xl max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b bg-muted/10 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-foreground flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-primary" /> Case Evidence Pack
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Job Reference: <span className="font-mono text-foreground font-bold">{formatJobRef(dispute.id)}</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {evidencePack && (
+                  <button
+                    onClick={handleCopySummary}
+                    className="bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2 rounded-xl text-xs transition flex items-center gap-1.5"
+                  >
+                    <Copy className="h-4 w-4" /> Copy Case Summary
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowEvidencePack(false)}
+                  className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 text-sm text-foreground">
+              {evidencePackLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                  <p className="text-xs text-muted-foreground font-semibold">Compiling complete evidence case pack from secure database records...</p>
+                </div>
+              ) : evidencePackError ? (
+                <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-600 font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" /> {evidencePackError}
+                </div>
+              ) : !evidencePack ? (
+                <div className="p-10 text-center text-muted-foreground font-semibold italic">
+                  No evidence pack data returned.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* 1. Job Overview & Parties */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-3 p-4 bg-muted/10 border rounded-2xl">
+                      <h4 className="text-[11px] font-black text-primary uppercase tracking-wider mb-2">Job Overview</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Title</p>
+                          <p className="text-foreground font-bold truncate">{evidencePack.job?.title || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Status</p>
+                          <p className="text-foreground font-black uppercase text-[10px]">{evidencePack.job?.status || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Created</p>
+                          <p className="text-foreground">{evidencePack.job?.created_at ? new Date(evidencePack.job.created_at).toLocaleDateString('en-AU') : 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Last Updated</p>
+                          <p className="text-foreground">{evidencePack.job?.updated_at ? new Date(evidencePack.job.updated_at).toLocaleDateString('en-AU') : 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Parties */}
+                    <div className="p-4 bg-muted/10 border rounded-2xl">
+                      <h4 className="text-[11px] font-black text-primary uppercase tracking-wider mb-2 flex items-center gap-1"><User className="h-3.5 w-3.5" /> Customer Identity</h4>
+                      <div className="space-y-1 text-xs">
+                        <p className="font-bold text-foreground">{evidencePack.customer?.display_name || 'N/A'}</p>
+                        <p className="text-muted-foreground font-medium">{evidencePack.customer?.email || 'N/A'}</p>
+                        <p className="text-muted-foreground font-medium">{evidencePack.customer?.phone || 'N/A'}</p>
+                        <span className={`inline-block text-[9px] font-black px-1.5 py-0.5 rounded border mt-1 ${evidencePack.customer?.identity_verified ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : 'bg-amber-500/10 text-amber-600 border-amber-500/20'}`}>
+                          {evidencePack.customer?.identity_verified ? 'ID VERIFIED' : 'ID PENDING'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-muted/10 border rounded-2xl md:col-span-2">
+                      <h4 className="text-[11px] font-black text-primary uppercase tracking-wider mb-2 flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" /> Contractor Identity</h4>
+                      {evidencePack.tradie ? (
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="space-y-1">
+                            <p className="font-bold text-foreground">{evidencePack.tradie.display_name || 'N/A'}</p>
+                            <p className="text-muted-foreground font-medium">{evidencePack.tradie.email || 'N/A'}</p>
+                            <p className="text-muted-foreground font-medium">{evidencePack.tradie.phone || 'N/A'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-foreground font-semibold"><span className="text-muted-foreground">ABN:</span> {evidencePack.tradie.abn || 'N/A'}</p>
+                            <p className="text-foreground font-semibold"><span className="text-muted-foreground">Licence:</span> {evidencePack.tradie.license_number || 'N/A'}</p>
+                            <div className="flex gap-1.5 mt-1 flex-wrap">
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${evidencePack.tradie.identity_verified ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : 'bg-amber-500/10 text-amber-600 border-amber-500/20'}`}>
+                                {evidencePack.tradie.identity_verified ? 'ID VERIFIED' : 'ID PENDING'}
+                              </span>
+                              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${evidencePack.tradie.tradie_verified ? 'bg-green-500/10 text-green-600 border-green-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
+                                {evidencePack.tradie.tradie_verified ? 'WHITELISTED' : 'SUSPENDED/PENDING'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic font-semibold">No tradie application accepted for this job.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. Quote Breakdown */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Contract / Quote Line Items</h4>
+                    {evidencePack.quote ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-bold text-foreground">
+                          <span>Accepted Quote: {formatAUD(evidencePack.quote.estimate * 100)}</span>
+                          <span className="text-muted-foreground">Accepted At: {evidencePack.quote.updated_at ? new Date(evidencePack.quote.updated_at).toLocaleString('en-AU') : 'N/A'}</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="border-b text-[10px] uppercase text-muted-foreground">
+                                <th className="py-2">Item</th>
+                                <th className="py-2">Type</th>
+                                <th className="py-2 text-right">Qty</th>
+                                <th className="py-2 text-right">Unit Price</th>
+                                <th className="py-2 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y font-semibold">
+                              {(evidencePack.quote.line_items || []).map((line: any) => (
+                                <tr key={line.id}>
+                                  <td className="py-2">
+                                    <p className="font-bold text-foreground">{line.label}</p>
+                                    {line.description && <p className="text-[10px] text-muted-foreground font-medium">{line.description}</p>}
+                                  </td>
+                                  <td className="py-2 capitalize">{line.line_type}</td>
+                                  <td className="py-2 text-right">{line.quantity}</td>
+                                  <td className="py-2 text-right">{formatAUD(line.unit_price * 100)}</td>
+                                  <td className="py-2 text-right font-black">{formatAUD(line.line_total * 100)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No accepted quote data available.</p>
+                    )}
+                  </div>
+
+                  {/* 3. Variations */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Contract Variations</h4>
+                    {evidencePack.variations && evidencePack.variations.length > 0 ? (
+                      <div className="space-y-4">
+                        {evidencePack.variations.map((v: any) => {
+                          const total = (v.line_items || []).reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+                          return (
+                            <div key={v.id} className="border rounded-xl p-3 bg-card space-y-2">
+                              <div className="flex justify-between items-baseline flex-wrap gap-2 text-xs">
+                                <span className="font-bold text-foreground">{v.title}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded font-black border uppercase ${
+                                  v.status === 'approved' ? 'bg-green-500/10 text-green-700 border-green-500/20' :
+                                  v.status === 'pending' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' :
+                                  'bg-red-500/10 text-red-700 border-red-500/20'
+                                }`}>{v.status}</span>
+                              </div>
+                              {v.description && <p className="text-[11px] text-muted-foreground font-semibold">Reason/Desc: {v.description}</p>}
+                              {v.rejection_reason && <p className="text-[11px] text-red-500 font-semibold">Rejection reason: {v.rejection_reason}</p>}
+                              <div className="text-[10px] text-muted-foreground font-bold">
+                                Requested: {new Date(v.requested_at).toLocaleString('en-AU')} | Total: {formatAUD(total * 100)}
+                              </div>
+                              {(v.line_items || []).length > 0 && (
+                                <table className="w-full text-left text-[11px] mt-2 border-t pt-2">
+                                  <thead>
+                                    <tr className="text-[9px] uppercase text-muted-foreground">
+                                      <th className="py-1">Line Label</th>
+                                      <th className="py-1">Type</th>
+                                      <th className="py-1 text-right">Qty</th>
+                                      <th className="py-1 text-right">Unit Price</th>
+                                      <th className="py-1 text-right">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y font-semibold">
+                                    {v.line_items.map((line: any) => (
+                                      <tr key={line.id}>
+                                        <td className="py-1">{line.label}</td>
+                                        <td className="py-1 capitalize">{line.line_type}</td>
+                                        <td className="py-1 text-right">{line.quantity}</td>
+                                        <td className="py-1 text-right">{formatAUD(line.unit_price * 100)}</td>
+                                        <td className="py-1 text-right font-bold">{formatAUD(line.quantity * line.unit_price * 100)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No contract variation requests submitted.</p>
+                    )}
+                  </div>
+
+                  {/* 4. Early Releases */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Early Release Requests</h4>
+                    {evidencePack.early_releases && evidencePack.early_releases.length > 0 ? (
+                      <div className="space-y-2">
+                        {evidencePack.early_releases.map((er: any) => (
+                          <div key={er.id} className="flex justify-between items-center p-3 border rounded-xl bg-card text-xs">
+                            <div>
+                              <p className="font-bold text-foreground capitalize">{er.request_type}</p>
+                              <p className="text-[10px] text-muted-foreground font-semibold">Requested: {new Date(er.requested_at).toLocaleString('en-AU')}</p>
+                              {er.rejection_reason && <p className="text-[10px] text-red-500 mt-1">Rejection reason: {er.rejection_reason}</p>}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-black text-foreground">{formatAUD(er.amount * 100)}</p>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border uppercase inline-block mt-0.5 ${
+                                er.status === 'approved' ? 'bg-green-500/10 text-green-700 border-green-500/20' :
+                                er.status === 'pending' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' :
+                                'bg-red-500/10 text-red-700 border-red-500/20'
+                              }`}>{er.status}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No early release requests submitted.</p>
+                    )}
+                  </div>
+
+                  {/* 5. Payments & Ledgers */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Payments &amp; Ledger Audit Trail</h4>
+                    {evidencePack.payments && evidencePack.payments.length > 0 ? (
+                      <div className="space-y-4">
+                        {evidencePack.payments.map((p: any) => (
+                          <div key={p.id} className="space-y-2">
+                            <div className="grid grid-cols-3 gap-2 bg-card border p-3 rounded-xl text-xs font-semibold">
+                              <div>
+                                <span className="text-[9px] text-muted-foreground uppercase block font-bold">Total Held</span>
+                                <span className="text-sm font-black text-foreground">{formatAUD(p.amount)}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-muted-foreground uppercase block font-bold">Platform Fee</span>
+                                <span className="text-sm font-black text-primary">{formatAUD(p.platform_fee)}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-muted-foreground uppercase block font-bold">Escrow Status</span>
+                                <span className="text-xs uppercase font-black text-green-600 block mt-0.5">{p.status}</span>
+                              </div>
+                            </div>
+                            {(p.ledger_entries || []).length > 0 ? (
+                              <div className="border rounded-xl overflow-hidden bg-card">
+                                <table className="w-full text-left text-[11px]">
+                                  <thead>
+                                    <tr className="bg-muted/30 text-[9px] uppercase font-bold text-muted-foreground border-b">
+                                      <th className="p-2">Transaction Type</th>
+                                      <th className="p-2 text-right">Amount</th>
+                                      <th className="p-2">Stripe Transaction ID</th>
+                                      <th className="p-2 text-right">Processed At</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y font-semibold">
+                                    {p.ledger_entries.map((l: any) => (
+                                      <tr key={l.id}>
+                                        <td className="p-2 capitalize text-foreground font-bold">{l.transaction_type}</td>
+                                        <td className="p-2 text-right font-black">{formatAUD(l.amount_cents)}</td>
+                                        <td className="p-2 font-mono text-[9px] text-muted-foreground">{l.stripe_transaction_id || 'N/A'}</td>
+                                        <td className="p-2 text-right text-muted-foreground">{new Date(l.created_at).toLocaleString('en-AU')}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground italic font-semibold pl-2">No transaction ledger entries recorded for this payment.</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No payment records found.</p>
+                    )}
+                  </div>
+
+                  {/* 6. Invoices & Receipts */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Generated Documents (Invoices / Receipts)</h4>
+                    {evidencePack.invoices && evidencePack.invoices.length > 0 ? (
+                      <div className="space-y-4">
+                        {evidencePack.invoices.map((inv: any) => (
+                          <div key={inv.id} className="border rounded-xl p-3 bg-card space-y-2 text-xs">
+                            <div className="flex justify-between items-baseline font-bold">
+                              <span className="text-foreground capitalize">{inv.invoice_type.replace(/_/g, ' ')} ({inv.invoice_number})</span>
+                              <span className="text-muted-foreground">Issued: {new Date(inv.issued_at).toLocaleString('en-AU')}</span>
+                            </div>
+                            <p className="font-black text-foreground">Total: {formatAUD(inv.amount_cents)}</p>
+                            {(inv.line_items || []).length > 0 && (
+                              <div className="mt-2 border-t pt-2 overflow-x-auto">
+                                <table className="w-full text-left text-[11px]">
+                                  <thead>
+                                    <tr className="text-[9px] uppercase text-muted-foreground">
+                                      <th className="py-1">Description</th>
+                                      <th className="py-1">Source Type</th>
+                                      <th className="py-1 text-right">Qty</th>
+                                      <th className="py-1 text-right">Unit Price</th>
+                                      <th className="py-1 text-right">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y font-semibold">
+                                    {inv.line_items.map((line: any) => (
+                                      <tr key={line.id}>
+                                        <td className="py-1">
+                                          <p className="font-bold text-foreground">{line.label}</p>
+                                          {line.description && <p className="text-[9px] text-muted-foreground font-medium">{line.description}</p>}
+                                        </td>
+                                        <td className="py-1 capitalize">{line.source_type.replace(/_/g, ' ')}</td>
+                                        <td className="py-1 text-right">{line.quantity}</td>
+                                        <td className="py-1 text-right">{formatAUD(line.unit_price * 100)}</td>
+                                        <td className="py-1 text-right font-bold">{formatAUD(line.line_total * 100)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No tax invoices or customer receipts generated yet.</p>
+                    )}
+                  </div>
+
+                  {/* 7. Completion Proofs */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Completion Proofs Metadata</h4>
+                    {evidencePack.completion_proofs && evidencePack.completion_proofs.length > 0 ? (
+                      <div className="space-y-3">
+                        {evidencePack.completion_proofs.map((cp: any) => (
+                          <div key={cp.id} className="p-3 border rounded-xl bg-card text-xs space-y-2">
+                            <p className="font-bold text-foreground">Notes: <span className="font-semibold text-muted-foreground italic">"{cp.description || 'No notes provided'}"</span></p>
+                            <div className="text-[10px] text-muted-foreground font-bold">
+                              Submitted: {new Date(cp.created_at).toLocaleString('en-AU')} | Auto-Release Target: {new Date(cp.auto_release_at).toLocaleString('en-AU')}
+                            </div>
+                            {cp.attachments && cp.attachments.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-[9px] text-muted-foreground uppercase font-black">Attachments ({cp.attachments.length})</p>
+                                <ul className="list-disc pl-4 text-[10px] text-blue-500 font-mono">
+                                  {cp.attachments.map((file: string, fIdx: number) => (
+                                    <li key={fIdx}>{file}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No completion proofs submitted yet.</p>
+                    )}
+                  </div>
+
+                  {/* 8. Disputes / Issues */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Disputes History</h4>
+                    {evidencePack.disputes && evidencePack.disputes.length > 0 ? (
+                      <div className="space-y-3">
+                        {evidencePack.disputes.map((d: any) => (
+                          <div key={d.id} className="p-3 border rounded-xl bg-card text-xs space-y-2">
+                            <div className="flex justify-between items-baseline font-bold flex-wrap gap-2">
+                              <span className="text-foreground font-black">Dispute Case ID: {d.id}</span>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border uppercase ${
+                                d.status === 'resolved_payout' || d.status === 'resolved_refund' || d.status === 'resolved_split' ? 'bg-green-500/10 text-green-700 border-green-500/20' :
+                                'bg-red-500/10 text-red-700 border-red-500/20'
+                              }`}>{d.status}</span>
+                            </div>
+                            <p className="font-bold text-foreground">Complaint: <span className="font-semibold text-muted-foreground italic">"{d.description}"</span></p>
+                            <div className="text-[10px] text-muted-foreground font-bold">
+                              Raised By (User UUID): {d.raised_by} | Raised: {new Date(d.created_at).toLocaleString('en-AU')}
+                            </div>
+                            {d.resolved_at && (
+                              <div className="text-[10px] text-muted-foreground font-bold">
+                                Resolved At: {new Date(d.resolved_at).toLocaleString('en-AU')} | Resolved By (Admin UUID): {d.resolved_by || 'N/A'}
+                              </div>
+                            )}
+                            {d.admin_notes && (
+                              <div className="mt-2 p-2 bg-muted/20 border border-border rounded-lg text-[11px]">
+                                <span className="font-bold text-primary block mb-0.5">Admin Findings &amp; Rationale:</span>
+                                <p className="font-medium text-foreground whitespace-pre-wrap">{d.admin_notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No dispute complaint records found.</p>
+                    )}
+                  </div>
+
+                  {/* 9. Chronological Timeline */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Chronological Timeline events</h4>
+                    {evidencePack.timeline && evidencePack.timeline.length > 0 ? (
+                      <div className="relative pl-4 border-l border-border ml-2 space-y-4 py-1">
+                        {evidencePack.timeline.map((event: any) => (
+                          <div key={event.event_id} className="relative group text-xs">
+                            <div className="absolute -left-[21px] top-1 h-2 w-2 rounded-full border border-primary bg-background shadow-sm" />
+                            <div className="space-y-0.5">
+                              <div className="flex flex-wrap items-baseline gap-x-2">
+                                <span className="font-bold text-foreground">{event.event_label}</span>
+                                {event.amount !== null && event.amount !== undefined && (
+                                  <span className="text-[10px] font-black text-primary">
+                                    {event.amount.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })}
+                                  </span>
+                                )}
+                                {event.status && (
+                                  <span className={`uppercase text-[8px] px-1.5 py-0.5 rounded font-black border ${
+                                    event.status === 'pending' || event.status === 'open' ? 'bg-amber-500/10 text-amber-800 border-amber-500/30' :
+                                    ['approved', 'released', 'resolved_payout', 'resolved_refund', 'resolved_split'].includes(event.status) ? 'bg-green-500/10 text-green-800 border-green-500/30' :
+                                    'bg-red-500/10 text-red-800 border-red-500/30'
+                                  }`}>
+                                    {event.status}
+                                  </span>
+                                )}
+                              </div>
+                              {event.event_description && (
+                                <p className="text-[11px] text-foreground/75 font-medium leading-relaxed">
+                                  {event.event_description}
+                                </p>
+                              )}
+                              <span className="text-[9px] text-muted-foreground block font-bold">
+                                {new Date(event.occurred_at).toLocaleString('en-AU')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No chronological timeline events logged for this job yet.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t bg-muted/10 flex justify-end gap-3">
+              <button
+                onClick={() => setShowEvidencePack(false)}
+                className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black px-5 py-2.5 rounded-xl text-sm transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

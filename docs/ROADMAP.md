@@ -764,7 +764,7 @@ Status: **Implementation complete / pushed. Live SQL has been run.**
 
 # Phase 6 Chunk L — Job Evidence Timeline
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL has been run.**
 
 * [x] Create database migration to collect chronological job lifecycle, quote, payment, early release, variation, and invoice events.
 * [x] Verify permissions securely: check caller is customer, contracted tradie, or admin.
@@ -773,11 +773,11 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
-# Phase 6 Chunk M — Admin Evidence Pack (upcoming)
+# Phase 6 Chunk M — Admin Evidence Pack
 
-Status: **Upcoming**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Add admin export and evidence pack generation for disputes/admin review.
+* [x] Add admin export and evidence pack generation for disputes/admin review.
 
 ---
 

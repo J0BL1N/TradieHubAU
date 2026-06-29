@@ -312,3 +312,12 @@ export async function getDisputeJob(jobId: string) {
   return { data, error };
 }
 
+/**
+ * Fetches the complete admin job evidence pack for a given job.
+ */
+export async function getAdminJobEvidencePack(jobId: string) {
+  const { data, error } = await supabase.rpc('get_admin_job_evidence_pack', {
+    p_job_id: jobId
+  });
+  return { data: data || null, error };
+}
