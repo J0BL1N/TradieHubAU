@@ -298,6 +298,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Polish Completed Work Controls | `2cacf93` | Wired Publish/Hide to autosave immediately, removed redundant Save, and made summary and preview controls more compact. |
 | 2026-06-30 | Profile Verification Tab Redesign | `fcd3d39` | Redesigned the Verification tab into wider sectioned cards/rows for identity and tradie credentials, fixing cramped credential layout while preserving upload/recheck behavior. |
 | 2026-06-30 | Profile Verification Checklist Polish | `7e81d9f` | Replaced bulky verification document cards with compact checklist rows, fixed text overlap/overflow, and expanded upload controls only for documents needing action. |
+| 2026-06-30 | Profile Verification Summary Polish | `cee113f` | Replaced the two-card verification summary with one compact status banner connected to the checklist rows. |
 
 ### Migrations / Deployments
 
@@ -534,6 +535,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Summary | Replaced bulky verification document cards with compact checklist rows. We hide upload controls for approved and pending documents, fixed text overlap/overflow, and only expand upload fields and alerts for documents needing action. |
 | Verification row layouts | - Approved and pending documents show check/status icons (green check or amber clock), document titles, and helpers in a neat row. <br> - Documents needing action (recheck, expired, revoked, rejected, none) display inline expanded forms with warning messages and choose-file/submit controls. <br> - Muted optional badges on Trade Certificates to distinguish them from required actions. |
 | Overflow fixes | Utilized wrapping text structures (`break-words`), inline block alerts, and flexible layout parameters to prevent badge and label overlaps on smaller screens. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+
+### Profile Verification Summary Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Profile Verification Tab Summary Polish |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md`. |
+| Summary | Replaced the two separate verification summary cards with a single unified status banner. Connects the status overview and next action directly to the checklist sections using a clean responsive layout with progress chips. |
+| Banner details | - Unified Title and body text inside a single card container with check/warning status icons. <br> - Includes an optional success helper line ("You're ready to quote...") when verification is complete. <br> - Renders compact progress chips for Photo ID, Liveness, and Credentials on the right-hand side. <br> - Adapts seamlessly to vertical stack on mobile viewports. |
 | Migrations required | None. |
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |

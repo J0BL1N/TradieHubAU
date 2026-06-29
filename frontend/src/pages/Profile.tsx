@@ -1059,56 +1059,47 @@ export default function Profile() {
     };
   })();
 
+  const isVerificationComplete = nextVerificationAction.title === 'Verification complete';
+
   const compactVerificationDashboard = (
     <div className="space-y-6">
-      {/* 1. Top Summary Row */}
-      <div className="grid gap-5 xl:grid-cols-2">
-        <section className="rounded-3xl border bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-black text-foreground">Verification Status Overview</h3>
-              <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
-                Current review state for required verification documents.
+      {/* 1. Top Summary Banner */}
+      <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 rounded-3xl border bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-4 min-w-0">
+          {isVerificationComplete ? (
+            <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+          )}
+          <div className="min-w-0">
+            <h3 className="text-sm font-black text-foreground break-words">{nextVerificationAction.title}</h3>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground break-words">{nextVerificationAction.body}</p>
+            {isVerificationComplete && (
+              <p className="mt-2 text-[10px] font-black text-green-600 uppercase tracking-wider">
+                {targetProfile.role === 'customer' ? "Verified to use TradieHubAU" : "You’re ready to quote on eligible jobs"}
               </p>
-            </div>
-            <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border bg-muted/10 p-3 flex flex-col justify-between">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Photo ID</p>
-              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2 py-0.5 rounded-full border w-fit ${getStatusClass(effectiveIdVerificationStatus)}`}>
-                {getStatusLabel(effectiveIdVerificationStatus)}
-              </span>
-            </div>
-            <div className="rounded-2xl border bg-muted/10 p-3 flex flex-col justify-between">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Liveness</p>
-              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border w-fit ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
-                {getStatusLabel(effectiveLivenessVerificationStatus)}
-              </span>
-            </div>
-            <div className="rounded-2xl border bg-muted/10 p-3 flex flex-col justify-between">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Credentials</p>
-              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border w-fit ${getStatusClass(tradieVerificationStatus)}`}>
-                {getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border bg-card p-5 shadow-sm flex flex-col justify-center">
-          <div className="flex items-start gap-3">
-            {nextVerificationAction.title === 'Verification complete' ? (
-              <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
-            ) : (
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             )}
-            <div className="min-w-0">
-              <h3 className="text-sm font-black text-foreground break-words">{nextVerificationAction.title}</h3>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-muted-foreground break-words">{nextVerificationAction.body}</p>
-            </div>
           </div>
-        </section>
-      </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 items-center lg:justify-end shrink-0 border-t lg:border-t-0 pt-4 lg:pt-0 border-border/60">
+          <div className="flex items-center gap-1.5 rounded-xl border bg-muted/10 px-3 py-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${effectiveIdVerificationStatus === 'approved' ? 'bg-green-500' : effectiveIdVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-muted-foreground/30'}`}></span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Photo ID:</span>
+            <span className={`text-[10px] font-black uppercase ${effectiveIdVerificationStatus === 'approved' ? 'text-green-600' : effectiveIdVerificationStatus === 'pending' ? 'text-amber-700' : 'text-muted-foreground'}`}>{getStatusLabel(effectiveIdVerificationStatus)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl border bg-muted/10 px-3 py-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${effectiveLivenessVerificationStatus === 'approved' ? 'bg-green-500' : effectiveLivenessVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-muted-foreground/30'}`}></span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Liveness:</span>
+            <span className={`text-[10px] font-black uppercase ${effectiveLivenessVerificationStatus === 'approved' ? 'text-green-600' : effectiveLivenessVerificationStatus === 'pending' ? 'text-amber-700' : 'text-muted-foreground'}`}>{getStatusLabel(effectiveLivenessVerificationStatus)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl border bg-muted/10 px-3 py-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${tradieVerificationStatus === 'approved' ? 'bg-green-500' : tradieVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-muted-foreground/30'}`}></span>
+            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Credentials:</span>
+            <span className={`text-[10px] font-black uppercase ${tradieVerificationStatus === 'approved' ? 'text-green-600' : tradieVerificationStatus === 'pending' ? 'text-amber-700' : 'text-muted-foreground'}`}>{getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}</span>
+          </div>
+        </div>
+      </section>
 
       {/* 2. Identity Verification Section */}
       <div className="space-y-3">
