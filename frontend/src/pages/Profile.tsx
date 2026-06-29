@@ -49,6 +49,7 @@ interface UserReview {
 }
 
 type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'revoked' | 'recheck' | 'expired' | 'requested_more_info';
+type ProfileTab = 'account' | 'verification' | 'tradie-profile' | 'completed-work';
 
 interface VerificationSummary {
   document_type: string;
@@ -127,6 +128,7 @@ export default function Profile() {
   const targetId = isSelf ? user?.id : id;
 
   const [targetProfile, setTargetProfile] = useState<UserProfile | null>(null);
+  const [activeProfileTab, setActiveProfileTab] = useState<ProfileTab>('account');
   const [profileLoading, setProfileLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -860,6 +862,123 @@ export default function Profile() {
   // Average review calculation
   const totalReviews = reviews.length;
   const averageRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) : null;
+  const profileTabs: Array<{ id: ProfileTab; label: string }> = [
+    { id: 'account', label: 'Account' },
+    { id: 'verification', label: 'Verification' },
+    ...(targetProfile.role !== 'customer'
+      ? [
+          { id: 'tradie-profile' as ProfileTab, label: 'Tradie Profile' },
+          { id: 'completed-work' as ProfileTab, label: 'Completed Work' },
+        ]
+      : []),
+  ];
+
+  const tradieCredentialPanel = targetProfile.role !== 'customer' ? (
+    <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
+      <div className="border-b pb-4">
+        <h3 className="text-xl font-bold text-foreground">Tradie Credential Uploads</h3>
+        <p className="text-xs text-muted-foreground mt-1">
+          Submit contractor licences, insurance, and supporting trade credentials for admin review.
+        </p>
+      </div>
+
+      {currentTradieVerified && !['recheck', 'expired', 'rejected', 'revoked', 'requested_more_info'].includes(tradieVerificationStatus) ? (
+        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
+          <div>
+            <p className="font-bold">Tradie Profile Approved</p>
+            <p className="mt-0.5 font-medium text-green-600/90 leading-relaxed">
+              Your professional credentials have been reviewed, whitelisted, and approved by TradieHubAU admins.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {['recheck', 'requested_more_info'].includes(tradieVerificationStatus) && (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2">
+              <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Credential Action Required</p>
+                <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                  An administrator has requested updated trade credential information. Please upload the current document requested below.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {['expired', 'rejected', 'revoked'].includes(tradieVerificationStatus) && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
+              <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Credential Replacement Required</p>
+                <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                  Your previous trade credential is not currently accepted. Please upload a current replacement document.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {uploadSuccess && (
+            <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold">
+              Document uploaded and submitted to review queue successfully!
+            </div>
+          )}
+
+          {uploadError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold">
+              {uploadError}
+            </div>
+          )}
+
+          <div className="grid gap-3">
+            {TRADIE_DOCUMENT_CARDS.map((doc) => {
+              const status = getDocumentStatus(doc.type);
+              const selectedFile = tradieFiles[doc.type];
+              return (
+                <div key={doc.type} className="rounded-2xl border bg-muted/10 p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div>
+                      <h6 className="text-sm font-black text-foreground">{doc.title}</h6>
+                      <p className="text-xs text-muted-foreground font-semibold mt-0.5">{doc.helper}</p>
+                    </div>
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(status)}`}>
+                      {getStatusLabel(status, doc.required)}
+                    </span>
+                  </div>
+
+                  {selectedFile && (
+                    <p className="text-xs font-bold text-muted-foreground">{selectedFile.name}</p>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <label className="inline-flex flex-1 items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                      <Upload className="h-4 w-4" /> Choose File
+                      <input
+                        type="file"
+                        onChange={(e) => setTradieCardFile(doc.type, e.target.files?.[0] || null)}
+                        disabled={uploadingDoc}
+                        className="hidden"
+                        accept="image/*,application/pdf"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void handleApplyAsTradie(undefined, doc.type, selectedFile || null)}
+                      disabled={uploadingDoc || !selectedFile}
+                      className="inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                    >
+                      {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                      Submit Document
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  ) : null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -1009,9 +1128,31 @@ export default function Profile() {
           {isSelf ? (
             /* Settings View (Self) */
             <div className="space-y-8">
+              <div className="bg-card border rounded-3xl p-2 shadow-sm overflow-x-auto">
+                <div className="flex min-w-max gap-1">
+                  {profileTabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveProfileTab(tab.id)}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
+                        activeProfileTab === tab.id
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {(activeProfileTab === 'account' || activeProfileTab === 'tradie-profile') && (
               <form onSubmit={handleSaveProfile} className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
               <div className="flex items-center justify-between border-b pb-4">
-                <h3 className="text-xl font-bold text-foreground">Personal Profile Settings</h3>
+                <h3 className="text-xl font-bold text-foreground">
+                  {activeProfileTab === 'account' ? 'Account Settings' : 'Tradie Profile Settings'}
+                </h3>
                 <button
                   type="submit"
                   disabled={saveLoading}
@@ -1036,6 +1177,8 @@ export default function Profile() {
                 </div>
               )}
 
+              {activeProfileTab === 'account' && (
+              <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-foreground uppercase tracking-wider">Display Name</label>
@@ -1121,11 +1264,13 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
+              </>
+              )}
 
               {/* Tradie specific section */}
-              {targetProfile.role !== 'customer' && (
+              {targetProfile.role !== 'customer' && activeProfileTab === 'tradie-profile' && (
                 <div className="space-y-6 border-t pt-5">
-                  <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Tradie Settings</h4>
+                  <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Tradie Profile</h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-2">
@@ -1243,7 +1388,7 @@ export default function Profile() {
                   </div>
 
                   {/* Verification document status / uploads */}
-                  {currentTradieVerified && !['recheck', 'expired', 'rejected'].includes(tradieVerificationStatus) ? (
+                  {true ? null : currentTradieVerified && !['recheck', 'expired', 'rejected'].includes(tradieVerificationStatus) ? (
                     <div className="space-y-4 border-t pt-5">
                       <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-2">
                         <ShieldCheck className="h-5 w-5 shrink-0 text-green-500" />
@@ -1348,8 +1493,11 @@ export default function Profile() {
                 </div>
               )}
             </form>
+              )}
 
             {/* Verification Status Summary Card */}
+            {activeProfileTab === 'verification' && (
+            <>
             <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
               <div className="border-b pb-4">
@@ -1864,7 +2012,11 @@ export default function Profile() {
               </div>
             )}
 
-            {targetProfile.role !== 'customer' && (
+            {targetProfile.role !== 'customer' && tradieCredentialPanel}
+            </>
+            )}
+
+            {targetProfile.role !== 'customer' && activeProfileTab === 'completed-work' && (
               <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
                 <div className="border-b pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
