@@ -301,7 +301,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 2026-06-30 | Profile Verification Summary Polish | `cd986ed` | Replaced the two-card verification summary with one compact status banner connected to the checklist rows. |
 | 2026-06-30 | Profile Verification Summary Layout Hotfix | `f462e9f` | Fixed top verification summary text collapsing vertically by correcting flex/grid sizing and chip wrapping. |
 | 2026-06-30 | Admin Credential Recheck Controls | `fda4e11` | Audited/fixed admin recheck controls so licence, insurance, and trade certificate credentials can be individually requested for recheck/resubmission. |
-| 2026-06-30 | Profile Verification Summary Emergency Hotfix | `4350d4d` | Fixed summary banner text collapse by replacing fragile layout with stable block/grid structure. |
+| 2026-06-30 | Profile Verification Summary Emergency Hotfix | `a1a41d8` | Fixed summary banner text collapse by replacing fragile layout with stable block/grid structure. |
 
 ### Migrations / Deployments
 
