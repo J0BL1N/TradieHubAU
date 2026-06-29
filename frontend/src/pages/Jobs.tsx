@@ -13,6 +13,12 @@ import {
 } from '../lib/applications';
 import type { Application, QuoteLineItem, AcceptedQuoteLineItem } from '../lib/applications';
 import { toggleSavedItem, getSavedItemIds } from '../lib/saved';
+import {
+  fetchEarlyReleaseRequestsForJob,
+  createEarlyReleaseRequest,
+  cancelEarlyReleaseRequest
+} from '../lib/earlyReleases';
+import type { EarlyReleaseRequest, EarlyReleaseRequestPayload } from '../lib/earlyReleases';
 import { useAuth } from '../components/AuthProvider';
 import {
   Search, MapPin, DollarSign, Briefcase, AlertTriangle,
@@ -572,6 +578,76 @@ export default function Jobs() {
     }
   };
 
+  const handleCreateEarlyReleaseRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedJob || !user) return;
+
+    const amt = parseFloat(erAmount);
+    if (isNaN(amt) || amt <= 0) {
+      showToast("Please enter a valid, positive amount.", 'error');
+      return;
+    }
+
+    if (!erTitle.trim()) {
+      showToast("Request title is required.", 'error');
+      return;
+    }
+
+    const app = myApplications.get(selectedJob.id);
+    if (!app || app.status !== 'accepted') {
+      showToast("Cannot create request: accepted application not found.", 'error');
+      return;
+    }
+
+    setIsSubmittingEr(true);
+    try {
+      const payload: EarlyReleaseRequestPayload = {
+        job_id: selectedJob.id,
+        application_id: app.id,
+        tradie_id: user.id,
+        customer_id: selectedJob.customer_id,
+        accepted_quote_line_item_id: erSelectedLineId || null,
+        request_type: erRequestType,
+        title: erTitle.trim(),
+        description: erDescription.trim() || undefined,
+        amount: amt
+      };
+
+      const { error } = await createEarlyReleaseRequest(payload);
+      if (error) throw error;
+
+      showToast("Early release request submitted successfully.", 'success');
+      setErTitle('');
+      setErAmount('');
+      setErDescription('');
+      setErSelectedLineId('');
+      setShowErForm(false);
+
+      const { data: erRequests } = await fetchEarlyReleaseRequestsForJob(selectedJob.id);
+      setEarlyReleaseRequests(erRequests || []);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to submit early release request.', 'error');
+    } finally {
+      setIsSubmittingEr(false);
+    }
+  };
+
+  const handleCancelEarlyReleaseRequest = async (requestId: string) => {
+    if (!selectedJob) return;
+    if (!confirm("Are you sure you want to cancel this early release request?")) return;
+
+    try {
+      const { error } = await cancelEarlyReleaseRequest(requestId);
+      if (error) throw error;
+
+      showToast("Early release request cancelled.", 'success');
+      const { data: erRequests } = await fetchEarlyReleaseRequestsForJob(selectedJob.id);
+      setEarlyReleaseRequests(erRequests || []);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to cancel request.', 'error');
+    }
+  };
+
   // Applications: map of job_id → Application (for jobs the user has applied to)
   const [myApplications, setMyApplications] = useState<Map<string, Application>>(new Map());
 
@@ -581,6 +657,19 @@ export default function Jobs() {
   // Accepted quote line items for the active contract
   const [acceptedQuoteLines, setAcceptedQuoteLines] = useState<AcceptedQuoteLineItem[]>([]);
   const [loadingAcceptedLines, setLoadingAcceptedLines] = useState(false);
+
+  // Early release requests state
+  const [earlyReleaseRequests, setEarlyReleaseRequests] = useState<EarlyReleaseRequest[]>([]);
+  const [loadingEarlyReleases, setLoadingEarlyReleases] = useState(false);
+
+  // Early release form state
+  const [erRequestType, setErRequestType] = useState<'materials' | 'fuel' | 'mobilisation' | 'permit' | 'equipment' | 'other'>('materials');
+  const [erTitle, setErTitle] = useState('');
+  const [erAmount, setErAmount] = useState('');
+  const [erDescription, setErDescription] = useState('');
+  const [erSelectedLineId, setErSelectedLineId] = useState<string>('');
+  const [isSubmittingEr, setIsSubmittingEr] = useState(false);
+  const [showErForm, setShowErForm] = useState(false);
 
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -729,8 +818,14 @@ export default function Jobs() {
         const { data: accLines } = await fetchAcceptedQuoteLineItemsByJobIds([jobId]);
         setAcceptedQuoteLines(accLines || []);
         setLoadingAcceptedLines(false);
+
+        setLoadingEarlyReleases(true);
+        const { data: erRequests } = await fetchEarlyReleaseRequestsForJob(jobId);
+        setEarlyReleaseRequests(erRequests || []);
+        setLoadingEarlyReleases(false);
       } else {
         setAcceptedQuoteLines([]);
+        setEarlyReleaseRequests([]);
       }
     } catch (err: any) {
       setLifecycleError(err.message || 'Failed to load details.');
@@ -2331,9 +2426,12 @@ export default function Jobs() {
                       })()}
 
                       {/* 1. Protected Payment Status Bar / Steps */}
-                      {selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (
-                        <div className="space-y-4">
-                          <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
+                      {selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (() => {
+                        const isCustomerOwner = selectedJob.customer_id === user?.id;
+                        const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
+                        return (
+                          <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
 
                           <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold">
                             <div className={`p-2 rounded-xl border ${['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
@@ -2550,8 +2648,217 @@ export default function Jobs() {
                               </p>
                             )}
                           </div>
+
+                          {/* Early Release Requests Section */}
+                          {(isCustomerOwner || isContractedTradie || profile?.is_admin) && (
+                            <div className="p-4 bg-muted/30 border rounded-2xl space-y-3 text-sm">
+                              <div className="flex justify-between items-center border-b pb-1">
+                                <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block font-black">
+                                  Early Release Requests
+                                </span>
+                                {isContractedTradie && !showErForm && (
+                                  <button
+                                    onClick={() => setShowErForm(true)}
+                                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                                  >
+                                    <Plus className="h-3 w-3" /> Request Release
+                                  </button>
+                                )}
+                              </div>
+
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Request an early release for approved materials, fuel, or mobilisation. The customer must approve this before any funds can be released.
+                              </p>
+
+                              {/* Form for Tradie */}
+                              {isContractedTradie && showErForm && (
+                                <form onSubmit={handleCreateEarlyReleaseRequest} className="bg-background border p-3 rounded-xl space-y-3 border-border/60">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-foreground">New Release Request</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowErForm(false)}
+                                      className="text-xs text-muted-foreground hover:text-foreground font-semibold"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Type</label>
+                                      <select
+                                        value={erRequestType}
+                                        onChange={(e: any) => setErRequestType(e.target.value)}
+                                        className="w-full bg-muted/50 border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-semibold font-black"
+                                      >
+                                        <option value="materials">Materials</option>
+                                        <option value="fuel">Fuel</option>
+                                        <option value="mobilisation">Mobilisation</option>
+                                        <option value="permit">Permit</option>
+                                        <option value="equipment">Equipment</option>
+                                        <option value="other">Other</option>
+                                      </select>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Amount ($ AUD)</label>
+                                      <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        step="0.01"
+                                        min="0.01"
+                                        required
+                                        value={erAmount}
+                                        onChange={(e) => setErAmount(e.target.value)}
+                                        className="w-full bg-muted/50 border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Title</label>
+                                    <input
+                                      type="text"
+                                      placeholder="e.g., Copper piping for bathroom"
+                                      required
+                                      value={erTitle}
+                                      onChange={(e) => setErTitle(e.target.value)}
+                                      className="w-full bg-muted/50 border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Description (Optional)</label>
+                                    <textarea
+                                      placeholder="Additional context about this request..."
+                                      rows={2}
+                                      value={erDescription}
+                                      onChange={(e) => setErDescription(e.target.value)}
+                                      className="w-full bg-muted/50 border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-semibold resize-none"
+                                    />
+                                  </div>
+
+                                  {/* Linked Quote Line Selector */}
+                                  {acceptedQuoteLines.length > 0 && (
+                                    <div className="space-y-1">
+                                      <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Link to Quote Line (Optional)</label>
+                                      <select
+                                        value={erSelectedLineId}
+                                        onChange={(e) => setErSelectedLineId(e.target.value)}
+                                        className="w-full bg-muted/50 border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
+                                      >
+                                        <option value="">-- No link (unlisted line or legacy job) --</option>
+                                        {acceptedQuoteLines.map((line) => (
+                                          <option key={line.id} value={line.id}>
+                                            {line.label} ({line.line_type} - ${line.line_total.toLocaleString()})
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  )}
+
+                                  <button
+                                    type="submit"
+                                    disabled={isSubmittingEr}
+                                    className="w-full bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg hover:bg-primary/95 transition-all shadow-sm flex justify-center items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {isSubmittingEr ? (
+                                      <>
+                                        <Loader2 className="h-3 w-3 animate-spin" /> Submitting...
+                                      </>
+                                    ) : (
+                                      <>Submit Release Request</>
+                                    )}
+                                  </button>
+                                </form>
+                              )}
+
+                              {/* Requests List */}
+                              <div className="space-y-2 mt-2">
+                                {loadingEarlyReleases ? (
+                                  <div className="flex justify-center py-4">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                  </div>
+                                ) : earlyReleaseRequests.length > 0 ? (
+                                  earlyReleaseRequests.map((req) => {
+                                    const linkedLine = acceptedQuoteLines.find(line => line.id === req.accepted_quote_line_item_id);
+                                    return (
+                                      <div key={req.id} className="bg-background border p-3 rounded-xl space-y-2 border-border/50">
+                                        <div className="flex justify-between items-start">
+                                          <div>
+                                            <span className="text-xs font-bold text-foreground block">{req.title}</span>
+                                            <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                                              Type: {req.request_type}
+                                            </span>
+                                            {linkedLine && (
+                                              <span className="text-[9px] text-primary/80 font-bold block mt-0.5">
+                                                Linked Line: {linkedLine.label}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="text-right">
+                                            <span className="text-xs font-black text-foreground block font-black">
+                                              ${req.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                            <span className={`inline-block uppercase text-[8px] px-1.5 py-0.5 rounded font-black border mt-1 ${
+                                              req.status === 'pending' ? 'bg-amber-500/10 text-amber-800 border-amber-500/30' :
+                                              req.status === 'approved' ? 'bg-green-500/10 text-green-800 border-green-500/30' :
+                                              req.status === 'rejected' ? 'bg-red-500/10 text-red-800 border-red-500/30' : 'bg-secondary text-secondary-foreground border-transparent'
+                                            }`}>
+                                              {req.status}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {req.description && (
+                                          <p className="text-[11px] text-foreground/75 italic bg-muted/10 p-1.5 rounded-lg border border-dashed border-border/40 leading-relaxed font-medium">
+                                            {req.description}
+                                          </p>
+                                        )}
+
+                                        {req.review_note && (
+                                          <div className="text-[10px] bg-muted/40 p-2 rounded-lg border border-border/50 font-medium">
+                                            <span className="font-bold text-foreground/90 block">Review Note:</span>
+                                            <span className="text-foreground/70">{req.review_note}</span>
+                                          </div>
+                                        )}
+
+                                        {/* Cancel Action for Tradie */}
+                                        {isContractedTradie && req.status === 'pending' && (
+                                          <div className="flex justify-end pt-1">
+                                            <button
+                                              onClick={() => handleCancelEarlyReleaseRequest(req.id)}
+                                              className="text-[10px] text-red-600 hover:text-red-700 font-bold flex items-center gap-0.5"
+                                            >
+                                              <X className="h-3 w-3" /> Cancel Request
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })
+                                ) : (
+                                  <p className="text-xs text-muted-foreground italic">No early release requests submitted yet.</p>
+                                )}
+                              </div>
+
+                              {/* Customer Banner Placeholder for Chunk H */}
+                              {isCustomerOwner && (
+                                <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-1 mt-2">
+                                  <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                                    <AlertCircle className="h-4 w-4 text-primary" /> Approval System Notice
+                                  </span>
+                                  <p className="text-[11px] text-foreground/75 leading-relaxed font-medium">
+                                    Customer approval controls will be added in the next chunk. You will be able to review, approve, or reject these requests dynamically here.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      );
+                    })()}
 
                       {/* 2. Customer Actions: Quote Selection */}
                       {selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (

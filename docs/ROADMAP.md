@@ -686,6 +686,32 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
+# Phase 3 Chunk F — Early Release Request Foundation
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Create early_release_requests table, validation triggers, and RLS policies.
+* [x] Create frontend helpers and UI for tradies to submit and cancel requests.
+* [x] Render requested releases for customers with a notice of upcoming approval controls.
+
+---
+
+# Phase 3 Chunk G — Early Release Caps (upcoming)
+
+Status: **Upcoming**
+
+* [ ] Enforce release caps so total approved early releases cannot exceed set limits.
+
+---
+
+# Phase 3 Chunk H — Customer Approval Modal (upcoming)
+
+Status: **Upcoming**
+
+* [ ] Build customer approval/rejection modal for early release requests.
+
+---
+
 # v0.6.x — Reviews and Reputation
 
 * [ ] Add post-completion customer review

@@ -281,6 +281,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 16:15:00 | Homepage Polish | `bc9a960` | Polished the hero area, improved category icon contrast, loaded real verified tradies (weekly seeded randomization), and loaded real open jobs with deep linking. |
 | 17:45:00 | Homepage Category Icon Polish | `6ccb00c` | Refined the Popular Categories icon styling and colors to alternate between crisp navy and orange accents, resolving mud/low-contrast badge issues. |
 | 18:30:00 | Phase 2 / Chunk E — Lock Accepted Quote Lines | `0b5f9f6` | Snapshotted accepted quote line items into an immutable table upon acceptance, locked original quote lines from edit/delete after pending status, and rendered breakdowns. |
+| 19:15:00 | Phase 3 / Chunk F — Early Release Request Foundation | `1d8cf68` | Created the early release request database schema, RLS policies, context-matching insert triggers, resolved update locks, and implemented tradie request forms and customer tracking displays. |
 
 ### Migrations / Deployments
 
@@ -288,6 +289,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | --- | --- | --- |
 | `066_add_quote_line_items.sql` | Created | Creates the quote_line_items table, CHECK constraints for positive quantities and non-negative prices, and RLS policies for tradies/customers/admins. |
 | `067_lock_accepted_quote_lines.sql` | Created | Creates the accepted_quote_line_items table, trigger to copy snapshots upon status='accepted', and validation trigger to prevent modifying lines once status is not 'pending'. |
+| `068_early_release_requests.sql` | Created | Creates early_release_requests table, validation triggers, and RLS policies to allow tradie requests and customer/admin views on active jobs. |
 
 ### Privacy Notes
 - **Verified Tradies**: The homepage utilizes only the public-safe database fields (`display_name`, `business_name`, `avatar_url`, `suburb`, `state`, `trades`, and verified indicators). No private contact information, documents, or personal records are exposed.
