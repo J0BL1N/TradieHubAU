@@ -136,8 +136,8 @@ export function ProtectedPaymentExplainer() {
     <InfoPage
       icon={<CircleDollarSign className="h-4 w-4" />}
       badge="Payment Protection"
-      title="How Protected Payment Works in the Local MVP"
-      intro="The current flow demonstrates secure job payment states without moving real money."
+      title="Protected Payments"
+      intro="See how TradieHubAU uses protected-payment workflow states to help customers and tradies complete jobs with clearer records, proof, and dispute support."
       sections={[
         {
           title: 'Current simulated flow',
