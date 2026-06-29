@@ -980,6 +980,316 @@ export default function Profile() {
     </div>
   ) : null;
 
+  const actionStatuses: VerificationStatus[] = ['none', 'recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'];
+  const requiredCredentialStatuses = TRADIE_DOCUMENT_CARDS
+    .filter(doc => doc.required)
+    .map(doc => getDocumentStatus(doc.type));
+  const credentialsNeedAction =
+    targetProfile.role !== 'customer' &&
+    (actionStatuses.includes(tradieVerificationStatus) || requiredCredentialStatuses.some(status => actionStatuses.includes(status)));
+  const nextVerificationAction = (() => {
+    if (actionStatuses.includes(effectiveIdVerificationStatus)) {
+      return {
+        title: 'Photo ID action required',
+        body: effectiveIdVerificationStatus === 'none'
+          ? 'Upload a clear photo ID document to start identity verification.'
+          : 'Your current photo ID status needs attention. Upload a replacement document from the Photo ID card below.',
+      };
+    }
+    if (actionStatuses.includes(effectiveLivenessVerificationStatus)) {
+      return {
+        title: 'Liveness selfie action required',
+        body: effectiveLivenessVerificationStatus === 'none'
+          ? 'Upload a liveness selfie to complete the identity check.'
+          : 'Your liveness selfie status needs attention. Upload a replacement selfie from the Liveness Selfie card below.',
+      };
+    }
+    if (credentialsNeedAction) {
+      return {
+        title: 'Credentials action required',
+        body: 'Upload the required licence and insurance documents so admin review can continue.',
+      };
+    }
+    if (
+      effectiveIdVerificationStatus === 'pending' ||
+      effectiveLivenessVerificationStatus === 'pending' ||
+      tradieVerificationStatus === 'pending'
+    ) {
+      return {
+        title: 'Review in progress',
+        body: 'Your submitted verification material is waiting for admin review.',
+      };
+    }
+    return {
+      title: 'Verification complete',
+      body: targetProfile.role === 'customer'
+        ? 'Your current customer identity checks are complete.'
+        : 'Your current identity and tradie credential checks are complete.',
+    };
+  })();
+
+  const compactVerificationDashboard = (
+    <div className="space-y-5">
+      <div className="grid gap-5 xl:grid-cols-2">
+        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black text-foreground">Verification Status Overview</h3>
+              <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
+                Current review state for the documents needed on your account.
+              </p>
+            </div>
+            <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border bg-muted/10 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Photo ID</p>
+              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(effectiveIdVerificationStatus)}`}>
+                {getStatusLabel(effectiveIdVerificationStatus)}
+              </span>
+            </div>
+            <div className="rounded-2xl border bg-muted/10 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Liveness</p>
+              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
+                {getStatusLabel(effectiveLivenessVerificationStatus)}
+              </span>
+            </div>
+            <div className="rounded-2xl border bg-muted/10 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Credentials</p>
+              <span className={`mt-2 inline-flex text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusClass(tradieVerificationStatus)}`}>
+                {getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            {nextVerificationAction.title === 'Verification complete' ? (
+              <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
+            ) : (
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            )}
+            <div>
+              <h3 className="text-lg font-black text-foreground">{nextVerificationAction.title}</h3>
+              <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{nextVerificationAction.body}</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-3">
+        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-black text-foreground">Photo ID</h3>
+              <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">{IDENTITY_DOCUMENT_CARD.helper}</p>
+            </div>
+            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(effectiveIdVerificationStatus)}`}>
+              {getStatusLabel(effectiveIdVerificationStatus)}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3 text-xs font-semibold leading-5 text-muted-foreground">
+            {effectiveIdVerificationStatus === 'approved' && (
+              <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Identity document verified.</p>
+            )}
+            {effectiveIdVerificationStatus === 'pending' && (
+              <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">Photo ID is waiting for admin review.</p>
+            )}
+            {effectiveIdVerificationStatus !== 'approved' && effectiveIdVerificationStatus !== 'pending' && (
+              <form onSubmit={handleIdentityUpload} className="space-y-3">
+                {effectiveIdVerificationStatus !== 'none' && (
+                  <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
+                    Action required. Upload a clear replacement photo ID.
+                  </p>
+                )}
+                {idUploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your ID document has been submitted for verification.</p>}
+                {idUploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{idUploadError}</p>}
+                {idFile && <p>{idFile.name}</p>}
+                <div className="grid gap-2">
+                  <label className="inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                    <Upload className="h-4 w-4" /> Choose File
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        setIdDocType(IDENTITY_DOCUMENT_CARD.type);
+                        setIdFile(e.target.files?.[0] || null);
+                      }}
+                      disabled={uploadingDoc}
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={uploadingDoc || !idFile}
+                    className="inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                  >
+                    {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Submit ID
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-black text-foreground">Liveness Selfie</h3>
+              <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
+                Upload a clear selfie holding up 4 fingers next to your face.
+              </p>
+            </div>
+            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(effectiveLivenessVerificationStatus)}`}>
+              {getStatusLabel(effectiveLivenessVerificationStatus)}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3 text-xs font-semibold leading-5 text-muted-foreground">
+            {effectiveLivenessVerificationStatus === 'approved' && (
+              <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Liveness selfie verified.</p>
+            )}
+            {effectiveLivenessVerificationStatus === 'pending' && (
+              <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">Selfie is waiting for admin review.</p>
+            )}
+            {effectiveLivenessVerificationStatus !== 'approved' && effectiveLivenessVerificationStatus !== 'pending' && (
+              <form onSubmit={handleLivenessUpload} className="space-y-3">
+                {effectiveLivenessVerificationStatus !== 'none' && (
+                  <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
+                    Action required. Upload a replacement liveness selfie.
+                  </p>
+                )}
+                {livenessUploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your selfie has been submitted for review.</p>}
+                {livenessUploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{livenessUploadError}</p>}
+                {livenessFile && <p>{livenessFile.name}</p>}
+                <div className="grid gap-2">
+                  <label className="inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                    <Camera className="h-4 w-4" /> Take / Choose Photo
+                    <input
+                      type="file"
+                      onChange={(e) => setLivenessFile(e.target.files?.[0] || null)}
+                      disabled={livenessUploading}
+                      className="hidden"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={livenessUploading || !livenessFile}
+                    className="inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                  >
+                    {livenessUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Submit Selfie
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-black text-foreground">Professional Credentials</h3>
+              <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
+                Licence, insurance, and supporting trade checks for quoting access.
+              </p>
+            </div>
+            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border w-fit ${getStatusClass(tradieVerificationStatus)}`}>
+              {getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3 text-xs font-semibold leading-5 text-muted-foreground">
+            {targetProfile.role === 'customer' && (
+              <form onSubmit={handleApplyAsTradie} className="space-y-3">
+                {uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Your credentials have been submitted for review.</p>}
+                {uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
+                <div className="grid gap-2">
+                  <input
+                    type="text"
+                    value={abn}
+                    onChange={(e) => setAbn(e.target.value)}
+                    placeholder="ABN"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
+                    disabled={tradieVerificationStatus === 'pending'}
+                  />
+                  <input
+                    type="text"
+                    value={licenseNumber}
+                    onChange={(e) => setLicenseNumber(e.target.value)}
+                    placeholder="Trade licence number"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
+                    disabled={tradieVerificationStatus === 'pending'}
+                  />
+                </div>
+              </form>
+            )}
+            {targetProfile.role !== 'customer' && currentTradieVerified && !credentialsNeedAction ? (
+              <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Professional credentials verified.</p>
+            ) : (
+              <div className="space-y-3">
+                {targetProfile.role !== 'customer' && credentialsNeedAction && (
+                  <p className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700">
+                    Action required. Upload current licence and insurance documents.
+                  </p>
+                )}
+                {targetProfile.role !== 'customer' && uploadSuccess && <p className="rounded-2xl border border-green-500/20 bg-green-500/10 p-3 text-green-600">Document uploaded and submitted to review queue successfully.</p>}
+                {targetProfile.role !== 'customer' && uploadError && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-500">{uploadError}</p>}
+                <div className="space-y-2">
+                  {TRADIE_DOCUMENT_CARDS.map((doc) => {
+                    const status = getDocumentStatus(doc.type);
+                    const selectedFile = tradieFiles[doc.type];
+                    return (
+                      <div key={doc.type} className="rounded-2xl border bg-muted/10 p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-black text-foreground">{doc.title}</p>
+                            <p className="text-[11px] leading-4 text-muted-foreground">{doc.helper}</p>
+                          </div>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border w-fit ${getStatusClass(status)}`}>
+                            {getStatusLabel(status, doc.required)}
+                          </span>
+                        </div>
+                        {selectedFile && <p>{selectedFile.name}</p>}
+                        {status !== 'approved' && status !== 'pending' && (
+                          <div className="grid gap-2">
+                            <label className="inline-flex items-center justify-center gap-2 bg-secondary text-secondary-foreground font-bold px-3 py-2 rounded-xl hover:bg-secondary/80 transition-all text-xs cursor-pointer select-none">
+                              <Upload className="h-4 w-4" /> Choose File
+                              <input
+                                type="file"
+                                onChange={(e) => setTradieCardFile(doc.type, e.target.files?.[0] || null)}
+                                disabled={uploadingDoc}
+                                className="hidden"
+                                accept="image/*,application/pdf"
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => void handleApplyAsTradie(undefined, doc.type, selectedFile || null)}
+                              disabled={uploadingDoc || !selectedFile}
+                              className="inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-3 py-2 rounded-xl hover:bg-primary/95 transition-all shadow-sm text-xs disabled:opacity-50"
+                            >
+                              {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                              Submit
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header and Back Link (Public view only) */}
@@ -1495,8 +1805,10 @@ export default function Profile() {
             </form>
               )}
 
+            {activeProfileTab === 'verification' && compactVerificationDashboard}
+
             {/* Verification Status Summary Card */}
-            {activeProfileTab === 'verification' && (
+            {false && activeProfileTab === 'verification' && (
             <>
             <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
@@ -1543,7 +1855,7 @@ export default function Profile() {
                 </div>
 
                 {/* 3. Trade Credentials */}
-                {targetProfile.role !== 'customer' && (
+                {targetProfile?.role !== 'customer' && (
                   <div className="p-4 rounded-2xl border bg-muted/5 flex flex-col justify-between space-y-3">
                     <div>
                       <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">3. Professional Credentials</h4>
@@ -1563,7 +1875,7 @@ export default function Profile() {
 
               {/* General Guidance message */}
               <div className="text-xs font-semibold leading-relaxed p-4 rounded-2xl bg-primary/5 text-primary border border-primary/10">
-                {targetProfile.role === 'customer' ? (
+                {targetProfile?.role === 'customer' ? (
                   <p>
                     {currentIdentityVerified
                       ? "✓ Your customer identity verification is complete. You are fully verified!"
@@ -1695,7 +2007,7 @@ export default function Profile() {
                       </div>
 
                       {idFile && (
-                        <p className="text-xs font-bold text-muted-foreground">{idFile.name}</p>
+                        <p className="text-xs font-bold text-muted-foreground">{idFile?.name}</p>
                       )}
 
                       <div className="flex flex-col sm:flex-row gap-2">
@@ -1825,7 +2137,7 @@ export default function Profile() {
                       </div>
 
                       {livenessFile && (
-                        <p className="text-xs font-bold text-muted-foreground">{livenessFile.name}</p>
+                        <p className="text-xs font-bold text-muted-foreground">{livenessFile?.name}</p>
                       )}
 
                       <div className="flex flex-col sm:flex-row gap-2">
@@ -1862,7 +2174,7 @@ export default function Profile() {
             </div>
 
             {/* Tradie Application Section (Only for customers) */}
-            {targetProfile.role === 'customer' && (
+            {targetProfile?.role === 'customer' && (
               <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
                 <div className="border-b pb-4">
                   <h3 className="text-xl font-bold text-foreground">Apply for Tradie Approval</h3>
@@ -2012,7 +2324,7 @@ export default function Profile() {
               </div>
             )}
 
-            {targetProfile.role !== 'customer' && tradieCredentialPanel}
+            {targetProfile?.role !== 'customer' && tradieCredentialPanel}
             </>
             )}
 
