@@ -291,6 +291,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 23:45:00 | Phase 6 / Chunk M — Admin Evidence Pack | `9bc7e5b` | Created read-only get_admin_job_evidence_pack RPC function compiling full job evidence history, frontend helper, and admin panel with markdown export. |
 | 23:59:00 | Phase 6 / Chunk N — Enforcement Actions | `3f25006` | Created admin enforcement actions table, user restriction columns, creation/resolution RPCs, and admin safety panel UI. |
 | 23:59:59 | Phase 7 / Chunk O — Tradie Risk Controls | `511f260` | Created tradie_risk_signals table, risk score calculator RPC, and admin-only risk panel UI. |
+| 23:59:59 | Security Lint Cleanup Pass | `d07a665` | Revoked PUBLIC and anon execution grants from security definer admin RPCs, internal triggers, and validations. |
 
 ### Migrations / Deployments
 
@@ -308,6 +309,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `075_admin_job_evidence_pack.sql` | Created | Creates read-only public.get_admin_job_evidence_pack function compiling job, parties, quotes, variations, early releases, payments, invoices, completion proofs, and timeline details with strict admin checks. |
 | `076_admin_enforcement_actions.sql` | Created | Creates admin enforcement actions tables, user restriction columns, RPC creation/resolution helpers, and hardens application and quote RLS policies. |
 | `077_tradie_risk_signals.sql` | Created | Creates the tradie_risk_signals table, RLS policies, and get_admin_tradie_risk_summary calculator RPC. |
+| `078_revoke_public_execute_on_definers.sql` | Created | Revokes anon and PUBLIC execution permissions from security definer admin functions, developer simulation scripts, and trigger validations. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -450,6 +452,22 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `git diff --check` result | Passed. |
 | Live Supabase action required | Apply `supabase/migrations/077_tradie_risk_signals.sql` after migration `076_admin_enforcement_actions.sql`. |
 | Commit hash after commit | `511f260` |
+
+### Security Lint Cleanup Pass
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/078_revoke_public_execute_on_definers.sql`, `docs/supabase-security-definer-rpc-audit.md`, `docs/DAILY_WORK_LOG.md`. |
+| Migration filename | `078_revoke_public_execute_on_definers.sql`. |
+| Revoked permissions summary | Revoked `anon` and `PUBLIC` execute access from all admin-only RPCs (identity/profile approval, dispute settlement, enforcement creation/resolution, risk summaries, admin analytics) and developer simulation scripts. |
+| Trigger functions execute revoked | Revoked ALL direct execution privileges (`PUBLIC`, `anon`, `authenticated`) from trigger functions and internal verification/cap/mutation validators (e.g. `protect_user_fields`, `check_and_auto_whitelist_tradie`, `check_early_release_caps`, `protect_quote_line_items`, `validate_early_release_request`, `prevent_itemised_variation_line_mutation`). |
+| Remaining warnings rationale | Documented in `docs/supabase-security-definer-rpc-audit.md`. Standard workflow functions (quote acceptance, completion approvals, messaging, variations) must remain executable by `authenticated` database sessions to process updates. They run in security definer mode to bypass direct table RLS write constraints only after validating caller identity and state transitions. |
+| `public.public_profiles` view security | Retained as security definer view (documented as intentional exception). Exposes only sanitized public fields (display name, trades, experience, verified tags) to allow guest/customer search directory, while the base `public.users` table is strictly protected by RLS. |
+| Dashboard-only settings | Added reminder that leaked password protection must be enabled in the Supabase Dashboard Authentication settings. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Apply `supabase/migrations/078_revoke_public_execute_on_definers.sql` after migration `077_tradie_risk_signals.sql`. |
+| Commit hash after commit | `d07a665` |
 
 
 ### Privacy Notes
