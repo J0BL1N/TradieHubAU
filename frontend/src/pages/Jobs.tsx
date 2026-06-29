@@ -17,7 +17,8 @@ import {
   fetchEarlyReleaseRequestsForJob,
   createEarlyReleaseRequest,
   cancelEarlyReleaseRequest,
-  fetchEarlyReleaseCapSummaryForJob
+  fetchEarlyReleaseCapSummaryForJob,
+  reviewEarlyReleaseRequest
 } from '../lib/earlyReleases';
 import type { EarlyReleaseRequest, EarlyReleaseRequestPayload, EarlyReleaseCapSummary } from '../lib/earlyReleases';
 import { useAuth } from '../components/AuthProvider';
@@ -689,6 +690,56 @@ export default function Jobs() {
     }
   };
 
+  const handleOpenEarlyReleaseReview = (request: EarlyReleaseRequest) => {
+    setReviewingEarlyRelease(request);
+    setEarlyReleaseReviewNote(request.review_note || '');
+  };
+
+  const handleReviewEarlyReleaseRequest = async (
+    decision: 'approved' | 'rejected',
+    requestOverride?: EarlyReleaseRequest
+  ) => {
+    const requestToReview = requestOverride || reviewingEarlyRelease;
+    if (!selectedJob || !requestToReview) return;
+
+    setSubmittingEarlyReleaseReview(decision);
+    try {
+      const { error } = await reviewEarlyReleaseRequest(
+        requestToReview.id,
+        decision,
+        requestOverride ? requestOverride.review_note || '' : earlyReleaseReviewNote
+      );
+      if (error) throw error;
+
+      showToast(
+        decision === 'approved'
+          ? 'Early release request approved. No funds have been released.'
+          : 'Early release request rejected.',
+        'success'
+      );
+
+      setReviewingEarlyRelease(null);
+      setEarlyReleaseReviewNote('');
+
+      const [{ data: erRequests }, { data: capSummary }] = await Promise.all([
+        fetchEarlyReleaseRequestsForJob(selectedJob.id),
+        fetchEarlyReleaseCapSummaryForJob(selectedJob.id)
+      ]);
+      setEarlyReleaseRequests(erRequests || []);
+      setEarlyReleaseCapSummary(capSummary || null);
+    } catch (err: any) {
+      const message = err.message || 'Failed to review early release request.';
+      showToast(
+        message.includes('cap')
+          ? "This request can't be approved because it would exceed the early release cap."
+          : message,
+        'error'
+      );
+    } finally {
+      setSubmittingEarlyReleaseReview(null);
+    }
+  };
+
   // Applications: map of job_id → Application (for jobs the user has applied to)
   const [myApplications, setMyApplications] = useState<Map<string, Application>>(new Map());
 
@@ -712,6 +763,9 @@ export default function Jobs() {
   const [erSelectedLineId, setErSelectedLineId] = useState<string>('');
   const [isSubmittingEr, setIsSubmittingEr] = useState(false);
   const [showErForm, setShowErForm] = useState(false);
+  const [reviewingEarlyRelease, setReviewingEarlyRelease] = useState<EarlyReleaseRequest | null>(null);
+  const [earlyReleaseReviewNote, setEarlyReleaseReviewNote] = useState('');
+  const [submittingEarlyReleaseReview, setSubmittingEarlyReleaseReview] = useState<'approved' | 'rejected' | null>(null);
 
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -726,7 +780,7 @@ export default function Jobs() {
 
   // Prevent body scroll when details or other modals are open
   useEffect(() => {
-    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob || activeInvoice) {
+    if (selectedJob || reviewModalJob || tradieReviewModalJob || completionModalJob || applyJob || activeInvoice || reviewingEarlyRelease) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -734,7 +788,7 @@ export default function Jobs() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob, activeInvoice]);
+  }, [selectedJob, reviewModalJob, tradieReviewModalJob, completionModalJob, applyJob, activeInvoice, reviewingEarlyRelease]);
 
   // Escape key close for details modal
   useEffect(() => {
@@ -818,6 +872,20 @@ export default function Jobs() {
       return Math.min(earlyReleaseCapSummary?.job_remaining ?? 0, selectedLineCap.remaining);
     }
     return earlyReleaseCapSummary?.job_remaining ?? null;
+  };
+
+  const getEarlyReleaseLineCapById = (lineId: string | null) => {
+    if (!lineId || !earlyReleaseCapSummary) return null;
+    return earlyReleaseCapSummary.line_caps.find(
+      line => line.accepted_quote_line_item_id === lineId
+    ) || null;
+  };
+
+  const getEarlyReleaseStatusLabel = (status: EarlyReleaseRequest['status']) => {
+    if (status === 'pending') return 'Pending customer review';
+    if (status === 'approved') return 'Approved by customer';
+    if (status === 'rejected') return 'Rejected by customer';
+    return 'Cancelled';
   };
 
   const fetchJobLifecycleDetails = useCallback(async (jobId: string) => {
@@ -1547,6 +1615,152 @@ export default function Jobs() {
           showToast={showToast}
         />
       )}
+
+      {reviewingEarlyRelease && (() => {
+        const linkedLine = acceptedQuoteLines.find(line => line.id === reviewingEarlyRelease.accepted_quote_line_item_id);
+        const lineCap = getEarlyReleaseLineCapById(reviewingEarlyRelease.accepted_quote_line_item_id);
+
+        return (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+            <div className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+              <div className="p-5 border-b flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-foreground">Review Early Release</h3>
+                  <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                    {getEarlyReleaseStatusLabel(reviewingEarlyRelease.status)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setReviewingEarlyRelease(null);
+                    setEarlyReleaseReviewNote('');
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                  disabled={!!submittingEarlyReleaseReview}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/15 text-primary text-[11px] font-semibold leading-relaxed flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>Approving this request records your approval for an early release. Funds are not released in this step.</span>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted/30 border rounded-xl p-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Type</span>
+                      <span className="text-xs font-black text-foreground capitalize">{reviewingEarlyRelease.request_type}</span>
+                    </div>
+                    <div className="bg-muted/30 border rounded-xl p-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Amount</span>
+                      <span className="text-xs font-black text-foreground">{formatAud(reviewingEarlyRelease.amount)}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted/30 border rounded-xl p-3">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Title</span>
+                    <span className="text-sm font-black text-foreground">{reviewingEarlyRelease.title}</span>
+                  </div>
+
+                  {reviewingEarlyRelease.description && (
+                    <div className="bg-muted/30 border rounded-xl p-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Description</span>
+                      <p className="text-xs font-semibold text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                        {reviewingEarlyRelease.description}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="bg-muted/30 border rounded-xl p-3">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Accepted Quote Line</span>
+                    {linkedLine ? (
+                      <div className="flex items-center justify-between gap-3 mt-1">
+                        <div className="min-w-0">
+                          <span className="text-xs font-black text-foreground truncate block">{linkedLine.label}</span>
+                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            {linkedLine.line_type} | {linkedLine.quantity} x ${linkedLine.unit_price.toLocaleString()}
+                          </span>
+                        </div>
+                        <span className="text-xs font-black text-foreground shrink-0">{formatAud(linkedLine.line_total)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-semibold text-muted-foreground">No accepted quote line linked.</span>
+                    )}
+                  </div>
+
+                  {earlyReleaseCapSummary && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="bg-background border rounded-xl p-2">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Job Cap</span>
+                        <span className="text-xs font-black text-foreground">{formatAud(earlyReleaseCapSummary.job_cap)}</span>
+                      </div>
+                      <div className="bg-background border rounded-xl p-2">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Job Remaining</span>
+                        <span className="text-xs font-black text-primary">{formatAud(earlyReleaseCapSummary.job_remaining)}</span>
+                      </div>
+                      <div className="bg-background border rounded-xl p-2">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Line Remaining</span>
+                        <span className="text-xs font-black text-primary">
+                          {lineCap ? formatAud(lineCap.remaining) : 'N/A'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Review Note (Optional)</label>
+                    <textarea
+                      rows={3}
+                      value={earlyReleaseReviewNote}
+                      onChange={(e) => setEarlyReleaseReviewNote(e.target.value)}
+                      placeholder="Add a short note for the tradie..."
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50 resize-none"
+                      disabled={!!submittingEarlyReleaseReview}
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-[11px] font-semibold leading-relaxed">
+                    Rejecting this request means it will not be eligible for early release.
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 border-t flex flex-col sm:flex-row justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReviewingEarlyRelease(null);
+                    setEarlyReleaseReviewNote('');
+                  }}
+                  disabled={!!submittingEarlyReleaseReview}
+                  className="bg-secondary text-secondary-foreground font-bold px-4 py-2 rounded-xl hover:bg-secondary/80 transition-colors text-xs disabled:opacity-50"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReviewEarlyReleaseRequest('rejected')}
+                  disabled={!!submittingEarlyReleaseReview}
+                  className="bg-red-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-red-700 transition-colors text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {submittingEarlyReleaseReview === 'rejected' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Rejecting...</> : 'Reject Request'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReviewEarlyReleaseRequest('approved')}
+                  disabled={!!submittingEarlyReleaseReview}
+                  className="bg-green-600 text-white font-bold px-4 py-2 rounded-xl hover:bg-green-700 transition-colors text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {submittingEarlyReleaseReview === 'approved' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Approving...</> : 'Approve Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {activeInvoice && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 print:bg-white">
@@ -2932,7 +3146,7 @@ export default function Jobs() {
                                               req.status === 'approved' ? 'bg-green-500/10 text-green-800 border-green-500/30' :
                                               req.status === 'rejected' ? 'bg-red-500/10 text-red-800 border-red-500/30' : 'bg-secondary text-secondary-foreground border-transparent'
                                             }`}>
-                                              {req.status}
+                                              {getEarlyReleaseStatusLabel(req.status)}
                                             </span>
                                           </div>
                                         </div>
@@ -2947,6 +3161,35 @@ export default function Jobs() {
                                           <div className="text-[10px] bg-muted/40 p-2 rounded-lg border border-border/50 font-medium">
                                             <span className="font-bold text-foreground/90 block">Review Note:</span>
                                             <span className="text-foreground/70">{req.review_note}</span>
+                                          </div>
+                                        )}
+
+                                        {req.reviewed_at && (
+                                          <p className="text-[9px] text-muted-foreground font-semibold">
+                                            Reviewed {new Date(req.reviewed_at).toLocaleDateString()}
+                                          </p>
+                                        )}
+
+                                        {isCustomerOwner && req.status === 'pending' && (
+                                          <div className="flex flex-wrap justify-end gap-2 pt-1">
+                                            <button
+                                              onClick={() => handleOpenEarlyReleaseReview(req)}
+                                              className="text-[10px] bg-background border border-primary/30 text-primary hover:bg-primary/5 font-bold px-2.5 py-1 rounded-lg"
+                                            >
+                                              Review
+                                            </button>
+                                            <button
+                                              onClick={() => handleOpenEarlyReleaseReview(req)}
+                                              className="text-[10px] bg-green-600 text-white hover:bg-green-700 font-bold px-2.5 py-1 rounded-lg"
+                                            >
+                                              Approve
+                                            </button>
+                                            <button
+                                              onClick={() => handleOpenEarlyReleaseReview(req)}
+                                              className="text-[10px] bg-red-600 text-white hover:bg-red-700 font-bold px-2.5 py-1 rounded-lg"
+                                            >
+                                              Reject
+                                            </button>
                                           </div>
                                         )}
 
@@ -2968,18 +3211,6 @@ export default function Jobs() {
                                   <p className="text-xs text-muted-foreground italic">No early release requests submitted yet.</p>
                                 )}
                               </div>
-
-                              {/* Customer Banner Placeholder for Chunk H */}
-                              {isCustomerOwner && (
-                                <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-1 mt-2">
-                                  <span className="text-xs font-bold text-primary flex items-center gap-1.5">
-                                    <AlertCircle className="h-4 w-4 text-primary" /> Approval System Notice
-                                  </span>
-                                  <p className="text-[11px] text-foreground/75 leading-relaxed font-medium">
-                                    Customer approval controls will be added in the next chunk. You will be able to review, approve, or reject these requests dynamically here.
-                                  </p>
-                                </div>
-                              )}
                             </div>
                           )}
                         </div>

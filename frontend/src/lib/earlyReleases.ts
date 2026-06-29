@@ -97,6 +97,24 @@ export async function cancelEarlyReleaseRequest(requestId: string) {
 }
 
 /**
+ * Customer/admin review of a pending early release request.
+ */
+export async function reviewEarlyReleaseRequest(
+  requestId: string,
+  decision: 'approved' | 'rejected',
+  reviewNote?: string
+) {
+  const { data, error } = await supabase
+    .rpc('review_early_release_request', {
+      p_request_id: requestId,
+      p_decision: decision,
+      p_review_note: reviewNote?.trim() || null
+    });
+
+  return { data: data as EarlyReleaseRequest | null, error };
+}
+
+/**
  * Fetch the DB-authoritative early release cap summary for a job.
  * The RPC is permission-checked and only returns data to the contracted tradie,
  * job customer, admins, or service role.

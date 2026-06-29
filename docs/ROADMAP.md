@@ -688,7 +688,7 @@ Status: **Implementation complete / awaiting manual review.**
 
 # Phase 3 Chunk F — Early Release Request Foundation
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / live.**
 
 * [x] Create early_release_requests table, validation triggers, and RLS policies.
 * [x] Create frontend helpers and UI for tradies to submit and cancel requests.
@@ -698,7 +698,7 @@ Status: **Implementation complete / awaiting manual review.**
 
 # Phase 3 Chunk G — Early Release Caps
 
-Status: **Implementation complete / awaiting manual review.**
+Status: **Implementation complete / pushed. Live SQL should be run before Chunk H manual QA.**
 
 * [x] Enforce early release caps at the database layer.
 * [x] Cap pending + approved requests at 30% of accepted contract value.
@@ -707,11 +707,14 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
-# Phase 3 Chunk H — Customer Approval Modal (upcoming)
+# Phase 3 Chunk H — Customer Approval Modal
 
-Status: **Upcoming**
+Status: **Implementation complete / awaiting manual review.**
 
-* [ ] Build customer approval/rejection modal for early release requests.
+* [x] Build customer approval/rejection modal for early release requests.
+* [x] Add permission-checked review RPC for customer/admin approval decisions.
+* [x] Re-run cap validation at approval time.
+* [x] Keep approval tracking separate from actual payment/fund release.
 
 ---
 

@@ -282,7 +282,8 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | 17:45:00 | Homepage Category Icon Polish | `6ccb00c` | Refined the Popular Categories icon styling and colors to alternate between crisp navy and orange accents, resolving mud/low-contrast badge issues. |
 | 18:30:00 | Phase 2 / Chunk E — Lock Accepted Quote Lines | `0b5f9f6` | Snapshotted accepted quote line items into an immutable table upon acceptance, locked original quote lines from edit/delete after pending status, and rendered breakdowns. |
 | 19:15:00 | Phase 3 / Chunk F — Early Release Request Foundation | `1d8cf68` | Created the early release request database schema, RLS policies, context-matching insert triggers, resolved update locks, and implemented tradie request forms and customer tracking displays. |
-| 20:10:00 | Phase 3 / Chunk G — Early Release Caps | `pending` | Added DB-enforced early release caps, a permission-checked cap summary RPC, and UI guidance for remaining job and accepted quote line caps. |
+| 20:10:00 | Phase 3 / Chunk G — Early Release Caps | `a8c2305` | Added DB-enforced early release caps, a permission-checked cap summary RPC, and UI guidance for remaining job and accepted quote line caps. |
+| 20:45:00 | Phase 3 / Chunk H — Customer Approval Modal | `pending` | Added customer/admin early release review RPC, hardened review field updates, and built the customer approval/rejection modal with cap context. |
 
 ### Migrations / Deployments
 
@@ -292,6 +293,7 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `067_lock_accepted_quote_lines.sql` | Created | Creates the accepted_quote_line_items table, trigger to copy snapshots upon status='accepted', and validation trigger to prevent modifying lines once status is not 'pending'. |
 | `068_early_release_requests.sql` | Created | Creates early_release_requests table, validation triggers, and RLS policies to allow tradie requests and customer/admin views on active jobs. |
 | `069_early_release_caps.sql` | Created | Enforces early release caps on insert and approval updates, adds accepted quote line linking rules, and exposes a permission-checked cap summary RPC. |
+| `070_early_release_review_rpc.sql` | Created | Adds the review_early_release_request RPC and hardens early release review field/status update rules. |
 
 ### Phase 3 / Chunk G — Early Release Caps
 
@@ -307,6 +309,22 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
 | `git diff --check` result | Passed with line-ending warnings only. |
 | Live Supabase action required | Apply `supabase/migrations/069_early_release_caps.sql` to the live Supabase database. |
+| Commit hash after commit | Recorded in final report after push. |
+
+### Phase 3 / Chunk H — Customer Approval Modal
+
+| Item | Notes |
+| --- | --- |
+| Files changed | `supabase/migrations/070_early_release_review_rpc.sql`, `frontend/src/lib/earlyReleases.ts`, `frontend/src/pages/Jobs.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/ROADMAP.md`. |
+| Migration filename | `070_early_release_review_rpc.sql`. |
+| RPC/status update summary | Added `review_early_release_request(p_request_id, p_decision, p_review_note)` for customer/admin approval or rejection. The RPC locks the request row, requires authenticated customer/admin access, blocks non-admin tradie self-review, requires pending status, normalizes the optional review note, and updates status through the existing update trigger. |
+| Cap/race safety notes | Approval locks the request row, takes a same-job transaction advisory lock, and calls `check_early_release_caps`; the hardened update trigger also takes the same lock and reruns cap validation on approved status. Rejected and cancelled requests remain excluded from caps. |
+| UI summary | Customer owners see pending request review actions. The modal shows request type, title, description, amount, linked accepted quote line, job/line cap context, optional review note, and clear copy that approval does not release funds. Approved/rejected requests are read-only afterward and show review status/date/note. |
+| Privacy/security notes | Review details stay in authenticated early release request surfaces only. No public profile, Browse Tradies, homepage, messaging, invoice, public job card, analytics, review, or portfolio exposure was added. |
+| Non-goals | No money release, payment status changes, partial release flags, payout records, invoice itemisation changes, variations, reviews, messaging, homepage, OAuth, analytics, or portfolio changes. |
+| Build result | `npm run build` passed. Vite reported the existing large chunk warning. |
+| `git diff --check` result | Passed with line-ending warnings only. |
+| Live Supabase action required | Apply `supabase/migrations/070_early_release_review_rpc.sql` after migration `069_early_release_caps.sql`. |
 | Commit hash after commit | Recorded in final report after push. |
 
 ### Privacy Notes
