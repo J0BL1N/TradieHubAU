@@ -663,6 +663,29 @@ Status: **Implementation complete / awaiting manual review.**
 
 ---
 
+# Phase 2 Chunk D — Itemised Quote Lines
+
+Status: **Implementation complete / awaiting manual review.**
+
+* [x] Create migration `066_add_quote_line_items.sql` with schema, CHECK constraints, indexes, and RLS policies for quote line items.
+* [x] Add `QuoteLineItem` type interfaces and helper functions (`createQuoteLineItems`, `fetchQuoteLineItemsByApplicationIds`, `groupQuoteLineItemsByApplication`) in `frontend/src/lib/applications.ts`.
+* [x] Update `submitApplication` to insert quote line items atomically and rollback if it fails.
+* [x] Update tradie quote form (`ApplyModal` in `frontend/src/pages/Jobs.tsx`) to support a dynamic list builder for quote line items.
+* [x] Enforce quote validations (quantity > 0, unit_price >= 0, label required, and sum of line totals matches legacy `estimate` field).
+* [x] Update tradie quote details view (`ApplyModal` already applied state) to render submitted quote line items with subtotals.
+* [x] Render itemised quote line items for customers reviewing bids in "Submitted Quotes" dashboard, with legacy fallback.
+* [x] Ensure backwards compatibility so existing quotes/applications display the legacy fallback and remain accept-friendly.
+
+---
+
+# Phase 2 Chunk E — Lock Accepted Quote Lines (upcoming)
+
+Status: **Upcoming**
+
+* [ ] Lock accepted quote lines into an immutable table upon acceptance.
+
+---
+
 # v0.6.x — Reviews and Reputation
 
 * [ ] Add post-completion customer review

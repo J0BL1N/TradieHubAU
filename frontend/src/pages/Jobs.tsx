@@ -2,8 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { fetchJobWorkspaceImages, fetchJobs, getPublicJobLocation, hydrateJobsWithPublicCustomers } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
-import { submitApplication, getMyApplicationForJob, getApplicationsForJob, getMyApplications } from '../lib/applications';
-import type { Application } from '../lib/applications';
+import {
+  submitApplication,
+  getMyApplicationForJob,
+  getApplicationsForJob,
+  getMyApplications,
+  fetchQuoteLineItemsByApplicationIds,
+  groupQuoteLineItemsByApplication
+} from '../lib/applications';
+import type { Application, QuoteLineItem } from '../lib/applications';
 import { toggleSavedItem, getSavedItemIds } from '../lib/saved';
 import { useAuth } from '../components/AuthProvider';
 import {
@@ -11,7 +18,7 @@ import {
   SlidersHorizontal, X, Clock, User, Filter, RefreshCw,
   Bookmark, BookmarkCheck, Send, CheckCircle, AlertCircle,
   FileText, Loader2, Lock, Upload, Mail, Phone, MessageSquare,
-  Image as ImageIcon, Star
+  Image as ImageIcon, Star, Plus, Trash2
 } from 'lucide-react';
 import { 
   acceptQuote, submitCompletionProof, raiseJobIssue, approveJobCompletion, 
@@ -40,64 +47,68 @@ interface ApplyModalProps {
   job: Job;
   existingApplication: Application | null;
   onClose: () => void;
-  onSuccess: (app: Application) => void;
+  onSuccess: (app: Application, lines: QuoteLineItem[]) => void;
+}
+
+interface FormLineItem {
+  label: string;
+  quantity: number;
+  unit_price: number;
+  line_type: 'labour' | 'materials' | 'callout' | 'disposal' | 'other';
 }
 
 function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModalProps) {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
-  const [estimate, setEstimate] = useState('');
   const [availability, setAvailability] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If already applied, show existing application summary
-  if (existingApplication && existingApplication.status !== 'withdrawn') {
-    return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div className="bg-card border border-border w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-          <div className="p-6 border-b flex items-start justify-between gap-4">
-            <h3 className="text-xl font-extrabold text-foreground">Application Submitted</h3>
-            <button onClick={onClose} className="p-1.5 rounded-lg border hover:bg-muted text-muted-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="p-6 space-y-4">
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600">
-              <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
-              <div className="text-sm font-semibold">
-                You have already submitted an application for this job.
-              </div>
-            </div>
-            <div className="space-y-2 text-sm font-medium text-muted-foreground bg-muted/30 p-4 rounded-xl border">
-              <div className="flex justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider">Status</span>
-                <span className={`font-bold capitalize ${
-                  existingApplication.status === 'accepted' ? 'text-green-500' :
-                  existingApplication.status === 'declined' ? 'text-red-500' : 'text-amber-500'
-                }`}>{existingApplication.status}</span>
-              </div>
-              {existingApplication.estimate !== null && (
-                <div className="flex justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider">Your Quote</span>
-                  <span className="font-bold text-foreground">${existingApplication.estimate?.toLocaleString()}</span>
-                </div>
-              )}
-              <div className="border-t pt-2 mt-2">
-                <p className="text-xs font-bold uppercase tracking-wider mb-1">Your Message</p>
-                <p className="text-foreground leading-relaxed">{existingApplication.message}</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-6 border-t flex justify-end">
-            <button onClick={onClose} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Line items state
+  const [lineItems, setLineItems] = useState<FormLineItem[]>([
+    { label: 'Labour', quantity: 1, unit_price: 0, line_type: 'labour' }
+  ]);
+
+  // Loading submitted line items if already applied
+  const [loadedLineItems, setLoadedLineItems] = useState<QuoteLineItem[]>([]);
+  const [loadingLines, setLoadingLines] = useState(false);
+
+  useEffect(() => {
+    if (existingApplication && existingApplication.status !== 'withdrawn') {
+      setLoadingLines(true);
+      fetchQuoteLineItemsByApplicationIds([existingApplication.id])
+        .then(({ data }) => {
+          if (data) {
+            setLoadedLineItems(data);
+          }
+        })
+        .finally(() => {
+          setLoadingLines(false);
+        });
+    }
+  }, [existingApplication]);
+
+  const handleAddLine = () => {
+    setLineItems([
+      ...lineItems,
+      { label: '', quantity: 1, unit_price: 0, line_type: 'labour' }
+    ]);
+  };
+
+  const handleRemoveLine = (index: number) => {
+    setLineItems(lineItems.filter((_, idx) => idx !== index));
+  };
+
+  const handleLineChange = (index: number, field: keyof FormLineItem, value: any) => {
+    const updated = [...lineItems];
+    updated[index] = {
+      ...updated[index],
+      [field]: value
+    };
+    setLineItems(updated);
+  };
+
+  const calculatedTotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,14 +129,29 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
       return;
     }
 
-    if (!estimate) {
-      setError('Please enter a valid estimate amount for your quote.');
+    if (lineItems.length === 0) {
+      setError('Please add at least one quote line item.');
       return;
     }
 
-    const estimateVal = parseFloat(estimate);
-    if (isNaN(estimateVal) || estimateVal <= 0) {
-      setError('Please enter a valid positive estimate.');
+    for (let i = 0; i < lineItems.length; i++) {
+      const item = lineItems[i];
+      if (!item.label.trim()) {
+        setError(`Line item #${i + 1} must have a label.`);
+        return;
+      }
+      if (item.quantity <= 0) {
+        setError(`Line item #${i + 1} must have a quantity greater than 0.`);
+        return;
+      }
+      if (item.unit_price < 0) {
+        setError(`Line item #${i + 1} cannot have a negative unit price.`);
+        return;
+      }
+    }
+
+    if (calculatedTotal <= 0) {
+      setError('The total quote estimate must be greater than $0.');
       return;
     }
 
@@ -134,14 +160,14 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
       job_id: job.id,
       customer_id: job.customer_id,
       message: message.trim(),
-      estimate: estimateVal,
+      estimate: calculatedTotal,
       availability: availability.trim() || null,
+      line_items: lineItems,
     });
 
     setSubmitting(false);
 
     if (submitErr) {
-      // Handle duplicate constraint violation gracefully (PostgrestError code 23505)
       if ((submitErr as any).code === '23505') {
         setError('You have already applied for this job.');
       } else {
@@ -150,12 +176,98 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
       return;
     }
 
-    if (data) onSuccess(data as Application);
+    if (data) {
+      // Fetch the created line items for local state update
+      const { data: lines } = await fetchQuoteLineItemsByApplicationIds([data.id]);
+      onSuccess(data as Application, lines || []);
+    }
   };
+
+  // If already applied, show existing application summary with line items
+  if (existingApplication && existingApplication.status !== 'withdrawn') {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+          <div className="p-6 border-b flex items-start justify-between gap-4">
+            <h3 className="text-xl font-extrabold text-foreground">Application Submitted</h3>
+            <button onClick={onClose} className="p-1.5 rounded-lg border hover:bg-muted text-muted-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600">
+              <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="text-sm font-semibold">
+                You have already submitted an application for this job.
+              </div>
+            </div>
+            <div className="space-y-4 text-sm font-medium text-muted-foreground bg-muted/30 p-4 rounded-xl border">
+              <div className="flex justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider">Status</span>
+                <span className={`font-bold capitalize ${
+                  existingApplication.status === 'accepted' ? 'text-green-500' :
+                  existingApplication.status === 'declined' ? 'text-red-500' : 'text-amber-500'
+                }`}>{existingApplication.status}</span>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider block border-b pb-1">Itemised Quote Breakdown</span>
+                {loadingLines ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  </div>
+                ) : loadedLineItems.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                      {loadedLineItems.map((item) => (
+                        <div key={item.id} className="flex justify-between items-center text-xs bg-background/50 border p-2 rounded-lg">
+                          <div className="min-w-0 flex-1 pr-2">
+                            <span className="font-semibold text-foreground truncate block">{item.label}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+                              {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
+                            </span>
+                          </div>
+                          <span className="font-bold text-foreground shrink-0">${item.line_total.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t pt-2 flex justify-between font-bold text-foreground">
+                      <span>Total Quote Amount</span>
+                      <span>${existingApplication.estimate?.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic py-2">
+                    Detailed quote breakdown not available for this older quote.
+                  </p>
+                )}
+              </div>
+
+              {existingApplication.availability && (
+                <div className="flex justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider">Availability</span>
+                  <span className="text-foreground">{existingApplication.availability}</span>
+                </div>
+              )}
+              <div className="border-t pt-2">
+                <p className="text-xs font-bold uppercase tracking-wider mb-1">Your Message</p>
+                <p className="text-foreground leading-relaxed whitespace-pre-wrap">{existingApplication.message}</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 border-t flex justify-end">
+            <button onClick={onClose} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+      <div className="bg-card border border-border w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden">
         <div className="p-6 border-b flex items-start justify-between gap-4">
           <div>
             <h3 className="text-xl font-extrabold text-foreground">Apply for Job</h3>
@@ -166,7 +278,7 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {error && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -175,12 +287,12 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
           )}
 
           {/* Message */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider">
               Cover Message <span className="text-red-400">*</span>
             </label>
             <textarea
-              rows={4}
+              rows={3}
               placeholder="Introduce yourself and explain why you're the right tradie for this job. Include relevant experience, approach, and any questions you have..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -192,30 +304,116 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Estimate */}
-            <div className="space-y-2">
+          {/* Line Items Section */}
+          <div className="space-y-2 border-t pt-3">
+            <div className="flex justify-between items-center">
               <label className="text-xs font-bold text-foreground uppercase tracking-wider">
-                Your Quote ($) <span className="text-red-400">*</span>
+                Quote Line Items <span className="text-red-400">*</span>
               </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="e.g. 450"
-                  value={estimate}
-                  onChange={(e) => setEstimate(e.target.value)}
-                  className="w-full pl-9 pr-3 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-sm font-semibold transition-all"
-                  required
-                />
-              </div>
+              <button
+                type="button"
+                onClick={handleAddLine}
+                className="text-[10px] font-bold uppercase tracking-wider text-primary hover:underline flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" /> Add Line
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {lineItems.map((item, idx) => (
+                <div key={idx} className="flex flex-col md:flex-row gap-2 items-start border p-3 rounded-xl bg-muted/20 relative">
+                  {/* Label */}
+                  <div className="flex-1 w-full space-y-1">
+                    <input
+                      type="text"
+                      placeholder="e.g. Living room electrical wiring"
+                      value={item.label}
+                      onChange={(e) => handleLineChange(idx, 'label', e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-primary/50"
+                      required
+                    />
+                  </div>
+
+                  {/* Type select */}
+                  <div className="w-full md:w-32">
+                    <select
+                      value={item.line_type}
+                      onChange={(e) => handleLineChange(idx, 'line_type', e.target.value as any)}
+                      className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-primary/50"
+                    >
+                      <option value="labour">Labour</option>
+                      <option value="materials">Materials</option>
+                      <option value="callout">Callout</option>
+                      <option value="disposal">Disposal</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full md:w-auto">
+                    {/* Quantity */}
+                    <div className="w-16">
+                      <input
+                        type="number"
+                        min="0.0001"
+                        step="any"
+                        placeholder="Qty"
+                        value={item.quantity}
+                        onChange={(e) => handleLineChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs font-semibold text-center outline-none focus:border-primary/50"
+                        required
+                      />
+                    </div>
+
+                    <span className="text-xs text-muted-foreground">×</span>
+
+                    {/* Unit Price */}
+                    <div className="w-20 relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Price"
+                        value={item.unit_price || ''}
+                        onChange={(e) => handleLineChange(idx, 'unit_price', parseFloat(e.target.value) || 0)}
+                        className="w-full pl-5 pr-2 py-1.5 bg-background border border-border rounded-lg text-xs font-semibold outline-none focus:border-primary/50"
+                        required
+                      />
+                      <DollarSign className="absolute left-1.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+
+                    {/* Total */}
+                    <div className="min-w-[60px] text-right font-bold text-xs text-foreground pr-2 pl-1">
+                      ${((item.quantity || 0) * (item.unit_price || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+
+                    {/* Remove button */}
+                    {lineItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLine(idx)}
+                        className="p-1 rounded text-red-500 hover:bg-red-500/10 transition-colors animate-fade-in"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 border-t pt-3">
+            {/* Total quote sum */}
+            <div className="space-y-1 flex flex-col justify-center">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Calculated Quote</span>
+              <span className="text-lg font-black text-primary">
+                ${calculatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
             </div>
 
             {/* Availability */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-foreground uppercase tracking-wider">
                 Availability
               </label>
               <input
@@ -223,12 +421,12 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
                 placeholder="e.g. This weekend"
                 value={availability}
                 onChange={(e) => setAvailability(e.target.value)}
-                className="w-full px-4 py-3 bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-xl outline-none focus:border-primary/50 text-xs font-semibold transition-all"
               />
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-primary text-xs font-semibold leading-relaxed flex items-start gap-2">
+          <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 text-primary text-[10px] font-semibold leading-relaxed flex items-start gap-2">
             <FileText className="h-4 w-4 shrink-0 mt-0.5" />
             <span>Your contact details are kept private. The customer will contact you through the platform if they choose your application.</span>
           </div>
@@ -376,6 +574,9 @@ export default function Jobs() {
   // Applications: map of job_id → Application (for jobs the user has applied to)
   const [myApplications, setMyApplications] = useState<Map<string, Application>>(new Map());
 
+  // Quote line items: map of application_id → QuoteLineItem[]
+  const [quoteLineItems, setQuoteLineItems] = useState<Record<string, QuoteLineItem[]>>({});
+
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [reviewModalJob, setReviewModalJob] = useState<Job | null>(null);
@@ -491,6 +692,31 @@ export default function Jobs() {
       if (isOwner) {
         const { data: appData } = await getApplicationsForJob(jobId);
         setJobApplications(appData);
+        if (appData && appData.length > 0) {
+          const appIds = appData.map(a => a.id);
+          const { data: lines } = await fetchQuoteLineItemsByApplicationIds(appIds);
+          if (lines) {
+            const grouped = groupQuoteLineItemsByApplication(lines);
+            setQuoteLineItems(prev => {
+              const updated = { ...prev };
+              appIds.forEach(id => {
+                updated[id] = grouped.get(id) || [];
+              });
+              return updated;
+            });
+          }
+        }
+      } else {
+        const app = myApplications.get(jobId);
+        if (app) {
+          const { data: lines } = await fetchQuoteLineItemsByApplicationIds([app.id]);
+          if (lines) {
+            setQuoteLineItems(prev => ({
+              ...prev,
+              [app.id]: lines
+            }));
+          }
+        }
       }
     } catch (err: any) {
       setLifecycleError(err.message || 'Failed to load details.');
@@ -685,19 +911,32 @@ export default function Jobs() {
       return;
     }
     setSelectedJob(null); // close detail modal
-    // Pre-fetch existing application
+    // Pre-fetch existing application and its line items
     if (user) {
       const { data } = await getMyApplicationForJob(job.id);
       if (data) {
         setMyApplications((prev) => new Map(prev).set(job.id, data));
+        const { data: lines } = await fetchQuoteLineItemsByApplicationIds([data.id]);
+        if (lines) {
+          setQuoteLineItems(prev => ({
+            ...prev,
+            [data.id]: lines
+          }));
+        }
       }
     }
     setApplyJob(job);
   };
 
   // ─── Application Success ────────────────────────────────────────────────────
-  const handleApplicationSuccess = (app: Application) => {
+  const handleApplicationSuccess = (app: Application, lines: QuoteLineItem[]) => {
     setMyApplications((prev) => new Map(prev).set(app.job_id, app));
+    if (lines && lines.length > 0) {
+      setQuoteLineItems(prev => ({
+        ...prev,
+        [app.id]: lines
+      }));
+    }
     setApplyJob(null);
     setShowSuccess(true);
   };
@@ -2260,6 +2499,34 @@ export default function Jobs() {
                                     </div>
                                   </div>
                                   <p className="text-xs text-foreground bg-muted/10 p-3 rounded-xl leading-relaxed whitespace-pre-wrap">{app.message}</p>
+
+                                  {/* Itemised quote lines if present */}
+                                  <div className="space-y-1.5 border-t pt-2 mt-2">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-black">Quote Details Breakdown</span>
+                                    {quoteLineItems[app.id] && quoteLineItems[app.id].length > 0 ? (
+                                      <div className="space-y-1.5">
+                                        {quoteLineItems[app.id].map((item) => (
+                                          <div key={item.id} className="flex justify-between items-center text-xs font-semibold bg-muted/20 p-2 rounded-xl border border-border/50">
+                                            <div className="min-w-0 flex-1 pr-2">
+                                              <span className="text-foreground font-bold truncate block">{item.label}</span>
+                                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                                                {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
+                                              </span>
+                                            </div>
+                                            <span className="text-foreground font-extrabold shrink-0">${item.line_total.toLocaleString()}</span>
+                                          </div>
+                                        ))}
+                                        <div className="flex justify-between items-center text-xs border-t pt-2 font-bold text-foreground">
+                                          <span>Total Estimate</span>
+                                          <span className="text-primary">${app.estimate?.toLocaleString()}</span>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <p className="text-[10px] text-muted-foreground italic">
+                                        Detailed quote breakdown not available for this older quote.
+                                      </p>
+                                    )}
+                                  </div>
                                   {selectedJob.status === 'open' ? (
                                     <button
                                       onClick={() => {

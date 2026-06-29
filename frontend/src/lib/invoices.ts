@@ -1,3 +1,7 @@
+/**
+ * Note: Invoice itemisation will be upgraded in Phase 2 / Chunk K.
+ * Currently, this module handles basic invoice generation, preview modals, and print sheets.
+ */
 import { supabase } from './supabase';
 
 export interface JobInvoice {

@@ -269,3 +269,31 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Google OAuth provider | Needs dashboard setup: enable Google provider, add client ID/secret, configure Supabase redirect URLs, and configure Google Cloud callback to Supabase `/auth/v1/callback`. |
 | Supabase leaked password protection | Needs dashboard enablement and Advisor re-run. |
 | Remaining `SECURITY DEFINER` warnings | Documented as guarded/expected in `docs/supabase-security-definer-rpc-audit.md`; no code migration needed in pass 2. |
+
+
+## 2026-06-29
+
+### Completed
+
+| Time | Area | Commit | Summary |
+| --- | --- | --- | --- |
+| 15:30:00 | Phase 2 / Chunk D — Itemised Quote Lines | `391fbdb` | Added itemised quote lines database schema, constraints, RLS policies, frontend APIs, dynamic quote list builder, customer review dashboard, and legacy fallbacks. |
+
+### Migrations / Deployments
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| `066_add_quote_line_items.sql` | Created | Creates the quote_line_items table, CHECK constraints for positive quantities and non-negative prices, and RLS policies for tradies/customers/admins. |
+
+### Validation
+
+| Check | Result |
+| --- | --- |
+| `npm run build` | Passed. Checked for TypeScript compilation and bundle compliance. |
+| `git diff --check` | Passed. No trailing whitespace or formatting issues. |
+
+### Remaining / Next
+
+| Item | Status |
+| --- | --- |
+| Phase 2 / Chunk E — Lock Accepted Quote Lines | Upcoming. |

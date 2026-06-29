@@ -3,6 +3,30 @@ import { getPublicProfilesByIds } from './users';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+export interface QuoteLineItem {
+  id: string;
+  application_id: string;
+  tradie_id: string;
+  job_id: string;
+  label: string;
+  description: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  line_type: 'labour' | 'materials' | 'callout' | 'disposal' | 'other';
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuoteLineItemPayload {
+  label: string;
+  description?: string | null;
+  quantity: number;
+  unit_price: number;
+  line_type?: 'labour' | 'materials' | 'callout' | 'disposal' | 'other';
+}
+
 export interface Application {
   id: string;
   job_id: string;
@@ -30,12 +54,13 @@ export interface SubmitApplicationPayload {
   message: string;
   estimate?: number | null;
   availability?: string | null;
+  line_items?: QuoteLineItemPayload[];
 }
 
 // ─── API Helpers ─────────────────────────────────────────────────────────────
 
 /**
- * Submit a new application for a job.
+ * Submit a new application for a job along with its itemised quote line items.
  * tradie_id is always derived server-side from auth.uid() via RLS.
  */
 export async function submitApplication(payload: SubmitApplicationPayload) {
@@ -45,7 +70,8 @@ export async function submitApplication(payload: SubmitApplicationPayload) {
     return { data: null, error: new Error("You can't quote on your own job.") };
   }
 
-  const { data, error } = await supabase
+  // 1. Insert application
+  const { data: appData, error: appError } = await supabase
     .from('applications')
     .insert({
       job_id: payload.job_id,
@@ -59,13 +85,95 @@ export async function submitApplication(payload: SubmitApplicationPayload) {
     .select('*')
     .maybeSingle();
 
+  if (appError || !appData) {
+    return { data: null, error: appError || new Error('Failed to create application') };
+  }
+
+  // 2. Insert line items if present
+  if (payload.line_items && payload.line_items.length > 0) {
+    const lineItemsPayload = payload.line_items.map((item, index) => ({
+      application_id: appData.id,
+      tradie_id: user.id,
+      job_id: payload.job_id,
+      label: item.label,
+      description: item.description || null,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      line_type: item.line_type || 'labour',
+      sort_order: index,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('quote_line_items')
+      .insert(lineItemsPayload);
+
+    if (itemsError) {
+      // Rollback application if line items fail to protect integrity
+      await supabase.from('applications').delete().eq('id', appData.id);
+      return { data: null, error: itemsError };
+    }
+  }
+
+  return { data: appData, error: null };
+}
+
+/**
+ * Bulk create quote line items for an application.
+ */
+export async function createQuoteLineItems(
+  applicationId: string,
+  tradieId: string,
+  jobId: string,
+  items: QuoteLineItemPayload[]
+) {
+  const payload = items.map((item, index) => ({
+    application_id: applicationId,
+    tradie_id: tradieId,
+    job_id: jobId,
+    label: item.label,
+    description: item.description || null,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    line_type: item.line_type || 'labour',
+    sort_order: index,
+  }));
+
+  const { data, error } = await supabase
+    .from('quote_line_items')
+    .insert(payload)
+    .select('*');
+
   return { data, error };
 }
 
 /**
- * Check whether the authenticated user has already applied for a given job.
- * Returns the existing application or null.
+ * Fetch all quote line items for a list of application IDs.
  */
+export async function fetchQuoteLineItemsByApplicationIds(applicationIds: string[]) {
+  if (applicationIds.length === 0) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('quote_line_items')
+    .select('*')
+    .in('application_id', applicationIds)
+    .order('sort_order', { ascending: true });
+
+  return { data: data ?? [], error };
+}
+
+/**
+ * Helper to group quote line items by application ID.
+ */
+export function groupQuoteLineItemsByApplication(items: QuoteLineItem[]) {
+  const groups = new Map<string, QuoteLineItem[]>();
+  for (const item of items) {
+    if (!groups.has(item.application_id)) {
+      groups.set(item.application_id, []);
+    }
+    groups.get(item.application_id)!.push(item);
+  }
+  return groups;
+}
+
 export async function getMyApplicationForJob(jobId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { data: null, error: null };
