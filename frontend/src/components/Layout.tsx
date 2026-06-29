@@ -336,9 +336,6 @@ export default function Layout() {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-end">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-            <Link to="/how-it-works" className="hover:text-primary transition-colors">How It Works</Link>
-            <Link to="/protected-payments" className="hover:text-primary transition-colors">Protected Payments</Link>
-            <Link to="/trust-and-safety" className="hover:text-primary transition-colors">Trust &amp; Safety</Link>
             <Link to="/support" className="hover:text-primary transition-colors">Contact Support</Link>
           </div>
         </div>

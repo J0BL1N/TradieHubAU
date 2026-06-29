@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   UserCheck,
 } from 'lucide-react';
+import InfoHubTabs from '../components/InfoHubTabs';
 
 type InfoSection = {
   title: string;
@@ -45,6 +46,8 @@ function BetaNotice() {
 function InfoPage({ icon, eyebrow, title, intro, sections }: InfoPageProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
+      <InfoHubTabs />
+
       <header className="space-y-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           {icon}

@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   UserCheck,
 } from 'lucide-react';
+import InfoHubTabs from '../components/InfoHubTabs';
 
 const customerSteps = [
   'Post a clear job scope with suburb-level location, timing, budget type, and workspace photos where useful.',
@@ -72,6 +73,8 @@ export default function HowItWorks() {
           A safer way to hire, quote, complete, and pay for trade work, with clear beta-stage checks and job records.
         </p>
       </header>
+
+      <InfoHubTabs />
 
       <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5 text-sm font-semibold leading-6 text-amber-900">
         <div className="flex items-start gap-3">
