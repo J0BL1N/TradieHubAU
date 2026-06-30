@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Verification & Admin Action Notifications (Chunk 8 / Task 10)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database / Notifications |
+| Summary | Created `086_verification_notifications.sql` migration defining a database trigger (`trg_create_notification_on_verification_change`) and trigger function (`create_notification_on_verification_change`) on the `public.verifications` table to automatically notify users in real-time when their verification document is approved, rejected, or an admin requests a recheck. |
+| Files changed | `supabase/migrations/086_verification_notifications.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`086_verification_notifications.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 086 SQL script in Supabase Studio. |
+| Manual QA status | Not applicable for database schema/trigger changes. |
+
 ### Dispute & Issue Notifications (Chunk 7 / Task 9)
 
 | Item | Notes |
