@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Quote & Application Lifecycle Notifications (Chunk 4)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database / Notifications |
+| Summary | Created `083_quote_lifecycle_notifications.sql` migration defining an `AFTER INSERT OR UPDATE` trigger (`trg_create_notification_on_application_change`) and helper function (`create_notification_on_application_change`) on the `public.applications` table to automatically notify customers about new quotes, and tradies about quote acceptances or declines. |
+| Files changed | `supabase/migrations/083_quote_lifecycle_notifications.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`083_quote_lifecycle_notifications.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 083 SQL script in Supabase Studio. |
+| Manual QA status | Not applicable for database schema/trigger changes. |
+
 ### New Message In-App Notifications (Chunk 3)
 
 | Item | Notes |
