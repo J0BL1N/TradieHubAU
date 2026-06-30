@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Clean Beta Display Labels
+
+| Item | Notes |
+| --- | --- |
+| Area | Seed Data / User Interface |
+| Summary | Removed the visible `[BETA]` prefix from generated beta/test account display names and business names in the `create-beta-test-accounts.mjs` script so they appear as clean names in the public UI. |
+| Files changed | `scripts/create-beta-test-accounts.mjs`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None (live database requires SQL script cleanup). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute SQL script in Supabase Studio to strip existing `[BETA]` prefixes. |
+| Manual QA status | Not applicable for data seed updates (manual check by Jay). |
+
 ### Realtime Job Messages Verification
 
 | Item | Notes |

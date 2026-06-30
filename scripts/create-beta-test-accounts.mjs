@@ -86,7 +86,7 @@ function buildCustomers() {
     return {
       testerId: id,
       fakeName: `${firstName} ${lastName}`,
-      displayName: `[BETA] ${firstName} ${lastName}`,
+      displayName: `${firstName} ${lastName}`,
       email: `customer.${slug(firstName)}.${slug(lastName)}${twoDigit(index)}@${EMAIL_DOMAIN}`,
       password: `TradieBeta!2026-C${twoDigit(index)}`,
       role: 'customer',
@@ -111,8 +111,8 @@ function buildTradies() {
     return {
       testerId: id,
       fakeName: `${firstName} ${lastName}`,
-      displayName: `[BETA] ${firstName} ${lastName}`,
-      businessName: `[BETA] ${businessName}`,
+      displayName: `${firstName} ${lastName}`,
+      businessName: `${businessName}`,
       email: `tradie.${slug(firstName)}.${slug(lastName)}${twoDigit(index)}@${EMAIL_DOMAIN}`,
       password: `TradieBeta!2026-T${twoDigit(index)}`,
       role: 'tradie',
