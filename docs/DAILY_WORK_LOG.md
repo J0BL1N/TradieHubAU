@@ -58,6 +58,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Header/Nav Primary Action Refinement
+
+| Item | Notes |
+| --- | --- |
+| Area | Header/Nav Primary Action Refinement |
+| Summary | Restored visible primary navigation and Post a Job where space allows, while keeping profile/admin/sign-in/sign-out actions in the compact menu for cleaner tablet/mobile use. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

@@ -39,17 +39,17 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-3">
           
           {/* Logo & Middle Menu Section */}
-          <div className="flex min-w-0 items-center gap-6 xl:gap-8">
+          <div className="flex min-w-0 items-center gap-3 md:gap-4 lg:gap-6 xl:gap-8">
             <Link to="/" className="nav-logo shrink-0" aria-label="TradieHubAU home">
               <img src="/assets/tradiehubau-logo-nav-clean.png" alt="TradieHubAU" className="nav-logo-img" />
             </Link>
 
             {/* Desktop Middle Navigation */}
-            <nav className="hidden lg:flex items-center gap-2 xl:gap-3">
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2 xl:gap-3">
               <NavLink
                 to="/jobs"
                 className={({ isActive }) =>
-                  `inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                  `inline-flex min-h-11 lg:min-h-12 items-center gap-1.5 lg:gap-2 rounded-xl px-2 lg:px-3 text-sm xl:text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
                     isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                   }`
                 }
@@ -61,7 +61,7 @@ export default function Layout() {
               <NavLink
                 to="/browse-tradies"
                 className={({ isActive }) =>
-                  `inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                  `inline-flex min-h-11 lg:min-h-12 items-center gap-1.5 lg:gap-2 rounded-xl px-2 lg:px-3 text-sm xl:text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
                     isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                   }`
                 }
@@ -74,7 +74,7 @@ export default function Layout() {
                 <NavLink
                   to="/messages"
                   className={({ isActive }) =>
-                    `inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                    `inline-flex min-h-11 lg:min-h-12 items-center gap-1.5 lg:gap-2 rounded-xl px-2 lg:px-3 text-sm xl:text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
                       isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                     }`
                   }
@@ -91,7 +91,7 @@ export default function Layout() {
             <NavLink
               to="/how-it-works"
               className={({ isActive }) =>
-                `hidden lg:inline-flex min-h-12 items-center rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                `hidden xl:inline-flex min-h-12 items-center rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
                   isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                 }`
               }
@@ -102,14 +102,14 @@ export default function Layout() {
             {/* Primary Action Button */}
             <Link
               to="/post-job"
-              className="hidden lg:inline-flex min-h-12 items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold px-4 xl:px-5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap"
+              className="hidden sm:inline-flex min-h-11 lg:min-h-12 items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold px-3 lg:px-4 xl:px-5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap"
             >
               Post a Job
             </Link>
 
             {/* User Account / Authentication Buttons */}
             {user ? (
-              <div className="relative hidden lg:block" ref={dropdownRef}>
+              <div className="relative hidden xl:block" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex min-h-12 items-center gap-2 rounded-xl px-2 text-sm font-bold text-foreground/75 hover:bg-muted/40 hover:text-foreground transition-all focus:outline-none"
@@ -121,7 +121,7 @@ export default function Layout() {
                       (profile?.display_name || user.email || 'U').charAt(0).toUpperCase()
                     )}
                   </div>
-                  <span className="hidden lg:inline-block max-w-[120px] truncate">
+                  <span className="hidden xl:inline-block max-w-[120px] truncate">
                     {profile?.display_name || user.email?.split('@')[0]}
                   </span>
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
@@ -176,7 +176,7 @@ export default function Layout() {
                 )}
               </div>
             ) : (
-              <div className="hidden lg:flex items-center gap-2">
+              <div className="hidden xl:flex items-center gap-2">
                 <Link
                   to="/login"
                   className="inline-flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-foreground/75 hover:bg-muted/40 hover:text-foreground transition-all"
@@ -198,7 +198,7 @@ export default function Layout() {
                 setDropdownOpen(false);
                 setMobileMenuOpen(!mobileMenuOpen);
               }}
-              className="lg:hidden inline-flex h-12 w-12 items-center justify-center text-muted-foreground hover:text-foreground outline-none rounded-xl hover:bg-muted focus:bg-muted"
+              className="xl:hidden inline-flex h-12 w-12 items-center justify-center text-muted-foreground hover:text-foreground outline-none rounded-xl hover:bg-muted focus:bg-muted"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -208,7 +208,7 @@ export default function Layout() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden bg-background/95 backdrop-blur-md pt-24 px-6 space-y-4 flex flex-col items-center overflow-y-auto">
+        <div className="fixed inset-0 z-50 xl:hidden bg-background/95 backdrop-blur-md pt-24 px-6 space-y-4 flex flex-col items-center overflow-y-auto">
           <button
             onClick={() => setMobileMenuOpen(false)}
             className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground rounded-lg"
@@ -257,7 +257,7 @@ export default function Layout() {
             <Link
               to="/post-job"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full inline-flex items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground font-bold py-3.5 rounded-xl shadow-lg mt-4"
+              className="inline-flex sm:hidden w-full items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground font-bold py-3.5 rounded-xl shadow-lg mt-2"
             >
               Post a Job
             </Link>
