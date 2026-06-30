@@ -11,6 +11,7 @@ import {
 import type { UserProfile } from '../lib/users';
 import { formatJobLocation } from '../lib/auLocations';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
+import { maskName } from '../lib/masking';
 import {
   fetchEligibleCompletionProofPortfolioItems,
   updateCompletionProofPortfolioItem,
@@ -121,7 +122,7 @@ const TRADIE_DOCUMENT_CARDS = [
 
 export default function Profile() {
   const { id } = useParams<{ id?: string }>();
-  const { user, loading: authLoading, refreshProfile, updateProfileState } = useAuth();
+  const { user, profile: loggedInProfile, loading: authLoading, refreshProfile, updateProfileState } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -129,6 +130,7 @@ export default function Profile() {
   const targetId = isSelf ? user?.id : id;
 
   const [targetProfile, setTargetProfile] = useState<UserProfile | null>(null);
+  const [showFullIdentity, setShowFullIdentity] = useState(isSelf);
   const [activeProfileTab, setActiveProfileTab] = useState<ProfileTab>('account');
   const [profileLoading, setProfileLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -230,32 +232,98 @@ export default function Profile() {
     if (!targetId) return;
     setProfileLoading(true);
     setError(null);
-    const { data, error: profileErr } = isSelf
-      ? await getUserProfile(targetId)
-      : await getPublicUserProfile(targetId);
-    if (profileErr) {
-      setError(profileErr.message || 'Failed to load profile.');
-    } else if (data) {
-      setTargetProfile(data);
+
+    let profileData: UserProfile | null = null;
+    let fullIdentity = false;
+
+    if (isSelf) {
+      const { data: userData, error: userErr } = await getUserProfile(targetId);
+      if (userData) {
+        profileData = userData;
+        fullIdentity = true;
+      } else if (userErr) {
+        setError(userErr.message || 'Failed to load profile.');
+      }
+    } else {
+      // Try to load full profile first (will succeed if RLS allows)
+      const { data: userData } = await getUserProfile(targetId);
+
+      // Also query the active/funded contract relationship
+      let hasFundedContract = false;
+      if (user && targetId) {
+        // Query 1: Viewer is Customer, Profile is Tradie
+        const { data: customerJobs } = await supabase
+          .from('jobs')
+          .select('id, status, applications!inner(status, tradie_id)')
+          .eq('customer_id', user.id)
+          .in('status', ['payment_held', 'completed_pending_review', 'disputed', 'completed'])
+          .eq('applications.tradie_id', targetId)
+          .eq('applications.status', 'accepted');
+
+        // Query 2: Viewer is Tradie, Profile is Customer
+        const { data: tradieJobs } = await supabase
+          .from('jobs')
+          .select('id, status, applications!inner(status, tradie_id)')
+          .eq('customer_id', targetId)
+          .in('status', ['payment_held', 'completed_pending_review', 'disputed', 'completed'])
+          .eq('applications.tradie_id', user.id)
+          .eq('applications.status', 'accepted');
+
+        if (
+          (customerJobs && customerJobs.length > 0) ||
+          (tradieJobs && tradieJobs.length > 0)
+        ) {
+          hasFundedContract = true;
+        }
+      }
+
+      const isAdmin = loggedInProfile?.is_admin || false;
+
+      if (userData || isAdmin || hasFundedContract) {
+        fullIdentity = true;
+        if (userData) {
+          profileData = userData;
+        } else {
+          // If we had no userData, but we are authorized, try to fetch again
+          const { data: retryUserData } = await getUserProfile(targetId);
+          profileData = retryUserData;
+        }
+      }
+
+      if (!profileData) {
+        // Fallback to public profile
+        const { data: publicData, error: publicErr } = await getPublicUserProfile(targetId);
+        if (publicData) {
+          profileData = publicData;
+        } else if (publicErr) {
+          setError(publicErr.message || 'Failed to load profile.');
+        }
+        fullIdentity = false;
+      }
+    }
+
+    if (profileData) {
+      setTargetProfile(profileData);
+      setShowFullIdentity(fullIdentity);
       // Hydrate forms
-      setDisplayName(data.display_name || '');
-      setPhone(data.phone || '');
-      setSuburb(data.suburb || '');
-      setStateVal(data.state || '');
-      setPostcode(data.postcode || '');
-      setShowLocation(data.show_location ?? true);
-      setAddressRule(data.address_rule || 'afterAccepted');
-      setTrades(data.trades || []);
-      setAbn(data.abn || '');
-      setLicenseNumber(data.license_number || '');
-      setBusinessName(data.business_name || '');
-      setBio(data.bio || '');
-      setYearsExperience(data.years_experience !== null && data.years_experience !== undefined ? String(data.years_experience) : '');
-      setServiceAreas((data.service_areas || []).join(', '));
-      setWebsiteUrl(data.website_url || '');
+      setDisplayName(profileData.display_name || '');
+      setPhone(profileData.phone || '');
+      setSuburb(profileData.suburb || '');
+      setStateVal(profileData.state || '');
+      setPostcode(profileData.postcode || '');
+      setShowLocation(profileData.show_location ?? true);
+      setAddressRule(profileData.address_rule || 'afterAccepted');
+      setTrades(profileData.trades || []);
+      setAbn(profileData.abn || '');
+      setLicenseNumber(profileData.license_number || '');
+      setBusinessName(profileData.business_name || '');
+      setBio(profileData.bio || '');
+      setYearsExperience(profileData.years_experience !== null && profileData.years_experience !== undefined ? String(profileData.years_experience) : '');
+      setServiceAreas((profileData.service_areas || []).join(', '));
+      setWebsiteUrl(profileData.website_url || '');
     }
     setProfileLoading(false);
-  }, [targetId, isSelf]);
+  }, [targetId, isSelf, loggedInProfile, user]);
 
   const loadCompletionProofPortfolioItems = useCallback(async () => {
     if (!isSelf || !targetProfile || targetProfile.role === 'customer') return;
@@ -922,7 +990,24 @@ export default function Profile() {
     );
   }
 
-  const displayNameStr = targetProfile.display_name || 'User';
+  const displayNameStr = showFullIdentity
+    ? (targetProfile.display_name || 'User')
+    : maskName(targetProfile.display_name || 'User');
+
+  const formatMaskedABN = (abnVal: string | null | undefined) => {
+    if (!abnVal) return 'Not Provided';
+    const clean = abnVal.trim();
+    if (clean.length <= 2) return clean + ' ••• ••• •••';
+    return clean.substring(0, 2) + ' ••• ••• •••';
+  };
+
+  const formatMaskedLicense = (licVal: string | null | undefined) => {
+    if (!licVal) return 'Not Provided';
+    const clean = licVal.trim();
+    if (clean.length <= 2) return clean + '••••';
+    return clean.substring(0, 2) + '••••';
+  };
+
   const roleLabel = targetProfile.role ? (targetProfile.role.charAt(0).toUpperCase() + targetProfile.role.slice(1)) : 'Customer';
   const locationParts = [targetProfile.suburb, targetProfile.state].filter(Boolean);
   const displayLocation = locationParts.length > 0 ? locationParts.join(', ') : 'No location specified';
@@ -1722,7 +1807,7 @@ export default function Profile() {
           </div>
 
           <div className="border-t w-full pt-4 space-y-3 text-left text-sm text-muted-foreground font-semibold">
-            {isSelf && (
+            {showFullIdentity ? (
               <>
                 <div className="flex items-center gap-2.5">
                   <Mail className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
@@ -1731,6 +1816,17 @@ export default function Profile() {
                 <div className="flex items-center gap-2.5">
                   <Phone className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
                   <span>{targetProfile.phone || 'No phone added'}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2.5">
+                  <Mail className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
+                  <span>[Email Masked]</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Phone className="h-4.5 w-4.5 text-muted-foreground/60 shrink-0" />
+                  <span>[Phone Masked]</span>
                 </div>
               </>
             )}
@@ -2906,17 +3002,25 @@ export default function Profile() {
                   </div>
                 )}
                 
-                {targetProfile.role !== 'customer' && (
+                 {targetProfile.role !== 'customer' && (
                   <div className="bg-card border p-6 rounded-3xl space-y-3 shadow-sm text-sm">
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Credentials</h4>
                     <div className="space-y-1.5 font-bold text-foreground">
                       <div className="flex justify-between border-b pb-1.5">
                         <span className="text-xs font-semibold text-muted-foreground">ABN</span>
-                        <span>{targetProfile.abn || 'Not Provided'}</span>
+                        <span>
+                          {showFullIdentity
+                            ? (targetProfile.abn || 'Not Provided')
+                            : formatMaskedABN(targetProfile.abn)}
+                        </span>
                       </div>
                       <div className="flex justify-between pt-0.5">
                         <span className="text-xs font-semibold text-muted-foreground">License ID</span>
-                        <span>{targetProfile.license_number || 'Not Provided'}</span>
+                        <span>
+                          {showFullIdentity
+                            ? (targetProfile.license_number || 'Not Provided')
+                            : formatMaskedLicense(targetProfile.license_number)}
+                        </span>
                       </div>
                     </div>
                   </div>

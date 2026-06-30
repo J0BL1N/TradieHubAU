@@ -419,7 +419,7 @@ export default function Home() {
                             <ShieldCheck className="h-4 w-4 text-primary fill-current" />
                           )}
                         </h4>
-                        <p className="text-xs text-muted-foreground truncate">{maskName(tradie.business_name || 'Individual Contractor')}</p>
+                        <p className="text-xs text-muted-foreground truncate">{tradie.business_name ? maskName(tradie.business_name) : 'Individual Contractor'}</p>
                       </div>
                     </div>
 
