@@ -2314,6 +2314,74 @@ export default function Admin() {
     if (isAdmin) loadData();
   }, [isAdmin, loadData]);
 
+  // Realtime subscription for admin queues
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const channel = supabase
+      .channel('admin-dashboard-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'verifications'
+        },
+        () => {
+          void loadData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'users'
+        },
+        () => {
+          void loadData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_issues'
+        },
+        () => {
+          void loadData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        },
+        () => {
+          void loadData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'jobs'
+        },
+        () => {
+          void loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [isAdmin, loadData]);
+
   useEffect(() => {
     if (isAdmin && adminTab === 'analytics') {
       // Load initially (full spinner)

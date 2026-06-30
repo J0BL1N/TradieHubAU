@@ -5,6 +5,7 @@ import { useAuth } from '../components/AuthProvider';
 import { getDisputeJob } from '../lib/payments';
 import { DisputeCaseFile } from './Admin';
 import type { ConfirmConfig } from './Admin';
+import { supabase } from '../lib/supabase';
 
 interface ToastMessage {
   text: string;
@@ -36,6 +37,55 @@ export default function AdminDisputeCase() {
   }, [jobId, profile]);
 
   useEffect(() => { loadCase(); }, [loadCase]);
+
+  // Realtime sync for this specific dispute case
+  useEffect(() => {
+    if (!profile?.is_admin || !jobId) return;
+
+    const channel = supabase
+      .channel(`admin-dispute-case-sync:${jobId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_issues',
+          filter: `job_id=eq.${jobId}`
+        },
+        () => {
+          void loadCase();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments',
+          filter: `job_id=eq.${jobId}`
+        },
+        () => {
+          void loadCase();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'jobs',
+          filter: `id=eq.${jobId}`
+        },
+        () => {
+          void loadCase();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [profile, jobId, loadCase]);
 
   if (authLoading) return <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user || !profile?.is_admin) {

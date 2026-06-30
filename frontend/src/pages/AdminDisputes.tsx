@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, CheckCircle, FolderOpen, Loader2, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../components/AuthProvider';
 import { getAllDisputeJobs } from '../lib/payments';
+import { supabase } from '../lib/supabase';
 
 function formatJobRef(id: string): string {
   return `#${id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
@@ -89,6 +90,52 @@ export default function AdminDisputes() {
   }, [profile]);
 
   useEffect(() => { loadDisputes(); }, [loadDisputes]);
+
+  // Realtime sync for disputes list
+  useEffect(() => {
+    if (!profile?.is_admin) return;
+
+    const channel = supabase
+      .channel('admin-disputes-list-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_issues'
+        },
+        () => {
+          void loadDisputes();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        },
+        () => {
+          void loadDisputes();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'jobs'
+        },
+        () => {
+          void loadDisputes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [profile, loadDisputes]);
 
   if (authLoading) return <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!user || !profile?.is_admin) {
