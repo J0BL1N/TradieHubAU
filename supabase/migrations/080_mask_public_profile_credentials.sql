@@ -1,8 +1,6 @@
 -- Migration: 080_mask_public_profile_credentials.sql
 -- Description: Mask abn, license_number, and website_url in public.public_profiles for unauthorized users.
 
-DROP VIEW IF EXISTS public.public_profiles;
-
 CREATE OR REPLACE VIEW public.public_profiles AS
 SELECT
   id,
