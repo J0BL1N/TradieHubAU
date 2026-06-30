@@ -83,7 +83,7 @@ interface VariationFormLineItem {
   line_type: VariationLineType;
 }
 
-type JobDetailTab = 'overview' | 'quote' | 'payment' | 'requests' | 'evidence' | 'history';
+type JobDetailTab = 'overview' | 'contract' | 'requests' | 'evidence';
 
 function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModalProps) {
   const { user } = useAuth();
@@ -2968,30 +2968,28 @@ export default function Jobs() {
                 const evidenceNeedAction = selectedJob.status === 'completed_pending_review';
                 const tabs: Array<{ id: JobDetailTab; label: string; alert?: boolean }> = [
                   { id: 'overview', label: 'Overview' },
-                  { id: 'quote', label: 'Quote' },
-                  { id: 'payment', label: 'Payment' },
+                  { id: 'contract', label: 'Contract' },
                   { id: 'requests', label: 'Requests', alert: requestsNeedAction },
-                  { id: 'evidence', label: 'Evidence', alert: evidenceNeedAction },
-                  { id: 'history', label: 'History' }
+                  { id: 'evidence', label: 'Evidence', alert: evidenceNeedAction }
                 ];
 
                 return (
-                  <div className="-mx-1 overflow-x-auto pb-1">
-                    <div className="flex min-w-max gap-2 px-1">
+                  <div className="-mx-1 overflow-x-auto border-b border-border">
+                    <div className="flex min-w-max gap-5 px-1">
                       {tabs.map(tab => (
                         <button
                           key={tab.id}
                           type="button"
                           onClick={() => setActiveJobDetailTab(tab.id)}
-                          className={`relative rounded-xl border px-3 py-2 text-xs font-extrabold transition-colors ${
+                          className={`relative border-b-2 pb-3 text-xs font-extrabold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-t-md ${
                             activeJobDetailTab === tab.id
-                              ? 'border-primary/30 bg-primary text-primary-foreground shadow-sm'
-                              : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-muted-foreground hover:text-foreground'
                           }`}
                         >
                           {tab.label}
                           {tab.alert && (
-                            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-card bg-amber-500" />
+                            <span className="absolute -right-2 top-0 h-2 w-2 rounded-full bg-amber-500" />
                           )}
                         </button>
                       ))}
@@ -3218,12 +3216,12 @@ export default function Jobs() {
                       })()}
 
                       {/* 1. Protected Payment Status Bar / Steps */}
-                      {(!usesJobDetailTabs(selectedJob) || ['payment', 'quote', 'requests'].includes(activeJobDetailTab)) && selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (() => {
+                      {(!usesJobDetailTabs(selectedJob) || ['contract', 'requests'].includes(activeJobDetailTab)) && selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (() => {
                         const isCustomerOwner = selectedJob.customer_id === user?.id;
                         const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
                         return (
                           <div className="space-y-4">
-                            {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'payment') && (
+                            {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && (
                               <>
                             <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
 
@@ -3408,7 +3406,7 @@ export default function Jobs() {
                               </>
                             )}
 
-                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'payment') && isCustomerOwner && jobLedger.length > 0 && (
+                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && isCustomerOwner && jobLedger.length > 0 && (
                             <details className="rounded-2xl border bg-muted/20 text-sm">
                               <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                                 Payment Ledger
@@ -3439,7 +3437,7 @@ export default function Jobs() {
                           )}
 
                           {/* Accepted Quote Breakdown */}
-                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'quote') && (
+                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && (
                           <details open={!isCustomerOwner} className="rounded-2xl border bg-muted/20 text-sm">
                             <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                               Accepted Quote Breakdown
@@ -3832,38 +3830,8 @@ export default function Jobs() {
                         </details>
                       )}
 
-                      {usesJobDetailTabs(selectedJob) && activeJobDetailTab === 'history' && (
-                        <div className="rounded-2xl border bg-muted/20 p-4 text-sm space-y-3">
-                          <h4 className="text-xs font-black uppercase tracking-wider text-foreground/80">Job History</h4>
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            <div className="rounded-xl border bg-background p-3">
-                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Posted</span>
-                              <span className="mt-1 block text-xs font-extrabold text-foreground">{formatDate(selectedJob.created_at)}</span>
-                            </div>
-                            <div className="rounded-xl border bg-background p-3">
-                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current status</span>
-                              <span className="mt-1 block text-xs font-extrabold text-foreground">{getContractStatusLabel(selectedJob.status)}</span>
-                            </div>
-                          </div>
-                          {timelineEvents.length > 0 ? (
-                            <div className="rounded-xl border bg-background p-3 text-xs font-semibold text-muted-foreground">
-                              {timelineEvents.length} evidence event{timelineEvents.length === 1 ? '' : 's'} logged. Open the Evidence tab to view the full timeline.
-                              <button
-                                type="button"
-                                onClick={() => setActiveJobDetailTab('evidence')}
-                                className="mt-2 block text-xs font-extrabold text-primary hover:underline"
-                              >
-                                View evidence timeline
-                              </button>
-                            </div>
-                          ) : (
-                            <p className="text-xs font-semibold text-muted-foreground">No extra history has been logged for this job yet.</p>
-                          )}
-                        </div>
-                      )}
-
                       {/* 2. Customer Actions: Quote Selection */}
-                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'quote') && selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
                         <details open={selectedJob.status === 'open'} className="rounded-2xl border bg-muted/20 text-sm">
                           <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             Submitted Quote History ({jobApplications.length})
@@ -3991,7 +3959,7 @@ export default function Jobs() {
                       )}
 
                       {/* 3. Customer Actions: Protected Payment Funding Simulation */}
-                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview' || activeJobDetailTab === 'payment') && ((selectedJob.customer_id === user?.id) || profile?.is_admin) && selectedJob.status === 'accepted' && jobPayment && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview' || activeJobDetailTab === 'contract') && ((selectedJob.customer_id === user?.id) || profile?.is_admin) && selectedJob.status === 'accepted' && jobPayment && (
                         <div className="p-5 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-3 font-semibold">
                           <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-amber-500" /> Protected Payment Required — Fund Contract

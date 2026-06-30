@@ -22,6 +22,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Job Details Sub-Nav Simplification
+
+| Item | Notes |
+| --- | --- |
+| Area | Job Details Sub-Nav Simplification |
+| Summary | Reduced accepted/in-progress job detail tabs from six to four, merged quote/payment into Contract, moved history into Evidence, and restyled the sub-nav to a cleaner underline/info-hub style. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed
