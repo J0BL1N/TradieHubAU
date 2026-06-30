@@ -2,7 +2,36 @@
 
 Single ongoing project-history log. Entries are based on committed git history, file timestamps, and docs present in this repo.
 
+## 2026-07-01
+
+### Browse Tradies Identity Masking
+
+| Item | Notes |
+| --- | --- |
+| Area | Directory Masking / Privacy |
+| Summary | Masked public Browse Tradies card identities by default using the `maskName` helper on the contractor's `business_name` or `display_name` (falling back to "Verified Tradie" if empty). Since `/browse-tradies` lacks funded-contract context, the names are masked for everyone to prevent public identity leaks. |
+| Files changed | `frontend/src/pages/BrowseTradies.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
+### Fix public_profiles view migration dependency issue
+
+| Item | Notes |
+| --- | --- |
+| Area | Supabase Migrations |
+| Summary | Fixed a live migration failure in `080_mask_public_profile_credentials.sql` by removing `DROP VIEW IF EXISTS public.public_profiles;` and instead using `CREATE OR REPLACE VIEW public.public_profiles AS`. This prevents Supabase from failing due to dependent database objects, while preserving grants, view comments, security_invoker reset, and identity privacy masking logic. |
+| Files changed | `supabase/migrations/080_mask_public_profile_credentials.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (corrected `080_mask_public_profile_credentials.sql`) |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Apply corrected `080_mask_public_profile_credentials.sql` SQL. |
+| Manual QA status | Not applicable for DB schema changes (manual browser/QA to be performed by Jay). |
+
 ## 2026-06-30
+
 
 ### In-Progress Job Details UI Polish
 
