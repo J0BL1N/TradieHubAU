@@ -49,6 +49,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Header/Nav Menu Consolidation
+
+| Item | Notes |
+| --- | --- |
+| Area | Header/Nav Menu Consolidation |
+| Summary | Increased header/logo presence, improved nav spacing, and consolidated tablet/mobile navigation into one cleaner menu with consistent admin/profile/sign-out access. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

@@ -136,7 +136,7 @@
 
 .nav-logo-img {
   display: block;
-  height: 42px;
+  height: 46px;
   width: auto;
   object-fit: contain;
 }
@@ -169,4 +169,3 @@ select option {
     display: none !important;
   }
 }
-
