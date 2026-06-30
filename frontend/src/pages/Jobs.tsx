@@ -3058,7 +3058,7 @@ export default function Jobs() {
 
               {/* Lifecycle Section */}
               {user && (
-                <div className="border-t pt-6 space-y-6">
+                <div className="border-t pt-4 sm:pt-6 space-y-4 sm:space-y-6">
                   {loadingLifecycle ? (
                     <div className="flex justify-center p-4">
                       <Loader2 className="h-6 w-6 text-primary animate-spin" />
@@ -3220,22 +3220,22 @@ export default function Jobs() {
                         const isCustomerOwner = selectedJob.customer_id === user?.id;
                         const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
                         return (
-                          <div className="space-y-4">
+                          <div className="space-y-3 sm:space-y-4">
                             {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && (
                               <>
-                            <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
+                            <h4 className="text-xs sm:text-sm font-black text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
 
-                          <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold">
-                            <div className={`p-2 rounded-xl border ${['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                          <div className="grid grid-cols-2 gap-1.5 text-center text-[11px] font-bold sm:grid-cols-4 sm:gap-2 sm:text-xs">
+                            <div className={`rounded-xl border p-2 ${['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
                               1. Accepted
                             </div>
-                            <div className={`p-2 rounded-xl border ${['payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                            <div className={`rounded-xl border p-2 ${['payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
                               2. Funded
                             </div>
-                            <div className={`p-2 rounded-xl border ${['completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                            <div className={`rounded-xl border p-2 ${['completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-transparent text-muted-foreground'}`}>
                               3. Review
                             </div>
-                            <div className={`p-2 rounded-xl border ${['completed'].includes(selectedJob.status) ? 'bg-green-500/10 border-green-500/30 text-green-600' : 'bg-muted border-transparent text-muted-foreground'}`}>
+                            <div className={`rounded-xl border p-2 ${['completed'].includes(selectedJob.status) ? 'bg-green-500/10 border-green-500/30 text-green-600' : 'bg-muted border-transparent text-muted-foreground'}`}>
                               4. Released
                             </div>
                           </div>
@@ -3247,41 +3247,41 @@ export default function Jobs() {
                               {jobPayment.payee_id === user.id && (
                                 <>
                                   {selectedJob.status === 'accepted' && (
-                                    <div className="p-4 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-2">
-                                      <h4 className="text-sm font-extrabold text-amber-800 flex items-center gap-2">
-                                        <Clock className="h-5 w-5 text-amber-600" /> Protected Payment Pending
+                                    <div className="p-3 sm:p-4 border border-amber-500/20 bg-amber-500/5 rounded-xl sm:rounded-2xl space-y-1.5 sm:space-y-2">
+                                      <h4 className="text-sm font-extrabold text-amber-800 flex items-start gap-2">
+                                        <Clock className="h-5 w-5 shrink-0 text-amber-600" /> Protected Payment Pending
                                       </h4>
-                                      <p className="text-sm text-foreground/75 leading-relaxed font-medium">
+                                      <p className="text-xs sm:text-sm text-foreground/75 leading-relaxed font-medium">
                                         Your quote has been accepted! Please wait for the customer to fund the contract. You will be authorized to start work once the secure job payment is funded. Do not begin work until payment is funded.
                                       </p>
                                     </div>
                                   )}
                                   {selectedJob.status === 'payment_held' && (
-                                    <div className="p-4 border border-green-500/25 bg-green-500/10 rounded-2xl space-y-2">
-                                      <h4 className="text-sm font-extrabold text-green-800 flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-green-600" /> Contract Active (Payment Funded)
+                                    <div className="p-3 sm:p-4 border border-green-500/25 bg-green-500/10 rounded-xl sm:rounded-2xl space-y-1.5 sm:space-y-2">
+                                      <h4 className="text-sm font-extrabold text-green-800 flex items-start gap-2">
+                                        <CheckCircle className="h-5 w-5 shrink-0 text-green-600" /> Contract Active (Payment Funded)
                                       </h4>
-                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                      <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
                                         The secure job payment has been funded by the customer and is held until completion. You are authorized to begin work! Submit your completion proof below when the job is done.
                                       </p>
                                     </div>
                                   )}
                                   {selectedJob.status === 'completed_pending_review' && (
-                                    <div className="p-4 border border-blue-500/25 bg-blue-500/10 rounded-2xl space-y-2">
-                                      <h4 className="text-sm font-extrabold text-blue-800 flex items-center gap-2">
-                                        <Clock className="h-5 w-5 text-blue-600" /> Completion Under Review
+                                    <div className="p-3 sm:p-4 border border-blue-500/25 bg-blue-500/10 rounded-xl sm:rounded-2xl space-y-1.5 sm:space-y-2">
+                                      <h4 className="text-sm font-extrabold text-blue-800 flex items-start gap-2">
+                                        <Clock className="h-5 w-5 shrink-0 text-blue-600" /> Completion Under Review
                                       </h4>
-                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                      <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
                                         You have submitted completion proof. The customer has been notified and has 72 hours to review the work and release the payment. If no action is taken, funds will auto-release.
                                       </p>
                                     </div>
                                   )}
                                   {selectedJob.status === 'completed' && (
-                                    <div className="p-4 border border-emerald-500/25 bg-emerald-500/10 rounded-2xl space-y-2">
-                                      <h4 className="text-sm font-extrabold text-emerald-800 flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-emerald-600" /> Payment Released
+                                    <div className="p-3 sm:p-4 border border-emerald-500/25 bg-emerald-500/10 rounded-xl sm:rounded-2xl space-y-1.5 sm:space-y-2">
+                                      <h4 className="text-sm font-extrabold text-emerald-800 flex items-start gap-2">
+                                        <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" /> Payment Released
                                       </h4>
-                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                      <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
                                         The secure job payment has been successfully released to your account. Thank you for completing this work on TradieHubAU!
                                       </p>
                                     </div>
@@ -3293,26 +3293,26 @@ export default function Jobs() {
                               {selectedJob.customer_id === user.id && (
                                 <>
                                   {selectedJob.status === 'payment_held' && (
-                                    <div className="p-4 border border-green-500/25 bg-green-500/10 rounded-2xl space-y-2">
-                                      <h4 className="text-sm font-extrabold text-green-800 flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-green-600" /> Contract Active (Payment Funded)
+                                    <div className="p-3 sm:p-4 border border-green-500/25 bg-green-500/10 rounded-xl sm:rounded-2xl space-y-1.5 sm:space-y-2">
+                                      <h4 className="text-sm font-extrabold text-green-800 flex items-start gap-2">
+                                        <CheckCircle className="h-5 w-5 shrink-0 text-green-600" /> Contract Active (Payment Funded)
                                       </h4>
-                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                      <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
                                         The protected payment is funded and held securely by TradieHubAU. The tradie has been authorized to begin work. Once they complete the work, they will submit proof for your review.
                                       </p>
                                     </div>
                                   )}
                                   {selectedJob.status === 'completed' && (
-                                    <div className="p-4 border border-emerald-500/25 bg-emerald-500/10 rounded-2xl space-y-2">
-                                      <h4 className="text-sm font-extrabold text-emerald-800 flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-emerald-600" /> Job Completed & Released
+                                    <div className="p-3 sm:p-4 border border-emerald-500/25 bg-emerald-500/10 rounded-xl sm:rounded-2xl space-y-1.5 sm:space-y-2">
+                                      <h4 className="text-sm font-extrabold text-emerald-800 flex items-start gap-2">
+                                        <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" /> Job Completed & Released
                                       </h4>
-                                      <p className="text-sm text-foreground/80 leading-relaxed font-medium">
+                                      <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
                                         This job is completed and the secure payment has been successfully released to the tradie. Thank you for hiring on TradieHubAU!
                                       </p>
                                       <button
                                         onClick={() => setTradieReviewModalJob(selectedJob)}
-                                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground shadow-sm transition-all hover:bg-primary/95 active:scale-95"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground shadow-sm transition-all hover:bg-primary/95 active:scale-95 sm:w-auto sm:py-2"
                                       >
                                         <Star className="h-4 w-4 fill-current" /> Leave Review
                                       </button>
@@ -3323,7 +3323,7 @@ export default function Jobs() {
                             </div>
                           )}
 
-                          <div className="p-4 bg-muted/30 border rounded-2xl space-y-2.5 text-sm">
+                          <div className="p-3 sm:p-4 bg-card border rounded-xl sm:rounded-2xl space-y-2.5 text-sm">
                             <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                               <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Protected Payment</span>
                               <span className={`uppercase text-[10px] px-2.5 py-0.5 rounded font-semibold border ${
@@ -3334,9 +3334,9 @@ export default function Jobs() {
                                 {['held', 'held_in_escrow'].includes(jobPayment.status) ? 'payment protected' : jobPayment.status === 'released' ? 'payment released' : jobPayment.status}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
                               <span className="text-foreground/70 font-medium">Contract Amount:</span>
-                              <span className="text-foreground font-bold">{formatCentsToAud(jobPayment.amount)}</span>
+                              <span className="text-foreground font-bold break-words">{formatCentsToAud(jobPayment.amount)}</span>
                             </div>
 
                             {(() => {
@@ -3347,26 +3347,26 @@ export default function Jobs() {
                               const payoutCents = jobPayment.amount - jobPayment.platform_fee;
                               return (
                                 <>
-                                  <div className="flex justify-between items-center text-xs">
+                                  <div className="flex flex-col gap-0.5 text-xs sm:flex-row sm:items-center sm:justify-between">
                                     <span className="text-foreground/70 font-medium">
                                       {isFunded ? 'Platform Fee:' : 'Expected Platform Fee:'}
                                     </span>
-                                    <span className="text-foreground/90 font-semibold">{formatCentsToAud(jobPayment.platform_fee)}</span>
+                                    <span className="text-foreground/90 font-semibold break-words">{formatCentsToAud(jobPayment.platform_fee)}</span>
                                   </div>
 
-                                  <div className="flex justify-between items-center text-xs border-b pb-2 mb-2">
+                                  <div className="flex flex-col gap-0.5 text-xs border-b pb-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
                                     <span className="text-foreground/70 font-medium">
                                       {isReleased ? 'Released Tradie Payout:' : (isFunded ? 'Expected Tradie Payout:' : 'Estimated Tradie Payout:')}
                                     </span>
-                                    <span className="text-primary font-bold">{formatCentsToAud(payoutCents)}</span>
+                                    <span className="text-primary font-bold break-words">{formatCentsToAud(payoutCents)}</span>
                                   </div>
                                 </>
                               );
                             })()}
 
-                            <div className="flex justify-between items-center text-xs">
+                            <div className="flex flex-col gap-0.5 text-xs sm:flex-row sm:items-center sm:justify-between">
                               <span className="text-foreground/70 font-medium">Contract Status:</span>
-                              <span className="text-foreground/95 font-medium">
+                              <span className="text-foreground/95 font-medium break-words sm:text-right">
                                 {selectedJob.status === 'accepted' ? 'Quote Accepted — Awaiting Payment' :
                                  selectedJob.status === 'payment_held' ? 'Contract Active (Payment Funded)' :
                                  selectedJob.status === 'completed_pending_review' ? 'Under Review (Completion Submitted)' :
@@ -3386,16 +3386,16 @@ export default function Jobs() {
                                     if (l.transaction_type === 'payout') label = 'Tradie Payout';
                                     if (l.transaction_type === 'refund') label = 'Customer Refund';
                                     return (
-                                      <div key={l.id} className="flex justify-between items-center text-xs font-medium bg-background border p-2 rounded-xl">
-                                        <div className="space-y-0.5">
+                                      <div key={l.id} className="flex flex-col gap-1 text-xs font-medium bg-background border p-2 rounded-xl sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="space-y-0.5 min-w-0">
                                           <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
                                             l.transaction_type === 'charge' ? 'bg-blue-500/10 text-blue-800 border-blue-500/20' :
                                             l.transaction_type === 'payout' ? 'bg-green-500/10 text-green-800 border-green-500/20' :
                                             l.transaction_type === 'fee' ? 'bg-orange-500/10 text-orange-800 border-orange-500/20' : 'bg-red-500/10 text-red-800 border-red-500/20'
                                           }`}>{label}</span>
-                                          <span className="text-[10px] text-foreground/60 ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
+                                          <span className="text-[10px] text-foreground/60 sm:ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
                                         </div>
-                                        <span className="font-bold text-foreground">{formatCentsToAud(l.amount_cents)}</span>
+                                        <span className="font-bold text-foreground break-words sm:shrink-0">{formatCentsToAud(l.amount_cents)}</span>
                                       </div>
                                     );
                                   })}
@@ -3407,11 +3407,11 @@ export default function Jobs() {
                             )}
 
                           {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && isCustomerOwner && jobLedger.length > 0 && (
-                            <details className="rounded-2xl border bg-muted/20 text-sm">
-                              <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                            <details className="rounded-xl sm:rounded-2xl border bg-card/70 text-sm">
+                              <summary className="cursor-pointer list-none p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                                 Payment Ledger
                               </summary>
-                              <div className="border-t p-4 pt-3 space-y-1.5 max-h-44 overflow-y-auto">
+                              <div className="border-t p-3 sm:p-4 pt-3 space-y-1.5 max-h-44 overflow-y-auto">
                                 {jobLedger.map((l) => {
                                   let label = l.transaction_type;
                                   if (l.transaction_type === 'charge') label = 'Deposit Charge';
@@ -3419,16 +3419,16 @@ export default function Jobs() {
                                   if (l.transaction_type === 'payout') label = 'Tradie Payout';
                                   if (l.transaction_type === 'refund') label = 'Customer Refund';
                                   return (
-                                    <div key={l.id} className="flex justify-between items-center gap-3 text-xs font-medium bg-background border p-2 rounded-xl">
+                                    <div key={l.id} className="flex flex-col gap-1 text-xs font-medium bg-background border p-2 rounded-xl sm:flex-row sm:items-center sm:justify-between">
                                       <div className="space-y-0.5 min-w-0">
                                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
                                           l.transaction_type === 'charge' ? 'bg-blue-500/10 text-blue-800 border-blue-500/20' :
                                           l.transaction_type === 'payout' ? 'bg-green-500/10 text-green-800 border-green-500/20' :
                                           l.transaction_type === 'fee' ? 'bg-orange-500/10 text-orange-800 border-orange-500/20' : 'bg-red-500/10 text-red-800 border-red-500/20'
                                         }`}>{label}</span>
-                                        <span className="text-[10px] text-foreground/60 ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
+                                        <span className="text-[10px] text-foreground/60 sm:ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
                                       </div>
-                                      <span className="font-bold text-foreground shrink-0">{formatCentsToAud(l.amount_cents)}</span>
+                                      <span className="font-bold text-foreground break-words sm:shrink-0">{formatCentsToAud(l.amount_cents)}</span>
                                     </div>
                                   );
                                 })}
@@ -3438,11 +3438,11 @@ export default function Jobs() {
 
                           {/* Accepted Quote Breakdown */}
                           {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && (
-                          <details open={!isCustomerOwner} className="rounded-2xl border bg-muted/20 text-sm">
-                            <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                          <details open={!isCustomerOwner} className="rounded-xl sm:rounded-2xl border bg-card/70 text-sm">
+                            <summary className="cursor-pointer list-none p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                               Accepted Quote Breakdown
                             </summary>
-                            <div className="border-t p-4 pt-3 space-y-2.5">
+                            <div className="border-t p-3 sm:p-4 pt-3 space-y-2.5">
                             {loadingAcceptedLines ? (
                               <div className="flex justify-center py-4">
                                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -3450,21 +3450,21 @@ export default function Jobs() {
                             ) : acceptedQuoteLines.length > 0 ? (
                               <div className="space-y-1.5 mt-2">
                                 {acceptedQuoteLines.map((item) => (
-                                  <div key={item.id} className="flex justify-between items-center text-xs font-semibold bg-background border p-2 rounded-xl border-border/50">
+                                  <div key={item.id} className="flex flex-col gap-1 text-xs font-semibold bg-background border p-2 rounded-xl border-border/50 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="min-w-0 flex-1 pr-2">
-                                      <span className="text-foreground font-bold truncate block">{item.label}</span>
+                                      <span className="text-foreground font-bold break-words block">{item.label}</span>
                                       <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
                                         {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
                                       </span>
                                     </div>
-                                    <span className="text-foreground font-extrabold shrink-0">
+                                    <span className="text-foreground font-extrabold break-words sm:shrink-0">
                                       ${item.line_total.toLocaleString()}
                                     </span>
                                   </div>
                                 ))}
-                                <div className="flex justify-between items-center text-xs pt-1.5 font-bold text-foreground border-t">
+                                <div className="flex flex-col gap-1 text-xs pt-1.5 font-bold text-foreground border-t sm:flex-row sm:items-center sm:justify-between">
                                   <span>Total Contract Estimate</span>
-                                  <span className="text-primary">${(jobPayment.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                  <span className="text-primary break-words">${(jobPayment.amount / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                               </div>
                             ) : (
@@ -3478,21 +3478,21 @@ export default function Jobs() {
 
                           {/* Early Release Requests Section */}
                           {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'requests') && (isCustomerOwner || isContractedTradie || profile?.is_admin) && (
-                            <details open={!isCustomerOwner || earlyReleaseRequests.some(req => isCustomerOwner && req.status === 'pending')} className="rounded-2xl border bg-muted/20 text-sm">
-                              <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
-                                <span className="inline-flex items-center gap-2">
+                            <details open={!isCustomerOwner || earlyReleaseRequests.some(req => isCustomerOwner && req.status === 'pending')} className="rounded-xl sm:rounded-2xl border bg-card/70 text-sm">
+                              <summary className="cursor-pointer list-none p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                                <span className="inline-flex flex-wrap items-center gap-2">
                                   Early Release Requests
                                   {earlyReleaseRequests.some(req => isCustomerOwner && req.status === 'pending') && (
                                     <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] text-amber-800">Action needed</span>
                                   )}
                                 </span>
                               </summary>
-                              <div className="border-t p-4 pt-3 space-y-3">
-                                <div className="flex justify-end">
+                              <div className="border-t p-3 sm:p-4 pt-3 space-y-3">
+                                <div className="flex">
                                   {isContractedTradie && !showErForm && (
                                   <button
                                     onClick={() => setShowErForm(true)}
-                                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                                    className="flex w-full items-center justify-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs font-bold text-primary hover:bg-primary/10 sm:w-auto sm:border-0 sm:bg-transparent sm:p-0 sm:hover:bg-transparent sm:hover:underline"
                                   >
                                     <Plus className="h-3 w-3" /> Request Release
                                   </button>
@@ -3504,18 +3504,18 @@ export default function Jobs() {
                               </p>
 
                               {earlyReleaseCapSummary ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                  <div className="bg-background border rounded-xl p-2">
+                                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                                  <div className="bg-background border rounded-xl p-2 min-w-0">
                                     <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Contract Total</span>
-                                    <span className="text-xs font-black text-foreground">{formatAud(earlyReleaseCapSummary.contract_total)}</span>
+                                    <span className="text-[11px] sm:text-xs font-black text-foreground break-words">{formatAud(earlyReleaseCapSummary.contract_total)}</span>
                                   </div>
-                                  <div className="bg-background border rounded-xl p-2">
+                                  <div className="bg-background border rounded-xl p-2 min-w-0">
                                     <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Job Cap (30%)</span>
-                                    <span className="text-xs font-black text-foreground">{formatAud(earlyReleaseCapSummary.job_cap)}</span>
+                                    <span className="text-[11px] sm:text-xs font-black text-foreground break-words">{formatAud(earlyReleaseCapSummary.job_cap)}</span>
                                   </div>
-                                  <div className="bg-background border rounded-xl p-2">
+                                  <div className="bg-background border rounded-xl p-2 min-w-0">
                                     <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground block">Remaining</span>
-                                    <span className="text-xs font-black text-primary">{formatAud(earlyReleaseCapSummary.job_remaining)}</span>
+                                    <span className="text-[11px] sm:text-xs font-black text-primary break-words">{formatAud(earlyReleaseCapSummary.job_remaining)}</span>
                                   </div>
                                 </div>
                               ) : (
@@ -3545,7 +3545,7 @@ export default function Jobs() {
                                     </button>
                                   </div>
 
-                                  <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                     <div className="space-y-1">
                                       <label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block">Type</label>
                                       <select
@@ -3678,20 +3678,20 @@ export default function Jobs() {
                                     const linkedLine = acceptedQuoteLines.find(line => line.id === req.accepted_quote_line_item_id);
                                     return (
                                       <div key={req.id} className="bg-background border p-3 rounded-xl space-y-2 border-border/50">
-                                        <div className="flex justify-between items-start">
-                                          <div>
-                                            <span className="text-xs font-bold text-foreground block">{req.title}</span>
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                          <div className="min-w-0">
+                                            <span className="text-xs font-bold text-foreground block break-words">{req.title}</span>
                                             <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
                                               Type: {req.request_type}
                                             </span>
                                             {linkedLine && (
-                                              <span className="text-[9px] text-primary/80 font-bold block mt-0.5">
+                                              <span className="text-[9px] text-primary/80 font-bold block mt-0.5 break-words">
                                                 Linked Line: {linkedLine.label}
                                               </span>
                                             )}
                                           </div>
-                                          <div className="text-right">
-                                            <span className="text-xs font-black text-foreground block font-black">
+                                          <div className="sm:text-right">
+                                            <span className="text-xs font-black text-foreground block break-words">
                                               ${req.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
                                             <span className={`inline-block uppercase text-[8px] px-1.5 py-0.5 rounded font-black border mt-1 ${
@@ -3724,22 +3724,22 @@ export default function Jobs() {
                                         )}
 
                                         {isCustomerOwner && req.status === 'pending' && (
-                                          <div className="flex flex-wrap justify-end gap-2 pt-1">
+                                          <div className="grid grid-cols-1 gap-2 pt-1 sm:flex sm:flex-wrap sm:justify-end">
                                             <button
                                               onClick={() => handleOpenEarlyReleaseReview(req)}
-                                              className="text-[10px] bg-background border border-primary/30 text-primary hover:bg-primary/5 font-bold px-2.5 py-1 rounded-lg"
+                                              className="w-full text-[11px] bg-background border border-primary/30 text-primary hover:bg-primary/5 font-bold px-2.5 py-2 rounded-lg sm:w-auto sm:py-1 sm:text-[10px]"
                                             >
                                               Review
                                             </button>
                                             <button
                                               onClick={() => handleOpenEarlyReleaseReview(req)}
-                                              className="text-[10px] bg-green-600 text-white hover:bg-green-700 font-bold px-2.5 py-1 rounded-lg"
+                                              className="w-full text-[11px] bg-green-600 text-white hover:bg-green-700 font-bold px-2.5 py-2 rounded-lg sm:w-auto sm:py-1 sm:text-[10px]"
                                             >
                                               Approve
                                             </button>
                                             <button
                                               onClick={() => handleOpenEarlyReleaseReview(req)}
-                                              className="text-[10px] bg-red-600 text-white hover:bg-red-700 font-bold px-2.5 py-1 rounded-lg"
+                                              className="w-full text-[11px] bg-red-600 text-white hover:bg-red-700 font-bold px-2.5 py-2 rounded-lg sm:w-auto sm:py-1 sm:text-[10px]"
                                             >
                                               Reject
                                             </button>
@@ -3748,10 +3748,10 @@ export default function Jobs() {
 
                                         {/* Cancel Action for Tradie */}
                                         {isContractedTradie && req.status === 'pending' && (
-                                          <div className="flex justify-end pt-1">
+                                          <div className="flex pt-1 sm:justify-end">
                                             <button
                                               onClick={() => handleCancelEarlyReleaseRequest(req.id)}
-                                              className="text-[10px] text-red-600 hover:text-red-700 font-bold flex items-center gap-0.5"
+                                              className="flex w-full items-center justify-center gap-1 rounded-lg border border-red-500/20 px-2.5 py-2 text-[11px] font-bold text-red-600 hover:text-red-700 sm:w-auto sm:border-0 sm:p-0 sm:text-[10px]"
                                             >
                                               <X className="h-3 w-3" /> Cancel Request
                                             </button>
@@ -3775,25 +3775,25 @@ export default function Jobs() {
                       {((selectedJob.customer_id === user?.id) ||
                         (jobPayment && jobPayment.payee_id === user?.id) ||
                         profile?.is_admin) && (!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && (
-                        <details open={selectedJob.customer_id !== user?.id && timelineEvents.length > 0} className="rounded-2xl border bg-muted/20 text-sm">
-                          <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                        <details open={selectedJob.customer_id !== user?.id && timelineEvents.length > 0} className="rounded-xl sm:rounded-2xl border bg-card/70 text-sm">
+                          <summary className="cursor-pointer list-none p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             Job Evidence Timeline
                           </summary>
-                          <div className="border-t p-4 pt-3 space-y-3">
+                          <div className="border-t p-3 sm:p-4 pt-3 space-y-3">
                           {loadingTimeline ? (
                             <div className="flex justify-center py-4">
                               <Loader2 className="h-5 w-5 animate-spin text-primary" />
                             </div>
                           ) : timelineEvents.length > 0 ? (
-                            <div className="relative pl-4 border-l border-border/60 ml-2 space-y-4 py-1 mt-2">
+                            <div className="relative pl-4 border-l border-border/60 ml-1 sm:ml-2 space-y-3 sm:space-y-4 py-1 mt-2">
                               {timelineEvents.map((event) => (
                                 <div key={event.event_id} className="relative group">
                                   {/* Bullet indicator */}
                                   <div className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border border-primary bg-background shadow-sm" />
 
                                   <div className="space-y-1">
-                                    <div className="flex flex-wrap items-baseline gap-x-2">
-                                      <span className="text-xs font-bold text-foreground">{event.event_label}</span>
+                                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                      <span className="text-xs font-bold text-foreground break-words">{event.event_label}</span>
                                       {event.amount !== null && event.amount !== undefined && (
                                         <span className="text-[10px] font-black text-primary">
                                           ${event.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -3832,24 +3832,24 @@ export default function Jobs() {
 
                       {/* 2. Customer Actions: Quote Selection */}
                       {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'contract') && selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
-                        <details open={selectedJob.status === 'open'} className="rounded-2xl border bg-muted/20 text-sm">
-                          <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                        <details open={selectedJob.status === 'open'} className="rounded-xl sm:rounded-2xl border bg-card/70 text-sm">
+                          <summary className="cursor-pointer list-none p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             Submitted Quote History ({jobApplications.length})
                           </summary>
-                          <div className="border-t p-4 pt-3 space-y-4">
+                          <div className="border-t p-3 sm:p-4 pt-3 space-y-3 sm:space-y-4">
                           {jobApplications.length === 0 ? (
                             <p className="text-xs text-muted-foreground font-semibold">No quotes received yet.</p>
                           ) : (
                             <div className="space-y-3">
                               {jobApplications.map((app) => (
-                                <div key={app.id} className="border p-4 rounded-2xl space-y-3 bg-card font-semibold">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <h5 className="font-extrabold text-sm">{app.tradie?.display_name || 'Verified Tradie'}</h5>
-                                      <p className="text-[10px] text-muted-foreground">Licence: {app.tradie?.license_number || 'N/A'} | ABN: {app.tradie?.abn || 'N/A'}</p>
+                                <div key={app.id} className="border p-3 sm:p-4 rounded-xl sm:rounded-2xl space-y-3 bg-card font-semibold">
+                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                    <div className="min-w-0">
+                                      <h5 className="font-extrabold text-sm break-words">{app.tradie?.display_name || 'Verified Tradie'}</h5>
+                                      <p className="text-[10px] text-muted-foreground break-words">Licence: {app.tradie?.license_number || 'N/A'} | ABN: {app.tradie?.abn || 'N/A'}</p>
                                     </div>
-                                    <div className="text-right">
-                                      <span className="text-sm font-black text-primary">${app.estimate?.toLocaleString()}</span>
+                                    <div className="sm:text-right">
+                                      <span className="text-sm font-black text-primary break-words">${app.estimate?.toLocaleString()}</span>
                                       <p className="text-[10px] text-muted-foreground">{app.availability || 'Immediate start'}</p>
                                     </div>
                                   </div>
@@ -3861,19 +3861,19 @@ export default function Jobs() {
                                     {quoteLineItems[app.id] && quoteLineItems[app.id].length > 0 ? (
                                       <div className="space-y-1.5">
                                         {quoteLineItems[app.id].map((item) => (
-                                          <div key={item.id} className="flex justify-between items-center text-xs font-semibold bg-muted/20 p-2 rounded-xl border border-border/50">
+                                          <div key={item.id} className="flex flex-col gap-1 text-xs font-semibold bg-muted/20 p-2 rounded-xl border border-border/50 sm:flex-row sm:items-center sm:justify-between">
                                             <div className="min-w-0 flex-1 pr-2">
-                                              <span className="text-foreground font-bold truncate block">{item.label}</span>
+                                              <span className="text-foreground font-bold break-words block">{item.label}</span>
                                               <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
                                                 {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
                                               </span>
                                             </div>
-                                            <span className="text-foreground font-extrabold shrink-0">${item.line_total.toLocaleString()}</span>
+                                            <span className="text-foreground font-extrabold break-words sm:shrink-0">${item.line_total.toLocaleString()}</span>
                                           </div>
                                         ))}
-                                        <div className="flex justify-between items-center text-xs border-t pt-2 font-bold text-foreground">
+                                        <div className="flex flex-col gap-1 text-xs border-t pt-2 font-bold text-foreground sm:flex-row sm:items-center sm:justify-between">
                                           <span>Total Estimate</span>
-                                          <span className="text-primary">${app.estimate?.toLocaleString()}</span>
+                                          <span className="text-primary break-words">${app.estimate?.toLocaleString()}</span>
                                         </div>
                                       </div>
                                     ) : (
@@ -3960,9 +3960,9 @@ export default function Jobs() {
 
                       {/* 3. Customer Actions: Protected Payment Funding Simulation */}
                       {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview' || activeJobDetailTab === 'contract') && ((selectedJob.customer_id === user?.id) || profile?.is_admin) && selectedJob.status === 'accepted' && jobPayment && (
-                        <div className="p-5 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-3 font-semibold">
-                          <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                            <DollarSign className="h-5 w-5 text-amber-500" /> Protected Payment Required — Fund Contract
+                        <div className="p-4 sm:p-5 border border-amber-500/20 bg-amber-500/5 rounded-xl sm:rounded-2xl space-y-3 font-semibold">
+                          <h4 className="text-sm font-extrabold text-foreground flex items-start gap-2">
+                            <DollarSign className="h-5 w-5 shrink-0 text-amber-500" /> Protected Payment Required — Fund Contract
                           </h4>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             Please fund this contract to proceed. This secure job payment will be held until completion and only released after the work is completed and approved by you.
@@ -3995,7 +3995,7 @@ export default function Jobs() {
 
                       {/* 4. Tradie Actions: Variation Requests and Completion Proof Submissions */}
                       {jobPayment && jobPayment.payee_id === user.id && (
-                        <div className="space-y-6">
+                        <div className="space-y-4 sm:space-y-6">
                           {/* Guard messaging for unavailable actions */}
                           {selectedJob.status === 'accepted' && (
                             <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-xl text-xs font-bold flex items-start gap-2.5">
@@ -4032,9 +4032,9 @@ export default function Jobs() {
 
                           {/* Itemised variations form for contracted tradie */}
                           {['accepted', 'payment_held'].includes(selectedJob.status) && (
-                            <div className="p-5 bg-card border rounded-2xl space-y-4 font-semibold">
-                              <div className="flex items-center justify-between gap-3">
-                                <div>
+                            <div className="p-4 sm:p-5 bg-card border rounded-xl sm:rounded-2xl space-y-4 font-semibold">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
                                   <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Variation Requests</h4>
                                   <p className="text-xs text-muted-foreground leading-relaxed mt-1">
                                     Use variations for extra work or materials that were not included in the accepted quote. The customer must approve a variation before it can become chargeable.
@@ -4043,7 +4043,7 @@ export default function Jobs() {
                                 {!showVariationForm && (
                                   <button
                                     onClick={() => setShowVariationForm(true)}
-                                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1 shrink-0"
+                                    className="flex w-full items-center justify-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs font-bold text-primary hover:bg-primary/10 sm:w-auto sm:shrink-0 sm:border-0 sm:bg-transparent sm:p-0 sm:hover:bg-transparent sm:hover:underline"
                                   >
                                     <Plus className="h-3 w-3" /> New Variation
                                   </button>
@@ -4136,7 +4136,7 @@ export default function Jobs() {
                                             className="w-full bg-muted/40 border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-primary/50 resize-none"
                                           />
 
-                                          <div className="grid grid-cols-[80px_1fr_90px_32px] gap-2 items-center">
+                                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-[80px_1fr_90px_32px] sm:items-center">
                                             <input
                                               type="number"
                                               min="0.0001"
@@ -4158,7 +4158,7 @@ export default function Jobs() {
                                                 required
                                               />
                                             </div>
-                                            <span className="text-xs font-black text-right text-foreground">
+                                            <span className="text-xs font-black text-foreground sm:text-right">
                                               {formatAud((Number(item.quantity) || 0) * (Number(item.unit_price) || 0))}
                                             </span>
                                             {variationLineItems.length > 1 ? (
@@ -4203,14 +4203,14 @@ export default function Jobs() {
 
                       {/* 5. Customer Review of Completion Proof & Dispute raising - Lightweight summary only */}
                       {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && selectedJob.customer_id === user.id && selectedJob.status === 'completed_pending_review' && (
-                        <div className="space-y-4">
+                        <div className="space-y-3 sm:space-y-4">
                           <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
                             <CheckCircle className="h-4 w-4 text-green-500" /> Completion Review
                           </h4>
                           
-                          <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl space-y-2 text-xs font-semibold">
-                            <div className="flex items-center gap-2 text-blue-600 font-bold">
-                              <Clock className="h-4.5 w-4.5 text-blue-500" />
+                          <div className="p-3 sm:p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl sm:rounded-2xl space-y-2 text-xs font-semibold">
+                            <div className="flex items-start gap-2 text-blue-600 font-bold">
+                              <Clock className="h-4.5 w-4.5 shrink-0 text-blue-500" />
                               <span>Completion proof submitted — under customer review.</span>
                             </div>
                             <p className="text-muted-foreground leading-relaxed text-[11px] font-medium">
@@ -4222,7 +4222,7 @@ export default function Jobs() {
 
                       {/* 6. Disputes / Pending resolution view */}
                       {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && selectedJob.status === 'disputed' && (
-                        <div className="p-4 border border-red-500/20 bg-red-500/5 rounded-2xl space-y-2 font-semibold">
+                        <div className="p-3 sm:p-4 border border-red-500/20 bg-red-500/5 rounded-xl sm:rounded-2xl space-y-2 font-semibold">
                           <h4 className="text-xs font-black text-red-500 uppercase tracking-wider flex items-center gap-1.5"><AlertCircle className="h-4.5 w-4.5" /> Job is Disputed</h4>
                           {jobIssues.length > 0 && (
                             <>
@@ -4237,16 +4237,16 @@ export default function Jobs() {
 
                       {/* 7. Display itemised variation requests to customer & tradie */}
                       {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'requests') && jobVariations.length > 0 && (
-                        <details open={jobVariations.some(v => selectedJob.customer_id === user.id && v.status === 'pending') || jobPayment?.payee_id === user.id} className="rounded-2xl border bg-muted/20 text-sm">
-                          <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
-                            <span className="inline-flex items-center gap-2">
+                        <details open={jobVariations.some(v => selectedJob.customer_id === user.id && v.status === 'pending') || jobPayment?.payee_id === user.id} className="rounded-xl sm:rounded-2xl border bg-card/70 text-sm">
+                          <summary className="cursor-pointer list-none p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                            <span className="inline-flex flex-wrap items-center gap-2">
                               Variation Requests
                               {jobVariations.some(v => selectedJob.customer_id === user.id && v.status === 'pending') && (
                                 <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] text-amber-800">Action needed</span>
                               )}
                             </span>
                           </summary>
-                          <div className="border-t p-4 pt-3 space-y-4">
+                          <div className="border-t p-3 sm:p-4 pt-3 space-y-3 sm:space-y-4">
                           <div className="space-y-1">
                             {selectedJob.customer_id === user.id && (
                               <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed">
@@ -4259,10 +4259,10 @@ export default function Jobs() {
                               const lineItems = v.line_items || [];
                               const variationTotal = lineItems.reduce((sum, item) => sum + Number(item.line_total || 0), 0);
                               return (
-                              <div key={v.id} className="border p-4 rounded-2xl space-y-3 bg-muted/10 font-semibold">
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <h5 className="text-sm font-black text-foreground truncate">{v.title}</h5>
+                              <div key={v.id} className="border p-3 sm:p-4 rounded-xl sm:rounded-2xl space-y-3 bg-muted/10 font-semibold">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="min-w-0">
+                                    <h5 className="text-sm font-black text-foreground break-words">{v.title}</h5>
                                     {v.reason && (
                                       <p className="text-xs text-foreground/80 leading-relaxed font-medium mt-1 whitespace-pre-wrap">{v.reason}</p>
                                     )}
@@ -4276,17 +4276,17 @@ export default function Jobs() {
                                        v.status === 'rejected' ? 'Rejected by customer' : 'Cancelled'}
                                     </span>
                                   </div>
-                                  <div className="text-right">
-                                    <span className="text-sm font-extrabold text-foreground">{formatAud(variationTotal)}</span>
+                                  <div className="sm:text-right">
+                                    <span className="text-sm font-extrabold text-foreground break-words">{formatAud(variationTotal)}</span>
                                     <p className="text-[9px] text-muted-foreground font-bold">{new Date(v.requested_at).toLocaleDateString()}</p>
                                   </div>
                                 </div>
                                 {lineItems.length > 0 && (
                                   <div className="space-y-1.5 border-t pt-2">
                                     {lineItems.map((line) => (
-                                      <div key={line.id} className="flex justify-between gap-3 bg-background border rounded-xl p-2 text-xs">
+                                      <div key={line.id} className="flex flex-col gap-1 bg-background border rounded-xl p-2 text-xs sm:flex-row sm:justify-between">
                                         <div className="min-w-0">
-                                          <span className="font-bold text-foreground truncate block">{line.label}</span>
+                                          <span className="font-bold text-foreground break-words block">{line.label}</span>
                                           <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
                                             {line.line_type} | {line.quantity} x ${line.unit_price.toLocaleString()}
                                           </span>
@@ -4294,7 +4294,7 @@ export default function Jobs() {
                                             <p className="text-[10px] text-foreground/70 mt-1 leading-relaxed">{line.description}</p>
                                           )}
                                         </div>
-                                        <span className="font-black text-foreground shrink-0">{formatAud(Number(line.line_total || 0))}</span>
+                                        <span className="font-black text-foreground break-words sm:shrink-0">{formatAud(Number(line.line_total || 0))}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -4306,9 +4306,9 @@ export default function Jobs() {
                                       Approved Variation Breakdown
                                     </span>
                                     {(v.approved_line_items || []).map((line) => (
-                                      <div key={line.id} className="flex justify-between gap-3 bg-green-500/5 border border-green-500/20 rounded-xl p-2 text-xs">
+                                      <div key={line.id} className="flex flex-col gap-1 bg-green-500/5 border border-green-500/20 rounded-xl p-2 text-xs sm:flex-row sm:justify-between">
                                         <div className="min-w-0">
-                                          <span className="font-bold text-foreground truncate block">{line.label}</span>
+                                          <span className="font-bold text-foreground break-words block">{line.label}</span>
                                           <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
                                             {line.line_type} | {line.quantity} x ${line.unit_price.toLocaleString()}
                                           </span>
@@ -4316,7 +4316,7 @@ export default function Jobs() {
                                             <p className="text-[10px] text-foreground/70 mt-1 leading-relaxed">{line.description}</p>
                                           )}
                                         </div>
-                                        <span className="font-black text-foreground shrink-0">{formatAud(Number(line.line_total || 0))}</span>
+                                        <span className="font-black text-foreground break-words sm:shrink-0">{formatAud(Number(line.line_total || 0))}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -4336,22 +4336,22 @@ export default function Jobs() {
                                 )}
 
                                 {selectedJob.customer_id === user.id && v.status === 'pending' && (
-                                  <div className="flex flex-wrap justify-end gap-2 pt-1">
+                                  <div className="grid grid-cols-1 gap-2 pt-1 sm:flex sm:flex-wrap sm:justify-end">
                                     <button
                                       onClick={() => handleOpenVariationReview(v)}
-                                      className="text-[10px] bg-background border border-primary/30 text-primary hover:bg-primary/5 font-bold px-2.5 py-1 rounded-lg"
+                                      className="w-full text-[11px] bg-background border border-primary/30 text-primary hover:bg-primary/5 font-bold px-2.5 py-2 rounded-lg sm:w-auto sm:py-1 sm:text-[10px]"
                                     >
                                       Review
                                     </button>
                                     <button
                                       onClick={() => handleOpenVariationReview(v)}
-                                      className="text-[10px] bg-green-600 text-white hover:bg-green-700 font-bold px-2.5 py-1 rounded-lg"
+                                      className="w-full text-[11px] bg-green-600 text-white hover:bg-green-700 font-bold px-2.5 py-2 rounded-lg sm:w-auto sm:py-1 sm:text-[10px]"
                                     >
                                       Approve
                                     </button>
                                     <button
                                       onClick={() => handleOpenVariationReview(v)}
-                                      className="text-[10px] bg-red-600 text-white hover:bg-red-700 font-bold px-2.5 py-1 rounded-lg"
+                                      className="w-full text-[11px] bg-red-600 text-white hover:bg-red-700 font-bold px-2.5 py-2 rounded-lg sm:w-auto sm:py-1 sm:text-[10px]"
                                     >
                                       Reject
                                     </button>
@@ -4359,10 +4359,10 @@ export default function Jobs() {
                                 )}
 
                                 {jobPayment?.payee_id === user.id && v.status === 'pending' && (
-                                  <div className="flex justify-end pt-1">
+                                  <div className="flex pt-1 sm:justify-end">
                                     <button
                                       onClick={() => handleCancelVariationRequest(v.id)}
-                                      className="text-[10px] text-red-600 hover:text-red-700 font-bold flex items-center gap-0.5"
+                                      className="flex w-full items-center justify-center gap-1 rounded-lg border border-red-500/20 px-2.5 py-2 text-[11px] font-bold text-red-600 hover:text-red-700 sm:w-auto sm:border-0 sm:p-0 sm:text-[10px]"
                                     >
                                       <X className="h-3 w-3" /> Cancel Variation
                                     </button>

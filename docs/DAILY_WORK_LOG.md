@@ -76,6 +76,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Job Workspace Mobile Density
+
+| Item | Notes |
+| --- | --- |
+| Area | Job Workspace Mobile Density |
+| Summary | Improved mobile readability of accepted/in-progress job workspace tabs by reducing visual density in Contract, Requests, and Evidence while preserving all quote, payment, request, and evidence details. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed
