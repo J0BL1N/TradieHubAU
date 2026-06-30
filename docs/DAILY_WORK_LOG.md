@@ -31,6 +31,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Jobs Mobile Containment Pass
+
+| Item | Notes |
+| --- | --- |
+| Area | Jobs Mobile Containment Pass |
+| Summary | Improved `/jobs` mobile containment by stacking action buttons, reducing nowrap overflow risk, tightening job details modal mobile spacing, and keeping job detail tabs scroll-safe. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

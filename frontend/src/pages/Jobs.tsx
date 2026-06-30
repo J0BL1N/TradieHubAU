@@ -2669,7 +2669,7 @@ export default function Jobs() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className={`shrink-0 flex flex-row ${isCompactCard ? 'md:flex-row md:self-start flex-wrap justify-end' : 'md:flex-col md:self-center'} items-center gap-2`}>
+                    <div className={`shrink-0 flex w-full md:w-auto flex-col ${isCompactCard ? 'md:flex-row md:self-start md:flex-wrap md:justify-end' : 'md:flex-col md:self-center'} items-stretch md:items-center gap-2`}>
                       {/* Save button */}
                       <button
                         onClick={(e) => {
@@ -2682,7 +2682,7 @@ export default function Jobs() {
                         }}
                         disabled={isSaving}
                         title={isSaved ? 'Unsave job' : 'Save job'}
-                        className={`${isCompactCard ? 'p-2' : 'p-2.5'} rounded-xl border transition-all ${
+                        className={`${isCompactCard ? 'p-2' : 'p-2.5'} rounded-xl border transition-all self-start md:self-auto ${
                           isSaved
                             ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
                             : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -2699,7 +2699,7 @@ export default function Jobs() {
 
                       <button
                         onClick={() => setSelectedJob(job)}
-                        className={`${isCompactCard ? 'text-xs px-3 py-2' : 'text-sm px-4 py-2.5'} bg-secondary text-secondary-foreground font-bold rounded-xl hover:bg-secondary/80 transition-all whitespace-nowrap`}
+                        className={`${isCompactCard ? 'text-xs px-3 py-2' : 'text-sm px-4 py-2.5'} w-full md:w-auto bg-secondary text-secondary-foreground font-bold rounded-xl hover:bg-secondary/80 transition-all text-center whitespace-normal md:whitespace-nowrap`}
                       >
                         Details
                       </button>
@@ -2707,7 +2707,7 @@ export default function Jobs() {
                       {activeTab !== 'all' && canMessageJob(job) && (
                         <Link
                           to={`/messages?job=${job.id}`}
-                          className={`${isCompactCard ? 'text-xs px-3 py-2' : 'text-sm px-4 py-2.5'} inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 font-bold text-primary transition-colors hover:bg-primary/10 whitespace-nowrap`}
+                          className={`${isCompactCard ? 'text-xs px-3 py-2' : 'text-sm px-4 py-2.5'} inline-flex w-full md:w-auto items-center justify-center gap-1.5 rounded-xl border border-primary/25 bg-primary/5 font-bold text-primary transition-colors hover:bg-primary/10 text-center whitespace-normal md:whitespace-nowrap`}
                         >
                           <MessageSquare className="h-4 w-4" /> Message
                         </Link>
@@ -2721,7 +2721,7 @@ export default function Jobs() {
                               return (
                                 <button
                                   disabled
-                                  className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 cursor-default whitespace-nowrap"
+                                  className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-100 text-gray-500 border border-gray-200 cursor-default text-center whitespace-normal md:whitespace-nowrap"
                                 >
                                   You can't quote on your own job.
                                 </button>
@@ -2739,7 +2739,7 @@ export default function Jobs() {
                               return (
                                 <button
                                   disabled
-                                  className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-500/10 text-green-600 border border-green-500/20 cursor-default whitespace-nowrap"
+                                  className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-green-500/10 text-green-600 border border-green-500/20 cursor-default text-center whitespace-normal md:whitespace-nowrap"
                                 >
                                   Applied ✓
                                 </button>
@@ -2764,7 +2764,7 @@ export default function Jobs() {
                                   }
                                   handleOpenApply(job);
                                 }}
-                                className={`text-sm font-bold px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap ${
+                                className={`w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-center whitespace-normal md:whitespace-nowrap ${
                                   !isVerifiedTradie
                                     ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
                                     : 'bg-primary text-primary-foreground hover:bg-primary/95'
@@ -2777,7 +2777,7 @@ export default function Jobs() {
                         ) : (
                           <Link
                             to="/login"
-                            className="bg-primary text-primary-foreground text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md whitespace-nowrap"
+                            className="w-full md:w-auto bg-primary text-primary-foreground text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-center whitespace-normal md:whitespace-nowrap"
                           >
                             Apply
                           </Link>
@@ -2794,7 +2794,7 @@ export default function Jobs() {
                                 return (
                                   <button
                                     disabled
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-amber-500 text-amber-950 cursor-default whitespace-nowrap"
+                                    className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-amber-500 text-amber-950 cursor-default text-center whitespace-normal md:whitespace-nowrap"
                                   >
                                     Accepted — Awaiting Payment
                                   </button>
@@ -2804,7 +2804,7 @@ export default function Jobs() {
                                 return (
                                   <button
                                     onClick={() => setReviewModalJob(job)}
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-nowrap"
+                                    className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 text-center whitespace-normal md:whitespace-nowrap"
                                   >
                                     Review Completion
                                   </button>
@@ -2814,7 +2814,7 @@ export default function Jobs() {
                                 return (
                                   <button
                                     disabled
-                                    className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 text-white cursor-default whitespace-nowrap"
+                                    className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 text-white cursor-default text-center whitespace-normal md:whitespace-nowrap"
                                   >
                                     Contract Active
                                   </button>
@@ -2822,11 +2822,11 @@ export default function Jobs() {
                               }
                               if (job.status === 'completed') {
                                 return (
-                                  <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto">
+                                  <div className="flex flex-col gap-2 w-full md:w-auto">
                                     <button
                                       disabled={invoiceModalLoading}
                                       onClick={() => setTradieReviewModalJob(job)}
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-nowrap w-full text-center disabled:opacity-50"
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 transition-all shadow-md active:scale-95 whitespace-normal md:whitespace-nowrap w-full text-center disabled:opacity-50"
                                     >
                                       Leave Review
                                     </button>
@@ -2834,7 +2834,7 @@ export default function Jobs() {
                                       type="button"
                                       disabled={invoiceModalLoading}
                                       onClick={() => handleOpenInvoice(job.id, 'customer_receipt', job.status)}
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-nowrap w-full text-center disabled:opacity-50"
+                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-normal md:whitespace-nowrap w-full text-center disabled:opacity-50"
                                     >
                                       {invoiceModalLoading ? 'Loading...' : 'View Receipt'}
                                     </button>
@@ -2847,7 +2847,7 @@ export default function Jobs() {
                                   return (
                                     <button
                                       disabled
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-amber-500 text-amber-950 cursor-default whitespace-nowrap"
+                                      className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-amber-500 text-amber-950 cursor-default text-center whitespace-normal md:whitespace-nowrap"
                                     >
                                       Accepted — Awaiting Payment
                                     </button>
@@ -2857,7 +2857,7 @@ export default function Jobs() {
                                   return (
                                     <button
                                       onClick={() => setCompletionModalJob(job)}
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white transition-all shadow-md active:scale-95 whitespace-nowrap"
+                                      className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white transition-all shadow-md active:scale-95 text-center whitespace-normal md:whitespace-nowrap"
                                     >
                                       Submit Completion
                                     </button>
@@ -2867,7 +2867,7 @@ export default function Jobs() {
                                   return (
                                     <button
                                       disabled
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 text-white cursor-default whitespace-nowrap"
+                                      className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-green-600 text-white cursor-default text-center whitespace-normal md:whitespace-nowrap"
                                     >
                                       Contract Active
                                     </button>
@@ -2879,7 +2879,7 @@ export default function Jobs() {
                                       type="button"
                                       disabled={invoiceModalLoading}
                                       onClick={() => handleOpenInvoice(job.id, 'tradie_payout_statement', job.status)}
-                                      className="text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-50"
+                                      className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 transition-all shadow-sm active:scale-95 text-center whitespace-normal md:whitespace-nowrap disabled:opacity-50"
                                     >
                                       {invoiceModalLoading ? 'Loading...' : 'View Payout Statement'}
                                     </button>
@@ -2890,7 +2890,7 @@ export default function Jobs() {
                             return (
                               <button
                                 disabled
-                                className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-600 cursor-default whitespace-nowrap"
+                                className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-600 cursor-default text-center whitespace-normal md:whitespace-nowrap"
                               >
                                 Closed
                               </button>
@@ -2899,7 +2899,7 @@ export default function Jobs() {
                         ) : (
                           <button
                             disabled
-                            className="text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-400 cursor-default whitespace-nowrap"
+                            className="w-full md:w-auto text-sm font-bold px-4 py-2.5 rounded-xl bg-gray-200 text-gray-400 cursor-default text-center whitespace-normal md:whitespace-nowrap"
                           >
                             Closed
                           </button>
@@ -2937,14 +2937,14 @@ export default function Jobs() {
       {selectedJob && (
         <div 
           onClick={() => setSelectedJob(null)}
-          className="fixed inset-x-0 bottom-0 top-16 bg-background/80 backdrop-blur-sm z-30 flex items-center justify-center p-4"
+          className="fixed inset-x-0 bottom-0 top-16 bg-background/80 backdrop-blur-sm z-30 flex items-center justify-center p-2 sm:p-4"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-card border border-border w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(90vh-4rem)]"
+            className="bg-card border border-border w-full max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(94vh-4rem)] sm:max-h-[calc(90vh-4rem)]"
           >
-            <div className="p-6 border-b flex items-start justify-between gap-4">
-              <div className="space-y-2">
+            <div className="p-4 sm:p-6 border-b flex items-start justify-between gap-3 sm:gap-4">
+              <div className="space-y-2 min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   {selectedJob.categories.map((cat) => (
                     <span key={cat} className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase">{cat}</span>
@@ -2955,14 +2955,14 @@ export default function Jobs() {
                     </span>
                   )}
                 </div>
-                <h3 className="text-2xl font-extrabold text-foreground leading-tight">{selectedJob.title}</h3>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight break-words">{selectedJob.title}</h3>
               </div>
               <button onClick={() => setSelectedJob(null)} className="p-2 rounded-xl border hover:bg-muted text-muted-foreground hover:text-foreground transition-all shrink-0">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm font-medium">
+            <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden space-y-5 sm:space-y-6 flex-1 text-sm font-medium">
               {usesJobDetailTabs(selectedJob) && (() => {
                 const requestsNeedAction = earlyReleaseRequests.some(req => req.status === 'pending') || jobVariations.some(v => v.status === 'pending');
                 const evidenceNeedAction = selectedJob.status === 'completed_pending_review';
@@ -2974,7 +2974,7 @@ export default function Jobs() {
                 ];
 
                 return (
-                  <div className="-mx-1 overflow-x-auto border-b border-border">
+                  <div className="-mx-1 max-w-full overflow-x-auto overflow-y-hidden border-b border-border">
                     <div className="flex min-w-max gap-5 px-1">
                       {tabs.map(tab => (
                         <button
@@ -3024,7 +3024,7 @@ export default function Jobs() {
                   )}
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-6 bg-muted/20 border p-5 rounded-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 bg-muted/20 border p-4 sm:p-5 rounded-2xl">
                 <div className="space-y-1">
                   <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">Location</span>
                   <p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-0.5"><MapPin className="h-4 w-4 text-foreground/60" />{getPublicJobLocation(selectedJob)}</p>
@@ -4398,7 +4398,7 @@ export default function Jobs() {
                 </button>
               )}
               <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3 sm:ml-auto">
-                <button onClick={() => setSelectedJob(null)} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
+                <button onClick={() => setSelectedJob(null)} className="w-full sm:w-auto bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
                   Close
                 </button>
                 {selectedJob.status === 'open' && (
@@ -4406,7 +4406,7 @@ export default function Jobs() {
                     selectedJob.customer_id === user.id ? (
                       <button
                         disabled
-                        className="font-bold px-6 py-2.5 rounded-xl text-sm bg-gray-100 text-gray-500 border border-gray-200 cursor-default"
+                        className="w-full sm:w-auto font-bold px-6 py-2.5 rounded-xl text-sm bg-gray-100 text-gray-500 border border-gray-200 cursor-default whitespace-normal sm:whitespace-nowrap"
                       >
                         You can't quote on your own job.
                       </button>
@@ -4429,7 +4429,7 @@ export default function Jobs() {
                           handleOpenApply(selectedJob);
                         }}
                         disabled={myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'}
-                        className={`font-bold px-6 py-2.5 rounded-xl transition-all shadow-md text-sm active:scale-95 ${
+                        className={`w-full sm:w-auto font-bold px-6 py-2.5 rounded-xl transition-all shadow-md text-sm active:scale-95 whitespace-normal sm:whitespace-nowrap ${
                           myApplications.has(selectedJob.id) && myApplications.get(selectedJob.id)?.status !== 'withdrawn'
                             ? 'bg-green-500/10 text-green-600 border border-green-500/20 cursor-default'
                             : !isVerifiedTradie
@@ -4444,7 +4444,7 @@ export default function Jobs() {
                     ) : null
                   ) : (
                     <Link to="/login" state={{ from: { pathname: '/jobs' } }}
-                      className="bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-sm">
+                      className="w-full sm:w-auto bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl hover:bg-primary/95 transition-all shadow-md text-sm text-center whitespace-normal sm:whitespace-nowrap">
                       Sign In to Apply
                     </Link>
                   )
