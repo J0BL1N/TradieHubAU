@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### New Message In-App Notifications (Chunk 3)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database / Notifications |
+| Summary | Created `082_new_message_notifications.sql` migration defining an `AFTER INSERT` trigger (`trg_create_notification_on_new_message`) and helper function (`create_notification_on_new_message`) on the `public.messages` table to automatically generate in-app notifications for message recipients, avoiding self-notification and duplicate events. |
+| Files changed | `supabase/migrations/082_new_message_notifications.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`082_new_message_notifications.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 082 SQL script in Supabase Studio. |
+| Manual QA status | Not applicable for database schema/trigger changes. |
+
 ### In-App Notification Bell UI (Chunk 2)
 
 | Item | Notes |
