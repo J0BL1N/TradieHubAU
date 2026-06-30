@@ -102,9 +102,10 @@ export default function Layout() {
             {/* Primary Action Button */}
             <Link
               to="/post-job"
-              className="hidden sm:inline-flex min-h-11 lg:min-h-12 items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold px-3 lg:px-4 xl:px-5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap"
+              className="inline-flex min-h-11 lg:min-h-12 items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground text-xs sm:text-sm font-bold px-3 lg:px-4 xl:px-5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap"
             >
-              Post a Job
+              <span className="sm:hidden">Post Job</span>
+              <span className="hidden sm:inline">Post a Job</span>
             </Link>
 
             {/* User Account / Authentication Buttons */}

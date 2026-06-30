@@ -67,6 +67,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Mobile Post Job Header Hotfix
+
+| Item | Notes |
+| --- | --- |
+| Area | Mobile Post Job Header Hotfix |
+| Summary | Ensured the Post a Job CTA remains visible on small mobile headers while preserving the compact hamburger menu for secondary/account navigation. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed
