@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { fetchJobById, fetchJobWorkspaceImages, fetchJobs, getPublicJobLocation, hydrateJobsWithPublicCustomers } from '../lib/jobs';
 import type { Job } from '../lib/jobs';
@@ -1247,6 +1247,8 @@ export default function Jobs() {
     }
   }, [jobProofs]);
 
+
+
   // Reset the local status filter when switching tabs. loadJobs reacts to activeTab separately.
   useEffect(() => {
     setMyJobsStatusFilter('all');
@@ -1349,6 +1351,111 @@ export default function Jobs() {
     const ids = await getSavedItemIds('job');
     setSavedJobIds(ids);
   }, [userId]);
+
+  const selectedJobRef = useRef<Job | null>(null);
+  useEffect(() => {
+    selectedJobRef.current = selectedJob;
+  }, [selectedJob]);
+
+  // Realtime subscription to live updates on jobs, applications, payments, completion proofs, disputes, early releases, and variations
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`jobs-realtime-sync:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'jobs'
+        },
+        () => {
+          void loadJobs();
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'applications'
+        },
+        () => {
+          void loadJobs();
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        },
+        () => {
+          void loadJobs();
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_completion_proofs'
+        },
+        () => {
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_issues'
+        },
+        () => {
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'early_release_requests'
+        },
+        () => {
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_variation_requests'
+        },
+        () => {
+          const activeJob = selectedJobRef.current;
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user, loadJobs, fetchJobLifecycleDetails]);
 
   // ─── Load user's existing applications ─────────────────────────────────────
   const loadApplications = useCallback(async () => {
