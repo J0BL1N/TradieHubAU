@@ -209,6 +209,8 @@ export default function Profile() {
   const [verificationSummaries, setVerificationSummaries] = useState<Record<string, VerificationSummary>>({});
   const [tradieVerificationStatus, setTradieVerificationStatus] = useState<VerificationStatus>('none');
   const [tradieVerificationNotes, setTradieVerificationNotes] = useState<string | null>(null);
+  const [insuranceFile, setInsuranceFile] = useState<File | null>(null);
+  const [insuranceUploadError, setInsuranceUploadError] = useState<string | null>(null);
 
   const categoryOptions = [
     { id: 'electrical', label: 'Electrical' },
@@ -722,57 +724,111 @@ export default function Profile() {
   const handleApplyAsTradie = async (e?: React.FormEvent, documentType = tradieDocType, selectedFile = tradieFile) => {
     e?.preventDefault();
     if (!user) return;
-    if (!selectedFile) {
-      setUploadError('Please select a credential document file.');
-      return;
-    }
-    if (!abn.trim()) {
-      setUploadError('Please enter your ABN.');
-      return;
-    }
-    if (!licenseNumber.trim()) {
-      setUploadError('Please enter your licence number.');
-      return;
-    }
-    if (trades.length === 0) {
-      setUploadError('Please select at least one trade.');
-      return;
+
+    const isCustomer = targetProfile?.role === 'customer';
+
+    if (isCustomer) {
+      if (!tradieFile) {
+        setUploadError('Please select a credential document file.');
+        return;
+      }
+      if (!insuranceFile) {
+        setInsuranceUploadError('Please select an insurance proof file.');
+        return;
+      }
+      if (!abn.trim()) {
+        setUploadError('Please enter your ABN.');
+        return;
+      }
+      if (!licenseNumber.trim()) {
+        setUploadError('Please enter your licence number.');
+        return;
+      }
+      if (trades.length === 0) {
+        setUploadError('Please select at least one trade.');
+        return;
+      }
+    } else {
+      if (!selectedFile) {
+        setUploadError('Please select a credential document file.');
+        return;
+      }
     }
 
     setUploadingDoc(true);
     setUploadError(null);
+    setInsuranceUploadError(null);
     setUploadSuccess(false);
 
     try {
-      // 1. Update ABN, licence, and trades on user profile first (only if not already pending/approved to avoid trigger exceptions)
-      if (tradieVerificationStatus !== 'pending' && !targetProfile?.tradie_verified) {
-        const { error: profileErr } = await updateUserProfile(user.id, {
-          abn: abn.trim(),
-          license_number: licenseNumber.trim(),
-          trades: trades
+      if (isCustomer) {
+        // 1. Update ABN, licence, and trades on user profile first (only if not already pending/approved to avoid trigger exceptions)
+        if (tradieVerificationStatus !== 'pending' && !targetProfile?.tradie_verified) {
+          const { error: profileErr } = await updateUserProfile(user.id, {
+            abn: abn.trim(),
+            license_number: licenseNumber.trim(),
+            trades: trades
+          });
+          if (profileErr) throw profileErr;
+        }
+
+        // 2. Upload Credential Document
+        const credentialExt = tradieFile!.name.split('.').pop();
+        const credentialPath = `users/${user.id}/${Date.now()}_contractor_license.${credentialExt}`;
+        const { error: credUploadErr } = await supabase.storage
+          .from('verifications')
+          .upload(credentialPath, tradieFile!);
+        if (credUploadErr) throw credUploadErr;
+
+        // 3. Submit Credential Verification record
+        const { error: credDbErr } = await submitVerification({
+          user_id: user.id,
+          document_type: 'contractor_license',
+          document_url: credentialPath
         });
-        if (profileErr) throw profileErr;
+        if (credDbErr) throw credDbErr;
+
+        // 4. Upload Insurance Document
+        const insuranceExt = insuranceFile!.name.split('.').pop();
+        const insurancePath = `users/${user.id}/${Date.now()}_insurance.${insuranceExt}`;
+        const { error: insUploadErr } = await supabase.storage
+          .from('verifications')
+          .upload(insurancePath, insuranceFile!);
+        if (insUploadErr) throw insUploadErr;
+
+        // 5. Submit Insurance Verification record
+        const { error: insDbErr } = await submitVerification({
+          user_id: user.id,
+          document_type: 'insurance',
+          document_url: insurancePath
+        });
+        if (insDbErr) throw insDbErr;
+
+        setUploadSuccess(true);
+        setTradieFile(null);
+        setInsuranceFile(null);
+      } else {
+        // 2. Upload file to Supabase storage private 'verifications' bucket
+        const fileExt = selectedFile!.name.split('.').pop();
+        const filePath = `users/${user.id}/${Date.now()}_tradie.${fileExt}`;
+        const { error: uploadErr } = await supabase.storage
+          .from('verifications')
+          .upload(filePath, selectedFile!);
+        if (uploadErr) throw uploadErr;
+
+        // 3. Submit verification request record
+        const { error: dbErr } = await submitVerification({
+          user_id: user.id,
+          document_type: documentType,
+          document_url: filePath
+        });
+        if (dbErr) throw dbErr;
+
+        setUploadSuccess(true);
+        setTradieFile(null);
+        setTradieFiles(prev => ({ ...prev, [documentType]: null }));
       }
 
-      // 2. Upload file to Supabase storage private 'verifications' bucket
-      const fileExt = selectedFile.name.split('.').pop();
-      const filePath = `users/${user.id}/${Date.now()}_tradie.${fileExt}`;
-      const { error: uploadErr } = await supabase.storage
-        .from('verifications')
-        .upload(filePath, selectedFile);
-      if (uploadErr) throw uploadErr;
-
-      // 3. Submit verification request record
-      const { error: dbErr } = await submitVerification({
-        user_id: user.id,
-        document_type: documentType,
-        document_url: filePath
-      });
-      if (dbErr) throw dbErr;
-
-      setUploadSuccess(true);
-      setTradieFile(null);
-      setTradieFiles(prev => ({ ...prev, [documentType]: null }));
       await loadVerificationStatus();
       await loadProfile();
       refreshProfile();
@@ -1068,7 +1124,8 @@ export default function Profile() {
     abn.trim() !== '' ||
     licenseNumber.trim() !== '' ||
     trades.length > 0 ||
-    tradieFile !== null;
+    tradieFile !== null ||
+    insuranceFile !== null;
 
   const compactVerificationDashboard = (
     <div className="space-y-6">
@@ -1345,7 +1402,7 @@ export default function Profile() {
                       <div>
                         <label className="text-xs font-bold text-foreground uppercase tracking-wider">Credential document</label>
                         <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
-                          Upload your contractor licence, insurance certificate, or trade credential document.
+                          Upload your contractor licence or trade registration document.
                         </p>
                       </div>
                       {tradieFile && (
@@ -1372,6 +1429,46 @@ export default function Profile() {
                       </label>
                       {uploadError === 'Please select a credential document file.' && (
                         <p className="text-xs font-semibold text-red-500 mt-1">Please select a credential document file.</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl border bg-muted/10 p-3 space-y-3">
+                      <div>
+                        <label className="text-xs font-bold text-foreground uppercase tracking-wider">Insurance proof</label>
+                        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
+                          Upload your public liability insurance certificate or other required trade insurance proof.
+                        </p>
+                      </div>
+                      {insuranceFile && (
+                        <div className="flex items-center justify-between gap-3 rounded-xl border bg-background p-2">
+                          <span className="truncate text-xs font-bold text-foreground">{insuranceFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setInsuranceFile(null)}
+                            className="shrink-0 text-[10px] font-black uppercase text-muted-foreground hover:text-foreground"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                      <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-bold text-secondary-foreground transition-all hover:bg-secondary/80 cursor-pointer select-none">
+                        <Upload className="h-4 w-4" /> Choose Insurance File
+                        <input
+                          type="file"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setInsuranceFile(file);
+                            if (file && insuranceUploadError === 'Please select an insurance proof file.') {
+                              setInsuranceUploadError(null);
+                            }
+                          }}
+                          disabled={uploadingDoc || tradieVerificationStatus === 'pending'}
+                          className="hidden"
+                          accept="image/*,application/pdf"
+                        />
+                      </label>
+                      {insuranceUploadError && (
+                        <p className="text-xs font-semibold text-red-500 mt-1">{insuranceUploadError}</p>
                       )}
                     </div>
                     <input

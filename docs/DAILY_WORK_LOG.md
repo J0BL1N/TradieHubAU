@@ -112,6 +112,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Contractor Insurance Upload Hotfix
+
+| Item | Notes |
+| --- | --- |
+| Area | Contractor Insurance Upload Hotfix |
+| Summary | Added missing insurance proof upload to the Profile Verification contractor application flow so tradie applicants can submit both credential/licence proof and insurance proof for admin approval. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed
