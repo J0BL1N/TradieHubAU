@@ -40,6 +40,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Responsive Header/Nav Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Responsive Header/Nav Polish |
+| Summary | Improved shared header/nav readability, tap targets, tablet spacing, and mobile containment for a cleaner older-user-friendly navigation experience. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

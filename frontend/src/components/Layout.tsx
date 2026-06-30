@@ -36,21 +36,21 @@ export default function Layout() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Sticky Header with Glassmorphism */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           
           {/* Logo & Middle Menu Section */}
-          <div className="flex items-center gap-8">
-            <Link to="/" className="nav-logo" aria-label="TradieHubAU home">
+          <div className="flex min-w-0 items-center gap-6 xl:gap-8">
+            <Link to="/" className="nav-logo shrink-0" aria-label="TradieHubAU home">
               <img src="/assets/tradiehubau-logo-nav-clean.png" alt="TradieHubAU" className="nav-logo-img" />
             </Link>
 
             {/* Desktop Middle Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-2 xl:gap-3">
               <NavLink
                 to="/jobs"
                 className={({ isActive }) =>
-                  `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  `inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                    isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                   }`
                 }
               >
@@ -61,8 +61,8 @@ export default function Layout() {
               <NavLink
                 to="/browse-tradies"
                 className={({ isActive }) =>
-                  `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  `inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                    isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                   }`
                 }
               >
@@ -74,8 +74,8 @@ export default function Layout() {
                 <NavLink
                   to="/messages"
                   className={({ isActive }) =>
-                    `text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 ${
-                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    `inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                      isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                     }`
                   }
                 >
@@ -87,12 +87,12 @@ export default function Layout() {
           </div>
 
           {/* Right Action & Account Area */}
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <NavLink
               to="/how-it-works"
               className={({ isActive }) =>
-                `hidden md:inline-flex text-sm font-semibold hover:text-primary transition-colors items-center gap-1.5 ${
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                `hidden lg:inline-flex min-h-11 items-center rounded-xl px-3 text-[15px] font-bold transition-colors hover:bg-muted/40 hover:text-primary whitespace-nowrap ${
+                  isActive ? 'text-primary bg-primary/5' : 'text-foreground/75'
                 }`
               }
             >
@@ -102,7 +102,7 @@ export default function Layout() {
             {/* Primary Action Button */}
             <Link
               to="/post-job"
-              className="hidden sm:inline-flex items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold h-10 px-5 rounded-xl transition-all shadow-md active:scale-95"
+              className="hidden sm:inline-flex min-h-11 items-center justify-center bg-primary hover:bg-primary/95 text-primary-foreground text-sm font-bold px-4 xl:px-5 rounded-xl transition-all shadow-md active:scale-95 whitespace-nowrap"
             >
               Post a Job
             </Link>
@@ -112,7 +112,7 @@ export default function Layout() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all focus:outline-none"
+                  className="flex min-h-11 items-center gap-2 rounded-xl px-1.5 text-sm font-bold text-foreground/75 hover:bg-muted/40 hover:text-foreground transition-all focus:outline-none"
                 >
                   <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm border border-primary/20 shadow-sm overflow-hidden">
                     {profile?.avatar_url ? (
@@ -179,13 +179,13 @@ export default function Layout() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="text-sm font-bold text-muted-foreground hover:text-foreground px-3 py-2 transition-all"
+                  className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-bold text-foreground/75 hover:bg-muted/40 hover:text-foreground transition-all"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/login"
-                  className="hidden sm:inline-flex items-center justify-center border hover:bg-muted text-foreground text-sm font-bold h-9 px-4 rounded-xl transition-all"
+                  className="hidden sm:inline-flex min-h-11 items-center justify-center border hover:bg-muted text-foreground text-sm font-bold px-4 rounded-xl transition-all"
                 >
                   Join
                 </Link>
@@ -195,7 +195,7 @@ export default function Layout() {
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-muted-foreground hover:text-foreground outline-none rounded-lg focus:bg-muted"
+              className="lg:hidden inline-flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground outline-none rounded-xl hover:bg-muted focus:bg-muted"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -205,7 +205,7 @@ export default function Layout() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden bg-background/95 backdrop-blur-md pt-20 px-6 space-y-4 flex flex-col items-center">
+        <div className="fixed inset-0 z-50 lg:hidden bg-background/95 backdrop-blur-md pt-20 px-6 space-y-4 flex flex-col items-center">
           <button
             onClick={() => setMobileMenuOpen(false)}
             className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground rounded-lg"
