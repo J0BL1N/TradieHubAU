@@ -7,6 +7,9 @@ import { fetchPublicProofGallery } from '../lib/profileTrust';
 import type { PublicProofImage } from '../lib/profileTrust';
 import { fetchPublicTradieReviews } from '../lib/reviews';
 import type { PublicTradieReview } from '../lib/reviews';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../components/AuthProvider';
+import { maskName } from '../lib/masking';
 
 const tradeLabels: Record<string, string> = {
   electrical: 'Electrical',
@@ -28,6 +31,8 @@ function formatMonth(value: string | null) {
 
 export default function PublicTradieProfile() {
   const { userId } = useParams<{ userId: string }>();
+  const { user, profile: viewerProfile } = useAuth();
+  const [hasFundedContract, setHasFundedContract] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [proofGallery, setProofGallery] = useState<PublicProofImage[]>([]);
   const [reviews, setReviews] = useState<PublicTradieReview[]>([]);
@@ -49,6 +54,30 @@ export default function PublicTradieProfile() {
 
       setProfile(profileData);
 
+      let relationshipActive = false;
+      if (user && user.id !== userId) {
+        const { data: relJobs, error: relErr } = await supabase
+          .from('jobs')
+          .select('id, status')
+          .eq('customer_id', user.id)
+          .in('status', ['payment_held', 'completed_pending_review', 'disputed', 'completed']);
+
+        if (!relErr && relJobs && relJobs.length > 0) {
+          const jobIds = relJobs.map(j => j.id);
+          const { data: relApps, error: appErr } = await supabase
+            .from('applications')
+            .select('id')
+            .eq('tradie_id', userId)
+            .eq('status', 'accepted')
+            .in('job_id', jobIds);
+
+          if (!appErr && relApps && relApps.length > 0) {
+            relationshipActive = true;
+          }
+        }
+      }
+      setHasFundedContract(relationshipActive);
+
       const [
         proofResult,
         reviewsResult,
@@ -68,7 +97,7 @@ export default function PublicTradieProfile() {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, user]);
 
   useEffect(() => {
     void loadProfile();
@@ -97,7 +126,12 @@ export default function PublicTradieProfile() {
     );
   }
 
-  const displayName = profile.business_name || profile.display_name || 'TradieHubAU tradie';
+  const isOwner = user?.id === userId;
+  const isAdmin = viewerProfile?.is_admin === true;
+  const showFullIdentity = isOwner || isAdmin || hasFundedContract;
+
+  const rawDisplayName = profile.business_name || profile.display_name || 'TradieHubAU tradie';
+  const displayName = showFullIdentity ? rawDisplayName : maskName(rawDisplayName);
   const location = [profile.suburb, profile.state].filter(Boolean).join(', ');
   const averageRating = reviews.length > 0
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
@@ -131,7 +165,7 @@ export default function PublicTradieProfile() {
               </div>
             </div>
             {profile.bio && <p className="text-sm leading-6 text-muted-foreground font-medium max-w-3xl">{profile.bio}</p>}
-            {profile.website_url && (
+            {showFullIdentity && profile.website_url && (
               <a href={profile.website_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:text-primary/80">
                 Visit website <ExternalLink className="h-4 w-4" />
               </a>

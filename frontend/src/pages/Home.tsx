@@ -23,6 +23,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { fetchTradies } from '../lib/users';
+import { maskName } from '../lib/masking';
 import type { UserProfile } from '../lib/users';
 import { fetchPublicTradieReviewSummaries } from '../lib/reviews';
 import type { ReviewSummary } from '../lib/reviews';
@@ -406,19 +407,19 @@ export default function Home() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg overflow-hidden shrink-0 border border-primary/20">
                         {tradie.avatar_url ? (
-                          <img src={tradie.avatar_url} alt={tradie.display_name} className="w-full h-full object-cover" />
+                          <img src={tradie.avatar_url} alt={maskName(tradie.display_name)} className="w-full h-full object-cover" />
                         ) : (
-                          tradie.display_name.charAt(0).toUpperCase()
+                          maskName(tradie.display_name).charAt(0).toUpperCase()
                         )}
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-extrabold text-foreground text-sm truncate flex items-center gap-1.5">
-                          {tradie.display_name}
+                          {maskName(tradie.display_name)}
                           {tradie.tradie_verified && (
                             <ShieldCheck className="h-4 w-4 text-primary fill-current" />
                           )}
                         </h4>
-                        <p className="text-xs text-muted-foreground truncate">{tradie.business_name || 'Individual Contractor'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{maskName(tradie.business_name || 'Individual Contractor')}</p>
                       </div>
                     </div>
 

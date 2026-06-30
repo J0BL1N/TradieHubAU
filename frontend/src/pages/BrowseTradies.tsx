@@ -5,8 +5,11 @@ import type { UserProfile } from '../lib/users';
 import { fetchPublicTradieReviewSummaries } from '../lib/reviews';
 import type { ReviewSummary } from '../lib/reviews';
 import { Star, ShieldCheck, MapPin, Award, Search, SlidersHorizontal, X, Filter, RefreshCw, Loader2 } from 'lucide-react';
+import { useAuth } from '../components/AuthProvider';
+import { maskName } from '../lib/masking';
 
 export default function BrowseTradies() {
+  const { user, profile: viewerProfile } = useAuth();
   const [tradies, setTradies] = useState<UserProfile[]>([]);
   const [reviewSummaries, setReviewSummaries] = useState<Map<string, ReviewSummary>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -217,7 +220,9 @@ export default function BrowseTradies() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {tradies.map((tradie) => {
-                const displayName = tradie.business_name || tradie.display_name || 'User';
+                const rawName = tradie.business_name || tradie.display_name || 'User';
+                const showFull = viewerProfile?.is_admin || user?.id === tradie.id;
+                const displayName = showFull ? rawName : maskName(rawName);
                 const tradesLine = tradie.trades && tradie.trades.length > 0
                   ? tradie.trades.map(tid => categoryOptions.find(c => c.id === tid)?.label || tid).join(', ')
                   : 'General Contractor';

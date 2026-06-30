@@ -58,6 +58,7 @@ import {
   submitTradieReview,
 } from '../lib/reviews';
 import type { MyReview } from '../lib/reviews';
+import { maskName } from '../lib/masking';
 
 // ─── Application Modal ────────────────────────────────────────────────────────
 
@@ -3841,117 +3842,125 @@ export default function Jobs() {
                             <p className="text-xs text-muted-foreground font-semibold">No quotes received yet.</p>
                           ) : (
                             <div className="space-y-3">
-                              {jobApplications.map((app) => (
-                                <div key={app.id} className="border p-3 sm:p-4 rounded-xl sm:rounded-2xl space-y-3 bg-card font-semibold">
-                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                    <div className="min-w-0">
-                                      <h5 className="font-extrabold text-sm break-words">{app.tradie?.display_name || 'Verified Tradie'}</h5>
-                                      <p className="text-[10px] text-muted-foreground break-words">Licence: {app.tradie?.license_number || 'N/A'} | ABN: {app.tradie?.abn || 'N/A'}</p>
-                                    </div>
-                                    <div className="sm:text-right">
-                                      <span className="text-sm font-black text-primary break-words">${app.estimate?.toLocaleString()}</span>
-                                      <p className="text-[10px] text-muted-foreground">{app.availability || 'Immediate start'}</p>
-                                    </div>
-                                  </div>
-                                  <p className="text-xs text-foreground bg-muted/10 p-3 rounded-xl leading-relaxed whitespace-pre-wrap">{app.message}</p>
+                              {jobApplications.map((app) => {
+                                const isJobFunded = ['payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status);
+                                const showFull = isJobFunded || profile?.is_admin;
+                                const displayName = showFull ? (app.tradie?.display_name || 'Verified Tradie') : maskName(app.tradie?.display_name);
+                                const licenceText = showFull ? (app.tradie?.license_number || 'N/A') : 'Verified';
+                                const abnText = showFull ? (app.tradie?.abn || 'N/A') : 'Verified';
 
-                                  {/* Itemised quote lines if present */}
-                                  <div className="space-y-1.5 border-t pt-2 mt-2">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-black">Quote Details Breakdown</span>
-                                    {quoteLineItems[app.id] && quoteLineItems[app.id].length > 0 ? (
-                                      <div className="space-y-1.5">
-                                        {quoteLineItems[app.id].map((item) => (
-                                          <div key={item.id} className="flex flex-col gap-1 text-xs font-semibold bg-muted/20 p-2 rounded-xl border border-border/50 sm:flex-row sm:items-center sm:justify-between">
-                                            <div className="min-w-0 flex-1 pr-2">
-                                              <span className="text-foreground font-bold break-words block">{item.label}</span>
-                                              <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
-                                                {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
-                                              </span>
-                                            </div>
-                                            <span className="text-foreground font-extrabold break-words sm:shrink-0">${item.line_total.toLocaleString()}</span>
-                                          </div>
-                                        ))}
-                                        <div className="flex flex-col gap-1 text-xs border-t pt-2 font-bold text-foreground sm:flex-row sm:items-center sm:justify-between">
-                                          <span>Total Estimate</span>
-                                          <span className="text-primary break-words">${app.estimate?.toLocaleString()}</span>
-                                        </div>
+                                return (
+                                  <div key={app.id} className="border p-3 sm:p-4 rounded-xl sm:rounded-2xl space-y-3 bg-card font-semibold">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                      <div className="min-w-0">
+                                        <h5 className="font-extrabold text-sm break-words">{displayName}</h5>
+                                        <p className="text-[10px] text-muted-foreground break-words">Licence: {licenceText} | ABN: {abnText}</p>
                                       </div>
+                                      <div className="sm:text-right">
+                                        <span className="text-sm font-black text-primary break-words">${app.estimate?.toLocaleString()}</span>
+                                        <p className="text-[10px] text-muted-foreground">{app.availability || 'Immediate start'}</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs text-foreground bg-muted/10 p-3 rounded-xl leading-relaxed whitespace-pre-wrap">{app.message}</p>
+
+                                    {/* Itemised quote lines if present */}
+                                    <div className="space-y-1.5 border-t pt-2 mt-2">
+                                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-black">Quote Details Breakdown</span>
+                                      {quoteLineItems[app.id] && quoteLineItems[app.id].length > 0 ? (
+                                        <div className="space-y-1.5">
+                                          {quoteLineItems[app.id].map((item) => (
+                                            <div key={item.id} className="flex flex-col gap-1 text-xs font-semibold bg-muted/20 p-2 rounded-xl border border-border/50 sm:flex-row sm:items-center sm:justify-between">
+                                              <div className="min-w-0 flex-1 pr-2">
+                                                <span className="text-foreground font-bold break-words block">{item.label}</span>
+                                                <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">
+                                                  {item.line_type} | {item.quantity} x ${item.unit_price.toLocaleString()}
+                                                </span>
+                                              </div>
+                                              <span className="text-foreground font-extrabold break-words sm:shrink-0">${item.line_total.toLocaleString()}</span>
+                                            </div>
+                                          ))}
+                                          <div className="flex flex-col gap-1 text-xs border-t pt-2 font-bold text-foreground sm:flex-row sm:items-center sm:justify-between">
+                                            <span>Total Estimate</span>
+                                            <span className="text-primary break-words">${app.estimate?.toLocaleString()}</span>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-[10px] text-muted-foreground italic">
+                                          Detailed quote breakdown not available for this older quote.
+                                        </p>
+                                      )}
+                                    </div>
+                                    {selectedJob.status === 'open' ? (
+                                      <button
+                                        onClick={() => {
+                                          setModalConfirmConfig({
+                                            title: "Accept Quote",
+                                            message: `Accept quote from ${displayName} for $${app.estimate?.toLocaleString()}?`,
+                                            onConfirm: async () => {
+                                              const { error } = await acceptQuote(selectedJob.id, app.id);
+                                              if (error) {
+                                                showToast(error.message, 'error');
+                                              } else {
+                                                showToast("Quote accepted. Awaiting customer payment.", 'success');
+                                                setSelectedJob(prev => prev ? { ...prev, status: 'accepted' } : null);
+                                                fetchJobLifecycleDetails(selectedJob.id);
+                                                loadJobs();
+                                              }
+                                            }
+                                          });
+                                        }}
+                                        className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-black text-xs py-2 rounded-xl transition-all shadow active:scale-95"
+                                      >
+                                        Accept Quote
+                                      </button>
+                                    ) : app.status === 'accepted' ? (
+                                      selectedJob.status === 'accepted' ? (
+                                        <button
+                                          disabled
+                                          className="w-full bg-amber-500 text-amber-950 font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                        >
+                                          Accepted — Awaiting Payment
+                                        </button>
+                                      ) : selectedJob.status === 'completed_pending_review' ? (
+                                        <button
+                                          disabled
+                                          className="w-full bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                        >
+                                          Under Review
+                                        </button>
+                                      ) : selectedJob.status === 'disputed' ? (
+                                        <button
+                                          disabled
+                                          className="w-full bg-red-500 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                        >
+                                          Disputed
+                                        </button>
+                                      ) : selectedJob.status === 'completed' ? (
+                                        <button
+                                          disabled
+                                          className="w-full bg-emerald-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                        >
+                                          Completed
+                                        </button>
+                                      ) : (
+                                        <button
+                                          disabled
+                                          className="w-full bg-green-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                        >
+                                          Contract Active (Payment Funded)
+                                        </button>
+                                      )
                                     ) : (
-                                      <p className="text-[10px] text-muted-foreground italic">
-                                        Detailed quote breakdown not available for this older quote.
-                                      </p>
+                                      <button
+                                        disabled
+                                        className="w-full bg-gray-200 text-gray-400 font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
+                                      >
+                                        Other Quote Accepted
+                                      </button>
                                     )}
                                   </div>
-                                  {selectedJob.status === 'open' ? (
-                                    <button
-                                      onClick={() => {
-                                        setModalConfirmConfig({
-                                          title: "Accept Quote",
-                                          message: `Accept quote from ${app.tradie?.display_name || 'this tradie'} for $${app.estimate?.toLocaleString()}?`,
-                                          onConfirm: async () => {
-                                            const { error } = await acceptQuote(selectedJob.id, app.id);
-                                            if (error) {
-                                              showToast(error.message, 'error');
-                                            } else {
-                                              showToast("Quote accepted. Awaiting customer payment.", 'success');
-                                              setSelectedJob(prev => prev ? { ...prev, status: 'accepted' } : null);
-                                              fetchJobLifecycleDetails(selectedJob.id);
-                                              loadJobs();
-                                            }
-                                          }
-                                        });
-                                      }}
-                                      className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-black text-xs py-2 rounded-xl transition-all shadow active:scale-95"
-                                    >
-                                      Accept Quote
-                                    </button>
-                                  ) : app.status === 'accepted' ? (
-                                    selectedJob.status === 'accepted' ? (
-                                      <button
-                                        disabled
-                                        className="w-full bg-amber-500 text-amber-950 font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
-                                      >
-                                        Accepted — Awaiting Payment
-                                      </button>
-                                    ) : selectedJob.status === 'completed_pending_review' ? (
-                                      <button
-                                        disabled
-                                        className="w-full bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
-                                      >
-                                        Under Review
-                                      </button>
-                                    ) : selectedJob.status === 'disputed' ? (
-                                      <button
-                                        disabled
-                                        className="w-full bg-red-500 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
-                                      >
-                                        Disputed
-                                      </button>
-                                    ) : selectedJob.status === 'completed' ? (
-                                      <button
-                                        disabled
-                                        className="w-full bg-emerald-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
-                                      >
-                                        Completed
-                                      </button>
-                                    ) : (
-                                      <button
-                                        disabled
-                                        className="w-full bg-green-600 text-white font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
-                                      >
-                                        Contract Active (Payment Funded)
-                                      </button>
-                                    )
-                                  ) : (
-                                    <button
-                                      disabled
-                                      className="w-full bg-gray-200 text-gray-400 font-black text-xs py-2.5 rounded-xl cursor-not-allowed"
-                                    >
-                                      Other Quote Accepted
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                           </div>

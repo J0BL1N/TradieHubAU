@@ -121,6 +121,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Public Tradie Identity Masking
+
+| Item | Notes |
+| --- | --- |
+| Area | Public Tradie Identity Masking |
+| Summary | Masked public/pre-contract tradie identities across browse/profile/quote surfaces to reduce marketplace leakage while preserving full identity for admins, owners, and funded contract relationships. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed
