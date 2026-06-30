@@ -94,6 +94,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Contractor Credential Upload Hotfix
+
+| Item | Notes |
+| --- | --- |
+| Area | Contractor Credential Upload Hotfix |
+| Summary | Added the missing credential document upload control to the Profile Verification contractor application card so users can submit required ABN/licence details with supporting proof. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

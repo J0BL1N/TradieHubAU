@@ -811,6 +811,9 @@ export default function Profile() {
     setTradieFiles(prev => ({ ...prev, [documentType]: file }));
     setTradieDocType(documentType);
     setTradieFile(file);
+    if (file && uploadError === 'Please select a credential document file.') {
+      setUploadError(null);
+    }
   };
 
   if (authLoading || (profileLoading && !targetProfile)) {
@@ -1277,6 +1280,36 @@ export default function Profile() {
                   {uploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600">Your credentials have been submitted for review.</p>}
                   {uploadError && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500">{uploadError}</p>}
                   <div className="grid gap-3">
+                    <div className="rounded-2xl border bg-muted/10 p-3 space-y-3">
+                      <div>
+                        <label className="text-xs font-bold text-foreground uppercase tracking-wider">Credential document</label>
+                        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
+                          Upload your contractor licence, insurance certificate, or trade credential document.
+                        </p>
+                      </div>
+                      {tradieFile && (
+                        <div className="flex items-center justify-between gap-3 rounded-xl border bg-background p-2">
+                          <span className="truncate text-xs font-bold text-foreground">{tradieFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setTradieCardFile('contractor_license', null)}
+                            className="shrink-0 text-[10px] font-black uppercase text-muted-foreground hover:text-foreground"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                      <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-bold text-secondary-foreground transition-all hover:bg-secondary/80 cursor-pointer select-none">
+                        <Upload className="h-4 w-4" /> Choose Credential File
+                        <input
+                          type="file"
+                          onChange={(e) => setTradieCardFile('contractor_license', e.target.files?.[0] || null)}
+                          disabled={uploadingDoc || tradieVerificationStatus === 'pending'}
+                          className="hidden"
+                          accept="image/*,application/pdf"
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
                       value={abn}
