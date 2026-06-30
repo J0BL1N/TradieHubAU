@@ -13,6 +13,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Job Details Sub-Nav Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Job Details Sub-Nav Polish |
+| Summary | Moved accepted/in-progress job detail sections into a cleaner sub-nav/tab layout with Overview, Quote, Payment, Requests, Evidence, and History, reducing stacked technical clutter while preserving all actions. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

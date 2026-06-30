@@ -83,6 +83,8 @@ interface VariationFormLineItem {
   line_type: VariationLineType;
 }
 
+type JobDetailTab = 'overview' | 'quote' | 'payment' | 'requests' | 'evidence' | 'history';
+
 function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModalProps) {
   const { user } = useAuth();
   const [message, setMessage] = useState('');
@@ -953,6 +955,7 @@ export default function Jobs() {
 
   // Modal state
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [activeJobDetailTab, setActiveJobDetailTab] = useState<JobDetailTab>('overview');
   const [reviewModalJob, setReviewModalJob] = useState<Job | null>(null);
   const [tradieReviewModalJob, setTradieReviewModalJob] = useState<Job | null>(null);
   const [applyJob, setApplyJob] = useState<Job | null>(null);
@@ -961,6 +964,10 @@ export default function Jobs() {
   const [proofImageUrls, setProofImageUrls] = useState<string[]>([]);
   const [workspaceImageUrls, setWorkspaceImageUrls] = useState<string[]>([]);
   const [workspaceImageError, setWorkspaceImageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveJobDetailTab('overview');
+  }, [selectedJob?.id]);
 
   // Prevent body scroll when details or other modals are open
   useEffect(() => {
@@ -1603,6 +1610,10 @@ export default function Jobs() {
     if (status === 'disputed') return 'bg-red-500/10 text-red-800 border-red-500/30';
     if (status === 'completed') return 'bg-emerald-500/10 text-emerald-800 border-emerald-500/30';
     return 'bg-secondary text-secondary-foreground border-transparent';
+  };
+
+  const usesJobDetailTabs = (job: Job) => {
+    return !!user && job.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(job.status);
   };
 
   const activeCount = jobs.filter((j) => j.status === 'open').length;
@@ -2952,6 +2963,45 @@ export default function Jobs() {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm font-medium">
+              {usesJobDetailTabs(selectedJob) && (() => {
+                const requestsNeedAction = earlyReleaseRequests.some(req => req.status === 'pending') || jobVariations.some(v => v.status === 'pending');
+                const evidenceNeedAction = selectedJob.status === 'completed_pending_review';
+                const tabs: Array<{ id: JobDetailTab; label: string; alert?: boolean }> = [
+                  { id: 'overview', label: 'Overview' },
+                  { id: 'quote', label: 'Quote' },
+                  { id: 'payment', label: 'Payment' },
+                  { id: 'requests', label: 'Requests', alert: requestsNeedAction },
+                  { id: 'evidence', label: 'Evidence', alert: evidenceNeedAction },
+                  { id: 'history', label: 'History' }
+                ];
+
+                return (
+                  <div className="-mx-1 overflow-x-auto pb-1">
+                    <div className="flex min-w-max gap-2 px-1">
+                      {tabs.map(tab => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setActiveJobDetailTab(tab.id)}
+                          className={`relative rounded-xl border px-3 py-2 text-xs font-extrabold transition-colors ${
+                            activeJobDetailTab === tab.id
+                              ? 'border-primary/30 bg-primary text-primary-foreground shadow-sm'
+                              : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          {tab.label}
+                          {tab.alert && (
+                            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-card bg-amber-500" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview') && (
+                <>
               <div className="space-y-2">
                 <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Job Description</h4>
                 <p className="text-foreground/90 leading-relaxed font-medium whitespace-pre-wrap">{selectedJob.description}</p>
@@ -3005,6 +3055,8 @@ export default function Jobs() {
                   </div>
                 </div>
               )}
+                </>
+              )}
 
               {/* Lifecycle Section */}
               {user && (
@@ -3015,7 +3067,7 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <>
-                      {selectedJob.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview') && selectedJob.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) && (
                         <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5 space-y-4">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="min-w-0 space-y-2">
@@ -3066,7 +3118,7 @@ export default function Jobs() {
                         </div>
                       )}
 
-                      {canMessageJob(selectedJob) && !(selectedJob.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status)) && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview') && canMessageJob(selectedJob) && !(selectedJob.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status)) && (
                         <Link
                           to={`/messages?job=${selectedJob.id}`}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm font-extrabold text-primary transition-colors hover:bg-primary/10"
@@ -3083,7 +3135,7 @@ export default function Jobs() {
                       )}
 
                       {/* Contact Details Card */}
-                      {(() => {
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview') && (() => {
                         const isCustomerOwner = selectedJob.customer_id === user?.id;
                         const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
                         if (!isCustomerOwner && !isContractedTradie) return null;
@@ -3124,7 +3176,7 @@ export default function Jobs() {
                       })()}
 
                       {/* Completion Proof Details Card */}
-                      {(() => {
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && (() => {
                         const isCustomerOwner = selectedJob.customer_id === user?.id;
                         const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
                         if ((isCustomerOwner || isContractedTradie) && jobProofs.length > 0) {
@@ -3166,11 +3218,13 @@ export default function Jobs() {
                       })()}
 
                       {/* 1. Protected Payment Status Bar / Steps */}
-                      {selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (() => {
+                      {(!usesJobDetailTabs(selectedJob) || ['payment', 'quote', 'requests'].includes(activeJobDetailTab)) && selectedJob.status !== 'open' && selectedJob.status !== 'cancelled' && jobPayment && (() => {
                         const isCustomerOwner = selectedJob.customer_id === user?.id;
                         const isContractedTradie = jobPayment && jobPayment.payee_id === user?.id;
                         return (
                           <div className="space-y-4">
+                            {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'payment') && (
+                              <>
                             <h4 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Protected Payment Status</h4>
 
                           <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold">
@@ -3351,8 +3405,10 @@ export default function Jobs() {
                               </div>
                             )}
                           </div>
+                              </>
+                            )}
 
-                          {isCustomerOwner && jobLedger.length > 0 && (
+                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'payment') && isCustomerOwner && jobLedger.length > 0 && (
                             <details className="rounded-2xl border bg-muted/20 text-sm">
                               <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                                 Payment Ledger
@@ -3383,6 +3439,7 @@ export default function Jobs() {
                           )}
 
                           {/* Accepted Quote Breakdown */}
+                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'quote') && (
                           <details open={!isCustomerOwner} className="rounded-2xl border bg-muted/20 text-sm">
                             <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                               Accepted Quote Breakdown
@@ -3419,9 +3476,10 @@ export default function Jobs() {
                             )}
                             </div>
                           </details>
+                          )}
 
                           {/* Early Release Requests Section */}
-                          {(isCustomerOwner || isContractedTradie || profile?.is_admin) && (
+                          {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'requests') && (isCustomerOwner || isContractedTradie || profile?.is_admin) && (
                             <details open={!isCustomerOwner || earlyReleaseRequests.some(req => isCustomerOwner && req.status === 'pending')} className="rounded-2xl border bg-muted/20 text-sm">
                               <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                                 <span className="inline-flex items-center gap-2">
@@ -3718,7 +3776,7 @@ export default function Jobs() {
                       {/* Job Evidence Timeline Card */}
                       {((selectedJob.customer_id === user?.id) ||
                         (jobPayment && jobPayment.payee_id === user?.id) ||
-                        profile?.is_admin) && (
+                        profile?.is_admin) && (!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && (
                         <details open={selectedJob.customer_id !== user?.id && timelineEvents.length > 0} className="rounded-2xl border bg-muted/20 text-sm">
                           <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             Job Evidence Timeline
@@ -3774,8 +3832,38 @@ export default function Jobs() {
                         </details>
                       )}
 
+                      {usesJobDetailTabs(selectedJob) && activeJobDetailTab === 'history' && (
+                        <div className="rounded-2xl border bg-muted/20 p-4 text-sm space-y-3">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-foreground/80">Job History</h4>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <div className="rounded-xl border bg-background p-3">
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Posted</span>
+                              <span className="mt-1 block text-xs font-extrabold text-foreground">{formatDate(selectedJob.created_at)}</span>
+                            </div>
+                            <div className="rounded-xl border bg-background p-3">
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current status</span>
+                              <span className="mt-1 block text-xs font-extrabold text-foreground">{getContractStatusLabel(selectedJob.status)}</span>
+                            </div>
+                          </div>
+                          {timelineEvents.length > 0 ? (
+                            <div className="rounded-xl border bg-background p-3 text-xs font-semibold text-muted-foreground">
+                              {timelineEvents.length} evidence event{timelineEvents.length === 1 ? '' : 's'} logged. Open the Evidence tab to view the full timeline.
+                              <button
+                                type="button"
+                                onClick={() => setActiveJobDetailTab('evidence')}
+                                className="mt-2 block text-xs font-extrabold text-primary hover:underline"
+                              >
+                                View evidence timeline
+                              </button>
+                            </div>
+                          ) : (
+                            <p className="text-xs font-semibold text-muted-foreground">No extra history has been logged for this job yet.</p>
+                          )}
+                        </div>
+                      )}
+
                       {/* 2. Customer Actions: Quote Selection */}
-                      {selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'quote') && selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
                         <details open={selectedJob.status === 'open'} className="rounded-2xl border bg-muted/20 text-sm">
                           <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             Submitted Quote History ({jobApplications.length})
@@ -3903,7 +3991,7 @@ export default function Jobs() {
                       )}
 
                       {/* 3. Customer Actions: Protected Payment Funding Simulation */}
-                      {((selectedJob.customer_id === user?.id) || profile?.is_admin) && selectedJob.status === 'accepted' && jobPayment && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'overview' || activeJobDetailTab === 'payment') && ((selectedJob.customer_id === user?.id) || profile?.is_admin) && selectedJob.status === 'accepted' && jobPayment && (
                         <div className="p-5 border border-amber-500/20 bg-amber-500/5 rounded-2xl space-y-3 font-semibold">
                           <h4 className="text-sm font-extrabold text-foreground flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-amber-500" /> Protected Payment Required — Fund Contract
@@ -4146,7 +4234,7 @@ export default function Jobs() {
                       )}
 
                       {/* 5. Customer Review of Completion Proof & Dispute raising - Lightweight summary only */}
-                      {selectedJob.customer_id === user.id && selectedJob.status === 'completed_pending_review' && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && selectedJob.customer_id === user.id && selectedJob.status === 'completed_pending_review' && (
                         <div className="space-y-4">
                           <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
                             <CheckCircle className="h-4 w-4 text-green-500" /> Completion Review
@@ -4165,7 +4253,7 @@ export default function Jobs() {
                       )}
 
                       {/* 6. Disputes / Pending resolution view */}
-                      {selectedJob.status === 'disputed' && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'evidence') && selectedJob.status === 'disputed' && (
                         <div className="p-4 border border-red-500/20 bg-red-500/5 rounded-2xl space-y-2 font-semibold">
                           <h4 className="text-xs font-black text-red-500 uppercase tracking-wider flex items-center gap-1.5"><AlertCircle className="h-4.5 w-4.5" /> Job is Disputed</h4>
                           {jobIssues.length > 0 && (
@@ -4180,7 +4268,7 @@ export default function Jobs() {
                       )}
 
                       {/* 7. Display itemised variation requests to customer & tradie */}
-                      {jobVariations.length > 0 && (
+                      {(!usesJobDetailTabs(selectedJob) || activeJobDetailTab === 'requests') && jobVariations.length > 0 && (
                         <details open={jobVariations.some(v => selectedJob.customer_id === user.id && v.status === 'pending') || jobPayment?.payee_id === user.id} className="rounded-2xl border bg-muted/20 text-sm">
                           <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             <span className="inline-flex items-center gap-2">
