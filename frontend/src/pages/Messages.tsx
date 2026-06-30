@@ -175,6 +175,16 @@ export default function Messages() {
   const shouldStickToBottomRef = useRef(true);
   const scrollRetryTimeoutsRef = useRef<number[]>([]);
 
+  const messagesCacheRef = useRef<Record<string, MessageRecord[]>>({});
+  const hasMoreCacheRef = useRef<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (activeConversationId && messages.length > 0) {
+      messagesCacheRef.current[activeConversationId] = messages;
+      hasMoreCacheRef.current[activeConversationId] = hasOlderMessages;
+    }
+  }, [messages, activeConversationId, hasOlderMessages]);
+
   const activeConversation = useMemo(
     () => conversations.find(conversation => conversation.id === activeConversationId) || null,
     [activeConversationId, conversations]
@@ -290,15 +300,30 @@ export default function Messages() {
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!user) return;
     setMessagesLoading(true);
-    setMessages([]);
-    setHasOlderMessages(false);
+
+    const cached = messagesCacheRef.current[conversationId];
+    if (cached) {
+      setMessages(cached);
+      setHasOlderMessages(hasMoreCacheRef.current[conversationId] ?? false);
+    } else {
+      setMessages([]);
+      setHasOlderMessages(false);
+    }
+
     setNewMessageAvailable(false);
     setError(null);
     try {
       const { data, error: messagesError } = await getConversationMessages(conversationId, { limit: MESSAGE_PAGE_SIZE });
       if (messagesError) throw messagesError;
+
+      const loadedMessages = sortMessages(data.messages);
+
+      // Update cache
+      messagesCacheRef.current[conversationId] = loadedMessages;
+      hasMoreCacheRef.current[conversationId] = data.hasMore;
+
       shouldStickToBottomRef.current = true;
-      setMessages(sortMessages(data.messages));
+      setMessages(loadedMessages);
       setHasOlderMessages(data.hasMore);
 
       if (hasUnreadIncomingUserMessages(data.messages, user.id)) {
@@ -313,7 +338,9 @@ export default function Messages() {
       }
       scheduleScrollToBottom('auto', { force: true, retry: true });
     } catch (messagesError: any) {
-      setMessages([]);
+      if (!messagesCacheRef.current[conversationId]) {
+        setMessages([]);
+      }
       setError(friendlyMessageError(messagesError.message, 'This conversation could not be loaded.'));
     } finally {
       setMessagesLoading(false);
@@ -804,8 +831,13 @@ export default function Messages() {
                         }}
                         className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label="Refresh message history"
+                        disabled={messagesLoading}
                       >
-                        <RefreshCw className="h-4 w-4" />
+                        {messagesLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -821,7 +853,7 @@ export default function Messages() {
                   onScroll={handleMessagesScroll}
                   className="relative min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/5 p-5"
                 >
-                  {messagesLoading ? (
+                  {messagesLoading && messages.length === 0 ? (
                     <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
                   ) : messages.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center text-center">

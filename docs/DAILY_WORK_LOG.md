@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Live Messages UX / No-Refresh Thread Switching
+
+| Item | Notes |
+| --- | --- |
+| Area | Messaging / User Experience |
+| Summary | Implemented session-level caching for loaded messages in `Messages.tsx` using `useRef` cache stores (`messagesCacheRef` and `hasMoreCacheRef`). Pre-populates the message list immediately during thread switching, keeps cached content visible while fetching latest updates in the background, and dynamically transforms the refresh icon into a loader. Avoids blanking the message layout on thread change. |
+| Files changed | `frontend/src/pages/Messages.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation. |
+
 ### Clean Beta Display Labels
 
 | Item | Notes |
