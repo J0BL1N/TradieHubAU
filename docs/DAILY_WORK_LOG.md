@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Notifications Database Foundation (Chunk 1)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database / Notifications |
+| Summary | Created `081_create_notifications_table.sql` migration creating the `public.notifications` table, performance indexes, RLS select/update/delete policies, secure SQL definer RPC helper functions, execute grants, and enabling realtime publication. Created frontend library and types in `frontend/src/lib/notifications.ts`. |
+| Files changed | `supabase/migrations/081_create_notifications_table.sql`, `frontend/src/lib/notifications.ts`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`081_create_notifications_table.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 081 SQL script in Supabase Studio. |
+| Manual QA status | Not applicable for database schema changes. |
+
 ### Live Messages UX / No-Refresh Thread Switching
 
 | Item | Notes |
