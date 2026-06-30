@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Realtime Job Messages Verification
+
+| Item | Notes |
+| --- | --- |
+| Area | Messaging / Realtime |
+| Summary | Verified the live messages realtime foundation inside `Messages.tsx`. The implementation utilizes a scoped Supabase subscription (`postgres_changes`) listening for `INSERT` and `UPDATE` events on the `messages` table for the active conversation, dynamically loading attachments, and merging rows into state using duplicate-prevention filters (by message ID). Subscriptions are properly cleaned up on unmount or conversation change. |
+| Files changed | `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation. |
+
 ### Browse Tradies Identity Masking
 
 | Item | Notes |
