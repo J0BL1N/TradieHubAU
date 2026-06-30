@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Dispute & Issue Notifications (Chunk 7 / Task 9)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database / Notifications |
+| Summary | Created `085_dispute_notifications.sql` migration defining a database trigger (`trg_create_notification_on_dispute_change`) and trigger function (`create_notification_on_dispute_change`) on the `public.job_issues` table to automatically notify the counterparty when a dispute is opened, and notify both parties when a dispute is resolved. |
+| Files changed | `supabase/migrations/085_dispute_notifications.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`085_dispute_notifications.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 085 SQL script in Supabase Studio. |
+| Manual QA status | Not applicable for database schema/trigger changes. |
+
 ### Payment & Completion Proof Notifications (Chunk 6 / Task 8)
 
 | Item | Notes |
