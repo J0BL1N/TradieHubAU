@@ -103,6 +103,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Contractor Trade Selection Hotfix
+
+| Item | Notes |
+| --- | --- |
+| Area | Contractor Trade Selection Hotfix |
+| Summary | Added missing trade selection to the contractor application card and made credential status role-aware so credentials stay optional for customer-only users but become required/pending for contractor/tradie applicants. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

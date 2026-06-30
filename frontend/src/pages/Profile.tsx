@@ -1062,6 +1062,14 @@ export default function Profile() {
 
   const isVerificationComplete = nextVerificationAction.title === 'Verification complete';
 
+  const showCredentialsAsRequired =
+    targetProfile.role !== 'customer' ||
+    tradieVerificationStatus !== 'none' ||
+    abn.trim() !== '' ||
+    licenseNumber.trim() !== '' ||
+    trades.length > 0 ||
+    tradieFile !== null;
+
   const compactVerificationDashboard = (
     <div className="space-y-6">
       {/* 1. Top Summary Banner */}
@@ -1095,9 +1103,24 @@ export default function Profile() {
             <span className={`text-[10px] font-black uppercase ${effectiveLivenessVerificationStatus === 'approved' ? 'text-green-600' : effectiveLivenessVerificationStatus === 'pending' ? 'text-amber-700' : 'text-muted-foreground'}`}>{getStatusLabel(effectiveLivenessVerificationStatus)}</span>
           </div>
           <div className="flex items-center gap-1.5 rounded-xl border bg-muted/10 px-3 py-1.5">
-            <span className={`h-1.5 w-1.5 rounded-full ${tradieVerificationStatus === 'approved' ? 'bg-green-500' : tradieVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-muted-foreground/30'}`}></span>
+            <span className={`h-1.5 w-1.5 rounded-full ${
+              tradieVerificationStatus === 'approved' ? 'bg-green-500' :
+              tradieVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' :
+              ['recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'].includes(tradieVerificationStatus) ? 'bg-red-500' :
+              showCredentialsAsRequired ? 'bg-amber-500 animate-pulse' : 'bg-muted-foreground/30'
+            }`}></span>
             <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Credentials:</span>
-            <span className={`text-[10px] font-black uppercase ${tradieVerificationStatus === 'approved' ? 'text-green-600' : tradieVerificationStatus === 'pending' ? 'text-amber-700' : 'text-muted-foreground'}`}>{getStatusLabel(tradieVerificationStatus, targetProfile.role !== 'customer')}</span>
+            <span className={`text-[10px] font-black uppercase ${
+              tradieVerificationStatus === 'approved' ? 'text-green-600' :
+              tradieVerificationStatus === 'pending' ? 'text-amber-700' :
+              ['recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'].includes(tradieVerificationStatus) ? 'text-red-500' :
+              showCredentialsAsRequired ? 'text-amber-700 font-extrabold' : 'text-muted-foreground'
+            }`}>
+              {tradieVerificationStatus === 'approved' ? 'Approved' :
+               tradieVerificationStatus === 'pending' ? 'Pending' :
+               ['recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'].includes(tradieVerificationStatus) ? 'Action Required' :
+               showCredentialsAsRequired ? 'Required' : 'Optional'}
+            </span>
           </div>
         </div>
       </section>
@@ -1277,8 +1300,46 @@ export default function Profile() {
               </div>
               <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
                 <form onSubmit={handleApplyAsTradie} className="space-y-3 max-w-md">
-                  {uploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600">Your credentials have been submitted for review.</p>}
-                  {uploadError && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500">{uploadError}</p>}
+                  {tradieVerificationStatus === 'pending' && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2 mb-3">
+                      <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5 text-amber-500" />
+                      <div>
+                        <p className="font-bold">Tradie Approval Request Pending Review</p>
+                        <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                          Your professional credentials (ABN: {abn || 'Pending'}, Licence: {licenseNumber || 'Pending'}) are under manual review by our administration staff.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {tradieVerificationStatus === 'recheck' && (
+                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2 mb-3">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5 text-amber-500" />
+                      <div>
+                        <p className="font-bold">Tradie Credentials Recheck Requested</p>
+                        <p className="mt-1 font-medium text-amber-700/90 leading-relaxed">
+                          An administrator has requested a recheck of your credentials. Please upload the updated documents below to re-submit.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {tradieVerificationStatus === 'rejected' && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2 mb-3">
+                      <AlertCircle className="h-4.5 w-4.5 shrink-0 mt-0.5 text-red-500" />
+                      <div>
+                        <p className="font-bold">Tradie Application Rejected</p>
+                        <p className="mt-1 font-medium text-red-500/90 leading-relaxed">
+                          Your previous professional credentials were rejected: <strong className="text-foreground">{tradieVerificationNotes}</strong>. Please check ABN, licence, and upload valid documents to re-apply.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {uploadSuccess && <p className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-xs font-semibold text-green-600 mb-3">Your credentials have been submitted for review.</p>}
+                  {uploadError && uploadError !== 'Please select a credential document file.' && uploadError !== 'Please select at least one trade.' && (
+                    <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500 mb-3">{uploadError}</p>
+                  )}
                   <div className="grid gap-3">
                     <div className="rounded-2xl border bg-muted/10 p-3 space-y-3">
                       <div>
@@ -1309,6 +1370,9 @@ export default function Profile() {
                           accept="image/*,application/pdf"
                         />
                       </label>
+                      {uploadError === 'Please select a credential document file.' && (
+                        <p className="text-xs font-semibold text-red-500 mt-1">Please select a credential document file.</p>
+                      )}
                     </div>
                     <input
                       type="text"
@@ -1326,6 +1390,48 @@ export default function Profile() {
                       className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold"
                       disabled={tradieVerificationStatus === 'pending'}
                     />
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-foreground uppercase tracking-wider block">
+                        Trades you provide
+                      </label>
+                      <p className="text-[11px] font-semibold text-muted-foreground leading-normal">
+                        Choose at least one trade you want to offer on TradieHubAU.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 mt-1.5">
+                        {categoryOptions.map((option) => {
+                          const isSelected = trades.includes(option.id);
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => {
+                                const nextTrades = trades.includes(option.id)
+                                  ? trades.filter((t) => t !== option.id)
+                                  : [...trades, option.id];
+                                setTrades(nextTrades);
+                                if (nextTrades.length > 0 && uploadError === 'Please select at least one trade.') {
+                                  setUploadError(null);
+                                }
+                              }}
+                              disabled={tradieVerificationStatus === 'pending'}
+                              className={`flex items-center justify-between px-3 py-2 border rounded-xl text-xs font-bold transition-all ${
+                                isSelected
+                                  ? 'border-primary bg-primary/5 text-primary'
+                                  : 'border-border bg-background hover:bg-muted/30 text-foreground/80'
+                              } ${tradieVerificationStatus === 'pending' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            >
+                              <span>{option.label}</span>
+                              {isSelected && <span className="text-primary font-black ml-1">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {uploadError === 'Please select at least one trade.' && (
+                        <p className="text-xs font-semibold text-red-500 mt-1">Please select at least one trade.</p>
+                      )}
+                    </div>
+
                     <button
                       type="submit"
                       disabled={uploadingDoc || !abn || !licenseNumber || tradieVerificationStatus === 'pending'}
