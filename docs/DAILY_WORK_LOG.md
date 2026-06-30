@@ -2,6 +2,17 @@
 
 Single ongoing project-history log. Entries are based on committed git history, file timestamps, and docs present in this repo.
 
+## 2026-06-30
+
+### In-Progress Job Details UI Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | In-Progress Job Details UI Polish |
+| Summary | Simplified accepted/in-progress job details into a clearer customer-first layout, reduced duplicate payment/status sections, moved technical details into secondary/collapsible areas, and improved mobile readability. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed

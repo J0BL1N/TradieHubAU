@@ -1578,6 +1578,33 @@ export default function Jobs() {
     );
   };
 
+  const getContractStatusLabel = (status: string) => {
+    if (status === 'accepted') return 'Awaiting Payment';
+    if (status === 'payment_held') return 'Contract Active';
+    if (status === 'completed_pending_review') return 'Waiting for Review';
+    if (status === 'disputed') return 'Disputed';
+    if (status === 'completed') return 'Completed';
+    return status.replace(/_/g, ' ');
+  };
+
+  const getContractStatusCopy = (status: string) => {
+    if (status === 'accepted') return 'Your quote is accepted. Fund the protected payment to activate the contract.';
+    if (status === 'payment_held') return 'Contract active. Your payment is protected and the tradie can begin work.';
+    if (status === 'completed_pending_review') return 'The tradie has submitted proof. Review the work when you are ready.';
+    if (status === 'disputed') return 'This job is in dispute and is being reviewed by TradieHubAU.';
+    if (status === 'completed') return 'This job is complete and the payment has been released.';
+    return 'Job details and workflow information are available below.';
+  };
+
+  const getContractStatusClasses = (status: string) => {
+    if (status === 'accepted') return 'bg-amber-500/10 text-amber-800 border-amber-500/30';
+    if (status === 'payment_held') return 'bg-green-500/10 text-green-800 border-green-500/30';
+    if (status === 'completed_pending_review') return 'bg-blue-500/10 text-blue-800 border-blue-500/30';
+    if (status === 'disputed') return 'bg-red-500/10 text-red-800 border-red-500/30';
+    if (status === 'completed') return 'bg-emerald-500/10 text-emerald-800 border-emerald-500/30';
+    return 'bg-secondary text-secondary-foreground border-transparent';
+  };
+
   const activeCount = jobs.filter((j) => j.status === 'open').length;
   const urgentCount = jobs.filter((j) => j.status === 'open' && j.urgency === 'urgent').length;
   const totalValue = jobs.reduce((sum, j) => sum + (j.budget_max ?? j.budget_min ?? 0), 0);
@@ -2903,7 +2930,7 @@ export default function Jobs() {
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-card border border-border w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(90vh-4rem)]"
+            className="bg-card border border-border w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[calc(90vh-4rem)]"
           >
             <div className="p-6 border-b flex items-start justify-between gap-4">
               <div className="space-y-2">
@@ -2988,7 +3015,58 @@ export default function Jobs() {
                     </div>
                   ) : (
                     <>
-                      {canMessageJob(selectedJob) && (
+                      {selectedJob.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status) && (
+                        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5 space-y-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 space-y-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider ${getContractStatusClasses(selectedJob.status)}`}>
+                                  {getContractStatusLabel(selectedJob.status)}
+                                </span>
+                                {selectedJob.categories.slice(0, 2).map((cat) => (
+                                  <span key={cat} className="inline-flex items-center rounded-md bg-background/80 px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                                    {cat}
+                                  </span>
+                                ))}
+                              </div>
+                              <h4 className="text-lg font-extrabold leading-snug text-foreground break-words">{selectedJob.title}</h4>
+                              <p className="text-sm font-semibold leading-relaxed text-foreground/75">
+                                {getContractStatusCopy(selectedJob.status)}
+                              </p>
+                            </div>
+
+                            {canMessageJob(selectedJob) && (
+                              <Link
+                                to={`/messages?job=${selectedJob.id}`}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-extrabold text-primary-foreground shadow-sm transition-colors hover:bg-primary/95 sm:w-auto sm:shrink-0"
+                              >
+                                <MessageSquare className="h-4 w-4" /> Open Job Messages
+                              </Link>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            <div className="rounded-xl border bg-background/80 p-3 min-w-0">
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Location</span>
+                              <span className="mt-1 block truncate text-xs font-extrabold text-foreground">{getPublicJobLocation(selectedJob)}</span>
+                            </div>
+                            <div className="rounded-xl border bg-background/80 p-3 min-w-0">
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Budget</span>
+                              <span className="mt-1 block truncate text-xs font-extrabold text-foreground">{formatBudget(selectedJob)}</span>
+                            </div>
+                            <div className="rounded-xl border bg-background/80 p-3 min-w-0">
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Type</span>
+                              <span className="mt-1 block truncate text-xs font-extrabold text-foreground">{selectedJob.type || 'Standard'}</span>
+                            </div>
+                            <div className="rounded-xl border bg-background/80 p-3 min-w-0">
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Timeline</span>
+                              <span className="mt-1 block truncate text-xs font-extrabold text-foreground">{selectedJob.timeline || 'Flexible'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {canMessageJob(selectedJob) && !(selectedJob.customer_id === user.id && ['accepted', 'payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status)) && (
                         <Link
                           to={`/messages?job=${selectedJob.id}`}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm font-extrabold text-primary transition-colors hover:bg-primary/10"
@@ -3111,7 +3189,7 @@ export default function Jobs() {
                           </div>
 
                           {/* Informative Status Banners */}
-                          {user && (
+                          {user && !isCustomerOwner && (
                             <div className="space-y-4">
                               {/* 1. Contracted Tradie Banners */}
                               {jobPayment.payee_id === user.id && (
@@ -3194,6 +3272,16 @@ export default function Jobs() {
                           )}
 
                           <div className="p-4 bg-muted/30 border rounded-2xl space-y-2.5 text-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                              <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Protected Payment</span>
+                              <span className={`uppercase text-[10px] px-2.5 py-0.5 rounded font-semibold border ${
+                                ['held', 'held_in_escrow'].includes(jobPayment.status) ? 'bg-green-500/10 text-green-800 border-green-500/30' :
+                                jobPayment.status === 'released' ? 'bg-emerald-500/10 text-emerald-800 border-emerald-500/30' :
+                                jobPayment.status === 'refunded' ? 'bg-red-500/10 text-red-800 border-red-500/30' : 'bg-secondary text-secondary-foreground border-transparent'
+                              }`}>
+                                {['held', 'held_in_escrow'].includes(jobPayment.status) ? 'payment protected' : jobPayment.status === 'released' ? 'payment released' : jobPayment.status}
+                              </span>
+                            </div>
                             <div className="flex justify-between items-center">
                               <span className="text-foreground/70 font-medium">Contract Amount:</span>
                               <span className="text-foreground font-bold">{formatCentsToAud(jobPayment.amount)}</span>
@@ -3225,17 +3313,6 @@ export default function Jobs() {
                             })()}
 
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-foreground/70 font-medium">Payment Status:</span>
-                              <span className={`uppercase text-[10px] px-2.5 py-0.5 rounded font-semibold border ${
-                                ['held', 'held_in_escrow'].includes(jobPayment.status) ? 'bg-amber-500/10 text-amber-800 border-amber-500/30' :
-                                jobPayment.status === 'released' ? 'bg-green-500/10 text-green-800 border-green-500/30' :
-                                jobPayment.status === 'refunded' ? 'bg-red-500/10 text-red-800 border-red-500/30' : 'bg-secondary text-secondary-foreground border-transparent'
-                              }`}>
-                                {['held', 'held_in_escrow'].includes(jobPayment.status) ? 'payment funded' : jobPayment.status === 'released' ? 'payment released' : jobPayment.status}
-                              </span>
-                            </div>
-
-                            <div className="flex justify-between items-center text-xs">
                               <span className="text-foreground/70 font-medium">Contract Status:</span>
                               <span className="text-foreground/95 font-medium">
                                 {selectedJob.status === 'accepted' ? 'Quote Accepted — Awaiting Payment' :
@@ -3246,7 +3323,7 @@ export default function Jobs() {
                               </span>
                             </div>
 
-                            {jobLedger.length > 0 && (
+                            {!isCustomerOwner && jobLedger.length > 0 && (
                               <div className="border-t pt-3 mt-3 space-y-2">
                                 <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block">Transaction Ledger</span>
                                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
@@ -3275,11 +3352,42 @@ export default function Jobs() {
                             )}
                           </div>
 
+                          {isCustomerOwner && jobLedger.length > 0 && (
+                            <details className="rounded-2xl border bg-muted/20 text-sm">
+                              <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                                Payment Ledger
+                              </summary>
+                              <div className="border-t p-4 pt-3 space-y-1.5 max-h-44 overflow-y-auto">
+                                {jobLedger.map((l) => {
+                                  let label = l.transaction_type;
+                                  if (l.transaction_type === 'charge') label = 'Deposit Charge';
+                                  if (l.transaction_type === 'fee') label = 'Platform Fee';
+                                  if (l.transaction_type === 'payout') label = 'Tradie Payout';
+                                  if (l.transaction_type === 'refund') label = 'Customer Refund';
+                                  return (
+                                    <div key={l.id} className="flex justify-between items-center gap-3 text-xs font-medium bg-background border p-2 rounded-xl">
+                                      <div className="space-y-0.5 min-w-0">
+                                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
+                                          l.transaction_type === 'charge' ? 'bg-blue-500/10 text-blue-800 border-blue-500/20' :
+                                          l.transaction_type === 'payout' ? 'bg-green-500/10 text-green-800 border-green-500/20' :
+                                          l.transaction_type === 'fee' ? 'bg-orange-500/10 text-orange-800 border-orange-500/20' : 'bg-red-500/10 text-red-800 border-red-500/20'
+                                        }`}>{label}</span>
+                                        <span className="text-[10px] text-foreground/60 ml-2">{new Date(l.created_at).toLocaleDateString()}</span>
+                                      </div>
+                                      <span className="font-bold text-foreground shrink-0">{formatCentsToAud(l.amount_cents)}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </details>
+                          )}
+
                           {/* Accepted Quote Breakdown */}
-                          <div className="p-4 bg-muted/30 border rounded-2xl space-y-2.5 text-sm">
-                            <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block border-b pb-1 font-black">
+                          <details open={!isCustomerOwner} className="rounded-2xl border bg-muted/20 text-sm">
+                            <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                               Accepted Quote Breakdown
-                            </span>
+                            </summary>
+                            <div className="border-t p-4 pt-3 space-y-2.5">
                             {loadingAcceptedLines ? (
                               <div className="flex justify-center py-4">
                                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -3309,24 +3417,31 @@ export default function Jobs() {
                                 Detailed quote breakdown not available for this older accepted quote.
                               </p>
                             )}
-                          </div>
+                            </div>
+                          </details>
 
                           {/* Early Release Requests Section */}
                           {(isCustomerOwner || isContractedTradie || profile?.is_admin) && (
-                            <div className="p-4 bg-muted/30 border rounded-2xl space-y-3 text-sm">
-                              <div className="flex justify-between items-center border-b pb-1">
-                                <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block font-black">
+                            <details open={!isCustomerOwner || earlyReleaseRequests.some(req => isCustomerOwner && req.status === 'pending')} className="rounded-2xl border bg-muted/20 text-sm">
+                              <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                                <span className="inline-flex items-center gap-2">
                                   Early Release Requests
+                                  {earlyReleaseRequests.some(req => isCustomerOwner && req.status === 'pending') && (
+                                    <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] text-amber-800">Action needed</span>
+                                  )}
                                 </span>
-                                {isContractedTradie && !showErForm && (
+                              </summary>
+                              <div className="border-t p-4 pt-3 space-y-3">
+                                <div className="flex justify-end">
+                                  {isContractedTradie && !showErForm && (
                                   <button
                                     onClick={() => setShowErForm(true)}
                                     className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
                                   >
                                     <Plus className="h-3 w-3" /> Request Release
                                   </button>
-                                )}
-                              </div>
+                                  )}
+                                </div>
 
                               <p className="text-xs text-muted-foreground leading-relaxed">
                                 Early release requests are capped for safety. Pending and approved requests count toward the cap. Cancelled or rejected requests do not.
@@ -3593,7 +3708,8 @@ export default function Jobs() {
                                   <p className="text-xs text-muted-foreground italic">No early release requests submitted yet.</p>
                                 )}
                               </div>
-                            </div>
+                              </div>
+                            </details>
                           )}
                         </div>
                       );
@@ -3603,10 +3719,11 @@ export default function Jobs() {
                       {((selectedJob.customer_id === user?.id) ||
                         (jobPayment && jobPayment.payee_id === user?.id) ||
                         profile?.is_admin) && (
-                        <div className="p-4 bg-muted/30 border rounded-2xl space-y-3 text-sm">
-                          <span className="text-xs font-bold text-foreground/80 uppercase tracking-wider block border-b pb-1 font-black">
+                        <details open={selectedJob.customer_id !== user?.id && timelineEvents.length > 0} className="rounded-2xl border bg-muted/20 text-sm">
+                          <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
                             Job Evidence Timeline
-                          </span>
+                          </summary>
+                          <div className="border-t p-4 pt-3 space-y-3">
                           {loadingTimeline ? (
                             <div className="flex justify-center py-4">
                               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -3653,13 +3770,17 @@ export default function Jobs() {
                           ) : (
                             <p className="text-xs text-muted-foreground italic">No evidence events logged for this job yet.</p>
                           )}
-                        </div>
+                          </div>
+                        </details>
                       )}
 
                       {/* 2. Customer Actions: Quote Selection */}
                       {selectedJob.customer_id === user.id && selectedJob.status !== 'cancelled' && (
-                        <div className="space-y-4">
-                          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Submitted Quotes ({jobApplications.length})</h4>
+                        <details open={selectedJob.status === 'open'} className="rounded-2xl border bg-muted/20 text-sm">
+                          <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                            Submitted Quote History ({jobApplications.length})
+                          </summary>
+                          <div className="border-t p-4 pt-3 space-y-4">
                           {jobApplications.length === 0 ? (
                             <p className="text-xs text-muted-foreground font-semibold">No quotes received yet.</p>
                           ) : (
@@ -3777,7 +3898,8 @@ export default function Jobs() {
                               ))}
                             </div>
                           )}
-                        </div>
+                          </div>
+                        </details>
                       )}
 
                       {/* 3. Customer Actions: Protected Payment Funding Simulation */}
@@ -4059,9 +4181,17 @@ export default function Jobs() {
 
                       {/* 7. Display itemised variation requests to customer & tradie */}
                       {jobVariations.length > 0 && (
-                        <div className="space-y-4">
+                        <details open={jobVariations.some(v => selectedJob.customer_id === user.id && v.status === 'pending') || jobPayment?.payee_id === user.id} className="rounded-2xl border bg-muted/20 text-sm">
+                          <summary className="cursor-pointer list-none p-4 text-xs font-black uppercase tracking-wider text-foreground/80">
+                            <span className="inline-flex items-center gap-2">
+                              Variation Requests
+                              {jobVariations.some(v => selectedJob.customer_id === user.id && v.status === 'pending') && (
+                                <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] text-amber-800">Action needed</span>
+                              )}
+                            </span>
+                          </summary>
+                          <div className="border-t p-4 pt-3 space-y-4">
                           <div className="space-y-1">
-                            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Variation Requests</h4>
                             {selectedJob.customer_id === user.id && (
                               <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed">
                                 Funding controls will be added later. Approving a variation here does not release funds.
@@ -4186,7 +4316,8 @@ export default function Jobs() {
                               );
                             })}
                           </div>
-                        </div>
+                          </div>
+                        </details>
                       )}
                     </>
                   )}
@@ -4194,13 +4325,13 @@ export default function Jobs() {
               )}
             </div>
 
-            <div className="p-6 border-t bg-muted/20 flex items-center justify-between gap-3">
+            <div className="p-4 sm:p-6 border-t bg-muted/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               {/* Save in modal too */}
               {user && (
                 <button
                   onClick={(e) => handleToggleSave(selectedJob.id, e)}
                   disabled={savingId === selectedJob.id}
-                  className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-bold transition-all ${
+                  className={`flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-bold transition-all ${
                     savedJobIds.has(selectedJob.id)
                       ? 'bg-primary/10 border-primary/30 text-primary'
                       : 'border-border text-muted-foreground hover:bg-muted'
@@ -4210,7 +4341,7 @@ export default function Jobs() {
                   {savedJobIds.has(selectedJob.id) ? 'Saved' : 'Save Job'}
                 </button>
               )}
-              <div className="flex items-center gap-3 ml-auto">
+              <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3 sm:ml-auto">
                 <button onClick={() => setSelectedJob(null)} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
                   Close
                 </button>
