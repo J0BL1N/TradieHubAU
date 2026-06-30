@@ -149,6 +149,7 @@ export default function Messages() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
@@ -252,6 +253,7 @@ export default function Messages() {
       : data[0]?.id || null;
     shouldStickToBottomRef.current = true;
     setActiveConversationId(nextId);
+    setMobileThreadOpen(Boolean(nextId && requestedId));
   }, [searchParams, user]);
 
   useEffect(() => {
@@ -506,6 +508,7 @@ export default function Messages() {
   const selectConversation = (conversationId: string) => {
     shouldStickToBottomRef.current = true;
     setActiveConversationId(conversationId);
+    setMobileThreadOpen(true);
     setSearchParams({ conversation: conversationId }, { replace: true });
   };
 
@@ -713,7 +716,7 @@ export default function Messages() {
         </div>
       ) : (
         <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:h-[calc(100vh-220px)] lg:grid-cols-3">
-          <aside className="flex flex-col rounded-2xl border bg-card p-4">
+          <aside className={`${mobileThreadOpen ? 'hidden lg:flex' : 'flex'} flex-col rounded-2xl border bg-card p-4`}>
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="font-extrabold">Conversations</h2>
               <button
@@ -760,10 +763,18 @@ export default function Messages() {
             </div>
           </aside>
 
-          <section className="flex min-h-[560px] flex-col overflow-hidden rounded-2xl border bg-card lg:col-span-2">
+          <section className={`${mobileThreadOpen ? 'flex' : 'hidden lg:flex'} min-h-[560px] flex-col overflow-hidden rounded-2xl border bg-card lg:col-span-2`}>
             {activeConversation ? (
               <>
                 <header className="border-b bg-muted/20 p-4">
+                  <button
+                    type="button"
+                    onClick={() => setMobileThreadOpen(false)}
+                    className="mb-3 inline-flex min-h-10 items-center gap-2 rounded-xl border bg-background px-3 text-xs font-extrabold text-foreground shadow-sm transition-colors hover:bg-muted lg:hidden"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back to conversations
+                  </button>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">

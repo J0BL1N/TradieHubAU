@@ -85,6 +85,15 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Migrations required | None. |
 | Manual QA status | Manual QA still required; not approved until Jay confirms. |
 
+### Messages Mobile List/Thread Switching
+
+| Item | Notes |
+| --- | --- |
+| Area | Messages Mobile List/Thread Switching |
+| Summary | Improved mobile messaging flow by switching between conversation list and active thread views on narrow screens and adding a back-to-conversations control. |
+| Migrations required | None. |
+| Manual QA status | Manual QA still required; not approved until Jay confirms. |
+
 ## 2026-06-24
 
 ### Completed
