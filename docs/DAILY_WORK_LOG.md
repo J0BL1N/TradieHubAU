@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### In-App Notification Bell UI (Chunk 2)
+
+| Item | Notes |
+| --- | --- |
+| Area | User Interface / Notifications |
+| Summary | Implemented the in-app notification bell icon and dropdown menu in the main header layout (`Layout.tsx`) for logged-in users. Displays unread count badge, shows notifications sorted by newest, supports marking single notifications read upon click (and routing to the target thread/job/profile), supports marking all as read, and establishes a realtime Supabase subscription for instant live updates. |
+| Files changed | `frontend/src/components/Layout.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation. |
+
 ### Notifications Database Foundation (Chunk 1)
 
 | Item | Notes |

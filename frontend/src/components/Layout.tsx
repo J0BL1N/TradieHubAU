@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Menu, X, MessageSquare, Briefcase, Users, User, ShieldAlert, ChevronDown, LogOut } from 'lucide-react';
+import { Menu, X, MessageSquare, Briefcase, Users, User, ShieldAlert, ChevronDown, LogOut, Bell } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationCount } from '../lib/notifications';
+import type { NotificationRecord } from '../lib/notifications';
+import { supabase } from '../lib/supabase';
 
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
@@ -10,16 +13,123 @@ export default function Layout() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on click outside
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setDropdownOpen(false);
+      }
+      if (bellRef.current && !bellRef.current.contains(target)) {
+        setBellOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Notifications live subscription
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    let active = true;
+
+    const loadNotificationsData = async () => {
+      const { data } = await fetchNotifications(15);
+      const count = await getUnreadNotificationCount();
+      if (active) {
+        setNotifications(data || []);
+        setUnreadCount(count.data || 0);
+      }
+    };
+
+    loadNotificationsData();
+
+    const channel = supabase
+      .channel(`user-notifications:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const newNotification = payload.new as NotificationRecord;
+          if (active) {
+            setNotifications(current => {
+              if (current.some(n => n.id === newNotification.id)) return current;
+              return [newNotification, ...current].slice(0, 15);
+            });
+            setUnreadCount(prev => prev + 1);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const updatedNotification = payload.new as NotificationRecord;
+          if (active) {
+            setNotifications(current =>
+              current.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+            );
+            const count = await getUnreadNotificationCount();
+            if (active) {
+              setUnreadCount(count.data || 0);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const handleNotificationClick = async (notif: NotificationRecord) => {
+    setBellOpen(false);
+    if (!notif.read_at) {
+      await markNotificationRead(notif.id);
+      setNotifications(current =>
+        current.map(n => n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+
+    if (notif.conversation_id) {
+      navigate(`/messages?conversation=${notif.conversation_id}`);
+    } else if (notif.job_id) {
+      navigate(`/jobs?jobId=${notif.job_id}`);
+    } else if (notif.event_type.startsWith('verification')) {
+      navigate('/profile');
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllNotificationsRead();
+    setNotifications(current =>
+      current.map(n => ({ ...n, read_at: new Date().toISOString() }))
+    );
+    setUnreadCount(0);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -107,6 +217,78 @@ export default function Layout() {
               <span className="sm:hidden">Post Job</span>
               <span className="hidden sm:inline">Post a Job</span>
             </Link>
+
+            {/* Notification Bell */}
+            {user && (
+              <div className="relative" ref={bellRef}>
+                <button
+                  type="button"
+                  onClick={() => setBellOpen(!bellOpen)}
+                  className="relative p-2.5 rounded-xl text-foreground/75 hover:bg-muted/40 hover:text-foreground transition-all focus:outline-none flex items-center justify-center min-h-11 min-w-11"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-black text-primary-foreground">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {bellOpen && (
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-border bg-card shadow-xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="flex items-center justify-between px-4 pb-2 border-b">
+                      <span className="font-extrabold text-sm text-foreground">Notifications</span>
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllRead}
+                          className="text-[11px] font-bold text-primary hover:underline"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto mt-2 divide-y divide-border/60">
+                      {notifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-xs font-semibold text-muted-foreground">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <button
+                            type="button"
+                            key={notif.id}
+                            onClick={() => void handleNotificationClick(notif)}
+                            className={`w-full text-left px-4 py-3 flex items-start gap-2.5 hover:bg-muted/30 transition-colors ${
+                              !notif.read_at ? 'bg-primary/[0.02]' : ''
+                            }`}
+                          >
+                            <div className="flex-grow min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className={`text-xs truncate ${!notif.read_at ? 'font-black text-foreground' : 'font-bold text-foreground/80'}`}>
+                                  {notif.title}
+                                </span>
+                                {!notif.read_at && (
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                )}
+                              </div>
+                              <p className={`text-xs mt-0.5 line-clamp-2 ${!notif.read_at ? 'font-bold text-muted-foreground/90' : 'font-medium text-muted-foreground'}`}>
+                                {notif.body}
+                              </p>
+                              <span className="text-[10px] font-medium text-muted-foreground/60 mt-1 block">
+                                {new Date(notif.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} at {new Date(notif.created_at).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* User Account / Authentication Buttons */}
             {user ? (
