@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-01
 
+### Payment & Completion Proof Notifications (Chunk 6 / Task 8)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database / Notifications |
+| Summary | Created `084_payment_status_notifications.sql` migration defining database triggers on the `public.payments` table (`trg_create_notification_on_payment_change`) and `public.job_completion_proofs` table (`trg_create_notification_on_completion_proof`) to automatically notify the relevant tradie or customer upon payment funding, payment release, or completion proof submission. |
+| Files changed | `supabase/migrations/084_payment_status_notifications.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`084_payment_status_notifications.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 084 SQL script in Supabase Studio. |
+| Manual QA status | Not applicable for database schema/trigger changes. |
+
 ### Live Jobs & Workspace Realtime Sync (Chunk 5 / Task 7)
 
 | Item | Notes |
