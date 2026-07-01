@@ -176,14 +176,12 @@ export default function LocationSuburbSelect({
               <button
                 type="button"
                 onClick={() => handleSuggestionClick(item)}
-                className="w-full text-left rounded-lg px-3.5 py-2 text-foreground hover:bg-muted transition-colors flex items-center justify-between"
+                className="w-full text-left rounded-lg px-3.5 py-2 text-foreground hover:bg-muted transition-colors flex flex-col justify-center overflow-hidden"
               >
-                <span>{item.suburb}, {item.state} {item.postcode}</span>
-                {item.region_name && (
-                  <span className="text-[10px] font-bold text-muted-foreground bg-muted/65 px-2 py-0.5 rounded-full border border-border">
-                    {item.region_name}
-                  </span>
-                )}
+                <span className="font-extrabold text-sm truncate w-full">{item.suburb}</span>
+                <span className="text-xs font-semibold text-muted-foreground truncate w-full">
+                  {item.state} {item.postcode}{item.region_name ? ` · ${item.region_name}` : ''}
+                </span>
               </button>
             </li>
           ))}

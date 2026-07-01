@@ -483,80 +483,84 @@ export default function PostJob() {
             <MapPin className="h-5 w-5 text-primary" /> 2. Location & Schedule
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
-              <select
-                value={state}
-                onChange={(e) => {
-                  setState(e.target.value);
-                  setRegion('');
-                  setSuburb('');
-                  setPostcode('');
-                }}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer"
-                disabled={locationLoading}
-                required
-              >
-                <option value="">{locationLoading ? 'Loading...' : 'State / Territory'}</option>
-                {australianStates.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
+                <select
+                  value={state}
+                  onChange={(e) => {
+                    setState(e.target.value);
+                    setRegion('');
+                    setSuburb('');
+                    setPostcode('');
+                  }}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer"
+                  disabled={locationLoading}
+                  required
+                >
+                  <option value="">{locationLoading ? 'Loading...' : 'State / Territory'}</option>
+                  {australianStates.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Region</label>
+                <select
+                  value={region}
+                  onChange={(e) => {
+                    setRegion(e.target.value);
+                    setSuburb('');
+                    setPostcode('');
+                  }}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer disabled:opacity-60"
+                  disabled={!state || locationLoading}
+                  required
+                >
+                  <option value="">{state ? 'Region' : 'Select state first'}</option>
+                  {regionOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Region</label>
-              <select
-                value={region}
-                onChange={(e) => {
-                  setRegion(e.target.value);
-                  setSuburb('');
-                  setPostcode('');
-                }}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer disabled:opacity-60"
-                disabled={!state || locationLoading}
-                required
-              >
-                <option value="">{state ? 'Region' : 'Select state first'}</option>
-                {regionOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="sm:col-span-3 space-y-2">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
+                <LocationSuburbSelect
+                  value={suburb}
+                  stateFilter={state}
+                  regionFilter={region}
+                  onChange={setSuburb}
+                  onSelect={(selected) => {
+                    setSuburb(selected.suburb);
+                    setPostcode(selected.postcode);
+                  }}
+                  fallbackOptions={suburbOptions}
+                  placeholder={region ? 'Search suburb...' : 'Select region first'}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all disabled:opacity-60"
+                  disabled={!region || locationLoading}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
-              <LocationSuburbSelect
-                value={suburb}
-                stateFilter={state}
-                regionFilter={region}
-                onChange={setSuburb}
-                onSelect={(selected) => {
-                  setSuburb(selected.suburb);
-                  setPostcode(selected.postcode);
-                }}
-                fallbackOptions={suburbOptions}
-                placeholder={region ? 'Search suburb...' : 'Select region first'}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all disabled:opacity-60"
-                disabled={!region || locationLoading}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Postcode</label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{4}"
-                maxLength={4}
-                placeholder="e.g. 5098"
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
-                required
-              />
+              <div className="sm:col-span-1 space-y-2">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider">Postcode</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{4}"
+                  maxLength={4}
+                  placeholder="e.g. 5098"
+                  value={postcode}
+                  onChange={(e) => setPostcode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+                  required
+                />
+              </div>
             </div>
           </div>
           {locationLoadError && (

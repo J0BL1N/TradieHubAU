@@ -999,6 +999,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Beta Location Picker Layout & UX Improvements
+
+| Item | Notes |
+| --- | --- |
+| Area | Post Job Location UI / Autocomplete UX Hotfix |
+| Files changed | `frontend/src/pages/PostJob.tsx`, `frontend/src/components/LocationSuburbSelect.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Files created | None |
+| Summary | Restructured Post Job location fields into a two-row responsive grid, providing suburb autocomplete with much wider horizontal spacing and a clean, non-wrapping two-line suggestion format. |
+| Details | - **Responsive Grid Structure**: Restructured location fields in `PostJob.tsx` into a two-row grid on desktop/tablet devices (Row 1: State / Territory + Region, Row 2: Suburb + Postcode). Spanned the Suburb autocomplete to 3 columns and Postcode to 1 column, allowing ample room for suburb text.<br> - **Two-Line Autocomplete Display**: Redesigned `LocationSuburbSelect.tsx` search results to display suburbs in a clean two-line layout (Line 1: bold suburb name, Line 2: state postcode and region).<br> - **Graceful Truncation**: Removed region pills and applied overflow-truncation on long suburb and region strings to prevent text wrapping across multiple lines.<br> - **Layout Stability**: Kept preferred start date/time block positioned cleanly below the location selector and helper texts, and kept the postcode fully editable manually. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |
