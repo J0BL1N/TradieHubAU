@@ -126,7 +126,7 @@ export default function AdminDisputeCase() {
         <div className="bg-card border rounded-3xl overflow-hidden shadow-sm">
           <DisputeCaseFile
             dispute={dispute}
-            onResolved={loadCase}
+            onResolved={() => loadCase({ silent: true })}
             showToast={showToast}
             showConfirm={setConfirmConfig}
           />

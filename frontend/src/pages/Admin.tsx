@@ -2424,7 +2424,7 @@ export default function Admin() {
       } else {
         showToast('Identity verification approved.', 'success');
       }
-      loadData();
+      loadData({ silent: true });
     }
   };
 
@@ -2452,7 +2452,7 @@ export default function Admin() {
       } else {
         showToast('Document approved.', 'success');
       }
-      loadData();
+      loadData({ silent: true });
     }
   };
 
@@ -2461,7 +2461,7 @@ export default function Admin() {
     const { error: err } = await approveTradieProfile(userId);
     setActionLoadingId(null);
     if (err) showToast(err.message || 'Failed to whitelist tradie.', 'error');
-    else { showToast('Tradie profile whitelisted successfully.', 'success'); loadData(); }
+    else { showToast('Tradie profile whitelisted successfully.', 'success'); loadData({ silent: true }); }
   };
 
   const handleRejectSubmit = async (id: string) => {
@@ -2472,7 +2472,7 @@ export default function Admin() {
     setRejectingId(null);
     setRejectNotes('');
     if (err) showToast(err.message || 'Failed to reject verification.', 'error');
-    else { showToast('Verification rejected.', 'success'); loadData(); }
+    else { showToast('Verification rejected.', 'success'); loadData({ silent: true }); }
   };
 
   const handleRequestRecheckSubmit = async (id: string) => {
@@ -2492,7 +2492,7 @@ export default function Admin() {
       setRecheckReason('');
       setRecheckExpiry('');
       showToast('Verification recheck requested.', 'success');
-      loadData();
+      loadData({ silent: true });
     }
   };
 
@@ -2507,7 +2507,7 @@ export default function Admin() {
         const { error: err } = await suspendTradieProfile(userId);
         setActionLoadingId(null);
         if (err) showToast(err.message || 'Failed to suspend tradie.', 'error');
-        else { showToast('Tradie profile suspended.', 'success'); loadData(); }
+        else { showToast('Tradie profile suspended.', 'success'); loadData({ silent: true }); }
       }
     });
   };
@@ -2523,7 +2523,7 @@ export default function Admin() {
         const { error: err } = await suspendIdentityVerification(userId);
         setActionLoadingId(null);
         if (err) showToast(err.message || 'Failed to revoke identity verification.', 'error');
-        else { showToast('Identity verification revoked.', 'success'); loadData(); }
+        else { showToast('Identity verification revoked.', 'success'); loadData({ silent: true }); }
       }
     });
   };

@@ -1025,6 +1025,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Live Update UX Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Realtime & Data Loading UX Polish |
+| Files changed | `frontend/src/pages/Messages.tsx`, `frontend/src/pages/Jobs.tsx`, `frontend/src/pages/Admin.tsx`, `frontend/src/pages/AdminDisputeCase.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Files created | None |
+| Summary | Inspected and polished the live-update UX across Messages, Jobs, Notifications, and Admin queues, replacing full-screen reload blanking with silent in-place background refetching (stale-while-revalidate). |
+| Details | - **Stable Thread Switching**: Guarded page-level loading state in `Messages.tsx` so switching conversations does not clear the layout sidebar or show full-screen spinners when conversations are already cached/loaded.<br> - **Instant Messages Sending**: Audited optimistic message display, instant database inserts, and unread count notification bubble updates on thread switching.<br> - **Silent Jobs Refetching**: Replaced full-page loaders inside `Jobs.tsx` with silent updates (`loadJobs({ silent: true })` and `fetchJobLifecycleDetails(..., { silent: true })`) during modal success handlers (submitting completion proofs, quote acceptances, reviews, and simulated payment funding). Keeps stale content visible and shifts state updates in-place.<br> - **Silent Admin Refetching**: Updated verification actions (identity approval, document whitelist, recheck request, suspension) inside `Admin.tsx` and `AdminDisputeCase.tsx` to execute database synchronization silently without blanking active analytics tabs or queue lists.<br> - **Staff Data Security**: Confirmed that administrative sync channels are only created for authenticated users with staff/admin role flags. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |

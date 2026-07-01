@@ -1938,9 +1938,9 @@ export default function Jobs() {
             showToast("Completion proof submitted! Customer has 72 hours to review.", 'success');
             if (selectedJob && selectedJob.id === completionModalJob.id) {
               setSelectedJob(prev => prev ? { ...prev, status: 'completed_pending_review' } : null);
-              fetchJobLifecycleDetails(selectedJob.id);
+              fetchJobLifecycleDetails(selectedJob.id, { silent: true });
             }
-            loadJobs();
+            loadJobs({ silent: true });
           }}
         />
       )}
@@ -1954,9 +1954,9 @@ export default function Jobs() {
             setReviewModalJob(null);
             if (selectedJob && selectedJob.id === reviewModalJob.id) {
               setSelectedJob(prev => prev ? { ...prev, status: newStatus } : null);
-              fetchJobLifecycleDetails(reviewModalJob.id);
+              fetchJobLifecycleDetails(reviewModalJob.id, { silent: true });
             }
-            loadJobs();
+            loadJobs({ silent: true });
             if (newStatus === 'completed') {
               await openReviewModalIfEligible(completedJob);
             }
@@ -1974,9 +1974,9 @@ export default function Jobs() {
             setTradieReviewModalJob(null);
             showToast('Review submitted. It now appears on the tradie profile.', 'success');
             if (selectedJob && selectedJob.id === tradieReviewModalJob.id) {
-              fetchJobLifecycleDetails(selectedJob.id);
+              fetchJobLifecycleDetails(selectedJob.id, { silent: true });
             }
-            loadJobs();
+            loadJobs({ silent: true });
           }}
           showToast={showToast}
         />
@@ -4014,8 +4014,8 @@ export default function Jobs() {
                                               } else {
                                                 showToast("Quote accepted. Awaiting customer payment.", 'success');
                                                 setSelectedJob(prev => prev ? { ...prev, status: 'accepted' } : null);
-                                                fetchJobLifecycleDetails(selectedJob.id);
-                                                loadJobs();
+                                                fetchJobLifecycleDetails(selectedJob.id, { silent: true });
+                                                loadJobs({ silent: true });
                                               }
                                             }
                                           });
@@ -4099,8 +4099,8 @@ export default function Jobs() {
                                   } else {
                                     showToast("Protected payment funded! Payment is held until completion.", 'success');
                                     setSelectedJob(prev => prev ? { ...prev, status: 'payment_held' } : null);
-                                    fetchJobLifecycleDetails(selectedJob.id);
-                                    loadJobs();
+                                    fetchJobLifecycleDetails(selectedJob.id, { silent: true });
+                                    loadJobs({ silent: true });
                                   }
                                 }
                               });

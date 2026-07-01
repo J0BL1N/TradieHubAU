@@ -276,7 +276,9 @@ export default function Messages() {
 
     let cancelled = false;
     const initialise = async () => {
-      setLoading(true);
+      if (conversations.length === 0) {
+        setLoading(true);
+      }
       setError(null);
       try {
         let preferredId = searchParams.get('conversation');
