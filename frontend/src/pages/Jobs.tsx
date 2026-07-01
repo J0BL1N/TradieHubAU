@@ -1084,7 +1084,7 @@ export default function Jobs() {
     return 'Cancelled';
   };
 
-  const fetchJobLifecycleDetails = useCallback(async (jobId: string) => {
+  const fetchJobLifecycleDetails = useCallback(async (jobId: string, options?: { silent?: boolean }) => {
     if (!userId) {
       setJobPayment(null);
       setJobLedger([]);
@@ -1100,7 +1100,9 @@ export default function Jobs() {
       return;
     }
 
-    setLoadingLifecycle(true);
+    if (!options?.silent) {
+      setLoadingLifecycle(true);
+    }
     setLifecycleError(null);
     try {
       const { data: pData } = await getPaymentForJob(jobId);
@@ -1299,8 +1301,10 @@ export default function Jobs() {
   }, [searchParams, setSearchParams]);
 
   // ─── Load Jobs ──────────────────────────────────────────────────────────────
-  const loadJobs = useCallback(async () => {
-    setLoading(true);
+  const loadJobs = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -1371,9 +1375,9 @@ export default function Jobs() {
           table: 'jobs'
         },
         () => {
-          void loadJobs();
+          void loadJobs({ silent: true });
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .on(
@@ -1384,9 +1388,9 @@ export default function Jobs() {
           table: 'applications'
         },
         () => {
-          void loadJobs();
+          void loadJobs({ silent: true });
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .on(
@@ -1397,9 +1401,9 @@ export default function Jobs() {
           table: 'payments'
         },
         () => {
-          void loadJobs();
+          void loadJobs({ silent: true });
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .on(
@@ -1411,7 +1415,7 @@ export default function Jobs() {
         },
         () => {
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .on(
@@ -1423,7 +1427,7 @@ export default function Jobs() {
         },
         () => {
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .on(
@@ -1435,7 +1439,7 @@ export default function Jobs() {
         },
         () => {
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .on(
@@ -1447,7 +1451,7 @@ export default function Jobs() {
         },
         () => {
           const activeJob = selectedJobRef.current;
-          if (activeJob) void fetchJobLifecycleDetails(activeJob.id);
+          if (activeJob) void fetchJobLifecycleDetails(activeJob.id, { silent: true });
         }
       )
       .subscribe();
@@ -2611,7 +2615,7 @@ export default function Jobs() {
                   </select>
                 </div>
               )}
-              <button onClick={loadJobs} className="p-2 border rounded-xl hover:bg-muted text-muted-foreground" title="Refresh jobs">
+              <button onClick={() => { void loadJobs(); }} className="p-2 border rounded-xl hover:bg-muted text-muted-foreground" title="Refresh jobs">
                 <RefreshCw className="h-4 w-4" />
               </button>
             </div>
@@ -2659,7 +2663,7 @@ export default function Jobs() {
               <AlertTriangle className="h-10 w-10 mx-auto" />
               <h3 className="text-lg font-bold">Failed to load jobs</h3>
               <p className="text-sm font-medium">{error}</p>
-              <button onClick={loadJobs} className="bg-red-500 text-white font-semibold px-4 py-2 rounded-xl text-xs hover:bg-red-600 transition-colors">
+              <button onClick={() => { void loadJobs(); }} className="bg-red-500 text-white font-semibold px-4 py-2 rounded-xl text-xs hover:bg-red-600 transition-colors">
                 Try Again
               </button>
             </div>

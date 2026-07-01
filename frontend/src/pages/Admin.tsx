@@ -2246,9 +2246,11 @@ export default function Admin() {
 
   // ─── Data loading ──────────────────────────────────────────────────────────
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (options?: { silent?: boolean }) => {
     if (!isAdmin) return;
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -2328,7 +2330,7 @@ export default function Admin() {
           table: 'verifications'
         },
         () => {
-          void loadData();
+          void loadData({ silent: true });
         }
       )
       .on(
@@ -2339,7 +2341,7 @@ export default function Admin() {
           table: 'users'
         },
         () => {
-          void loadData();
+          void loadData({ silent: true });
         }
       )
       .on(
@@ -2350,7 +2352,7 @@ export default function Admin() {
           table: 'job_issues'
         },
         () => {
-          void loadData();
+          void loadData({ silent: true });
         }
       )
       .on(
@@ -2361,7 +2363,7 @@ export default function Admin() {
           table: 'payments'
         },
         () => {
-          void loadData();
+          void loadData({ silent: true });
         }
       )
       .on(
@@ -2372,7 +2374,7 @@ export default function Admin() {
           table: 'jobs'
         },
         () => {
-          void loadData();
+          void loadData({ silent: true });
         }
       )
       .subscribe();

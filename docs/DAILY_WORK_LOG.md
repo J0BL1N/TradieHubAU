@@ -934,8 +934,22 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | `npm run build` | Passed. Checked for TypeScript compilation and bundle compliance. |
 | `git diff --check` | Passed. No trailing whitespace or formatting issues. |
 
+### Beta Display Name, Realtime Messaging, Silent Background Sync & Google Places Autocomplete Integration
+
+| Item | Notes |
+| --- | --- |
+| Area | Display Names, Messaging Live UX, Admin/Jobs Silent Sync & Location Autocomplete |
+| Files changed | `frontend/src/lib/masking.ts`, `frontend/src/pages/Messages.tsx`, `frontend/src/pages/Jobs.tsx`, `frontend/src/pages/Admin.tsx`, `frontend/src/pages/AdminDisputes.tsx`, `frontend/src/pages/AdminDisputeCase.tsx`, `frontend/src/lib/users.ts`, `frontend/src/pages/Profile.tsx`, `frontend/src/pages/PostJob.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Files created | `docs/sql_cleanup_beta_display_names.md`, `supabase/migrations/087_add_google_places_location_fields.sql`, `docs/location_address_autocomplete_plan.md`, `frontend/src/components/GooglePlacesAutocomplete.tsx` |
+| Summary | Implemented Display Name sanitization, stale-while-revalidate live messaging, optimistic updates, silent background synchronization, and a new Google Places address autocomplete component with keyless graceful degradation. |
+| Details | - **Beta Name Leakage**: Strips `[BETA]` and brackets prefixes from names before applying masking logic in `masking.ts`. Added SQL script for display name database cleanup.<br> - **Stale-While-Revalidate Messaging**: Loads cached conversation threads instantly and runs silent background syncing to fetch updates, with a pulse syncing indicator next to the header.<br> - **Optimistic Chat Composer**: Appends new messages to state instantly and clears form fields immediately, rolling back on failure.<br> - **Deduplicated Realtime Messages**: Resolves duplicate messages dynamically by temporary IDs in the Postgres subscription listener.<br> - **Conversation Sidebar Sorting**: Automatically sorts conversation list items by `last_message_at` descending.<br> - **Silent Background Refreshes**: Reframed realtime listeners on Jobs, Admin dashboard, Disputes lists, and Dispute details pages to reload database states in the background without layout-blocking spinners.<br> - **Google Places Migration**: Created database migration `087_add_google_places_location_fields.sql` adding Places API fields to `jobs` and `users` tables, updating the client edit trigger allowlist.<br> - **Autocomplete Component**: Created `GooglePlacesAutocomplete` to load script dynamically, restriction to AU addresses, and fall back safely to normal text inputs when API key is missing.<br> - **Forms Integration**: Integrated autocomplete inside job creation (`PostJob.tsx`) and profile editing (`Profile.tsx`) to auto-fill State, Suburb, Postcode, and lookup matching local regions.<br> - **Docs Updates**: Documented setup steps in `location_address_autocomplete_plan.md` and updated `beta_readiness_checklist.md` and `ROADMAP.md`. |
+| Migrations required | `087_add_google_places_location_fields.sql` (to be applied by Jay manually). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |
 | --- | --- |
 | Phase 3 — Early Releases | Upcoming. |
+| Jay Manual QA Testing | In Progress. |

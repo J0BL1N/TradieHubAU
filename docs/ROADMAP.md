@@ -19,12 +19,13 @@ Current focus:
 * v0.0.13 Admin dashboard polish
 * v0.0.14 Admin Dispute Case Management (implementation complete, awaiting manual review)
 * v0.0.15 Full manual customer/tradie/admin test run (in progress — awaiting manual testing)
+* v0.0.18 Job Messaging & Live Sync Polish (implementation complete, awaiting manual review)
+* v0.0.19 Google Places Location Autocomplete Foundation (implementation complete, awaiting manual review)
 
 Next major focus:
 
-* v0.0.18 Job Messaging Foundation (in progress/unapproved)
-* v0.0.19 Invoicing Foundation
-* v0.0.20 Website Analytics Foundation
+* v0.0.20 Invoicing Foundation
+* v0.0.21 Website Analytics Foundation
 * v0.1.0 Controlled Local Beta Prep, after the near-term foundations are completed and separately verified
 
 Later:

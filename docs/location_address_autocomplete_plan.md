@@ -1,71 +1,44 @@
-# Location / Address Autocomplete Integration Plan
+# Google Places & Location Autocomplete Plan
 
-This document outlines the proposed architecture and implementation plan for integrating Google Places Autocomplete into the TradieHubAU platform.
+This document outlines the foundation setup for Google Places address autocomplete integration in TradieHubAU.
 
-## 1. Objectives
-* **Improve User Experience**: Eliminate manual select dropdowns for suburb/state selection on Job Posting, Search Filters, and Profile Setup.
-* **Ensure Data Integrity**: Capture validated Australian addresses, ensuring correct postcode, suburb, region, state, and lat/long coordinates.
-* **Keep Backwards Compatibility**: Support existing database columns (`suburb`, `state`, `postcode`, `region`) seamlessly.
-* **Manage Costs**: Implement session tokens and debounce mechanisms to optimize Google Maps API billing.
+## 1. Environment Variable Configuration
 
----
+To enable the address autocomplete search feature, define the following variable in your local `.env` and production Cloudflare/hosting environment:
 
-## 2. Current Schema & Structure
-Currently, locations are loaded statically from `frontend/src/lib/auLocations.ts` with structured filters:
-* **State** (e.g., NSW, QLD, VIC)
-* **Region** (e.g., Sydney, Greater Brisbane)
-* **Suburb** (e.g., Surry Hills, Brisbane City)
-
-Jobs table has:
-* `suburb` (TEXT)
-* `state` (TEXT)
-* `postcode` (TEXT)
-* `region` (TEXT)
-
----
-
-## 3. Integration Architecture
-
-### Frontend (Google Places Autocomplete Widget)
-* **Loading Script**: Dynamically load the Google Maps JavaScript API with the `places` library enabled.
-* **Component Integration**: Create a custom reusable `<AddressAutocomplete />` input component wrapper using standard Vanilla CSS styling matching the design system.
-* **Session Tokens**: Generate a new `AutocompleteSessionToken` when the user starts typing and pass it with requests to group keystrokes into a single billing event.
-* **Bounds Filtering**: Restrict autocomplete results strictly to Australian addresses (`components: 'country:au'`).
-
-### Data Mapping Flow
-When a user selects an address from the Autocomplete dropdown:
-1. Fetch address details using the `getDetails` request (binding the session token).
-2. Extract the address components:
-   * `locality` $\rightarrow$ Map to `suburb`
-   * `administrative_area_level_1` $\rightarrow$ Map to `state`
-   * `postal_code` $\rightarrow$ Map to `postcode`
-   * `geometry.location` $\rightarrow$ Map to lat/long coordinates for future map plotting.
-3. Determine `region` programmatically using the suburb/postcode mapping or a custom utility.
-
----
-
-## 4. Implementation Steps
-
-```mermaid
-graph TD
-  A[Setup Google Cloud Console API Key] --> B[Load Google Maps JS SDK in Index.html]
-  B --> C[Create Reusable AddressAutocomplete Input Component]
-  C --> D[Integrate into Job Posting PostJob.tsx]
-  C --> E[Integrate into Profiles Profile.tsx]
-  C --> F[Integrate into Search Filters BrowseTradies.tsx / Jobs.tsx]
-  D --> G[Test coordinate extraction and database saving]
+```env
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
-### Phase 1: SDK & Configuration
-1. Restrict Google API Key to web application domain HTTP referrers in GCP Console.
-2. Enable **Maps JavaScript API** and **Places API**.
+### Setup Steps in Google Cloud Console:
+1. **Create a Project** on the Google Cloud Console.
+2. **Enable APIs**: Enable the **Maps JavaScript API** and **Places API** (Places API Web Service or Places API New).
+3. **Billing**: Associate a billing account with the Google Cloud project (required by Google for API key activation).
+4. **Key Restrictions (Production)**:
+   - Restrict the API key to "HTTP referrers (web sites)".
+   - Add your authorized domains (e.g., `*.tradiehub.au/*`, `localhost/*`).
+   - Restrict API usage to the Maps JavaScript API and Places API to prevent abuse.
 
-### Phase 2: React Component Setup
-1. Define types and interfaces for autocomplete selections.
-2. Implement input debounce (300ms) to reduce API request volume.
-3. Group address parts into standard Australian format (e.g., "Unit 1, 10 Main St, Surry Hills NSW 2010").
+---
 
-### Phase 3: Integration and Testing
-1. Update `PostJob.tsx` location input fields.
-2. Update `Profile.tsx` address input fields.
-3. Validate database insertions and verify RLS allows saving coordinates.
+## 2. Reusable Autocomplete Component
+
+The `GooglePlacesAutocomplete` component (`frontend/src/components/GooglePlacesAutocomplete.tsx`) is designed with defensive coding best practices:
+- **Zero-Dependency Crash Avoidance**: If `VITE_GOOGLE_MAPS_API_KEY` is undefined or the script load fails, it operates as a standard text input field.
+- **Form Submission Integrity**: Manual address entry still works, and form validations are not blocked by Google API issues.
+
+---
+
+## 3. Database Schema Foundation
+
+Migration `087_add_google_places_location_fields.sql` introduces these fields:
+- `formatted_address` (text): Full formatted string from Google Places.
+- `place_id` (text): Unique Places identifier.
+- `latitude` (numeric): Geographic latitude.
+- `longitude` (numeric): Geographic longitude.
+
+### Target Tables:
+- **`public.jobs`**: Stored on job creation for precise location-based tradie routing.
+- **`public.users`**: Stored on customer/tradie profiles to establish home or service radius coordinates.
+
+The migration also adjusts the `protect_job_lifecycle_updates` trigger function allowlist to allow users to update these new location coordinates when editing open jobs before quotes are received.

@@ -79,9 +79,11 @@ export default function AdminDisputes() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDisputes = useCallback(async () => {
+  const loadDisputes = useCallback(async (options?: { silent?: boolean }) => {
     if (!profile?.is_admin) return;
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
     const { data, error: fetchError } = await getAllDisputeJobs();
     if (fetchError) setError(fetchError.message || 'Failed to load dispute cases.');
@@ -105,7 +107,7 @@ export default function AdminDisputes() {
           table: 'job_issues'
         },
         () => {
-          void loadDisputes();
+          void loadDisputes({ silent: true });
         }
       )
       .on(
@@ -116,7 +118,7 @@ export default function AdminDisputes() {
           table: 'payments'
         },
         () => {
-          void loadDisputes();
+          void loadDisputes({ silent: true });
         }
       )
       .on(
@@ -127,7 +129,7 @@ export default function AdminDisputes() {
           table: 'jobs'
         },
         () => {
-          void loadDisputes();
+          void loadDisputes({ silent: true });
         }
       )
       .subscribe();

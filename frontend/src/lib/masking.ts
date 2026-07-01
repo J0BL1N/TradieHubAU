@@ -44,10 +44,23 @@ const SUFFIXES = [
 ];
 
 
-export function maskName(name: string | null | undefined): string {
-  if (!name || !name.trim()) return 'Verified Tradie';
+export function sanitizeBetaName(name: string | null | undefined): string {
+  if (!name) return '';
+  let s = name.trim();
+  // Strip starting bracketed or loose beta
+  s = s.replace(/^\[?BETA\]?[:\-\s]*/i, '');
+  // Strip ending bracketed or loose beta
+  s = s.replace(/[:\-\s]*\[?BETA\]?$/i, '');
+  // Replace brackets or other artifacts from the name
+  s = s.replace(/[\[\]]/g, '');
+  return s.trim();
+}
 
-  const parts = name.trim().split(/\s+/);
+export function maskName(name: string | null | undefined): string {
+  const cleaned = sanitizeBetaName(name);
+  if (!cleaned) return 'Verified Tradie';
+
+  const parts = cleaned.split(/\s+/);
   if (parts.length === 0) return 'Verified Tradie';
 
   const maskedParts = parts.map((part) => {

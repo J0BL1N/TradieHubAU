@@ -14,6 +14,7 @@ import {
 } from '../lib/auLocations';
 import type { AustralianLocationOption } from '../lib/auLocations';
 import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase, ImagePlus, Trash2 } from 'lucide-react';
+import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
 
 export default function PostJob() {
   const { user, profile, loading } = useAuth();
@@ -33,6 +34,13 @@ export default function PostJob() {
   const [budgetType, setBudgetType] = useState<'rough_estimate' | 'fixed_budget' | 'need_quotes'>('rough_estimate');
   const [description, setDescription] = useState('');
   const [workspaceImages, setWorkspaceImages] = useState<File[]>([]);
+
+  // Google Places integration states
+  const [formattedAddress, setFormattedAddress] = useState('');
+  const [placeId, setPlaceId] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [googleAddress, setGoogleAddress] = useState('');
 
   // Status State
   const [error, setError] = useState<string | null>(null);
@@ -148,6 +156,11 @@ export default function PostJob() {
     setError(null);
     setSuccess(false);
     setConfirmOpen(false);
+    setFormattedAddress('');
+    setPlaceId('');
+    setLatitude(null);
+    setLongitude(null);
+    setGoogleAddress('');
   };
 
   // 3. Success Screen View
@@ -323,7 +336,11 @@ export default function PostJob() {
           timeline: trimmedTimeline,
           urgency,
           type: jobType,
-          status: 'open'
+          status: 'open',
+          formatted_address: formattedAddress || null,
+          place_id: placeId || null,
+          latitude: latitude,
+          longitude: longitude
         })
         .select('id')
         .maybeSingle();
@@ -446,6 +463,42 @@ export default function PostJob() {
           <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2 border-b pb-2">
             <MapPin className="h-5 w-5 text-primary" /> 2. Location & Schedule
           </h3>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-foreground uppercase tracking-wider block">Address Search (Google Places)</label>
+            <GooglePlacesAutocomplete
+              value={googleAddress}
+              onChange={setGoogleAddress}
+              onPlaceSelected={(place) => {
+                setFormattedAddress(place.formatted_address);
+                setPlaceId(place.place_id);
+                setLatitude(place.latitude);
+                setLongitude(place.longitude);
+
+                // Find matching local database location for region & suburb dropdowns
+                if (place.state && place.suburb && place.postcode) {
+                  const match = locationOptions.find(
+                    opt => opt.state === place.state &&
+                    opt.suburb.toLowerCase() === place.suburb.toLowerCase() &&
+                    opt.postcode === place.postcode
+                  );
+                  if (match) {
+                    setState(match.state);
+                    setRegion(match.region);
+                    setSuburb(match.suburb);
+                    setPostcode(match.postcode);
+                  } else {
+                    setState(place.state);
+                    setSuburb(place.suburb);
+                    setPostcode(place.postcode);
+                  }
+                }
+              }}
+              placeholder="Type address to search..."
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+            />
+            <p className="text-[11px] font-semibold text-muted-foreground">Optional: Select address via Google to auto-fill details and link coordinates.</p>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">

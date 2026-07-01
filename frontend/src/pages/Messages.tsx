@@ -157,6 +157,7 @@ export default function Messages() {
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [newMessageAvailable, setNewMessageAvailable] = useState(false);
   const [sending, setSending] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [reply, setReply] = useState('');
   const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
@@ -299,17 +300,19 @@ export default function Messages() {
 
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!user) return;
-    setMessagesLoading(true);
 
     const cached = messagesCacheRef.current[conversationId];
     if (cached) {
       setMessages(cached);
       setHasOlderMessages(hasMoreCacheRef.current[conversationId] ?? false);
+      setMessagesLoading(false);
     } else {
       setMessages([]);
       setHasOlderMessages(false);
+      setMessagesLoading(true);
     }
 
+    setSyncing(true);
     setNewMessageAvailable(false);
     setError(null);
     try {
@@ -322,8 +325,14 @@ export default function Messages() {
       messagesCacheRef.current[conversationId] = loadedMessages;
       hasMoreCacheRef.current[conversationId] = data.hasMore;
 
-      shouldStickToBottomRef.current = true;
-      setMessages(loadedMessages);
+      // Keep any optimistic messages in flight
+      setMessages(current => {
+        const inFlight = current.filter(m => m.id.startsWith('temp-'));
+        const nonDuplicateLoaded = loadedMessages.filter(lm =>
+          !inFlight.some(ifm => ifm.text === lm.text && ifm.sender_id === lm.sender_id)
+        );
+        return sortMessages([...inFlight, ...nonDuplicateLoaded]);
+      });
       setHasOlderMessages(data.hasMore);
 
       if (hasUnreadIncomingUserMessages(data.messages, user.id)) {
@@ -344,6 +353,7 @@ export default function Messages() {
       setError(friendlyMessageError(messagesError.message, 'This conversation could not be loaded.'));
     } finally {
       setMessagesLoading(false);
+      setSyncing(false);
     }
   }, [scheduleScrollToBottom, user]);
 
@@ -420,10 +430,29 @@ export default function Messages() {
 
     const mergeMessage = (incoming: MessageRecord, shouldScrollToBottom: boolean) => {
       if (shouldScrollToBottom) shouldStickToBottomRef.current = true;
-      setMessages(current => sortMessages([
-        ...current.filter(message => message.id !== incoming.id),
-        incoming,
-      ]));
+      setMessages(current => {
+        const matchIndex = current.findIndex(m =>
+          m.id.startsWith('temp-') &&
+          m.sender_id === incoming.sender_id &&
+          m.text === incoming.text
+        );
+
+        if (matchIndex !== -1) {
+          const next = [...current];
+          next[matchIndex] = {
+            ...incoming,
+            attachments: current[matchIndex].attachments?.length ? current[matchIndex].attachments : incoming.attachments
+          };
+          return sortMessages(next);
+        }
+
+        if (current.some(m => m.id === incoming.id)) {
+          return current;
+        }
+
+        return sortMessages([...current, incoming]);
+      });
+
       if (shouldScrollToBottom) {
         scheduleScrollToBottom('smooth', { force: true, retry: true });
       } else {
@@ -592,7 +621,6 @@ export default function Messages() {
 
     setSelectedAttachments(current => [...current, ...nextAttachments]);
   };
-
   const removeSelectedAttachment = (attachmentId: string) => {
     setSelectedAttachments(current => {
       const removed = current.find(attachment => attachment.id === attachmentId);
@@ -603,21 +631,73 @@ export default function Messages() {
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!activeConversationId || (!reply.trim() && selectedAttachments.length === 0) || sending) return;
+    if (!user || !activeConversationId || (!reply.trim() && selectedAttachments.length === 0) || sending) return;
 
     setSending(true);
     setError(null);
     setAttachmentError(null);
     const text = reply.trim();
     const uploadedPaths: string[] = [];
+
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimisticMessage: MessageRecord = {
+      id: tempId,
+      conversation_id: activeConversationId,
+      sender_id: user.id,
+      text: text,
+      read: false,
+      read_at: null,
+      created_at: new Date().toISOString(),
+      message_type: 'user',
+      system_event_type: null,
+      metadata: {},
+      attachments: selectedAttachments.map(att => ({
+        id: att.id,
+        message_id: tempId,
+        conversation_id: activeConversationId,
+        job_id: activeConversation?.job_id || '',
+        uploader_id: user.id,
+        bucket_id: 'message_attachments',
+        storage_path: '',
+        file_name: att.file.name,
+        mime_type: att.file.type as any,
+        file_size: att.file.size,
+        width: att.width,
+        height: att.height,
+        created_at: new Date().toISOString(),
+        signed_url: att.previewUrl,
+      })),
+    };
+
+    // Optimistically add message and clear state
+    setMessages(current => sortMessages([...current, optimisticMessage]));
+    scheduleScrollToBottom('smooth', { force: true, retry: true });
+
+    // Update conversation sidebar preview
+    setConversations(current => current.map(conversation =>
+      conversation.id === activeConversationId
+        ? {
+            ...conversation,
+            last_message_text: text || (selectedAttachments.length > 0 ? 'Sent an image' : ''),
+            last_message_at: optimisticMessage.created_at,
+            last_message_from: user.id,
+          }
+        : conversation
+    ));
+
+    setReply('');
+    setSelectedAttachments([]);
+
     try {
       if (selectedAttachments.length === 0) {
-        shouldStickToBottomRef.current = true;
-        const { error: sendError } = await sendJobMessage(activeConversationId, text);
+        const { data: newMessageId, error: sendError } = await sendJobMessage(activeConversationId, text);
         if (sendError) throw sendError;
+
+        if (newMessageId) {
+          setMessages(current => current.map(m => m.id === tempId ? { ...m, id: newMessageId } : m));
+        }
       } else {
         if (!user || !activeConversation) throw new Error('A valid job conversation is required to send attachments.');
-        shouldStickToBottomRef.current = true;
         const messageId = crypto.randomUUID();
         const attachmentMetadata: MessageAttachmentInput[] = [];
 
@@ -644,25 +724,34 @@ export default function Messages() {
           });
         }
 
-        const { error: sendError } = await sendJobMessageWithAttachments(
+        const { data: newMsg, error: sendError } = await sendJobMessageWithAttachments(
           messageId,
           activeConversationId,
           text,
           attachmentMetadata
         );
         if (sendError) throw sendError;
+
+        if (newMsg) {
+          setMessages(current => current.map(m => m.id === tempId ? { ...m, ...newMsg } : m));
+        }
       }
 
-      setReply('');
-      selectedAttachments.forEach(attachment => URL.revokeObjectURL(attachment.previewUrl));
-      setSelectedAttachments([]);
-      await loadMessages(activeConversationId);
-      await loadConversations(activeConversationId);
-      scheduleScrollToBottom('smooth', { force: true, retry: true });
+      optimisticMessage.attachments?.forEach(att => {
+        if (att.signed_url) URL.revokeObjectURL(att.signed_url);
+      });
+
+      // Background sync sidebar
+      void loadConversations(activeConversationId);
     } catch (sendError: any) {
+      // Revert optimistic additions on error
+      setMessages(current => current.filter(m => m.id !== tempId));
+      setReply(text);
+      setSelectedAttachments(selectedAttachments);
+
       const cleanupPaths = uploadedPaths.filter(path => path.trim().length > 0);
       if (cleanupPaths.length > 0) {
-        await supabase.storage.from('message_attachments').remove(cleanupPaths);
+        void supabase.storage.from('message_attachments').remove(cleanupPaths);
       }
       setError(friendlyMessageError(sendError.message, 'Your message could not be sent.'));
     } finally {
@@ -745,7 +834,10 @@ export default function Messages() {
         <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:h-[calc(100vh-220px)] lg:grid-cols-3">
           <aside className={`${mobileThreadOpen ? 'hidden lg:flex' : 'flex'} flex-col rounded-2xl border bg-card p-4`}>
             <div className="mb-3 flex items-center justify-between px-2">
-              <h2 className="font-extrabold">Conversations</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-extrabold">Conversations</h2>
+                {syncing && <span className="text-[10px] font-semibold text-primary animate-pulse">Syncing...</span>}
+              </div>
               <button
                 type="button"
                 onClick={() => loadConversations(activeConversationId).catch((refreshError: any) => setError(refreshError.message))}
@@ -756,7 +848,13 @@ export default function Messages() {
               </button>
             </div>
             <div className="space-y-2 overflow-y-auto">
-              {conversations.map(conversation => (
+              {[...conversations]
+                .sort((a, b) => {
+                  const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+                  const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+                  return bTime - aTime;
+                })
+                .map(conversation => (
                 <button
                   type="button"
                   key={conversation.id}

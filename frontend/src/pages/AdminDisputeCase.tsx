@@ -26,9 +26,11 @@ export default function AdminDisputeCase() {
     setTimeout(() => setToastMessage(null), 4500);
   }, []);
 
-  const loadCase = useCallback(async () => {
+  const loadCase = useCallback(async (options?: { silent?: boolean }) => {
     if (!profile?.is_admin || !jobId) return;
-    setLoading(true);
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
     const { data, error: fetchError } = await getDisputeJob(jobId);
     if (fetchError) setError(fetchError.message || 'Failed to load dispute case.');
@@ -53,7 +55,7 @@ export default function AdminDisputeCase() {
           filter: `job_id=eq.${jobId}`
         },
         () => {
-          void loadCase();
+          void loadCase({ silent: true });
         }
       )
       .on(
@@ -65,7 +67,7 @@ export default function AdminDisputeCase() {
           filter: `job_id=eq.${jobId}`
         },
         () => {
-          void loadCase();
+          void loadCase({ silent: true });
         }
       )
       .on(
@@ -77,7 +79,7 @@ export default function AdminDisputeCase() {
           filter: `id=eq.${jobId}`
         },
         () => {
-          void loadCase();
+          void loadCase({ silent: true });
         }
       )
       .subscribe();

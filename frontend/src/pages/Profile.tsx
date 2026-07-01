@@ -12,6 +12,7 @@ import type { UserProfile } from '../lib/users';
 import { formatJobLocation } from '../lib/auLocations';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
 import { maskName } from '../lib/masking';
+import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
 import {
   fetchEligibleCompletionProofPortfolioItems,
   updateCompletionProofPortfolioItem,
@@ -143,6 +144,12 @@ export default function Profile() {
   const [suburb, setSuburb] = useState('');
   const [stateVal, setStateVal] = useState('');
   const [postcode, setPostcode] = useState('');
+  // Google Places integration states
+  const [formattedAddress, setFormattedAddress] = useState('');
+  const [placeId, setPlaceId] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [googleAddress, setGoogleAddress] = useState('');
   const [showLocation, setShowLocation] = useState(true);
   const [addressRule, setAddressRule] = useState<'never' | 'afterAccepted' | 'afterJobStarts'>('afterAccepted');
   
@@ -311,6 +318,11 @@ export default function Profile() {
       setSuburb(profileData.suburb || '');
       setStateVal(profileData.state || '');
       setPostcode(profileData.postcode || '');
+      setFormattedAddress(profileData.formatted_address || '');
+      setPlaceId(profileData.place_id || '');
+      setLatitude(profileData.latitude || null);
+      setLongitude(profileData.longitude || null);
+      setGoogleAddress(profileData.formatted_address || '');
       setShowLocation(profileData.show_location ?? true);
       setAddressRule(profileData.address_rule || 'afterAccepted');
       setTrades(profileData.trades || []);
@@ -548,6 +560,10 @@ export default function Profile() {
       postcode: postcode.trim() || null,
       show_location: showLocation,
       address_rule: addressRule,
+      formatted_address: formattedAddress || null,
+      place_id: placeId || null,
+      latitude: latitude,
+      longitude: longitude,
       trades: targetProfile?.role !== 'customer' ? trades : null,
       abn: targetProfile?.role !== 'customer' ? abn.trim() || null : null,
       license_number: targetProfile?.role !== 'customer' ? licenseNumber.trim() || null : null,
@@ -1958,6 +1974,26 @@ export default function Profile() {
                     className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-foreground uppercase tracking-wider block">Address Search (Google Places)</label>
+                <GooglePlacesAutocomplete
+                  value={googleAddress}
+                  onChange={setGoogleAddress}
+                  onPlaceSelected={(place) => {
+                    setFormattedAddress(place.formatted_address);
+                    setPlaceId(place.place_id);
+                    setLatitude(place.latitude);
+                    setLongitude(place.longitude);
+                    if (place.suburb) setSuburb(place.suburb);
+                    if (place.state) setStateVal(place.state);
+                    if (place.postcode) setPostcode(place.postcode);
+                  }}
+                  placeholder="Search address..."
+                  className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
+                />
+                <p className="text-[11px] font-semibold text-muted-foreground">Optional: Auto-fills Suburb, State, Postcode and links coordinate mapping.</p>
               </div>
 
               <div className="grid grid-cols-3 gap-4">

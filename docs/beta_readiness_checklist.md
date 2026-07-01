@@ -24,9 +24,10 @@ All database modifications are codified in `supabase/migrations/`:
 * [x] **084** — Payments status and completion proof triggers
 * [x] **085** — Dispute opening and resolution triggers
 * [x] **086** — Document verification status triggers
+* [x] **087** — Google Places and address mapping fields
 
 > [!IMPORTANT]
-> The database migration files `081_create_notifications_table.sql` through `086_verification_notifications.sql` are created and pushed to GitHub main. Live deployment to the Supabase Studio hosting environment is manual and must be executed by Jay.
+> The database migration files `081_create_notifications_table.sql` through `087_add_google_places_location_fields.sql` are created and pushed to GitHub main. Live deployment to the Supabase Studio hosting environment is manual and must be executed by Jay.
 
 ---
 
@@ -46,5 +47,9 @@ Jay to manually test:
 - [ ] Customer accepts the quote (verify Tradie receives quote accepted notification).
 - [ ] Simulate payment funding (verify Tradie receives payment funded notification).
 - [ ] Chat in the workspace chat thread (verify thread switching is instant without refresh, and new messages pop up realtime with notification badges).
+- [ ] Verify message composer sends optimistically, immediately clears state, and sidebar updates details without lag.
+- [ ] Verify that changing active conversation loads cached messages instantly, with a background sync indicating active status in the sidebar.
+- [ ] Verify that Google Places address autocompletion loads on Profile and Post Job, auto-fills State/Suburb/Postcode, and degrades gracefully to standard inputs when keyless.
+- [ ] Verify background sync updates details silently without showing full-page loading indicators on Jobs and Admin views when realtime events trigger.
 - [ ] Tradie submits completion proof.
 - [ ] Customer approves completion proof (verify invoice receipt generation).

@@ -70,6 +70,10 @@ export interface UserProfile {
   years_experience: number | null;
   service_areas: string[] | null;
   website_url: string | null;
+  formatted_address?: string | null;
+  place_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
   updated_at: string;
   last_seen_at: string | null;
