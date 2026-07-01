@@ -36,7 +36,7 @@ export default function LocationSuburbSelect({
   onChange,
   onSelect,
   fallbackOptions = [],
-  placeholder = 'Type suburb name...',
+  placeholder = 'Search suburb...',
   className = '',
   disabled = false,
   required = false,
@@ -159,11 +159,16 @@ export default function LocationSuburbSelect({
         autoComplete="off"
       />
       
-      {showDropdown && (suggestions.length > 0 || loading) && (
+      {showDropdown && value.trim().length >= 2 && (
         <ul className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-1.5 shadow-lg max-h-60 overflow-y-auto text-sm font-semibold">
           {loading && (
             <li className="px-3.5 py-2 text-xs font-bold text-muted-foreground animate-pulse">
               Searching locations...
+            </li>
+          )}
+          {!loading && suggestions.length === 0 && (
+            <li className="px-3.5 py-2 text-xs font-bold text-muted-foreground bg-muted/20 rounded-lg">
+              No suburbs loaded for this region yet.
             </li>
           )}
           {!loading && suggestions.map((item) => (

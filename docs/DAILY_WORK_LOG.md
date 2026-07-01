@@ -986,6 +986,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Google Places Removed from Post Job Beta Flow
+
+| Item | Notes |
+| --- | --- |
+| Area | Post Job Location UI Hotfix |
+| Files changed | `frontend/src/pages/PostJob.tsx`, `frontend/src/components/LocationSuburbSelect.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Files created | None |
+| Summary | Completely removed Google Places / Address Search from the visible Post Job beta workflow, ensuring a clean, provider-neutral local database dropdown experience. |
+| Details | - **Visible Autocomplete Block Removed**: Removed GooglePlacesAutocomplete input block, the associated wrapper label, and helper texts from the `PostJob.tsx` location step layout.<br> - **Provider-Neutral Copy**: Updated job location guides to be provider-neutral (e.g. "Select the suburb-level job location. Street addresses are not collected here.").<br> - **LocationSuburbSelect Improvements**: Renamed default placeholder to "Search suburb...", styled suggestions wrapper, and implemented a helpful "No suburbs loaded for this region yet." empty state when search queries yield zero matches.<br> - **Form Validation Relaxed**: Updated state/region/suburb/postcode validation to allow database-selections or manual text entries, bypassing strict local static JSON mapping checks. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |

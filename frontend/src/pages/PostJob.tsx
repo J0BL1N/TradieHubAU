@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import { uploadJobWorkspaceImages, validateWorkspaceImage } from '../lib/jobs';
 import {
   australianStates,
-  findAustralianLocationOption,
   formatJobLocation,
   getRegionsForState,
   getSuburbsForRegion,
@@ -14,7 +13,6 @@ import {
 import type { AustralianLocationOption } from '../lib/auLocations';
 import { fetchRegionsFromDb } from '../lib/auLocations';
 import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase, ImagePlus, Trash2 } from 'lucide-react';
-import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
 import LocationSuburbSelect from '../components/LocationSuburbSelect';
 
 export default function PostJob() {
@@ -41,7 +39,6 @@ export default function PostJob() {
   const [placeId, setPlaceId] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [googleAddress, setGoogleAddress] = useState('');
 
   // Status State
   const [error, setError] = useState<string | null>(null);
@@ -182,7 +179,6 @@ export default function PostJob() {
     setPlaceId('');
     setLatitude(null);
     setLongitude(null);
-    setGoogleAddress('');
   };
 
   // 3. Success Screen View
@@ -295,9 +291,8 @@ export default function PostJob() {
       return false;
     }
 
-    const knownLocation = findAustralianLocationOption(locationOptions, state, trimmedRegion, trimmedSuburb, trimmedPostcode);
-    if (!knownLocation) {
-      setError('Please select a valid state, region, suburb, and postcode combination.');
+    if (!state || !trimmedRegion || !trimmedSuburb || !trimmedPostcode) {
+      setError('Please select a valid state, region, suburb, and postcode.');
       return false;
     }
 
@@ -488,42 +483,6 @@ export default function PostJob() {
             <MapPin className="h-5 w-5 text-primary" /> 2. Location & Schedule
           </h3>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-foreground uppercase tracking-wider block">Address Search (Google Places)</label>
-            <GooglePlacesAutocomplete
-              value={googleAddress}
-              onChange={setGoogleAddress}
-              onPlaceSelected={(place) => {
-                setFormattedAddress(place.formatted_address);
-                setPlaceId(place.place_id);
-                setLatitude(place.latitude);
-                setLongitude(place.longitude);
-
-                // Find matching local database location for region & suburb dropdowns
-                if (place.state && place.suburb && place.postcode) {
-                  const match = locationOptions.find(
-                    opt => opt.state === place.state &&
-                    opt.suburb.toLowerCase() === place.suburb.toLowerCase() &&
-                    opt.postcode === place.postcode
-                  );
-                  if (match) {
-                    setState(match.state);
-                    setRegion(match.region);
-                    setSuburb(match.suburb);
-                    setPostcode(match.postcode);
-                  } else {
-                    setState(place.state);
-                    setSuburb(place.suburb);
-                    setPostcode(place.postcode);
-                  }
-                }
-              }}
-              placeholder="Type address to search..."
-              className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
-            />
-            <p className="text-[11px] font-semibold text-muted-foreground">Optional: Select address via Google to auto-fill details and link coordinates.</p>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-foreground uppercase tracking-wider">State / Territory</label>
@@ -578,7 +537,7 @@ export default function PostJob() {
                   setPostcode(selected.postcode);
                 }}
                 fallbackOptions={suburbOptions}
-                placeholder={region ? 'Type suburb...' : 'Select region first'}
+                placeholder={region ? 'Search suburb...' : 'Select region first'}
                 className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all disabled:opacity-60"
                 disabled={!region || locationLoading}
                 required
@@ -603,7 +562,7 @@ export default function PostJob() {
           {locationLoadError && (
             <p className="text-xs font-bold text-red-500">{locationLoadError}</p>
           )}
-          <p className="text-[11px] font-semibold text-muted-foreground">Select suburb-level job location only. Street addresses are not collected here.</p>
+          <p className="text-[11px] font-semibold text-muted-foreground">Select the suburb-level job location. Street addresses are not collected here.</p>
 
           <div className="space-y-2">
             <label className="text-xs font-bold text-foreground uppercase tracking-wider">Preferred Start Date &amp; Time</label>
