@@ -810,21 +810,21 @@ export default function Messages() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
+    <div className="flex flex-col h-full min-h-0 p-4 sm:p-6 lg:p-8 space-y-4">
+      <div className="shrink-0">
         <h1 className="flex items-center gap-2 text-2xl font-extrabold"><MessageSquare className="h-6 w-6 text-primary" /> Job Messages</h1>
         <p className="mt-1 text-sm font-medium text-muted-foreground">Conversations are available only for accepted job relationships.</p>
       </div>
 
       {(error || attachmentError) && (
-        <div className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-600">
+        <div className="shrink-0 flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-600">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error || attachmentError}</span>
         </div>
       )}
 
       {conversations.length === 0 ? (
-        <div className="rounded-2xl border bg-card p-12 text-center space-y-4">
+        <div className="flex-1 flex flex-col justify-center items-center rounded-2xl border bg-card p-12 text-center space-y-4">
           <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/40" />
           <h2 className="text-xl font-extrabold">No job conversations yet</h2>
           <p className="mx-auto max-w-md text-sm font-medium leading-6 text-muted-foreground">
@@ -833,9 +833,9 @@ export default function Messages() {
           <Link to="/jobs" className="inline-flex rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">View My Jobs</Link>
         </div>
       ) : (
-        <div className="grid min-h-[560px] grid-cols-1 gap-5 lg:h-[calc(100vh-220px)] lg:grid-cols-3">
-          <aside className={`${mobileThreadOpen ? 'hidden lg:flex' : 'flex'} flex-col rounded-2xl border bg-card p-4`}>
-            <div className="mb-3 flex items-center justify-between px-2">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
+          <aside className={`${mobileThreadOpen ? 'hidden lg:flex' : 'flex'} flex-col h-full min-h-0 rounded-2xl border bg-card p-4`}>
+            <div className="mb-3 flex items-center justify-between px-2 shrink-0">
               <div className="flex items-center gap-2">
                 <h2 className="font-extrabold">Conversations</h2>
                 {syncing && <span className="text-[10px] font-semibold text-primary animate-pulse">Syncing...</span>}
@@ -849,7 +849,7 @@ export default function Messages() {
                 <RefreshCw className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-2 overflow-y-auto">
+            <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
               {[...conversations]
                 .sort((a, b) => {
                   const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
@@ -890,10 +890,10 @@ export default function Messages() {
             </div>
           </aside>
 
-          <section className={`${mobileThreadOpen ? 'flex' : 'hidden lg:flex'} min-h-[560px] flex-col overflow-hidden rounded-2xl border bg-card lg:col-span-2`}>
+          <section className={`${mobileThreadOpen ? 'flex' : 'hidden lg:flex'} h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-card lg:col-span-2`}>
             {activeConversation ? (
               <>
-                <header className="border-b bg-muted/20 p-4">
+                <header className="border-b bg-muted/20 p-4 shrink-0">
                   <button
                     type="button"
                     onClick={() => setMobileThreadOpen(false)}
@@ -1043,7 +1043,7 @@ export default function Messages() {
                   )}
                 </div>
 
-                <form onSubmit={handleSend} className="border-t bg-muted/20 p-4">
+                <form onSubmit={handleSend} className="border-t bg-muted/20 p-4 shrink-0">
                   {selectedAttachments.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-2">
                       {selectedAttachments.map(attachment => (

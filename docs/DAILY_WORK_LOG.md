@@ -1038,6 +1038,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Messages Workspace Scroll & Layout Fix
+
+| Item | Notes |
+| --- | --- |
+| Area | Messages Page Layout & Scrolling UX |
+| Files changed | `frontend/src/components/Layout.tsx`, `frontend/src/pages/Messages.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Files created | None |
+| Summary | Redesigned the Messages workspace layout to prevent footer overlap and establish clean internal scroll areas for conversation list and message history. |
+| Details | - **Confirmed Thread Switching**: Noted that Jay confirmed thread switching live/no-refresh feel is successful.<br> - **Hiding Global Footer**: Hides the global footer on the `/messages` route to ensure it does not overlay or cut through the active workspace.<br> - **Dynamic Content Area**: Constrained the layout height to `h-screen overflow-hidden` inside `Layout.tsx` for `/messages`, enabling a clean viewport-contained layout below the sticky header.<br> - **Internal Scrolling Lists**: Restructured layout flex directions and heights in `Messages.tsx` so the left conversation list and right message history scroll independently using their own internal vertical scrollbars.<br> - **Pinned Composer**: Ensured the bottom chat composer remains sticky at the bottom of the chat panel, and the job details details/header is pinned at the top. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |

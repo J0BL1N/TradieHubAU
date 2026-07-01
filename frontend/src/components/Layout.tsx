@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, MessageSquare, Briefcase, Users, User, ShieldAlert, ChevronDown, LogOut, Bell } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationCount } from '../lib/notifications';
@@ -9,6 +9,8 @@ import { supabase } from '../lib/supabase';
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMessagesPage = location.pathname === '/messages';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -143,7 +145,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <div className={`flex flex-col bg-background text-foreground ${isMessagesPage ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       {/* Sticky Header with Glassmorphism */}
       <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[72px] flex items-center justify-between gap-3">
@@ -511,21 +513,25 @@ export default function Layout() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      <main className={isMessagesPage
+        ? "flex-grow w-full flex flex-col min-h-0"
+        : "flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12"}>
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card py-8 text-center text-sm text-muted-foreground font-medium">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} TradieHubAU. All rights reserved.</p>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-end">
-            <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-            <Link to="/support" className="hover:text-primary transition-colors">Contact Support</Link>
+      {!isMessagesPage && (
+        <footer className="border-t bg-card py-8 text-center text-sm text-muted-foreground font-medium">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© {new Date().getFullYear()} TradieHubAU. All rights reserved.</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-end">
+              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
+              <Link to="/support" className="hover:text-primary transition-colors">Contact Support</Link>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }
