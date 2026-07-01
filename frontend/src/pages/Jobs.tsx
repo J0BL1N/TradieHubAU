@@ -2463,7 +2463,7 @@ export default function Jobs() {
                   </div>
                   <div>
                     <p className="text-[9px] uppercase tracking-wider">Terms</p>
-                    <p className="text-foreground font-bold mt-0.5">Paid via Escrow flow</p>
+                    <p className="text-foreground font-bold mt-0.5">Paid via protected payment</p>
                   </div>
                   <div>
                     <p className="text-[9px] uppercase tracking-wider">Released Date</p>
@@ -2476,7 +2476,7 @@ export default function Jobs() {
               <div className="space-y-1.5 text-center text-[10px] text-muted-foreground pt-4 border-t">
                 <p>Status: Released / Completed</p>
                 <p className="italic">GST/tax invoice support is pending accountant review. This document is a platform payment receipt/statement, not a tax invoice.</p>
-                <p>© 2026 TradieHubAU. Escrow Protected Payments system.</p>
+                <p>© 2026 TradieHubAU. Protected Payments system.</p>
               </div>
             </div>
 

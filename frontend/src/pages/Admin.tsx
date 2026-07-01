@@ -1623,7 +1623,7 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                                 <span className="text-sm font-black text-primary">{formatAUD(p.platform_fee)}</span>
                               </div>
                               <div>
-                                <span className="text-[9px] text-muted-foreground uppercase block font-bold">Escrow Status</span>
+                                <span className="text-[9px] text-muted-foreground uppercase block font-bold">Payment Status</span>
                                 <span className="text-xs uppercase font-black text-green-600 block mt-0.5">{p.status}</span>
                               </div>
                             </div>
