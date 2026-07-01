@@ -540,7 +540,7 @@ export default function PostJob() {
                     setPostcode(selected.postcode);
                   }}
                   fallbackOptions={suburbOptions}
-                  placeholder={region ? 'Search suburb...' : 'Select region first'}
+                  placeholder={region ? 'Search/select suburb...' : 'Select region first'}
                   className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all disabled:opacity-60"
                   disabled={!region || locationLoading}
                   required

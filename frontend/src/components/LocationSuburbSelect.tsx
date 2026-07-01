@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchSuburbsFromDb } from '../lib/auLocations';
+import { ChevronDown } from 'lucide-react';
 
 export interface SuburbSuggestion {
   id: string;
@@ -36,7 +37,7 @@ export default function LocationSuburbSelect({
   onChange,
   onSelect,
   fallbackOptions = [],
-  placeholder = 'Search suburb...',
+  placeholder = 'Search/select suburb...',
   className = '',
   disabled = false,
   required = false,
@@ -60,8 +61,30 @@ export default function LocationSuburbSelect({
     };
   }, []);
 
+  const getFallbackSuggestions = (query: string): SuburbSuggestion[] => {
+    if (!fallbackOptions) return [];
+    const queryLower = query.toLowerCase().trim();
+    return fallbackOptions
+      .filter(opt => {
+        const matchState = !stateFilter || opt.state === stateFilter;
+        const matchRegion = !regionFilter || opt.region === regionFilter;
+        const matchQuery = !queryLower || opt.suburb.toLowerCase().includes(queryLower) || opt.postcode.includes(queryLower);
+        return matchState && matchRegion && matchQuery;
+      })
+      .slice(0, 100)
+      .map(opt => ({
+        id: `${opt.suburb}-${opt.state}-${opt.postcode}`,
+        suburb: opt.suburb,
+        state: opt.state,
+        postcode: opt.postcode,
+        region_name: opt.region,
+        display_name: `${opt.suburb} ${opt.state} ${opt.postcode}`,
+        is_verified: false,
+      }));
+  };
+
   useEffect(() => {
-    if (value.trim().length < 2 || !showDropdown) {
+    if (!showDropdown || !stateFilter) {
       setSuggestions([]);
       return;
     }
@@ -71,65 +94,23 @@ export default function LocationSuburbSelect({
       fetchSuburbsFromDb({
         state: stateFilter || undefined,
         regionName: regionFilter || undefined,
-        query: value,
-        limit: 10,
+        query: value.trim() ? value : undefined,
+        limit: 100,
       })
         .then(({ data, error }) => {
           if (!error && data && data.length > 0) {
             setSuggestions(data);
-          } else if (fallbackOptions && fallbackOptions.length > 0) {
-            const queryLower = value.toLowerCase();
-            const filtered = fallbackOptions
-              .filter(opt => {
-                const matchState = !stateFilter || opt.state === stateFilter;
-                const matchRegion = !regionFilter || opt.region === regionFilter;
-                const matchQuery = opt.suburb.toLowerCase().startsWith(queryLower) || opt.postcode.startsWith(queryLower);
-                return matchState && matchRegion && matchQuery;
-              })
-              .slice(0, 10)
-              .map(opt => ({
-                id: `${opt.suburb}-${opt.state}-${opt.postcode}`,
-                suburb: opt.suburb,
-                state: opt.state,
-                postcode: opt.postcode,
-                region_name: opt.region,
-                display_name: `${opt.suburb} ${opt.state} ${opt.postcode}`,
-                is_verified: false,
-              }));
-            setSuggestions(filtered);
           } else {
-            setSuggestions([]);
+            setSuggestions(getFallbackSuggestions(value));
           }
         })
         .catch(() => {
-          if (fallbackOptions && fallbackOptions.length > 0) {
-            const queryLower = value.toLowerCase();
-            const filtered = fallbackOptions
-              .filter(opt => {
-                const matchState = !stateFilter || opt.state === stateFilter;
-                const matchRegion = !regionFilter || opt.region === regionFilter;
-                const matchQuery = opt.suburb.toLowerCase().startsWith(queryLower) || opt.postcode.startsWith(queryLower);
-                return matchState && matchRegion && matchQuery;
-              })
-              .slice(0, 10)
-              .map(opt => ({
-                id: `${opt.suburb}-${opt.state}-${opt.postcode}`,
-                suburb: opt.suburb,
-                state: opt.state,
-                postcode: opt.postcode,
-                region_name: opt.region,
-                display_name: `${opt.suburb} ${opt.state} ${opt.postcode}`,
-                is_verified: false,
-              }));
-            setSuggestions(filtered);
-          } else {
-            setSuggestions([]);
-          }
+          setSuggestions(getFallbackSuggestions(value));
         })
         .finally(() => {
           setLoading(false);
         });
-    }, 200);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [value, stateFilter, regionFilter, showDropdown, fallbackOptions]);
@@ -146,22 +127,27 @@ export default function LocationSuburbSelect({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      <input
-        id={id}
-        type="text"
-        value={value}
-        onChange={(e) => handleInputChange(e.target.value)}
-        onFocus={() => setShowDropdown(true)}
-        placeholder={placeholder}
-        className={className}
-        disabled={disabled}
-        required={required}
-        autoComplete="off"
-      />
+      <div className="relative flex items-center">
+        <input
+          id={id}
+          type="text"
+          value={value}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={() => setShowDropdown(true)}
+          placeholder={placeholder}
+          className={`${className} pr-10`}
+          disabled={disabled}
+          required={required}
+          autoComplete="off"
+        />
+        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-muted-foreground">
+          <ChevronDown className="h-4 w-4" />
+        </div>
+      </div>
       
-      {showDropdown && value.trim().length >= 2 && (
+      {showDropdown && (regionFilter || stateFilter) && (
         <ul className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-card p-1.5 shadow-lg max-h-60 overflow-y-auto text-sm font-semibold">
-          {loading && (
+          {loading && suggestions.length === 0 && (
             <li className="px-3.5 py-2 text-xs font-bold text-muted-foreground animate-pulse">
               Searching locations...
             </li>
@@ -171,7 +157,7 @@ export default function LocationSuburbSelect({
               No suburbs loaded for this region yet.
             </li>
           )}
-          {!loading && suggestions.map((item) => (
+          {suggestions.map((item) => (
             <li key={`${item.suburb}-${item.state}-${item.postcode}`}>
               <button
                 type="button"

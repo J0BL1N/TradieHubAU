@@ -1012,6 +1012,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Suburb Selector Changed to Dropdown-First Picker
+
+| Item | Notes |
+| --- | --- |
+| Area | Suburb Selector UI/UX Enhancements |
+| Files changed | `frontend/src/components/LocationSuburbSelect.tsx`, `frontend/src/pages/PostJob.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Files created | None |
+| Summary | Re-engineered the Suburb input to behave as a dropdown-first select component, fetching and displaying loaded suburbs immediately upon focus/click, with optional query filtering. |
+| Details | - **Dropdown-First Interaction**: Modified `LocationSuburbSelect.tsx` to query and list loaded suburbs on focus/click even if no query string is entered (up to 100 items limit).<br> - **Chevron Icon Addition**: Embedded a visual dropdown Chevron down indicator on the right of the suburb select field.<br> - **State/Region Filtering Checks**: Configured inputs to load suburbs matching State & Region filters (Post Job workflow) or State only filters (Profile editing workflow), keeping both pages fully functional.<br> - **Input Text & Fallback**: Updated placeholder to "Search/select suburb..." and preserved local in-memory fallback list filtering when the DB is offline. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |
