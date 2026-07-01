@@ -23,12 +23,45 @@ Apply the following migrations sequentially (lowest numbers first) in the Supaba
 | **6** | `086_verification_notifications.sql` | Adds triggers generating notifications on document approval/suspension status updates. | Tradie credentials approval alerts. |
 | **7** | `087_add_google_places_location_fields.sql` | Adds formatted_address, place_id, lat, lng to jobs/users, and updates client edit allowlist trigger. | Geolocation coordinates and optional address search. |
 | **8** | `088_national_location_database.sql` | Creates location_regions and location_suburbs tables, security, RPC helpers, and seeds fallback SA/VIC suburbs. | Suburb autocomplete list search and post-job region dropdowns. |
+| **9** | `089_harden_live_location_database.sql` | Safely enforces permissions, RLS policies, explicit execution grants, and fallback seeds on live servers. | Hardened access control and secure, public-safe location querying. |
+
+> [!IMPORTANT]
+> **Corrective Migration Note (089)**:
+> If migration `088_national_location_database.sql` was already applied to the live database *prior* to commit `6e25ca7` (without the standard explicit EXECUTE grants), do **not** re-run 088. Instead, immediately run `089_harden_live_location_database.sql` to cleanly apply the correct permission state, secure RLS, and verify fallback seeds.
 
 ---
 
-## 2. Post-Migration 088 Manual Smoke Checks
+## 2. SQL Verification Queries for Migration 089
+Jay can run the following SQL select queries in the Supabase SQL editor to verify that migration 089 applied security and constraints correctly:
 
-Once migration `088_national_location_database.sql` is applied, run the following manual checks on the frontend to confirm successful integration:
+```sql
+-- 1. Verify RLS is enabled on location tables
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+  AND tablename IN ('location_regions', 'location_suburbs');
+-- Expected: rowsecurity should be true for both.
+
+-- 2. Verify fallback seed rows exist and are correctly resolved
+SELECT count(*) FROM public.location_regions WHERE source = 'verified_fallback_seed';
+-- Expected: 6 regions.
+
+SELECT count(*) FROM public.location_suburbs WHERE source = 'verified_fallback_seed';
+-- Expected: 14 suburbs.
+
+-- 3. Verify RPC function execution is working for standard roles
+SELECT * FROM public.get_location_regions('SA');
+-- Expected: 2 regions (City of Salisbury, City of Adelaide).
+
+SELECT * FROM public.search_location_suburbs('SA', null, null, 'Salis', 5);
+-- Expected: 3 matching Salisbury suburbs (Salisbury, Salisbury Downs, Salisbury East).
+```
+
+---
+
+## 3. Post-Migration 088 & 089 Manual Smoke Checks
+
+Once migrations are applied, run the following manual checks on the frontend to confirm successful integration:
 
 - [ ] **State & Region Dropdowns**: Navigate to "Post a Job", select SA or VIC, and check that regions (e.g. City of Salisbury, Cardinia Shire) load alphabetically.
 - [ ] **Keyless Autocomplete**: Verify the suburb selector autocomplete does not crash and works without a Google Maps API Key.

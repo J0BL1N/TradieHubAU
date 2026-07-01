@@ -973,6 +973,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Live Location Database Hardening Migration
+
+| Item | Notes |
+| --- | --- |
+| Area | Location Database Security Hardening (Corrective Migration) |
+| Files changed | `docs/live_sql_application_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Files created | `supabase/migrations/089_harden_live_location_database.sql` |
+| Summary | Created a corrective, idempotent database migration `089` to apply standard execution permissions, secure RLS, and verify fallback seeds on live servers where the unhardened `088` migration was already applied by Jay. |
+| Details | - **Corrective Migration**: Added `089_harden_live_location_database.sql` to safely update live environments without modifying already-run migrations.<br> - **Role Execution Hardening**: Revokes PUBLIC execution privileges from `search_location_suburbs` and `get_location_regions` and grants access explicitly to standard roles (`anon`, `authenticated`, `service_role`).<br> - **Secure Access**: Explicitly revokes client write paths (INSERT, UPDATE, DELETE) from anon and authenticated roles on tables `location_regions` and `location_suburbs`. Enforces active select-only RLS policies.<br> - **Checklist Updates**: Added migration `089` to the sequential live SQL roadmap, providing SQL select verification queries to easily audit table security and RPC output live. |
+| Migrations required | `089_harden_live_location_database.sql` (to be applied by Jay manually). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |
