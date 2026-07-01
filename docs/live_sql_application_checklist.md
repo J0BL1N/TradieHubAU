@@ -24,6 +24,8 @@ Apply the following migrations sequentially (lowest numbers first) in the Supaba
 | **7** | `087_add_google_places_location_fields.sql` | Adds formatted_address, place_id, lat, lng to jobs/users, and updates client edit allowlist trigger. | Geolocation coordinates and optional address search. |
 | **8** | `088_national_location_database.sql` | Creates location_regions and location_suburbs tables, security, RPC helpers, and seeds fallback SA/VIC suburbs. | Suburb autocomplete list search and post-job region dropdowns. |
 | **9** | `089_harden_live_location_database.sql` | Safely enforces permissions, RLS policies, explicit execution grants, and fallback seeds on live servers. | Hardened access control and secure, public-safe location querying. |
+| **10** | `090_messaging_safety_moderation.sql` | Implements messaging moderation triggers, profane word filtering, and communication audits. | Safety and communication moderation filters. |
+| **11** | `091_supabase_lint_hardening.sql` | Resolves security lints by converting views to security invokers, adding search paths, and hardening triggers. | Safe database views, search path compliance, and trigger privilege control. |
 
 > [!IMPORTANT]
 > **Corrective Migration Note (089)**:
@@ -31,9 +33,10 @@ Apply the following migrations sequentially (lowest numbers first) in the Supaba
 
 ---
 
-## 2. SQL Verification Queries for Migration 089
-Jay can run the following SQL select queries in the Supabase SQL editor to verify that migration 089 applied security and constraints correctly:
+## 2. SQL Verification Queries for Migration 089 & 091
+Jay can run the following SQL select queries in the Supabase SQL editor to verify that migrations 089 and 091 applied security and constraints correctly:
 
+### Migration 089 Checks
 ```sql
 -- 1. Verify RLS is enabled on location tables
 SELECT tablename, rowsecurity
@@ -57,9 +60,28 @@ SELECT * FROM public.search_location_suburbs('SA', null, null, 'Salis', 5);
 -- Expected: 3 matching Salisbury suburbs (Salisbury, Salisbury Downs, Salisbury East).
 ```
 
+### Migration 091 Checks
+```sql
+-- 1. Verify view security invoker configuration
+SELECT
+  c.relname AS view_name,
+  (regexp_split_to_array(array_to_string(c.reloptions, ','), '='))[2] AS security_invoker
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relname IN ('public_profiles', 'public_open_jobs');
+-- Expected: security_invoker should be 'true' for both views.
+
+-- 2. Verify public_profiles view runs successfully under standard roles
+SELECT count(*) FROM public.public_profiles LIMIT 5;
+
+-- 3. Verify public_open_jobs view runs successfully under standard roles
+SELECT count(*) FROM public.public_open_jobs LIMIT 5;
+```
+
 ---
 
-## 3. Post-Migration 088 & 089 Manual Smoke Checks
+## 3. Post-Migration Manual Smoke Checks
 
 Once migrations are applied, run the following manual checks on the frontend to confirm successful integration:
 
@@ -71,3 +93,4 @@ Once migrations are applied, run the following manual checks on the frontend to 
 - [ ] **Postcode Manual Edit**: Click into the Postcode input and edit/type numbers manually.
 - [ ] **Offline Dropdown Fallback**: Simulating a database failure (or calling with an incorrect RPC name), verify the input reverts to manual text entry allowing custom text without crashing.
 - [ ] **Profile Settings**: Open Profile page, type a suburb, verify suggestion selection works, and click Save Profile to ensure it commits successfully.
+- [ ] **Profile Directory Read**: Verify the main tradie browse list and individual public tradie profile pages load portfolio images and reviews successfully for guest visitors.

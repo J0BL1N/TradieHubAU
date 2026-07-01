@@ -469,7 +469,7 @@ export default function Home() {
         <div className="flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground">Local Jobs</h2>
-            <p className="text-sm text-muted-foreground font-medium mt-0.5">Real posted jobs will appear here as the beta grows.</p>
+            <p className="text-sm text-muted-foreground font-medium mt-0.5">Browse local trade jobs posted by customers.</p>
           </div>
           <Link to="/jobs" className="text-primary hover:text-primary/95 text-sm font-bold flex items-center gap-1">
             View All Jobs <ArrowRight className="w-4 h-4" />

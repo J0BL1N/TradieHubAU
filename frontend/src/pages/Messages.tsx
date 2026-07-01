@@ -693,7 +693,13 @@ export default function Messages() {
     const modResult = moderateClientMessage(text, paymentStatus);
 
     if (modResult.isBlocked) {
-      setError("Blocked: Contact details and off-platform payments are not allowed. Please keep all communications on TradieHubAU.");
+      let specificReason = "Contact details or off-platform payment attempts were detected.";
+      if (modResult.reasons.includes('off_platform_payment')) {
+        specificReason = "Off-platform payment attempts are not allowed. Please keep all payment activities within TradieHubAU.";
+      } else if (modResult.reasons.includes('email_bypass') || modResult.reasons.includes('phone_bypass') || modResult.reasons.includes('social_bypass')) {
+        specificReason = "Sharing contact details (email, phone, or socials) before payment is protected is not allowed.";
+      }
+      setError(`Blocked: ${specificReason} Please keep all communications and payments secure on TradieHubAU.`);
       setReply('');
       setSelectedAttachments([]);
       setSending(false);

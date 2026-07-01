@@ -2,6 +2,22 @@
 
 Single ongoing project-history log. Entries are based on committed git history, file timestamps, and docs present in this repo.
 
+## 2026-07-02
+
+### Supabase Performance & Security Hardening (Migration 091)
+
+| Item | Notes |
+| --- | --- |
+| Area | Database, Security, Hardening |
+| Summary | Implemented database security/performance hardening to resolve Supabase linter warnings. Converted view public.public_profiles and public.public_open_jobs to security_invoker = true, utilizing a secure, sanitized SECURITY DEFINER function public.get_public_profiles() for profile retrieval. Added explicit search paths to suburbs/regions/profanity helper functions, and revoked EXECUTE privileges on trigger functions and internal attachments helpers from PUBLIC/anon. |
+| Files changed | `supabase/migrations/091_supabase_lint_hardening.sql`, `docs/live_sql_application_checklist.md`, `docs/UX_POLISH_BACKLOG.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (`091_supabase_lint_hardening.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the migration 091 SQL script in Supabase Studio. |
+| Manual QA status | Ready for Jay manual QA. |
+
+
 ## 2026-07-01
 
 ### Static Audit & Hardening Pass (Notifications & Live Updates)

@@ -269,7 +269,7 @@ export default function Layout() {
                           >
                             <div className="flex-grow min-w-0">
                               <div className="flex items-center justify-between gap-1">
-                                <span className={`text-xs truncate ${!notif.read_at ? 'font-black text-foreground' : 'font-bold text-foreground/80'}`}>
+                                <span className={`text-xs ${!notif.read_at ? 'font-black text-foreground' : 'font-bold text-foreground/80'}`}>
                                   {notif.title}
                                 </span>
                                 {!notif.read_at && (
@@ -525,6 +525,7 @@ export default function Layout() {
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p>© {new Date().getFullYear()} TradieHubAU. All rights reserved.</p>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 sm:justify-end">
+              <Link to="/how-it-works" className="hover:text-primary transition-colors">How It Works</Link>
               <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
               <Link to="/support" className="hover:text-primary transition-colors">Contact Support</Link>

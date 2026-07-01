@@ -3443,7 +3443,12 @@ export default function Jobs() {
                                 jobPayment.status === 'released' ? 'bg-emerald-500/10 text-emerald-800 border-emerald-500/30' :
                                 jobPayment.status === 'refunded' ? 'bg-red-500/10 text-red-800 border-red-500/30' : 'bg-secondary text-secondary-foreground border-transparent'
                               }`}>
-                                {['held', 'held_in_escrow'].includes(jobPayment.status) ? 'payment protected' : jobPayment.status === 'released' ? 'payment released' : jobPayment.status}
+                                {['held', 'held_in_escrow'].includes(jobPayment.status) ? 'payment protected' :
+                                 jobPayment.status === 'released' ? 'payment released' :
+                                 jobPayment.status === 'pending' ? 'payment pending' :
+                                 jobPayment.status === 'refunded' ? 'payment refunded' :
+                                 jobPayment.status === 'failed' ? 'payment failed' :
+                                 jobPayment.status.replaceAll('_', ' ')}
                               </span>
                             </div>
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
