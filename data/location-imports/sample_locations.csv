@@ -1,0 +1,22 @@
+suburb,state,postcode,region,latitude,longitude,source
+Ingle Farm,SA,5098,City of Salisbury,-34.821,138.636,sample_import_file
+Salisbury,SA,5108,City of Salisbury,-34.767,138.633,sample_import_file
+Salisbury Downs,SA,5108,City of Salisbury,-34.781,138.611,sample_import_file
+Salisbury East,SA,5109,City of Salisbury,-34.779,138.665,sample_import_file
+Pakenham,VIC,3810,Cardinia Shire,-38.071,145.485,sample_import_file
+Koo Wee Rup,VIC,3981,Cardinia Shire,-38.196,145.491,sample_import_file
+Officer,VIC,3809,Cardinia Shire,-38.062,145.419,sample_import_file
+Beaconsfield,VIC,3807,Cardinia Shire,-38.050,145.383,sample_import_file
+Berwick,VIC,3806,City of Casey,-38.031,145.347,sample_import_file
+Clyde,VIC,3978,City of Casey,-38.136,145.344,sample_import_file
+Cranbourne,VIC,3977,City of Casey,-38.099,145.283,sample_import_file
+Narre Warren,VIC,3805,City of Casey,-38.026,145.305,sample_import_file
+Dandenong,VIC,3175,City of Greater Dandenong,-37.981,145.215,sample_import_file
+Melbourne,VIC,3000,City of Melbourne,-37.814,144.963,sample_import_file
+Sydney,NSW,2000,City of Sydney,-33.868,151.209,sample_import_file
+Perth,WA,6000,City of Perth,-31.950,115.860,sample_import_file
+Adelaide,SA,5000,City of Adelaide,-34.928,138.600,sample_import_file
+Hobart,TAS,7000,City of Hobart,-42.882,147.327,sample_import_file
+Canberra,ACT,2600,Canberra,-35.280,149.130,sample_import_file
+Brisbane,QLD,4000,Brisbane City,-27.469,153.025,sample_import_file
+Darwin,NT,0800,Darwin,-12.463,130.844,sample_import_file

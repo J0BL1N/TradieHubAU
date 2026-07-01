@@ -2,6 +2,13 @@
 
 This document outlines the architecture, pipeline, and management steps for the proper, verified all-Australia location database (suburbs, localities, postcodes, and regions).
 
+> [!IMPORTANT]
+> **Status & Accuracy Notice:**
+> - **Fallback Seed Only**: The initial database migration (`088_national_location_database.sql`) contains only a minimal fallback seed for smoke testing (covering key SA Salisbury and VIC Cardinia/Casey suburbs). It does **not** contain the entire Australian dataset.
+> - **Full National Import Pending**: A full import must be run using the import pipeline script described below.
+> - **Old Data Inaccuracies**: The old hardcoded frontend location lists (`au-postcode-localities.json`) are known to contain inaccuracies and errors. Do not rely on them as a source of truth.
+> - **Licensing Caution**: Do not use or distribute unverified third-party CSV files without confirming their licensing terms and boundary/coordinate accuracy.
+
 ---
 
 ## 1. Schema Design & Data Relations

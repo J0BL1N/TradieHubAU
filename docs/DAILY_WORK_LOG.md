@@ -960,6 +960,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Hardening National Location Import & Autocomplete
+
+| Item | Notes |
+| --- | --- |
+| Area | National Location Database Hardening & Importer Improvements |
+| Files changed | `supabase/migrations/088_national_location_database.sql`, `scripts/import-australian-locations.mjs`, `scripts/validate-australian-locations.mjs`, `docs/location_dataset_plan.md`, `docs/DAILY_WORK_LOG.md` |
+| Files created | `data/location-imports/sample_locations.csv`, `docs/live_sql_application_checklist.md`, `supabase/seed_locations.sql` |
+| Summary | Hardened database migration permissions and improved pipeline scripts to support clear CLI helps, column aliases for generic CSVs, in-memory duplicate row filtering, and robust validation checks. Added sample locations CSV for smoke testing, and compiled a live SQL checklist. |
+| Details | - **Standardized Permissions**: Added explicit execution grants for public RPCs in `088_national_location_database.sql` to standard roles (`anon`, `authenticated`, `service_role`).<br> - **Help Output Options**: Extended importer and validator scripts to support `--help` and `-h` CLI options.<br> - **Alias Header Parsing**: Allowed generic CSV header aliases (e.g. mapping `suburb` to `locality`, `region` to `lgaregion`, `latitude`/`longitude` to `lat`/`lon`).<br> - **Script Deduplication**: Added in-memory Set checks to filter out duplicate locality/state/postcode rows from import files before writing database queries.<br> - **Validator Suite**: Updated `validate-australian-locations.mjs` to check all 15 required beta suburbs, verifying Brisbane/Darwin City suffix variations.<br> - **Sample & Seed Data**: Generated `sample_locations.csv` with all required testing rows, ran the pipeline to output sample `supabase/seed_locations.sql`, and verified full validator pass.<br> - **Checklist & Docs**: Created `live_sql_application_checklist.md` map of sequences/dependencies for Jay, and updated status warning notes in `location_dataset_plan.md`. |
+| Migrations required | `088_national_location_database.sql` (to be applied by Jay manually). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |

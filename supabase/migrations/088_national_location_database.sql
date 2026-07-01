@@ -198,3 +198,10 @@ SET
   source = EXCLUDED.source,
   is_verified = true,
   is_active = true;
+
+-- 8. Explicit RPC execution grants (standardizing security)
+REVOKE ALL ON FUNCTION public.search_location_suburbs(text, uuid, text, text, integer) FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.search_location_suburbs(text, uuid, text, text, integer) TO anon, authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.get_location_regions(text) FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_location_regions(text) TO anon, authenticated, service_role;

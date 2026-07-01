@@ -3,6 +3,29 @@ import path from 'node:path';
 
 // Get source CSV path
 const args = process.argv.slice(2);
+
+if (args.includes('--help') || args.includes('-h')) {
+  console.log(`
+🚀 Australian Postcode Importer Script
+
+Usage:
+  node scripts/import-australian-locations.mjs [path_to_csv]
+
+Options:
+  --help, -h    Show this help message and exit.
+
+Arguments:
+  [path_to_csv] Path to the source CSV file (defaults to data/location-imports/australian_postcodes.csv).
+
+Description:
+  Parses an Australian locality/postcode CSV file, normalizes fields (Title Case suburb names,
+  uppercase state abbreviations, 4-digit postcodes), filters out duplicate rows in memory,
+  performs critical required suburb validation, and generates a clean PostgreSQL batch seed
+  file at supabase/seed_locations.sql.
+`);
+  process.exit(0);
+}
+
 const sourcePath = args[0] || path.resolve('data/location-imports/australian_postcodes.csv');
 const outSqlPath = path.resolve('supabase/seed_locations.sql');
 
@@ -11,6 +34,7 @@ console.log(`🚀 Starting location import pipeline from: ${sourcePath}`);
 if (!fs.existsSync(sourcePath)) {
   console.error(`❌ Error: Source file not found at ${sourcePath}`);
   console.error(`Please place the official postcode CSV at that location or pass the path as an argument.`);
+  console.error(`Type 'node scripts/import-australian-locations.mjs --help' for details.`);
   process.exit(1);
 }
 
@@ -78,13 +102,24 @@ function titleCase(text) {
 const csvContent = fs.readFileSync(sourcePath, 'utf8');
 const parsedRows = parseCsv(csvContent);
 const headers = parsedRows.shift();
-const index = Object.fromEntries(headers.map((h, i) => [h.trim().toLowerCase(), i]));
+
+// Normalize headers to support generic column names
+const index = Object.fromEntries(
+  headers.map((h, i) => {
+    let key = h.trim().toLowerCase();
+    if (key === 'suburb') key = 'locality';
+    if (key === 'region') key = 'lgaregion';
+    if (key === 'latitude') key = 'lat';
+    if (key === 'longitude') key = 'lon';
+    return [key, i];
+  })
+);
 
 // Verify required headers exist
 const requiredHeaders = ['state', 'postcode', 'locality'];
 for (const h of requiredHeaders) {
   if (index[h] === undefined) {
-    console.error(`❌ Error: Missing required column header "${h}" in CSV.`);
+    console.error(`❌ Error: Missing required column header "${h}" (or alias like "suburb") in CSV.`);
     console.error(`Available headers: ${headers.join(', ')}`);
     process.exit(1);
   }
@@ -95,6 +130,7 @@ const stateSet = new Set(stateOrder);
 
 const suburbsList = [];
 const uniqueRegions = new Set(); // Set of "State|RegionName"
+const seenSuburbs = new Set(); // In-memory deduplication set
 
 // Audited presentation/council corrections
 const regionCorrections = new Map([
@@ -121,6 +157,14 @@ for (const row of parsedRows) {
   if (!/^\d{4}$/.test(postcode) || !localityRaw) continue;
 
   const suburb = titleCase(localityRaw);
+
+  // Deduplicate duplicate suburb/state/postcode rows in memory
+  const duplicateKey = `${suburb}|${state}|${postcode}`.toLowerCase();
+  if (seenSuburbs.has(duplicateKey)) {
+    continue;
+  }
+  seenSuburbs.add(duplicateKey);
+
   const lgaRaw = index.lgaregion !== undefined ? (row[index.lgaregion] || '').trim() : '';
   const sa3Raw = index.sa3name !== undefined ? (row[index.sa3name] || '').trim() : '';
   const sa4Raw = index.sa4name !== undefined ? (row[index.sa4name] || '').trim() : '';
@@ -134,7 +178,7 @@ for (const row of parsedRows) {
 
   // Latitude and Longitude if available
   const latVal = index.lat !== undefined ? parseFloat(row[index.lat]) : null;
-  const lngVal = index.lon !== undefined ? parseFloat(row[index.lon]) : (index.longitude !== undefined ? parseFloat(row[index.longitude]) : null);
+  const lngVal = index.lon !== undefined ? parseFloat(row[index.lon]) : null;
   const sourceRecordId = index.id !== undefined ? (row[index.id] || '').trim() : null;
 
   uniqueRegions.add(`${state}|${regionName}`);
@@ -233,10 +277,6 @@ sqlContent += regionsArray.join(',\n') + `\nON CONFLICT (state, region_name, reg
 
 // Insert suburbs
 sqlContent += `-- 2. Populate Suburbs (Linking to Region IDs dynamically)\n`;
-sqlContent += `WITH regions AS (
-  SELECT id, state, region_name FROM public.location_regions WHERE source = 'national_import_pipeline'
-)
-INSERT INTO public.location_suburbs (suburb, state, postcode, region_id, region_name, display_name, latitude, longitude, source, source_record_id) VALUES\n`;
 
 const suburbsArray = suburbsList.map(s => {
   const escapedSuburb = s.suburb.replace(/'/g, "''");
@@ -249,18 +289,15 @@ const suburbsArray = suburbsList.map(s => {
   return `  ('${escapedSuburb}', '${s.state}', '${s.postcode}', (SELECT id FROM regions WHERE state = '${s.state}' AND region_name = '${escapedRegion}'), '${escapedRegion}', '${displayName}', ${latVal}, ${lngVal}, 'national_import_pipeline', ${sourceRec})`;
 });
 
-// Since the array could be massive, we batch insert in sets of 1000 to prevent hitting Postgres memory limits or statement length caps.
 const BATCH_SIZE = 1000;
 let finalSql = sqlContent;
 
 for (let i = 0; i < suburbsArray.length; i += BATCH_SIZE) {
   const batch = suburbsArray.slice(i, i + BATCH_SIZE);
-  if (i > 0) {
-    finalSql += `WITH regions AS (
+  finalSql += `WITH regions AS (
   SELECT id, state, region_name FROM public.location_regions WHERE source = 'national_import_pipeline'
 )
 INSERT INTO public.location_suburbs (suburb, state, postcode, region_id, region_name, display_name, latitude, longitude, source, source_record_id) VALUES\n`;
-  }
   finalSql += batch.join(',\n') + `\nON CONFLICT (suburb, state, postcode) DO UPDATE\nSET\n  region_id = EXCLUDED.region_id,\n  region_name = EXCLUDED.region_name,\n  display_name = EXCLUDED.display_name,\n  latitude = EXCLUDED.latitude,\n  longitude = EXCLUDED.longitude,\n  source = EXCLUDED.source,\n  is_verified = true,\n  is_active = true;\n\n`;
 }
 
