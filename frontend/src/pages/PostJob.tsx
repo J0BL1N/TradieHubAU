@@ -7,14 +7,15 @@ import {
   australianStates,
   findAustralianLocationOption,
   formatJobLocation,
-  formatSuburbOption,
   getRegionsForState,
   getSuburbsForRegion,
   loadAustralianLocations,
 } from '../lib/auLocations';
 import type { AustralianLocationOption } from '../lib/auLocations';
+import { fetchRegionsFromDb } from '../lib/auLocations';
 import { PlusCircle, Info, Lock, CheckCircle, AlertCircle, DollarSign, Calendar, MapPin, Briefcase, ImagePlus, Trash2 } from 'lucide-react';
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
+import LocationSuburbSelect from '../components/LocationSuburbSelect';
 
 export default function PostJob() {
   const { user, profile, loading } = useAuth();
@@ -50,6 +51,27 @@ export default function PostJob() {
   const [locationOptions, setLocationOptions] = useState<AustralianLocationOption[]>([]);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationLoadError, setLocationLoadError] = useState<string | null>(null);
+
+  // Database location options
+  const [dbRegions, setDbRegions] = useState<{ id: string; region_name: string }[]>([]);
+
+  useEffect(() => {
+    if (!state) {
+      setDbRegions([]);
+      return;
+    }
+    fetchRegionsFromDb(state)
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          setDbRegions(data);
+        } else {
+          setDbRegions([]);
+        }
+      })
+      .catch(() => {
+        setDbRegions([]);
+      });
+  }, [state]);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,7 +235,9 @@ export default function PostJob() {
   const trimmedRegion = region.trim().replace(/\s+/g, ' ');
   const trimmedPostcode = postcode.trim();
   const locationSummary = formatJobLocation(trimmedSuburb, state);
-  const regionOptions = getRegionsForState(locationOptions, state);
+  const regionOptions = dbRegions.length > 0
+    ? dbRegions.map(r => r.region_name)
+    : getRegionsForState(locationOptions, state);
   const suburbOptions = getSuburbsForRegion(locationOptions, state, region);
   const estimatedBudgetValue = estimatedBudget ? parseInt(estimatedBudget) : null;
   const budgetTypeLabel = budgetType === 'rough_estimate'
@@ -544,24 +568,21 @@ export default function PostJob() {
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
-              <select
-                value={suburb && postcode ? `${suburb}|${postcode}` : ''}
-                onChange={(e) => {
-                  const [nextSuburb, nextPostcode] = e.target.value.split('|');
-                  setSuburb(nextSuburb || '');
-                  setPostcode(nextPostcode || '');
+              <LocationSuburbSelect
+                value={suburb}
+                stateFilter={state}
+                regionFilter={region}
+                onChange={setSuburb}
+                onSelect={(selected) => {
+                  setSuburb(selected.suburb);
+                  setPostcode(selected.postcode);
                 }}
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold cursor-pointer disabled:opacity-60"
+                fallbackOptions={suburbOptions}
+                placeholder={region ? 'Type suburb...' : 'Select region first'}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all disabled:opacity-60"
                 disabled={!region || locationLoading}
                 required
-              >
-                <option value="">{region ? 'Suburb' : 'Select region first'}</option>
-                {suburbOptions.map(option => (
-                  <option key={`${option.suburb}-${option.postcode}`} value={`${option.suburb}|${option.postcode}`}>
-                    {formatSuburbOption(option)}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="space-y-2">
@@ -571,10 +592,10 @@ export default function PostJob() {
                 inputMode="numeric"
                 pattern="[0-9]{4}"
                 maxLength={4}
-                placeholder="Auto-filled"
+                placeholder="e.g. 5098"
                 value={postcode}
-                readOnly
-                className="w-full bg-muted/30 border border-border rounded-xl px-4 py-3 outline-none text-sm font-semibold transition-all"
+                onChange={(e) => setPostcode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
                 required
               />
             </div>

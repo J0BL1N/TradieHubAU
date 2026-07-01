@@ -21,6 +21,7 @@ Current focus:
 * v0.0.15 Full manual customer/tradie/admin test run (in progress — awaiting manual testing)
 * v0.0.18 Job Messaging & Live Sync Polish (implementation complete, awaiting manual review)
 * v0.0.19 Google Places Location Autocomplete Foundation (implementation complete, awaiting manual review)
+* v0.0.22 National Location Database & Autocomplete (implementation complete, awaiting manual review)
 
 Next major focus:
 

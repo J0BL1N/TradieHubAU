@@ -9,10 +9,12 @@ import {
   submitVerification
 } from '../lib/users';
 import type { UserProfile } from '../lib/users';
-import { formatJobLocation } from '../lib/auLocations';
+import { formatJobLocation, loadAustralianLocations } from '../lib/auLocations';
+import type { AustralianLocationOption } from '../lib/auLocations';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
 import { maskName } from '../lib/masking';
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete';
+import LocationSuburbSelect from '../components/LocationSuburbSelect';
 import {
   fetchEligibleCompletionProofPortfolioItems,
   updateCompletionProofPortfolioItem,
@@ -164,6 +166,17 @@ export default function Profile() {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [locationOptions, setLocationOptions] = useState<AustralianLocationOption[]>([]);
+
+  useEffect(() => {
+    loadAustralianLocations()
+      .then(dataset => {
+        setLocationOptions(dataset.entries);
+      })
+      .catch(err => {
+        console.warn('Failed to load static locations in Profile.tsx:', err);
+      });
+  }, []);
 
   // Completed work portfolio state
   const [completionProofItems, setCompletionProofItems] = useState<CompletionProofPortfolioItem[]>([]);
@@ -1999,10 +2012,17 @@ export default function Profile() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-2 space-y-2">
                   <label className="text-xs font-bold text-foreground uppercase tracking-wider">Suburb</label>
-                  <input
-                    type="text"
+                  <LocationSuburbSelect
                     value={suburb}
-                    onChange={(e) => setSuburb(e.target.value)}
+                    stateFilter={stateVal}
+                    onChange={setSuburb}
+                    onSelect={(selected) => {
+                      setSuburb(selected.suburb);
+                      setStateVal(selected.state);
+                      setPostcode(selected.postcode);
+                    }}
+                    fallbackOptions={locationOptions}
+                    placeholder="Type suburb..."
                     className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
                   />
                 </div>
@@ -2024,7 +2044,7 @@ export default function Profile() {
                 <input
                   type="text"
                   value={postcode}
-                  onChange={(e) => setPostcode(e.target.value)}
+                  onChange={(e) => setPostcode(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   className="w-full bg-background border border-border rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm font-semibold transition-all"
                 />
               </div>

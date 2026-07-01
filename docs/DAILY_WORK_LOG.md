@@ -947,6 +947,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### National Location Database & Autocomplete
+
+| Item | Notes |
+| --- | --- |
+| Area | National Location Database & Dropdown Autocomplete |
+| Files changed | `frontend/src/lib/auLocations.ts`, `frontend/src/pages/PostJob.tsx`, `frontend/src/pages/Profile.tsx`, `docs/location_address_autocomplete_plan.md`, `docs/ROADMAP.md`, `docs/DAILY_WORK_LOG.md` |
+| Files created | `supabase/migrations/088_national_location_database.sql`, `data/location-imports/.gitkeep`, `data/location-imports/README.md`, `scripts/import-australian-locations.mjs`, `scripts/validate-australian-locations.mjs`, `frontend/src/components/LocationSuburbSelect.tsx`, `docs/location_dataset_plan.md` |
+| Summary | Implemented a proper, provider-neutral local database location system covering all of Australia, with verified fallback seeds (Ingle Farm SA 5098, Salisbury SA 5108, etc.), searchable autocompletion select input, and manual postcode editing. De-emphasised Google Places for beta. |
+| Details | - **Database Migration**: Added `088_national_location_database.sql` creating `location_regions` and `location_suburbs` tables with indexes, constraints, and RLS policies.<br> - **Search RPCs**: Added Postgres RPCs `search_location_suburbs` and `get_location_regions` with exact/prefix match weighting.<br> - **Fallback Seeds**: Seeded Cardinia Shire (VIC) and Salisbury (SA) regions and suburbs (including Ingle Farm, Salisbury, Salisbury Downs, Salisbury East) inside the migration script.<br> - **Import & Validation Pipeline**: Created Node import script `import-australian-locations.mjs` to parse/validate raw CSV data files and generate batch SQL seeds, and `validate-australian-locations.mjs` to enforce presence of critical suburbs.<br> - **Searchable Component**: Developed `LocationSuburbSelect.tsx` with dynamic DB RPC query and static local fallback mapping.<br> - **Form Integrations**: Updated `PostJob.tsx` and `Profile.tsx` to use the new searchable suburb input, auto-fill postcodes based on verified options, and keep postcode input manually editable.<br> - **Docs & Google Places**: Updated plans to de-emphasise Google Places, explaining that local DB is the default flow. |
+| Migrations required | `088_national_location_database.sql` (to be applied by Jay manually). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |

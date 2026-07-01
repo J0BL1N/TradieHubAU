@@ -62,3 +62,41 @@ export function formatSuburbOption(option: AustralianLocationOption) {
 export function formatJobLocation(suburb?: string | null, state?: string | null) {
   return [suburb?.trim(), state?.trim()].filter(Boolean).join(', ');
 }
+
+import { supabase } from './supabase';
+
+export async function fetchRegionsFromDb(state?: string) {
+  try {
+    const { data, error } = await supabase.rpc('get_location_regions', {
+      p_state: state || null,
+    });
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (err: any) {
+    console.error('Error fetching regions from DB:', err.message);
+    return { data: [], error: err };
+  }
+}
+
+export async function fetchSuburbsFromDb(params: {
+  state?: string;
+  regionId?: string;
+  regionName?: string;
+  query?: string;
+  limit?: number;
+}) {
+  try {
+    const { data, error } = await supabase.rpc('search_location_suburbs', {
+      p_state: params.state || null,
+      p_region_id: params.regionId || null,
+      p_region_name: params.regionName || null,
+      p_query: params.query || null,
+      p_limit: params.limit || 50,
+    });
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (err: any) {
+    console.error('Error fetching suburbs from DB:', err.message);
+    return { data: [], error: err };
+  }
+}
