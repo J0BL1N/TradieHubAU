@@ -1051,6 +1051,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Messaging Moderation & User-Focused Notifications
+
+| Item | Notes |
+| --- | --- |
+| Area | Messaging Moderation, User-Focused Notifications, Static Footer Pages & Category Updates |
+| Files changed | `frontend/src/App.tsx`, `frontend/src/components/Layout.tsx`, `frontend/src/lib/messages.ts`, `frontend/src/pages/Admin.tsx`, `frontend/src/pages/BetaInfoPages.tsx`, `frontend/src/pages/Home.tsx`, `frontend/src/pages/Messages.tsx` |
+| Files created | `supabase/migrations/090_messaging_safety_moderation.sql` |
+| Summary | Implemented automated messaging moderation (in-house bot checks and client-side warnings), changed all notifications to be user/actor focused, created real footer static pages with beta wording, and updated homepage categories to remove "Available soon". |
+| Details | - **Messaging Moderation**: Created a database trigger `process_message_moderation` (before insert) and a client-side helper `moderateClientMessage` to automatically censor profanities and detect phone/email bypasses, social references, and off-platform payment attempts.<br> - **Block/Warn & Admin Evidence**: Blocked violating messages from being shown to the recipient in chat feeds (using `metadata.blocked = true`), while saving the blocked attempts in the database so they are preserved as flagged evidence for admin review.<br> - **Admin Chat Viewer**: Appended messaging history inside the admin evidence pack markdown copy payload, and rendered a chronological moderated messaging logs feed highlighting flagged/blocked messages inside the Admin Case Evidence Pack modal.<br> - **Actor-Focused Notifications**: Redefined database trigger functions to generate notification titles and bodies referencing the actor directly (e.g. "Sarah Mitchell sent you a message", "Lingo submitted a quote") instead of job titles.<br> - **Footer static pages**: Added `PrivacyPolicy` and `TermsOfService` components under `/privacy` and `/terms` using provisional/beta terms of use copy, and linked them from Layout footer with React Router `<Link>`.<br> - **Category notes**: Replaced "Available soon" on the homepage category grid with specific and descriptive trade labels. |
+| Migrations required | `090_messaging_safety_moderation.sql` (implements triggers and redefines RPCs). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |

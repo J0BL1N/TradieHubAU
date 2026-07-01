@@ -115,12 +115,12 @@ export default function Home() {
   }, []);
 
   const categories = [
-    { name: 'Plumbing', icon: Droplet, note: 'Available soon', color: 'text-blue-900 bg-blue-50/80 border-blue-200/50 dark:bg-slate-800/50 dark:text-blue-300 dark:border-slate-700/50 border' },
-    { name: 'Electrical', icon: Zap, note: 'Available soon', color: 'text-primary bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:text-primary dark:border-amber-900/30 border' },
-    { name: 'Carpentry', icon: HomeIcon, note: 'Available soon', color: 'text-blue-900 bg-blue-50/80 border-blue-200/50 dark:bg-slate-800/50 dark:text-blue-300 dark:border-slate-700/50 border' },
-    { name: 'Landscaping', icon: Sun, note: 'Available soon', color: 'text-primary bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:text-primary dark:border-amber-900/30 border' },
-    { name: 'Painting', icon: Paintbrush, note: 'Available soon', color: 'text-blue-900 bg-blue-50/80 border-blue-200/50 dark:bg-slate-800/50 dark:text-blue-300 dark:border-slate-700/50 border' },
-    { name: 'View All', icon: Grid, note: 'Browse categories', color: 'text-primary bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:text-primary dark:border-amber-900/30 border' }
+    { name: 'Plumbing', icon: Droplet, note: 'Pipe & leak repairs', color: 'text-blue-900 bg-blue-50/80 border-blue-200/50 dark:bg-slate-800/50 dark:text-blue-300 dark:border-slate-700/50 border' },
+    { name: 'Electrical', icon: Zap, note: 'Power & wiring', color: 'text-primary bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:text-primary dark:border-amber-900/30 border' },
+    { name: 'Carpentry', icon: HomeIcon, note: 'Timber & renovation', color: 'text-blue-900 bg-blue-50/80 border-blue-200/50 dark:bg-slate-800/50 dark:text-blue-300 dark:border-slate-700/50 border' },
+    { name: 'Landscaping', icon: Sun, note: 'Garden & outdoor', color: 'text-primary bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:text-primary dark:border-amber-900/30 border' },
+    { name: 'Painting', icon: Paintbrush, note: 'Walls & finishes', color: 'text-blue-900 bg-blue-50/80 border-blue-200/50 dark:bg-slate-800/50 dark:text-blue-300 dark:border-slate-700/50 border' },
+    { name: 'View All', icon: Grid, note: 'Browse all', color: 'text-primary bg-amber-50/80 border-amber-200/50 dark:bg-amber-950/20 dark:text-primary dark:border-amber-900/30 border' }
   ];
 
   const faqs = [

@@ -372,3 +372,93 @@ export function CustomerVerificationExplainer() {
     />
   );
 }
+
+export function PrivacyPolicy() {
+  return (
+    <InfoPage
+      icon={<ShieldCheck className="h-4 w-4" />}
+      badge="Privacy"
+      title="Privacy Policy"
+      intro="This Privacy Policy is a provisional/beta document and outlines how TradieHubAU handles personal information during local MVP testing."
+      sections={[
+        {
+          title: 'Collection of Information',
+          body: (
+            <p>
+              We collect basic profile data (display name, role, suburb), contact details (email, phone), and verification documents (licences, ABNs) submitted for admin review.
+            </p>
+          ),
+        },
+        {
+          title: 'Use and Disclosure',
+          body: (
+            <p>
+              During beta, details are only used to test job coordination, messages, and simulated payment workflows. Contact info is hidden until a quote is accepted.
+            </p>
+          ),
+        },
+        {
+          title: 'Document Storage',
+          body: (
+            <p>
+              Verification files (such as government IDs) are stored in secure private storage buckets, accessible only to the owner and authorized admins.
+            </p>
+          ),
+        },
+        {
+          title: 'Beta Notice',
+          body: (
+            <p>
+              All data submitted in this MVP is for testing purposes and should not include highly confidential business or financial information.
+            </p>
+          ),
+        },
+      ]}
+    />
+  );
+}
+
+export function TermsOfService() {
+  return (
+    <InfoPage
+      icon={<BadgeCheck className="h-4 w-4" />}
+      badge="Terms"
+      title="Terms of Service"
+      intro="These Terms of Service are provisional/beta rules governing the use of the TradieHubAU local MVP."
+      sections={[
+        {
+          title: 'Beta Participation',
+          body: (
+            <p>
+              TradieHubAU is in a controlled testing phase. Services, features, and database states are provided 'as is' for MVP verification.
+            </p>
+          ),
+        },
+        {
+          title: 'User Accountability',
+          body: (
+            <p>
+              Users must provide accurate profile details and verify licences/ABNs where required. Self-labeling or bypasses are not permitted.
+            </p>
+          ),
+        },
+        {
+          title: 'Payments and Fees',
+          body: (
+            <p>
+              All payment funding and releases are strictly simulated. No real money changes hands, and no fees are charged during this phase.
+            </p>
+          ),
+        },
+        {
+          title: 'Dispute and Oversight',
+          body: (
+            <p>
+              Admins retain full oversight of verification approvals, disputes, and audit records. Flagged communications will be preserved for review.
+            </p>
+          ),
+        },
+      ]}
+    />
+  );
+}

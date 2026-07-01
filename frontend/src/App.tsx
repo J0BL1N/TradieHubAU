@@ -20,7 +20,9 @@ import {
   ContactSupport,
   CustomerVerificationExplainer,
   DisputeProcessExplainer,
+  PrivacyPolicy,
   ProtectedPaymentExplainer,
+  TermsOfService,
   TradieVerificationExplainer,
   TrustAndSafetyExplainer,
 } from './pages/BetaInfoPages';
@@ -48,6 +50,8 @@ export default function App() {
             <Route path="login" element={<Auth />} />
             <Route path="auth/callback" element={<AuthCallback />} />
             <Route path="support" element={<ContactSupport />} />
+            <Route path="privacy" element={<PrivacyPolicy />} />
+            <Route path="terms" element={<TermsOfService />} />
             <Route path="protected-payments" element={<ProtectedPaymentExplainer />} />
             <Route path="trust-and-safety" element={<TrustAndSafetyExplainer />} />
             <Route path="dispute-process" element={<DisputeProcessExplainer />} />

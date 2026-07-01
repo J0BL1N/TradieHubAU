@@ -58,6 +58,50 @@ function statusLabel(status: string) {
   return labels[status] || status.replaceAll('_', ' ');
 }
 
+interface ModerationResult {
+  isBlocked: boolean;
+  reasons: string[];
+  censoredText: string;
+}
+
+function moderateClientMessage(text: string, paymentStatus: string): ModerationResult {
+  const reasons: string[] = [];
+  let censoredText = text;
+
+  // 1. Censor profanity (always)
+  const badWords = ['crap', 'shit', 'fuck', 'bitch', 'asshole', 'cunt', 'bastard', 'idiot', 'stupid'];
+  for (const word of badWords) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    censoredText = censoredText.replace(regex, '*'.repeat(word.length));
+  }
+
+  // 2. Detect bypasses (only block if payment status is pending)
+  if (paymentStatus === 'pending') {
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i;
+    const phoneRegex = /(?:\+?61|0)\s*[23478](?:\s*\d){8}\b|\b\d{4}\s*\d{3}\s*\d{3}\b/i;
+    const socialRegex = /\b(facebook|fb|instagram|insta|linkedin|whatsapp|viber|telegram|snapchat|tiktok|socials?|handle)\b/i;
+
+    if (emailRegex.test(text)) {
+      reasons.push('email_bypass');
+    }
+    if (phoneRegex.test(text)) {
+      reasons.push('phone_bypass');
+    }
+    if (socialRegex.test(text)) {
+      reasons.push('social_bypass');
+    }
+  }
+
+  // 3. Detect off-platform payment attempts (always block/flag)
+  const paymentRegex = /\b(bank transfer|direct deposit|pay cash|paypal|pay outside|outside the app|off-platform|pay direct|cash payment|bsb|acc number|account number)\b/i;
+  if (paymentRegex.test(text)) {
+    reasons.push('off_platform_payment');
+  }
+
+  const isBlocked = reasons.length > 0;
+  return { isBlocked, reasons, censoredText };
+}
+
 function sortMessages(messages: MessageRecord[]) {
   return [...messages].sort((a, b) => {
     const byTime = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
@@ -431,6 +475,9 @@ export default function Messages() {
     if (!activeConversationId || !user) return;
 
     const mergeMessage = (incoming: MessageRecord, shouldScrollToBottom: boolean) => {
+      if (incoming.metadata && (incoming.metadata as any).blocked === true) {
+        return;
+      }
       if (shouldScrollToBottom) shouldStickToBottomRef.current = true;
       setMessages(current => {
         const matchIndex = current.findIndex(m =>
@@ -641,12 +688,27 @@ export default function Messages() {
     const text = reply.trim();
     const uploadedPaths: string[] = [];
 
+    // Client-side moderation check
+    const paymentStatus = activeConversation?.payment_status || 'pending';
+    const modResult = moderateClientMessage(text, paymentStatus);
+
+    if (modResult.isBlocked) {
+      setError("Blocked: Contact details and off-platform payments are not allowed. Please keep all communications on TradieHubAU.");
+      setReply('');
+      setSelectedAttachments([]);
+      setSending(false);
+      // Silently insert into the DB to preserve evidence for the admin
+      void sendJobMessage(activeConversationId, text).catch(() => {});
+      return;
+    }
+
+    const textToSend = modResult.censoredText;
     const tempId = `temp-${crypto.randomUUID()}`;
     const optimisticMessage: MessageRecord = {
       id: tempId,
       conversation_id: activeConversationId,
       sender_id: user.id,
-      text: text,
+      text: textToSend,
       read: false,
       read_at: null,
       created_at: new Date().toISOString(),
@@ -680,7 +742,7 @@ export default function Messages() {
       conversation.id === activeConversationId
         ? {
             ...conversation,
-            last_message_text: text || (selectedAttachments.length > 0 ? 'Sent an image' : ''),
+            last_message_text: textToSend || (selectedAttachments.length > 0 ? 'Sent an image' : ''),
             last_message_at: optimisticMessage.created_at,
             last_message_from: user.id,
           }
@@ -692,7 +754,7 @@ export default function Messages() {
 
     try {
       if (selectedAttachments.length === 0) {
-        const { data: newMessageId, error: sendError } = await sendJobMessage(activeConversationId, text);
+        const { data: newMessageId, error: sendError } = await sendJobMessage(activeConversationId, textToSend);
         if (sendError) throw sendError;
 
         if (newMessageId) {
@@ -729,7 +791,7 @@ export default function Messages() {
         const { data: newMsg, error: sendError } = await sendJobMessageWithAttachments(
           messageId,
           activeConversationId,
-          text,
+          textToSend,
           attachmentMetadata
         );
         if (sendError) throw sendError;

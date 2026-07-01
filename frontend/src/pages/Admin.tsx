@@ -321,6 +321,21 @@ function generateEvidencePackMarkdown(pack: any): string {
     md += `*No timeline events logged.*\n`;
   }
 
+  md += `\n## MESSAGING HISTORY\n`;
+  const msgs = pack.messages || [];
+  if (msgs.length > 0) {
+    msgs.forEach((m: any, idx: number) => {
+      const flaggedStr = m.metadata?.flagged ? ' [FLAGGED]' : '';
+      const blockedStr = m.metadata?.blocked ? ' [BLOCKED]' : '';
+      md += `${idx + 1}. [${new Date(m.created_at).toLocaleString('en-AU')}] **${m.sender_name || 'System'}**${flaggedStr}${blockedStr}: "${m.text}"\n`;
+      if (m.metadata?.flag_reasons && Array.isArray(m.metadata.flag_reasons)) {
+        md += `   - Reasons: ${m.metadata.flag_reasons.join(', ')}\n`;
+      }
+    });
+  } else {
+    md += `*No messages recorded.*\n`;
+  }
+
   return md;
 }
 
@@ -1816,6 +1831,54 @@ export function DisputeCaseFile({ dispute, onResolved, showToast, showConfirm }:
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground italic font-semibold">No chronological timeline events logged for this job yet.</p>
+                    )}
+                  </div>
+
+                  {/* Messaging History (Evidence) */}
+                  <div className="p-4 bg-muted/10 border rounded-2xl space-y-3">
+                    <h4 className="text-[11px] font-black text-primary uppercase tracking-wider border-b pb-1">Job Messaging History (Moderated)</h4>
+                    {evidencePack.messages && evidencePack.messages.length > 0 ? (
+                      <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                        {evidencePack.messages.map((m: any) => {
+                          const isFlagged = m.metadata?.flagged === true;
+                          const isBlocked = m.metadata?.blocked === true;
+                          return (
+                            <div key={m.id} className={`p-3 rounded-xl border ${
+                              isBlocked ? 'bg-red-500/5 border-red-500/20' :
+                              isFlagged ? 'bg-amber-500/5 border-amber-500/20' : 'bg-background border-border'
+                            } text-xs space-y-1.5`}>
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-foreground">{m.sender_name || 'System / Auto'}</span>
+                                <div className="flex items-center gap-2">
+                                  {isBlocked && (
+                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-red-500/10 text-red-600 border border-red-500/20">
+                                      Blocked from counterpart
+                                    </span>
+                                  )}
+                                  {isFlagged && !isBlocked && (
+                                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                                      Flagged
+                                    </span>
+                                  )}
+                                  <span className="text-[9px] text-muted-foreground font-bold">
+                                    {new Date(m.created_at).toLocaleString('en-AU')}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className={`font-medium leading-relaxed ${isBlocked ? 'text-red-700 dark:text-red-400 font-semibold' : 'text-foreground'}`}>
+                                {m.text}
+                              </p>
+                              {m.metadata?.flag_reasons && Array.isArray(m.metadata.flag_reasons) && (
+                                <div className="text-[10px] text-red-500 font-bold">
+                                  Flag reasons: {m.metadata.flag_reasons.join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic font-semibold">No messages have been sent in this job conversation yet.</p>
                     )}
                   </div>
                 </div>

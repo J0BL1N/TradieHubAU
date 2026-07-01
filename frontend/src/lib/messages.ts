@@ -242,10 +242,12 @@ export async function getConversationMessages(conversationId: string, options: M
 
   return {
     data: {
-      messages: messages.map(message => ({
-        ...message,
-        attachments: attachmentsByMessage.get(message.id) || [],
-      })),
+      messages: messages
+        .filter(message => !message.metadata || (message.metadata as any).blocked !== true)
+        .map(message => ({
+          ...message,
+          attachments: attachmentsByMessage.get(message.id) || [],
+        })),
       hasMore,
     },
     error: null,
