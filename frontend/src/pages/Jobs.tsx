@@ -439,6 +439,10 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl text-[10px] text-muted-foreground font-semibold leading-relaxed text-left">
+            Before quoting, confirm you are licensed, insured, qualified, and competent for this exact job scope and location. Requirements vary by state, licence class, and job scope. This is not legal, building, tax, or insurance advice.
+          </div>
+
           {error && (
             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-semibold flex items-start gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -4138,28 +4142,33 @@ export default function Jobs() {
                                       )}
                                     </div>
                                     {selectedJob.status === 'open' ? (
-                                      <button
-                                        onClick={() => {
-                                          setModalConfirmConfig({
-                                            title: "Accept Quote",
-                                            message: `Accept quote from ${displayName} for $${app.estimate?.toLocaleString()}?`,
-                                            onConfirm: async () => {
-                                              const { error } = await acceptQuote(selectedJob.id, app.id);
-                                              if (error) {
-                                                showToast(error.message, 'error');
-                                              } else {
-                                                showToast("Quote accepted. Awaiting customer payment.", 'success');
-                                                setSelectedJob(prev => prev ? { ...prev, status: 'accepted' } : null);
-                                                fetchJobLifecycleDetails(selectedJob.id, { silent: true });
-                                                loadJobs({ silent: true });
+                                      <>
+                                        <p className="text-[10px] text-muted-foreground font-semibold leading-relaxed mb-2 text-left">
+                                          * Before accepting, review the tradie’s profile, quote details, licence/insurance suitability, and any questions you need answered. TradieHubAU checks support platform trust but do not replace your own due diligence.
+                                        </p>
+                                        <button
+                                          onClick={() => {
+                                            setModalConfirmConfig({
+                                              title: "Accept Quote",
+                                              message: `Accept quote from ${displayName} for $${app.estimate?.toLocaleString()}?\n\nBefore accepting, review the tradie’s profile, quote details, licence/insurance suitability, and ensure you have performed your own due diligence.`,
+                                              onConfirm: async () => {
+                                                const { error } = await acceptQuote(selectedJob.id, app.id);
+                                                if (error) {
+                                                  showToast(error.message, 'error');
+                                                } else {
+                                                  showToast("Quote accepted. Awaiting customer payment.", 'success');
+                                                  setSelectedJob(prev => prev ? { ...prev, status: 'accepted' } : null);
+                                                  fetchJobLifecycleDetails(selectedJob.id, { silent: true });
+                                                  loadJobs({ silent: true });
+                                                }
                                               }
-                                            }
-                                          });
-                                        }}
-                                        className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-black text-xs py-2 rounded-xl transition-all shadow active:scale-95"
-                                      >
-                                        Accept Quote
-                                      </button>
+                                            });
+                                          }}
+                                          className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-black text-xs py-2 rounded-xl transition-all shadow active:scale-95"
+                                        >
+                                          Accept Quote
+                                        </button>
+                                      </>
                                     ) : app.status === 'accepted' ? (
                                       selectedJob.status === 'accepted' ? (
                                         <button
@@ -5480,13 +5489,18 @@ function ReviewCompletionModal({
           </div>
 
           {/* Action buttons */}
+          <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl text-[10px] text-muted-foreground font-semibold leading-relaxed mb-4 text-left">
+            <span className="font-black text-amber-800 uppercase block mb-1">Payment Release Disclaimer:</span>
+            Only approve completed work when you are satisfied with the outcome and evidence. Raise a dispute before approval if something is wrong. TradieHubAU reviews support platform trust but do not replace your own due diligence. This is not legal, building, tax, or insurance advice.
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <button
               disabled={disputeUploading}
               onClick={() => {
                 setModalConfirmConfig({
                   title: "Approve Completion & Release Funds",
-                  message: `Are you sure you want to approve the work and release the secure job payment of ${formatCentsToAud(jobPayment.amount)} to the tradie? This action will payout the funds and cannot be undone.`,
+                  message: `Are you sure you want to approve the work and release the secure job payment of ${formatCentsToAud(jobPayment.amount)} to the tradie? Only approve completed work when you are satisfied with the outcome and evidence. Payouts cannot be reversed.`,
                   onConfirm: async () => {
                     const { error: appErr } = await approveJobCompletion(job.id);
                     if (appErr) {

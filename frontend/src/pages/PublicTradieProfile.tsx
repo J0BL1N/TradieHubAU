@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Award, Briefcase, Calendar, ExternalLink, Loader2, MapPin, ShieldCheck, Star } from 'lucide-react';
+import { Award, Briefcase, Calendar, ExternalLink, Loader2, MapPin, ShieldCheck, Star, ShieldAlert } from 'lucide-react';
 import { getPublicUserProfile } from '../lib/users';
 import type { UserProfile } from '../lib/users';
 import { fetchPublicProofGallery } from '../lib/profileTrust';
@@ -205,14 +205,36 @@ export default function PublicTradieProfile() {
                   </span>
                 )}
               </div>
+              <p className="text-[10px] text-muted-foreground font-semibold mt-1.5 max-w-xl text-left">
+                * Badges show TradieHubAU review status only. Customers should still check licence/insurance suitability for their specific job. Requirements vary by state, licence class, and job scope.
+              </p>
             </div>
-            {profile.bio && <p className="text-sm leading-6 text-muted-foreground font-medium max-w-3xl">{profile.bio}</p>}
+            {profile.bio && <p className="text-sm leading-6 text-muted-foreground font-medium max-w-3xl text-left">{profile.bio}</p>}
             {showFullIdentity && profile.website_url && (
               <a href={profile.website_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:text-primary/80">
                 Visit website <ExternalLink className="h-4 w-4" />
               </a>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Trust & Due Diligence Advisory Panel */}
+      <section className="bg-card border rounded-3xl p-6 space-y-4 shadow-sm text-left">
+        <h2 className="text-lg font-black text-foreground flex items-center gap-2">
+          <ShieldAlert className="h-5 w-5 text-primary" /> Customer Trust & Due Diligence Advice
+        </h2>
+        <div className="text-sm font-semibold leading-relaxed text-muted-foreground space-y-3">
+          <p>
+            TradieHubAU runs platform trust checks, but customers are still responsible for reviewing the tradie, quote, licence/insurance suitability, job scope, and completion evidence before accepting work or approving payment.
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 text-xs text-muted-foreground font-medium">
+            <li>Review the tradie’s profile, verification badges, quote details, reviews, experience, and uploaded/completion evidence where available.</li>
+            <li>Check that the contractor has the correct licence, registration, and insurance for the exact work, state/territory, job value, and job scope. Requirements vary by state, licence class, and job scope.</li>
+            <li>Ask questions and clarify scope boundaries before accepting any quote.</li>
+            <li>Do not approve completed work or release secure job payments unless you are fully satisfied with the outcome and supporting evidence. Raise a dispute before approval if something is wrong.</li>
+            <li>This guidance is for general platform trust support only and is not legal, building, tax, or insurance advice.</li>
+          </ul>
         </div>
       </section>
 

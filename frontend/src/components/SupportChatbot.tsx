@@ -231,6 +231,50 @@ export default function SupportChatbot() {
       };
     }
 
+    // Trust, Licence, Badges, and Quote due diligence question handlers
+    if (q.includes('trust') || q.includes('check') || q.includes('licens') || q.includes('licence') || q.includes('allowed to do') || q.includes('allowed to work') || q.includes('badge') || q.includes('verified mean')) {
+      if (q.includes('can i quote') || q.includes('allowed to do') || q.includes('allowed to work')) {
+        return {
+          text: 'Contractor Licence & Quote Responsibilities:\n' +
+            '1. Tradies remain responsible for checking that they hold the correct current licence, insurance, qualifications, and experience for the exact work they quote or accept.\n' +
+            '2. Licensing and registration requirements can vary by state, licence class, job value, and job scope.\n' +
+            '3. Tradies must not use handyman/general maintenance categories to quote on regulated work.\n' +
+            '*Note: This is not legal, building, tax, or insurance advice.*',
+          links: [
+            { label: 'Check Verification Rules', to: '/profile' },
+            { label: 'Browse Jobs Board', to: '/jobs' }
+          ]
+        };
+      }
+
+      if (q.includes('badge') || q.includes('verified mean')) {
+        return {
+          text: 'TradieHubAU Trust Badges Explained:\n' +
+            '1. ID Checked: Photo ID matches name details.\n' +
+            '2. Insurance Checked: Holds active public liability insurance.\n' +
+            '3. Licensed Trade Verified: State-specific trade licence submitted & verified by admin.\n' +
+            '\n' +
+            '**Important Notice:** Badges show TradieHubAU review status only. Customers should still check licence/insurance suitability for their specific job. Requirements vary by state, licence class, and job scope.',
+          links: [
+            { label: 'My Verification Panel', to: '/profile' }
+          ]
+        };
+      }
+
+      // Default trust / due diligence matching
+      return {
+        text: 'Trust & Due Diligence Guidelines:\n' +
+          '1. **Platform Checks:** TradieHubAU runs platform trust checks (ID, ABN, base insurance, trade credentials) to reduce risk, but this does not replace the customer\'s own due diligence.\n' +
+          '2. **Customer Due Diligence:** Customers should review the tradie\'s profile, verification badges, quote details, reviews, experience, and uploaded completion evidence before accepting work or releasing payment.\n' +
+          '3. **Verify Licence Suitability:** Confirm that the contractor holds the correct active licence registration for the specific work, state/territory, job value, and job scope. Requirements vary by state, licence class, and job scope.\n' +
+          '4. **Raise Disputes:** Raise a dispute or contact support before approving work if you are not satisfied with the evidence or outcome. This is not legal, building, tax, or insurance advice.',
+        links: [
+          { label: 'Dispute Process Explainer', to: '/dispute-process' },
+          { label: 'Protected Payments', to: '/protected-payments' }
+        ]
+      };
+    }
+
     // 1. Post a job
     if (q.includes('post') || q.includes('create job') || q.includes('new job')) {
       return {

@@ -85,6 +85,24 @@ Use this checklist during staging/production validation:
 
 ---
 
-## 4. Maintenance & Rule Evolution
+## 4. Due Diligence Verification & Trust Disclaimer QA
+
+To ensure the platform maintains its legal boundaries while highlighting trust metrics, the following rules and tests must be verified:
+
+### A. Core Legal Constraints
+* **State & Scope Warnings:** Explicitly display that "requirements vary by state, licence class, and job scope".
+* **No Guarantees:** Ensure copy states that platform verifications (ID checks, licences, insurance checks) support trust scores but are not legal guarantees, and do not replace the user’s own due diligence.
+* **Advisory Disclaimer:** Ensure the disclaimer "*This is not legal, building, tax, or insurance advice*" is prominently visible on profile verification, quote submission/acceptance, and payment approval screens.
+
+### B. QA Verification Test Cases
+1. **Public Profile Badge Test:** Open a public tradie profile. Verify the compact disclaimer below the trust badges is visible: *"Badges show TradieHubAU review status only. Customers should still check licence/insurance suitability for their specific job."*
+2. **Apply/Quote Modal Test:** As a contractor, click "Apply for Job". Verify the due diligence check warning is rendered above the cover message input.
+3. **Accept Quote Confirm Test:** As a customer, view a quote. Verify the due diligence warnings are visible above the "Accept Quote" button and inside the confirmation alert modal.
+4. **Approve Work & Release Payment Test:** As a customer, view a completed job workspace. Verify the Payment Release Disclaimer panel is rendered above the buttons, instructing the customer to only approve when satisfied, and to raise a dispute before approval if needed.
+5. **Support Chatbot Query Test:** Open the global helper chatbot. Type queries like *"Can I trust this tradie?"*, *"Is this tradie licensed?"*, or *"Am I allowed to do this work?"*. Verify the bot lists platform trust limits and due diligence responsibilities for both parties.
+
+---
+
+## 5. Maintenance & Rule Evolution
 
 Trade requirement guidelines seeded during the beta are **starter rules only**. They must be audited and verified before moving beyond the Melbourne/Victorian beta launch phase.

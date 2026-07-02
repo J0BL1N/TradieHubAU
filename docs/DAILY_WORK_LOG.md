@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Add due diligence disclaimers and advisory messaging
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, UX Polish, Compliance, Documentation |
+| Summary | Integrated detailed due diligence advisory blocks across customer, tradie, admin, and public trust components. Added compact disclaimers below trust badges on `PublicTradieProfile.tsx`, a Contractor Due Diligence card on `Profile.tsx`, inline warnings and confirm modal notes for quote submission, acceptance, and work completion approvals on `Jobs.tsx`, and guideline warnings on `Admin.tsx`. Updated `SupportChatbot.tsx` response triggers to address trust, licensing, capacity, and badge queries. Extended `trade_specific_verification_plan.md` and `trade_specific_verification_QA.md` with due diligence guidelines and checklist items. |
+| Files changed | `frontend/src/pages/Profile.tsx`, `frontend/src/pages/PublicTradieProfile.tsx`, `frontend/src/pages/Jobs.tsx`, `frontend/src/pages/Admin.tsx`, `frontend/src/components/SupportChatbot.tsx`, `docs/trade_specific_verification_plan.md`, `docs/trade_specific_verification_QA.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Add live recovery patch for audited trade verification
 
 | Item | Notes |

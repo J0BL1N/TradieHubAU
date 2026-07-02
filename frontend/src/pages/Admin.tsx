@@ -3400,7 +3400,7 @@ export default function Admin() {
             </div>
 
             <div className="p-4 bg-muted/5 border-b text-[11px] text-muted-foreground leading-relaxed text-left">
-              <span className="font-bold text-foreground">Guidelines:</span> Licence requirements vary by state/territory, licence class, and job scope. Admin review supports platform trust checks but is not formal legal or compliance certification.
+              <span className="font-bold text-foreground">Guidelines:</span> Admin review supports platform trust checks. It does not replace official legal/licensing advice. Requirements vary by state, licence class, and job scope. This is not legal, building, tax, or insurance advice.
             </div>
 
             {pendingTradeCredentials.length === 0 ? (

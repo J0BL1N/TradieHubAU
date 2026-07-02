@@ -387,3 +387,23 @@ For the initial TradieHubAU Beta, we recommend the following cautious approach:
 2.  **Soft-Warning Gating:** Instead of strictly blocking quoting initially, show a prominent warning in the quote flow: *"You are quoting on a regulated trade. Please ensure your active licence is uploaded. Unverified quotes may be flagged by admins."*
 3.  **Hard-Enforce Only Top 3 Trades:** Strictly lock quoting for **Electricians, Plumbers, and Asbestos Removal** tradies. Keep other trades advisory.
 4.  **Disclaimers:** Add visible disclaimers in the frontend: *"TradieHubAU validates licences for platform trust, but final compliance responsibilities remain with the service provider."*
+
+---
+
+## 11. Due Diligence & Platform Liability Limits
+
+To maintain a secure and legally cautious system while keeping platform trust verification high, both customers and contractors are bound by clear due diligence rules:
+
+### A. Customer Responsibilities
+* **Review & Verification:** Customers are responsible for reviewing tradie profiles, badges, reviews, quote breakdowns, and uploaded completion evidence before accepting work or releasing payments.
+* **Licence & Insurance Suitability:** Customers must check that the tradie possesses the correct active licence, registration, and insurance for the specific location, state/territory, job value, and work scope. Requirements vary by state, licence class, and job scope.
+* **Payment Approval:** Customers should only approve work and release secure job payments when they are fully satisfied with the finished job outcome. Raised disputes must be logged prior to final approval.
+
+### B. Contractor (Tradie) Responsibilities
+* **Regulatory Compliance:** Tradies remain responsible for ensuring they hold the correct current licences, insurances, qualifications, and experience for the exact work they quote or accept.
+* **No Category Bypasses:** Tradies must keep their credentials up to date and are strictly prohibited from using handyman or general maintenance categories to perform regulated or restricted trades.
+* **Scope Verification:** Tradies must check job scopes, locations, site conditions, permit rules, and safety regulations prior to submitting quotations.
+
+### C. Legal Status & Platform Disclaimer
+* Platform checks (ID checked, licensed trade verified, insurance reviewed) support trust ratings but do not replace user due diligence or constitute formal legal, building, tax, or insurance advice.
+* Verification badges indicate successful submission and review status on the platform, not a legal guarantee of capacity to perform all job variations.

@@ -44,7 +44,7 @@ import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
   Upload, Loader2, Award, Star, Briefcase, Clock,
   Bookmark, BookmarkCheck, AlertCircle, CheckCircle, Send,
-  ImagePlus, Eye, Globe, Calendar, Camera
+  ImagePlus, Eye, Globe, Calendar, Camera, ShieldAlert
 } from 'lucide-react';
 
 interface DisplayJob {
@@ -2025,9 +2025,21 @@ export default function Profile() {
             <span className="text-[10px] font-bold text-muted-foreground uppercase">Requirements vary by state & scope</span>
           </div>
 
-          {/* Guidelines warning */}
-          <div className="p-3 bg-muted/20 border rounded-2xl text-[11px] text-muted-foreground leading-relaxed">
-            <span className="font-bold text-foreground">Important Note:</span> Licence and experience rules vary by state, licence class, and job scope. TradieHubAU reviews submissions to support platform trust checks, but this is not legal/compliance confirmation. Final responsibility remains on the contractor to hold the correct registrations for any accepted scope of work.
+          {/* Due diligence advisory */}
+          <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-2 text-left">
+            <h4 className="text-xs font-black text-amber-800 flex items-center gap-1.5 uppercase">
+              <ShieldAlert className="h-4 w-4 text-amber-600" /> Contractor Due Diligence Statement
+            </h4>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              Tradies remain responsible for checking that they hold the correct current licence, insurance, qualifications, and experience for the exact work they quote or accept. Requirements can vary by state, licence class, job value, and job scope. This is not legal, building, tax, or insurance advice.
+            </p>
+            <ul className="list-disc pl-5 text-[11px] text-muted-foreground space-y-1.5 font-medium leading-relaxed">
+              <li>Only quote or accept work that you are fully licensed, insured, qualified, and competent to perform under state regulations.</li>
+              <li>Keep all uploaded licence, ABN, insurance, and credential details current.</li>
+              <li>Carefully inspect job scope, location, site conditions, permits, safety hazards, materials, and any legal requirements before quoting.</li>
+              <li>Do not use handyman/general maintenance categories to bypass regulated or licensed work requirements.</li>
+              <li>TradieHubAU verification helps support platform trust ratings but does not guarantee or certify that a contractor is legally allowed to perform every job variation or scope.</li>
+            </ul>
           </div>
 
           {/* Rules and Guidelines matching user selected trades & state */}
