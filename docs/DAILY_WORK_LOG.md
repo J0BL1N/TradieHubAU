@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Audit and harden trade specific verification gating
+
+| Item | Notes |
+| --- | --- |
+| Area | Security, Database, Trust & Safety |
+| Summary | Performed a security and logic audit on the trade-specific verification subsystem. To ensure quote and application gating is enforced at the database level and not just in the frontend, added a `check_user_has_required_licences` SECURITY DEFINER helper function to `093_trade_specific_verification.sql` and updated the `public.applications` INSERT policy to enforce trade licensing and handyman gating. Verified that expired, rejected, recheck, and pending trade licences are strictly blocked from quoting. Checked RLS policies, views, function grants, and search_paths to meet Supabase security standards. |
+| Files changed | `supabase/migrations/093_trade_specific_verification.sql`, `docs/trade_specific_verification_QA.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Migration `093` (requires manual execution by Jay in Supabase Studio). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Manual migration `093` application. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Plan trade specific verification system
 
 | Item | Notes |

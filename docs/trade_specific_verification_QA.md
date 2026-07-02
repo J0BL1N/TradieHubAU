@@ -22,6 +22,10 @@ To prevent leaking sensitive documents or private information publicly, the subs
     *   Delete is restricted to records in `pending` status to prevent deleting audit-critical approved/historical records.
 *   **Admin Override:** Admin controls bypass standard user blocks to permit reviewing, approving, rejecting, or requesting rechecks.
 
+### C. Database-Level Gating (RLS & Check Functions)
+*   **Insert Gating on Applications:** Quote submission gating is enforced directly at the database layer via a custom RLS policy check on the `public.applications` table insertion.
+*   **`check_user_has_required_licences(uuid, uuid)` Function:** A `SECURITY DEFINER` function with safe `SET search_path = pg_catalog, public` checks the user's state, matches the job categories to the seeded state-specific requirement rules, and ensures the user has a matching, approved, unexpired licence. If a handyman attempts to quote on a regulated category, or if the licence is missing/expired, the database rejects the row insertion.
+
 ---
 
 ## 2. Risk Boundaries & Disclaimer Disclosures
