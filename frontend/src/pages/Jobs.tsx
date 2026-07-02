@@ -87,11 +87,100 @@ interface VariationFormLineItem {
 type JobDetailTab = 'overview' | 'contract' | 'requests' | 'evidence';
 
 function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModalProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [message, setMessage] = useState('');
   const [availability, setAvailability] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Gating check states
+  const [isGated, setIsGated] = useState(false);
+  const [gateMessage, setGateMessage] = useState<string | null>(null);
+  const [checkingGate, setCheckingGate] = useState(true);
+
+  useEffect(() => {
+    async function runGatingCheck() {
+      if (!user || !profile) {
+        setCheckingGate(false);
+        return;
+      }
+
+      // 1. Role Check
+      if (profile.role === 'customer') {
+        setIsGated(true);
+        setGateMessage('Only contractors can quote on jobs.');
+        setCheckingGate(false);
+        return;
+      }
+
+      // 2. Base Verification Check
+      if (!profile.tradie_verified) {
+        setIsGated(true);
+        setGateMessage('Your contractor profile must be verified by admin before you can quote.');
+        setCheckingGate(false);
+        return;
+      }
+
+      // 3. Trade category matching
+      try {
+        const userState = profile.state || 'VIC';
+
+        // Fetch rules
+        const { data: rules, error: rulesErr } = await supabase
+          .from('trade_requirement_rules')
+          .select('*, required_licence_type:trade_licence_types(*)')
+          .in('trade_id', job.categories)
+          .eq('state_code', userState);
+
+        if (rulesErr) throw rulesErr;
+
+        // Fetch user's approved, unexpired credentials
+        const { data: approvedCreds, error: credsErr } = await supabase
+          .from('user_trade_credentials')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'approved')
+          .gt('expiry_date', new Date().toISOString().split('T')[0]);
+
+        if (credsErr) throw credsErr;
+
+        const hardGatedCategories = [
+          'electrical', 'plumbing', 'gasfitting', 'roof_plumbing', 'building',
+          'hvac', 'pest_control', 'asbestos_removal', 'demolition', 'solar_installer',
+          'security_installer'
+        ];
+
+        for (const categoryId of job.categories) {
+          // If handyman, block them from bidding on regulated jobs
+          if (profile.trades && profile.trades.includes('handyman') && hardGatedCategories.includes(categoryId)) {
+            setIsGated(true);
+            setGateMessage(`General Handyman profiles are not permitted to quote on regulated ${categoryId} work.`);
+            setCheckingGate(false);
+            return;
+          }
+
+          // Find rule
+          const rule = rules?.find(r => r.trade_id === categoryId);
+          if (rule && rule.licence_requirement_level === 'required') {
+            const hasCredential = approvedCreds?.some(c => c.licence_type_id === rule.required_licence_type_id);
+            if (!hasCredential) {
+              setIsGated(true);
+              const licenceTypeName = rule.required_licence_type?.name || 'appropriate licence';
+              setGateMessage(`This job requires a verified "${licenceTypeName}" for ${userState}. Please upload your licence in your Profile.`);
+              setCheckingGate(false);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error verifying job gating requirements:', err);
+      } finally {
+        setCheckingGate(false);
+      }
+    }
+
+    void runGatingCheck();
+  }, [user, profile, job]);
 
   // Line items state
   const [lineItems, setLineItems] = useState<FormLineItem[]>([
@@ -283,6 +372,48 @@ function ApplyModal({ job, existingApplication, onClose, onSuccess }: ApplyModal
                 <p className="text-foreground leading-relaxed whitespace-pre-wrap">{existingApplication.message}</p>
               </div>
             </div>
+          </div>
+          <div className="p-6 border-t flex justify-end">
+            <button onClick={onClose} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkingGate) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div className="bg-card border border-border w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <p className="text-sm font-semibold text-muted-foreground">Verifying licensing & gating guidelines...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isGated) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div className="bg-card border border-border w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+          <div className="p-6 border-b flex items-start justify-between gap-4">
+            <h3 className="text-xl font-extrabold text-foreground">Quote Submission Blocked</h3>
+            <button onClick={onClose} className="p-1.5 rounded-lg border hover:bg-muted text-muted-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="text-sm font-semibold leading-relaxed text-left">
+                {gateMessage}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed text-left">
+              Licensing rules vary by state, licence class, and job scope. Ensure your credentials are up to date in your Profile settings before bidding.
+            </p>
           </div>
           <div className="p-6 border-t flex justify-end">
             <button onClick={onClose} className="bg-secondary text-secondary-foreground font-bold px-5 py-2.5 rounded-xl hover:bg-secondary/80 transition-colors text-sm">

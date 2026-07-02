@@ -36,6 +36,8 @@ export default function PublicTradieProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [proofGallery, setProofGallery] = useState<PublicProofImage[]>([]);
   const [reviews, setReviews] = useState<PublicTradieReview[]>([]);
+  const [approvedCreds, setApprovedCreds] = useState<any[]>([]);
+  const [approvedEvidence, setApprovedEvidence] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,9 +83,19 @@ export default function PublicTradieProfile() {
       const [
         proofResult,
         reviewsResult,
+        credsRes,
+        evRes,
       ] = await Promise.all([
         fetchPublicProofGallery(userId),
         fetchPublicTradieReviews(userId),
+        supabase
+          .from('public_user_credentials')
+          .select('*, licence_type:trade_licence_types(*)')
+          .eq('user_id', userId),
+        supabase
+          .from('public_user_experience_evidence')
+          .select('*')
+          .eq('user_id', userId)
       ]);
 
       if (proofResult.error) throw proofResult.error;
@@ -91,6 +103,8 @@ export default function PublicTradieProfile() {
 
       setProofGallery(proofResult.data);
       setReviews(reviewsResult.data);
+      if (credsRes.data) setApprovedCreds(credsRes.data);
+      if (evRes.data) setApprovedEvidence(evRes.data);
     } catch (err: any) {
       console.error('Public tradie profile load error:', err.message);
       setError(err.message || 'Public tradie profile could not be loaded.');
@@ -160,6 +174,35 @@ export default function PublicTradieProfile() {
                 )}
                 {averageRating && (
                   <span className="inline-flex items-center gap-1.5 text-amber-500"><Star className="h-4 w-4 fill-amber-500" /> {averageRating} ({reviews.length} reviews)</span>
+                )}
+              </div>
+
+              {/* Public Trust Badges */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {profile.identity_verified && (
+                  <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    ID Checked
+                  </span>
+                )}
+                {profile.tradie_verified && (
+                  <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Insurance Checked
+                  </span>
+                )}
+                {approvedCreds.length > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Licensed Trade Verified
+                  </span>
+                )}
+                {Array.from(new Set(approvedCreds.map(c => c.licence_type?.state_code).filter(Boolean))).map((stateCode) => (
+                  <span key={stateCode} className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Licence verified for {stateCode}
+                  </span>
+                ))}
+                {approvedEvidence.length > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Experience Evidence Reviewed
+                  </span>
                 )}
               </div>
             </div>

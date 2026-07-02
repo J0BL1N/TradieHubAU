@@ -12,7 +12,7 @@ import {
   ShieldCheck, UserCheck, ShieldAlert, Award, Loader2, AlertTriangle,
   Check, FileText, CheckCircle, AlertCircle, X, Image as ImageIcon,
   ChevronDown, ChevronUp, User, Briefcase, CreditCard, MessageSquare,
-  Camera, TrendingUp, DollarSign, RefreshCw, Activity, Copy, Scale
+  Camera, TrendingUp, DollarSign, RefreshCw, Activity, Copy, Scale, Eye
 } from 'lucide-react';
 import { getDisputedJobs, recordAdminDisputeAction, resolveDispute, getAdminJobEvidencePack, createAdminEnforcementAction, resolveAdminEnforcementAction, getAdminUserEnforcementHistory, getAdminTradieRiskSummary, createAdminRiskSignal, resolveAdminRiskSignal } from '../lib/payments';
 
@@ -2274,6 +2274,10 @@ export default function Admin() {
   const [whitelistedTradiesList, setWhitelistedTradiesList] = useState<UserProfile[]>([]);
   const [disputedJobs, setDisputedJobs] = useState<any[]>([]);
 
+  // Trade specific verification queues state
+  const [pendingTradeCredentials, setPendingTradeCredentials] = useState<any[]>([]);
+  const [pendingExperienceEvidence, setPendingExperienceEvidence] = useState<any[]>([]);
+
   // Verification action state
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -2323,6 +2327,8 @@ export default function Admin() {
         { count: verifiedCount },
         { data: whitelistedList },
         { data: disputesList },
+        { data: tradeCreds, error: tradeCredsErr },
+        { data: expEvidence, error: expEvidenceErr },
       ] = await Promise.all([
         getPendingVerifications(),
         supabase
@@ -2339,14 +2345,29 @@ export default function Admin() {
           .eq('tradie_verified', true)
           .order('display_name', { ascending: true }),
         getDisputedJobs(),
+        supabase
+          .from('user_trade_credentials')
+          .select('*, user:users(*), licence_type:trade_licence_types(*)')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('user_experience_evidence')
+          .select('*, user:users(*)')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false }),
       ]);
 
       if (fetchErr) throw fetchErr;
+      if (tradeCredsErr) throw tradeCredsErr;
+      if (expEvidenceErr) throw expEvidenceErr;
+
       setVerifications(list);
       if (tradiesCount !== null) setTotalTradies(tradiesCount);
       if (verifiedCount !== null) setVerifiedTradies(verifiedCount);
       if (whitelistedList) setWhitelistedTradiesList(whitelistedList as UserProfile[]);
       if (disputesList) setDisputedJobs(disputesList);
+      if (tradeCreds) setPendingTradeCredentials(tradeCreds);
+      if (expEvidence) setPendingExperienceEvidence(expEvidence);
     } catch (err: any) {
       setError(err.message || 'Failed to load administrator dashboard data.');
     } finally {
@@ -2600,6 +2621,79 @@ export default function Admin() {
       if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
       showToast(err.message || 'Failed to generate secure download link.', 'error');
+    }
+  };
+
+  // Trade-specific action handlers
+  const handleApproveTradeCredential = async (id: string) => {
+    setActionLoadingId(id);
+    const { error: err } = await supabase
+      .from('user_trade_credentials')
+      .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq('id', id);
+    setActionLoadingId(null);
+    if (err) showToast(err.message || 'Failed to approve licence credential.', 'error');
+    else {
+      showToast('Licence credential approved.', 'success');
+      loadData({ silent: true });
+    }
+  };
+
+  const handleRejectTradeCredential = async (id: string, notes: string) => {
+    if (!notes.trim()) { showToast('Please specify rejection reason.', 'error'); return; }
+    setActionLoadingId(id);
+    const { error: err } = await supabase
+      .from('user_trade_credentials')
+      .update({ status: 'rejected', recheck_reason: notes.trim(), reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq('id', id);
+    setActionLoadingId(null);
+    if (err) showToast(err.message || 'Failed to reject licence credential.', 'error');
+    else {
+      showToast('Licence credential rejected.', 'success');
+      loadData({ silent: true });
+    }
+  };
+
+  const handleRequestTradeCredentialRecheck = async (id: string, notes: string) => {
+    if (!notes.trim()) { showToast('Please specify recheck reason.', 'error'); return; }
+    setActionLoadingId(id);
+    const { error: err } = await supabase
+      .from('user_trade_credentials')
+      .update({ status: 'recheck', recheck_reason: notes.trim(), reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq('id', id);
+    setActionLoadingId(null);
+    if (err) showToast(err.message || 'Failed to request licence recheck.', 'error');
+    else {
+      showToast('Licence recheck requested.', 'success');
+      loadData({ silent: true });
+    }
+  };
+
+  const handleApproveExperienceEvidence = async (id: string) => {
+    setActionLoadingId(id);
+    const { error: err } = await supabase
+      .from('user_experience_evidence')
+      .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq('id', id);
+    setActionLoadingId(null);
+    if (err) showToast(err.message || 'Failed to approve experience evidence.', 'error');
+    else {
+      showToast('Experience evidence approved.', 'success');
+      loadData({ silent: true });
+    }
+  };
+
+  const handleRejectExperienceEvidence = async (id: string) => {
+    setActionLoadingId(id);
+    const { error: err } = await supabase
+      .from('user_experience_evidence')
+      .update({ status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: user?.id })
+      .eq('id', id);
+    setActionLoadingId(null);
+    if (err) showToast(err.message || 'Failed to reject experience evidence.', 'error');
+    else {
+      showToast('Experience evidence rejected.', 'success');
+      loadData({ silent: true });
     }
   };
 
@@ -3287,6 +3381,201 @@ export default function Admin() {
                         </div>
                       );
                     })}
+              </div>
+            )}
+          </div>
+
+          {/* ── 3. Trade-Specific Licences Queue ─────────────────────────────── */}
+          <div className="bg-card border rounded-3xl overflow-hidden shadow-sm">
+            <div className="p-6 border-b bg-muted/10 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-extrabold text-foreground">Pending Trade-Specific Licence Verifications</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 font-medium">Verify specific trade categories, numbers, states, and expiries.</p>
+              </div>
+              {pendingTradeCredentials.length > 0 && (
+                <span className="text-xs font-black bg-amber-500/10 text-amber-700 border border-amber-500/20 px-3 py-1 rounded-full">
+                  {pendingTradeCredentials.length} pending
+                </span>
+              )}
+            </div>
+
+            <div className="p-4 bg-muted/5 border-b text-[11px] text-muted-foreground leading-relaxed text-left">
+              <span className="font-bold text-foreground">Guidelines:</span> Licence requirements vary by state/territory, licence class, and job scope. Admin review supports platform trust checks but is not formal legal or compliance certification.
+            </div>
+
+            {pendingTradeCredentials.length === 0 ? (
+              <div className="p-10 text-center space-y-2">
+                <div className="h-12 w-12 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
+                  <Check className="h-6 w-6 text-green-500" />
+                </div>
+                <h4 className="font-bold text-sm text-foreground">All Caught Up!</h4>
+                <p className="text-xs text-muted-foreground font-semibold">No pending trade-specific licences to review.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-muted/30 text-[10px] font-bold text-muted-foreground border-b uppercase tracking-wider">
+                      <th className="p-4 pl-6">Tradie</th>
+                      <th className="p-4">Licence Type</th>
+                      <th className="p-4">Licence Number</th>
+                      <th className="p-4">Expiry</th>
+                      <th className="p-4">Document</th>
+                      <th className="p-4 pr-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y text-sm font-semibold">
+                    {pendingTradeCredentials.map((cred) => {
+                      const isActionLoading = actionLoadingId === cred.id;
+                      return (
+                        <tr key={cred.id} className="hover:bg-muted/5">
+                          <td className="p-4 pl-6">
+                            <div className="font-bold text-foreground">{cred.user?.display_name || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground font-medium">{cred.user?.email}</div>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded text-foreground">
+                              {cred.licence_type?.name} ({cred.licence_type?.state_code})
+                            </span>
+                          </td>
+                          <td className="p-4 text-xs font-mono font-bold text-foreground">
+                            {cred.licence_number}
+                          </td>
+                          <td className="p-4 text-xs font-bold text-foreground">
+                            {new Date(cred.expiry_date).toLocaleDateString('en-AU')}
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => void handleViewFile(cred.document_storage_path)}
+                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                            >
+                              <Eye className="h-3.5 w-3.5" /> View Proof
+                            </button>
+                          </td>
+                          <td className="p-4 pr-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleApproveTradeCredential(cred.id)}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const reason = window.prompt('Enter rejection reason:');
+                                  if (reason) handleRejectTradeCredential(cred.id, reason);
+                                }}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-xl text-xs font-bold transition-all"
+                              >
+                                Reject
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const reason = window.prompt('Enter recheck reason:');
+                                  if (reason) handleRequestTradeCredentialRecheck(cred.id, reason);
+                                }}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all"
+                              >
+                                Recheck
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ── 4. Experience Evidence Queue ─────────────────────────────────── */}
+          <div className="bg-card border rounded-3xl overflow-hidden shadow-sm">
+            <div className="p-6 border-b bg-muted/10 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-extrabold text-foreground">Pending Experience Evidence reviews</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 font-medium">Verify qualifications, referee letters, and logs.</p>
+              </div>
+              {pendingExperienceEvidence.length > 0 && (
+                <span className="text-xs font-black bg-amber-500/10 text-amber-700 border border-amber-500/20 px-3 py-1 rounded-full">
+                  {pendingExperienceEvidence.length} pending
+                </span>
+              )}
+            </div>
+
+            {pendingExperienceEvidence.length === 0 ? (
+              <div className="p-10 text-center space-y-2">
+                <div className="h-12 w-12 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto">
+                  <Check className="h-6 w-6 text-green-500" />
+                </div>
+                <h4 className="font-bold text-sm text-foreground">All Caught Up!</h4>
+                <p className="text-xs text-muted-foreground font-semibold">No pending experience evidence submissions to review.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-muted/30 text-[10px] font-bold text-muted-foreground border-b uppercase tracking-wider">
+                      <th className="p-4 pl-6">Tradie</th>
+                      <th className="p-4">Trade Category</th>
+                      <th className="p-4">Evidence Type</th>
+                      <th className="p-4">Description</th>
+                      <th className="p-4">Document</th>
+                      <th className="p-4 pr-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y text-sm font-semibold">
+                    {pendingExperienceEvidence.map((ev) => {
+                      const isActionLoading = actionLoadingId === ev.id;
+                      return (
+                        <tr key={ev.id} className="hover:bg-muted/5">
+                          <td className="p-4 pl-6">
+                            <div className="font-bold text-foreground">{ev.user?.display_name || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground font-medium">{ev.user?.email}</div>
+                          </td>
+                          <td className="p-4 capitalize text-left">
+                            {ev.trade_id}
+                          </td>
+                          <td className="p-4 capitalize text-left">
+                            {ev.evidence_type.replace('_', ' ')}
+                          </td>
+                          <td className="p-4 text-xs font-semibold text-muted-foreground leading-normal text-left">
+                            {ev.description || '—'}
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => void handleViewFile(ev.file_storage_path)}
+                              className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                            >
+                              <Eye className="h-3.5 w-3.5" /> View Proof
+                            </button>
+                          </td>
+                          <td className="p-4 pr-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleApproveExperienceEvidence(ev.id)}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectExperienceEvidence(ev.id)}
+                                disabled={isActionLoading}
+                                className="px-3 py-1.5 bg-destructive hover:bg-destructive/90 text-white rounded-xl text-xs font-bold transition-all"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

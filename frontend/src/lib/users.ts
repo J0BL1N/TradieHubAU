@@ -458,3 +458,158 @@ export async function requestVerificationRecheck(
     return { data: null, error };
   }
 }
+
+/**
+ * Fetch a user's trade credentials
+ */
+export async function fetchUserTradeCredentials(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('user_trade_credentials')
+      .select('*, licence_type:trade_licence_types(*)')
+      .eq('user_id', userId);
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error: any) {
+    console.error('❌ fetchUserTradeCredentials error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Submit a new trade credential
+ */
+export async function submitUserTradeCredential(payload: {
+  user_id: string;
+  licence_type_id: string;
+  licence_number: string;
+  expiry_date: string;
+  document_storage_path: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('user_trade_credentials')
+      .insert({
+        ...payload,
+        status: 'pending'
+      })
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ submitUserTradeCredential error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Delete a pending/rejected trade credential
+ */
+export async function deleteUserTradeCredential(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('user_trade_credentials')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ deleteUserTradeCredential error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Fetch a user's experience evidence
+ */
+export async function fetchUserExperienceEvidence(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('user_experience_evidence')
+      .select('*')
+      .eq('user_id', userId);
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error: any) {
+    console.error('❌ fetchUserExperienceEvidence error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Submit a new experience evidence record
+ */
+export async function submitUserExperienceEvidence(payload: {
+  user_id: string;
+  trade_id: string;
+  evidence_type: string;
+  description?: string;
+  file_storage_path: string;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('user_experience_evidence')
+      .insert({
+        ...payload,
+        status: 'pending'
+      })
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ submitUserExperienceEvidence error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Delete a pending experience evidence record
+ */
+export async function deleteUserExperienceEvidence(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('user_experience_evidence')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('❌ deleteUserExperienceEvidence error:', error.message);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Fetch all trade licence types
+ */
+export async function fetchTradeLicenceTypes() {
+  try {
+    const { data, error } = await supabase
+      .from('trade_licence_types')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error: any) {
+    console.error('❌ fetchTradeLicenceTypes error:', error.message);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Fetch all trade requirement rules
+ */
+export async function fetchTradeRequirementRules() {
+  try {
+    const { data, error } = await supabase
+      .from('trade_requirement_rules')
+      .select('*, required_licence_type:trade_licence_types(*)');
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error: any) {
+    console.error('❌ fetchTradeRequirementRules error:', error.message);
+    return { data: [], error };
+  }
+}

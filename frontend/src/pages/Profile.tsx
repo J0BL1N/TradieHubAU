@@ -6,7 +6,15 @@ import {
   getUserProfile,
   getPublicUserProfile,
   updateUserProfile,
-  submitVerification
+  submitVerification,
+  fetchUserTradeCredentials,
+  fetchUserExperienceEvidence,
+  fetchTradeLicenceTypes,
+  fetchTradeRequirementRules,
+  submitUserTradeCredential,
+  deleteUserTradeCredential,
+  submitUserExperienceEvidence,
+  deleteUserExperienceEvidence
 } from '../lib/users';
 import type { UserProfile } from '../lib/users';
 import { formatJobLocation, loadAustralianLocations } from '../lib/auLocations';
@@ -175,6 +183,30 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [locationOptions, setLocationOptions] = useState<AustralianLocationOption[]>([]);
+
+  // Trade specific verification states
+  const [userTradeCredentials, setUserTradeCredentials] = useState<any[]>([]);
+  const [userExperienceEvidence, setUserExperienceEvidence] = useState<any[]>([]);
+  const [licenceTypes, setLicenceTypes] = useState<any[]>([]);
+  const [requirementRules, setRequirementRules] = useState<any[]>([]);
+
+  // Submitting credential form state
+  const [selectedLicenceTypeId, setSelectedLicenceTypeId] = useState('');
+  const [licenceNumberVal, setLicenceNumberVal] = useState('');
+  const [expiryDateVal, setExpiryDateVal] = useState('');
+  const [credentialFile, setCredentialFile] = useState<File | null>(null);
+  const [submittingCredential, setSubmittingCredential] = useState(false);
+  const [credentialError, setCredentialError] = useState<string | null>(null);
+  const [credentialSuccess, setCredentialSuccess] = useState<string | null>(null);
+
+  // Submitting experience evidence form state
+  const [selectedEvidenceTradeId, setSelectedEvidenceTradeId] = useState('');
+  const [evidenceTypeVal, setEvidenceTypeVal] = useState<'certificate' | 'referee_letter' | 'completion_log'>('certificate');
+  const [evidenceDescription, setEvidenceDescription] = useState('');
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [submittingEvidence, setSubmittingEvidence] = useState(false);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
+  const [evidenceSuccess, setEvidenceSuccess] = useState<string | null>(null);
 
   // App sound preferences state
   const [soundMessage, setSoundMessage] = useState(() =>
@@ -552,10 +584,24 @@ export default function Profile() {
         setTradieVerificationStatus('none');
         setTradieVerificationNotes(null);
       }
+
+      // Fetch new trade-specific verification details if targetProfile is a tradie
+      if (targetProfile && targetProfile.role !== 'customer') {
+        const [credRes, evRes, typeRes, ruleRes] = await Promise.all([
+          fetchUserTradeCredentials(targetId),
+          fetchUserExperienceEvidence(targetId),
+          fetchTradeLicenceTypes(),
+          fetchTradeRequirementRules()
+        ]);
+        if (!credRes.error) setUserTradeCredentials(credRes.data);
+        if (!evRes.error) setUserExperienceEvidence(evRes.data);
+        if (!typeRes.error) setLicenceTypes(typeRes.data);
+        if (!ruleRes.error) setRequirementRules(ruleRes.data);
+      }
     } catch (err) {
       console.error('Error loading verification statuses:', err);
     }
-  }, [targetId, isSelf]);
+  }, [targetId, isSelf, targetProfile]);
 
   useEffect(() => {
     loadProfile();
@@ -1016,6 +1062,139 @@ export default function Profile() {
       setUploadError(err.message || 'Failed to submit application.');
     } finally {
       setUploadingDoc(false);
+    }
+  };
+
+  // Submit new trade credential
+  const handleAddTradeCredential = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (!selectedLicenceTypeId) {
+      setCredentialError('Please select a licence type.');
+      return;
+    }
+    if (!licenceNumberVal.trim()) {
+      setCredentialError('Please enter the licence number.');
+      return;
+    }
+    if (!expiryDateVal) {
+      setCredentialError('Please select the expiry date.');
+      return;
+    }
+    if (!credentialFile) {
+      setCredentialError('Please upload the licence document.');
+      return;
+    }
+
+    setSubmittingCredential(true);
+    setCredentialError(null);
+    setCredentialSuccess(null);
+
+    try {
+      // Upload document to 'verifications' bucket
+      const ext = credentialFile.name.split('.').pop();
+      const path = `users/${user.id}/${Date.now()}_trade_license.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from('verifications')
+        .upload(path, credentialFile);
+      if (uploadErr) throw uploadErr;
+
+      // Save user_trade_credentials record
+      const { error: dbErr } = await submitUserTradeCredential({
+        user_id: user.id,
+        licence_type_id: selectedLicenceTypeId,
+        licence_number: licenceNumberVal.trim(),
+        expiry_date: expiryDateVal,
+        document_storage_path: path
+      });
+      if (dbErr) throw dbErr;
+
+      setCredentialSuccess('Licence submitted successfully! Pending admin verification.');
+      setSelectedLicenceTypeId('');
+      setLicenceNumberVal('');
+      setExpiryDateVal('');
+      setCredentialFile(null);
+      loadVerificationStatus();
+    } catch (err: any) {
+      console.error(err);
+      setCredentialError(err.message || 'Failed to submit licence.');
+    } finally {
+      setSubmittingCredential(false);
+    }
+  };
+
+  // Delete pending trade credential
+  const handleDeleteTradeCredential = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this credential submission?')) return;
+    try {
+      const { error } = await deleteUserTradeCredential(id);
+      if (error) throw error;
+      loadVerificationStatus();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete credential.');
+    }
+  };
+
+  // Submit experience evidence
+  const handleAddExperienceEvidence = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (!selectedEvidenceTradeId) {
+      setEvidenceError('Please select a trade category.');
+      return;
+    }
+    if (!evidenceFile) {
+      setEvidenceError('Please upload the evidence document.');
+      return;
+    }
+
+    setSubmittingEvidence(true);
+    setEvidenceError(null);
+    setEvidenceSuccess(null);
+
+    try {
+      // Upload document
+      const ext = evidenceFile.name.split('.').pop();
+      const path = `users/${user.id}/${Date.now()}_exp_evidence.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from('verifications')
+        .upload(path, evidenceFile);
+      if (uploadErr) throw uploadErr;
+
+      // Save user_experience_evidence record
+      const { error: dbErr } = await submitUserExperienceEvidence({
+        user_id: user.id,
+        trade_id: selectedEvidenceTradeId,
+        evidence_type: evidenceTypeVal,
+        description: evidenceDescription.trim() || undefined,
+        file_storage_path: path
+      });
+      if (dbErr) throw dbErr;
+
+      setEvidenceSuccess('Evidence submitted successfully! Pending admin verification.');
+      setSelectedEvidenceTradeId('');
+      setEvidenceDescription('');
+      setEvidenceFile(null);
+      loadVerificationStatus();
+    } catch (err: any) {
+      console.error(err);
+      setEvidenceError(err.message || 'Failed to submit evidence.');
+    } finally {
+      setSubmittingEvidence(false);
+    }
+  };
+
+  // Delete pending evidence
+  const handleDeleteExperienceEvidence = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this evidence submission?')) return;
+    try {
+      const { error } = await deleteUserExperienceEvidence(id);
+      if (error) throw error;
+      loadVerificationStatus();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete evidence.');
     }
   };
 
@@ -1837,6 +2016,311 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* 4. Trade-Specific Licences & Requirements */}
+      {targetProfile.role !== 'customer' && (
+        <div className="space-y-4 border-t pt-6">
+          <div className="flex items-center justify-between border-b pb-2">
+            <h3 className="text-base font-black text-foreground">Trade-Specific Licences & Guidelines</h3>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">Requirements vary by state & scope</span>
+          </div>
+
+          {/* Guidelines warning */}
+          <div className="p-3 bg-muted/20 border rounded-2xl text-[11px] text-muted-foreground leading-relaxed">
+            <span className="font-bold text-foreground">Important Note:</span> Licence and experience rules vary by state, licence class, and job scope. TradieHubAU reviews submissions to support platform trust checks, but this is not legal/compliance confirmation. Final responsibility remains on the contractor to hold the correct registrations for any accepted scope of work.
+          </div>
+
+          {/* Rules and Guidelines matching user selected trades & state */}
+          <div className="space-y-3">
+            {trades.map(tradeId => {
+              const tradeName = categoryOptions.find(c => c.id === tradeId)?.label || tradeId;
+              const userState = stateVal || targetProfile.state || 'VIC'; // Default to VIC or profile state
+              const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
+
+              return (
+                <div key={tradeId} className="p-4 bg-card border rounded-2xl space-y-3 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="text-sm font-black text-foreground flex items-center gap-1.5 capitalize">
+                      <span className="h-2 w-2 rounded-full bg-primary" /> {tradeName} ({userState})
+                    </h4>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
+                      rule?.licence_requirement_level === 'required'
+                        ? 'bg-red-500/10 text-red-600 border-red-500/20'
+                        : rule?.licence_requirement_level === 'conditional'
+                        ? 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                        : 'bg-muted text-muted-foreground border-border'
+                    }`}>
+                      Licence: {rule?.licence_requirement_level || 'conditional'}
+                    </span>
+                  </div>
+
+                  {rule && (
+                    <p className="text-[11px] font-semibold text-muted-foreground leading-normal">
+                      Guideline Rule: {rule.licence_requirement_level === 'required' ? 'A registered licence is required.' : rule.licence_requirement_level === 'conditional' ? 'Licence is required for structural or major jobs exceeding state value limits.' : 'Generally not regulated, but qualifications are useful.'}
+                      {rule.required_licence_type && ` Requires: ${rule.required_licence_type.name} issued by ${rule.required_licence_type.regulatory_body}.`}
+                      {rule.min_experience_years > 0 && ` Minimum recommended experience: ${rule.min_experience_years} years.`}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* List of existing submissions */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">My Submitted Licences</h4>
+            {userTradeCredentials.length === 0 ? (
+              <p className="text-xs font-semibold text-muted-foreground italic">No licences submitted yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {userTradeCredentials.map(cred => (
+                  <div key={cred.id} className="p-3 bg-card border rounded-xl flex items-center justify-between gap-3 shadow-xs">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-foreground truncate">
+                        {cred.licence_type?.name || 'Trade Licence'} ({cred.licence_type?.state_code})
+                      </p>
+                      <p className="text-[11px] font-semibold text-muted-foreground">
+                        No: {cred.licence_number} | Exp: {new Date(cred.expiry_date).toLocaleDateString('en-AU')}
+                      </p>
+                      {cred.recheck_reason && (
+                        <p className="mt-1 text-[10px] font-semibold text-amber-700 bg-amber-500/10 p-1 px-2 rounded">
+                          Recheck: {cred.recheck_reason}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                        cred.status === 'approved' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                        cred.status === 'pending' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' :
+                        'bg-red-500/10 text-red-500 border-red-500/20'
+                      }`}>
+                        {cred.status}
+                      </span>
+                      {cred.status !== 'approved' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteTradeCredential(cred.id)}
+                          className="text-red-500 hover:text-red-700 text-xs font-black shrink-0 px-2 py-1"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Form to submit a new licence */}
+          <form onSubmit={handleAddTradeCredential} className="p-4 bg-muted/10 border border-dashed rounded-3xl space-y-4">
+            <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Submit New Trade Licence</h4>
+            {credentialError && <p className="text-xs font-bold text-red-500">{credentialError}</p>}
+            {credentialSuccess && <p className="text-xs font-bold text-green-600">{credentialSuccess}</p>}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Licence Type / Class</label>
+                <select
+                  value={selectedLicenceTypeId}
+                  onChange={e => setSelectedLicenceTypeId(e.target.value)}
+                  className="w-full bg-background border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50"
+                >
+                  <option value="">-- Select Licence --</option>
+                  {licenceTypes.map(lt => (
+                    <option key={lt.id} value={lt.id}>
+                      {lt.name} ({lt.state_code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Licence Number</label>
+                <input
+                  type="text"
+                  value={licenceNumberVal}
+                  onChange={e => setLicenceNumberVal(e.target.value)}
+                  placeholder="e.g. 104938C"
+                  className="w-full bg-background border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Expiry Date</label>
+                <input
+                  type="date"
+                  value={expiryDateVal}
+                  onChange={e => setExpiryDateVal(e.target.value)}
+                  className="w-full bg-background border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Licence Card Photo / PDF</label>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground text-xs font-bold rounded-xl cursor-pointer hover:bg-secondary/80 transition-all select-none">
+                    <Upload className="h-3.5 w-3.5" /> Choose
+                    <input
+                      type="file"
+                      onChange={e => setCredentialFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                    />
+                  </label>
+                  <span className="text-[11px] font-semibold text-muted-foreground truncate max-w-[120px]">
+                    {credentialFile ? credentialFile.name : 'No file selected'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={submittingCredential}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-black px-4 py-2 rounded-xl text-xs hover:bg-primary/95 shadow-sm transition-all disabled:opacity-50"
+            >
+              {submittingCredential && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Submit Licence
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 5. Experience Evidence */}
+      {targetProfile.role !== 'customer' && (
+        <div className="space-y-4 border-t pt-6">
+          <div className="flex items-center justify-between border-b pb-2">
+            <h3 className="text-base font-black text-foreground">Trade Experience Evidence</h3>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">Qualifications & references</span>
+          </div>
+
+          {/* List of existing submissions */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">My Submitted Evidence</h4>
+            {userExperienceEvidence.length === 0 ? (
+              <p className="text-xs font-semibold text-muted-foreground italic">No evidence uploaded yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {userExperienceEvidence.map(ev => {
+                  const tLabel = categoryOptions.find(c => c.id === ev.trade_id)?.label || ev.trade_id;
+                  return (
+                    <div key={ev.id} className="p-3 bg-card border rounded-xl flex items-center justify-between gap-3 shadow-xs">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-foreground truncate capitalize text-left">
+                          {ev.evidence_type.replace('_', ' ')}: {tLabel}
+                        </p>
+                        {ev.description && (
+                          <p className="text-[10px] font-medium text-muted-foreground truncate leading-normal text-left">
+                            {ev.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                          ev.status === 'approved' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                          ev.status === 'pending' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' :
+                          'bg-red-500/10 text-red-500 border-red-500/20'
+                        }`}>
+                          {ev.status}
+                        </span>
+                        {ev.status !== 'approved' && (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteExperienceEvidence(ev.id)}
+                            className="text-red-500 hover:text-red-700 text-xs font-black shrink-0 px-2 py-1"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Form to submit experience evidence */}
+          <form onSubmit={handleAddExperienceEvidence} className="p-4 bg-muted/10 border border-dashed rounded-3xl space-y-4">
+            <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Upload Experience Proof</h4>
+            {evidenceError && <p className="text-xs font-bold text-red-500">{evidenceError}</p>}
+            {evidenceSuccess && <p className="text-xs font-bold text-green-600">{evidenceSuccess}</p>}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Trade Category</label>
+                <select
+                  value={selectedEvidenceTradeId}
+                  onChange={e => setSelectedEvidenceTradeId(e.target.value)}
+                  className="w-full bg-background border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50"
+                >
+                  <option value="">-- Select Trade --</option>
+                  {trades.map(tid => {
+                    const label = categoryOptions.find(c => c.id === tid)?.label || tid;
+                    return (
+                      <option key={tid} value={tid}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Evidence Type</label>
+                <select
+                  value={evidenceTypeVal}
+                  onChange={e => setEvidenceTypeVal(e.target.value as any)}
+                  className="w-full bg-background border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50"
+                >
+                  <option value="certificate">Trade / Qualification Certificate</option>
+                  <option value="referee_letter">Referee / Employer Letter</option>
+                  <option value="completion_log">Apprenticeship Completion Log</option>
+                </select>
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Short Description</label>
+                <input
+                  type="text"
+                  value={evidenceDescription}
+                  onChange={e => setEvidenceDescription(e.target.value)}
+                  placeholder="e.g. Certificate III in Electrotechnology or reference contact details"
+                  className="w-full bg-background border rounded-xl px-3 py-2 text-xs font-semibold outline-none focus:border-primary/50"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Document Photo / PDF</label>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary text-secondary-foreground text-xs font-bold rounded-xl cursor-pointer hover:bg-secondary/80 transition-all select-none">
+                    <Upload className="h-3.5 w-3.5" /> Choose
+                    <input
+                      type="file"
+                      onChange={e => setEvidenceFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      accept="image/*,application/pdf"
+                    />
+                  </label>
+                  <span className="text-[11px] font-semibold text-muted-foreground truncate max-w-[120px]">
+                    {evidenceFile ? evidenceFile.name : 'No file selected'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={submittingEvidence}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-black px-4 py-2 rounded-xl text-xs hover:bg-primary/95 shadow-sm transition-all disabled:opacity-50"
+            >
+              {submittingEvidence && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Upload Evidence
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 
