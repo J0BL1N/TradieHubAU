@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Fix public_profiles view migration 092 dependency issue
+
+| Item | Notes |
+| --- | --- |
+| Area | Database, Security, Migrations |
+| Summary | Fixed a live migration dependency issue in `092_public_profile_identity_safety.sql` by commenting out the `DROP VIEW IF EXISTS public.public_profiles;` statement. Since the signature (return columns and types) of `get_public_profiles()` is identical to migration 091, the function and view can be safely replaced via `CREATE OR REPLACE` in-place, avoiding dependency failures with dependent RLS and storage policies. |
+| Files changed | `supabase/migrations/092_public_profile_identity_safety.sql`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (corrected `092_public_profile_identity_safety.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute corrected migration 092 SQL script in Supabase Studio. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Supabase Performance & Security Hardening (Migration 091)
 
 | Item | Notes |

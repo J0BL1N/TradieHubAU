@@ -181,8 +181,9 @@ COMMENT ON FUNCTION public.safe_public_profile_text(text) IS
 -- 2. RECREATE GET_PUBLIC_PROFILES() FUNCTION WITH SECURED FIELD OUTPUTS
 -- ============================================================================
 
--- Drop dependent view first to avoid parameter update locks
-DROP VIEW IF EXISTS public.public_profiles;
+-- We do NOT drop public.public_profiles view because other objects depend on it (e.g. RLS and storage policies).
+-- Instead, we use CREATE OR REPLACE FUNCTION and CREATE OR REPLACE VIEW since the return signature is identical.
+-- DROP VIEW IF EXISTS public.public_profiles;
 
 CREATE OR REPLACE FUNCTION public.get_public_profiles()
 RETURNS TABLE (
