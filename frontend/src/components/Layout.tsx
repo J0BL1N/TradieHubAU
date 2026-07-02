@@ -6,6 +6,7 @@ import { fetchNotifications, markNotificationRead, markAllNotificationsRead, get
 import type { NotificationRecord } from '../lib/notifications';
 import { supabase } from '../lib/supabase';
 import { KEYS, getSoundPreference, getSoundEnabledPreference, playSoundSafe } from '../lib/soundPreferences';
+import SupportChatbot from './SupportChatbot';
 
 interface GroupedNotificationRecord extends NotificationRecord {
   groupedIds?: string[];
@@ -607,6 +608,9 @@ export default function Layout() {
           </div>
         </footer>
       )}
+
+      {/* Floating Support Chatbot */}
+      <SupportChatbot />
     </div>
   );
 }

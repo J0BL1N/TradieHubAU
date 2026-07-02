@@ -64,3 +64,14 @@ The following items are planned for future phases to further enforce profile saf
 - **Grouping Rule**: Repeated unread message notifications from the same conversation/sender are visually collapsed into a single row in the notification dropdown.
 - **Display**: A count indicator, e.g. `(4)`, is displayed next to the title. The row retains the newest notification's timestamp and body text.
 - **Batch Marking Read**: Clicking a grouped notification row executes concurrent API calls to mark all message notifications in that group as read, updating the raw database states and reducing the unread count accordingly.
+
+---
+
+## 6. Profile-Aware Support Chatbot
+- **Status**: Floating support chatbot panel integrated in Layout.tsx.
+- **Privacy & Safety Constraints**:
+  - The chatbot runs strictly in frontend component memory. No user question texts, chat logs, transcripts, or telemetry are saved, logged, or sent to external endpoints.
+  - The chatbot uses only safe, public-facing profile fields (`role`, `verified`, `identity_verified`, `tradie_verified`) to formulate helpful directions.
+  - The chatbot explicitly *does not* read, query, or expose uploaded identity documents, trade licence files, liability insurance certificates, private chat messages, payment details, dispute files, or admin notes.
+- **Rule Engine**: Matches queries locally against 18 core topics (e.g. posting jobs, applying, verification check-lists, secure payment explanation, sound preferences, disputes) and suggests prompt chips and clickable routing links.
+- **Future Roadmap**: AI-powered support assistant later via secure backend route, with strict privacy controls.

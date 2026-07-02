@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Add profile aware support chatbot
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, Chatbot |
+| Summary | Built a profile-aware floating support chatbot widget (`frontend/src/components/SupportChatbot.tsx`) and wired it globally in `frontend/src/components/Layout.tsx`. The bot answers basic "how to use the site" questions using a local rule-based matching engine across 18 core topics. It uses safe profile/session states (`role`, `verified`, `identity_verified`, `tradie_verified`) to formulate directions explaining why certain actions are locked. No OpenAI/external AI integrations or backend storage tables were added, and no private documents/messages/payment data are accessed or exposed. |
+| Files changed | `frontend/src/components/SupportChatbot.tsx`, `frontend/src/components/Layout.tsx`, `docs/UX_POLISH_BACKLOG.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Group repeated message notifications
 
 | Item | Notes |
