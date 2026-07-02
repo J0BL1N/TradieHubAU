@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Add profile sound preferences
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, UX Polish |
+| Summary | Created a user-selectable app sound preferences system. Added a new "App Sounds" tab to the Profile settings page allowing users to separately toggle/mute message and notification sound alerts. Saved preferences locally in `localStorage` under `tradiehub_sound_*` keys. Configured pre-set assets `/audio/message.mp3` (for chat messages) and `/audio/notification.mp3` (for alerts). Integrated live audio playback: message sounds play on new incoming chat messages (excluding current user), and notification sounds play on new notifications received via live subscription. Created `frontend/public/audio/README.md` to guide placement of SFX files. |
+| Files changed | `frontend/src/lib/soundPreferences.ts`, `frontend/src/pages/Profile.tsx`, `frontend/src/components/Layout.tsx`, `frontend/src/pages/Messages.tsx`, `frontend/public/audio/README.md`, `docs/UX_POLISH_BACKLOG.md`, `docs/beta_readiness_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None (frontend only). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Fix profile identity migration function replacement
 
 | Item | Notes |

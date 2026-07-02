@@ -40,8 +40,16 @@ The following items are planned for future phases to further enforce profile saf
 - **Advanced Profile Risk Scoring**:
   Automatically elevate risk scores for profiles containing repeatedly flagged bypass attempts, triggering alerts in the admin console.
 - **"My Tradies" Saved List**:
-  Allow homeowners to curate a private list of saved tradie profiles to reference again later.
+  Allow homeowners to curate a private list of saved tradie profiles to reference again later (parked future roadmap item).
 - **Full Legal/Policy Review**:
   Conduct a comprehensive legal review of public profile details, terms of use, and privacy policy safeguards before public marketing.
 - **Global Lightbox & Gallery Viewer**:
   Extend the existing chat attachment lightbox in Messages.tsx to act as a global component, supporting zoom, download, and swipe-navigation across all completion proof galleries and work photos.
+
+---
+
+## 4. App Sounds & Audio Polish
+- **Status**: LocalStorage preference UI and live audio alerts integrated.
+- **Audio Assets**: Pre-configured paths point to `/audio/message.mp3` and `/audio/notification.mp3`. Jay must place approved, license-free SFX files (in formats like MP3, OGG, or WAV, recommended length 0.2s - 1.5s) in the `frontend/public/audio/` directory.
+- **Graceful Degradation**: Audio playback fails silently without crash if files are absent or if the browser blocks autoplay.
+- **Preferences**: Stored on-device in `localStorage`. Message and notification sound toggles operate independently.

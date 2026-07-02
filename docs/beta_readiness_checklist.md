@@ -67,3 +67,4 @@ These items are manual setup steps in the Supabase Dashboard and do not involve 
 - [ ] **Leaked Password Protection**: Enable "Prevent use of leaked passwords" in Authentication > Auth Settings > Password Policy.
 - [ ] **Supabase Advisor Pass**: Run the Supabase Security Advisor and resolve any flagged auth/RLS config recommendations.
 - [ ] **Deployment & Rollback Checklist**: Review and verify the deployment variables, buckets, and rollback procedures in [DEPLOYMENT_READINESS_CHECKLIST.md](file:///f:/TradieHubAU/docs/DEPLOYMENT_READINESS_CHECKLIST.md).
+- [ ] **Place Audio SFX Files**: Copy approved `message.mp3` and `notification.mp3` files into `frontend/public/audio/` and verify that the "App Sounds" tab previews and live message/notification playbacks trigger successfully.

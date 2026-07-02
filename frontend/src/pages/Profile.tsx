@@ -23,6 +23,14 @@ import {
 import type { CompletionProofPortfolioItem } from '../lib/profileTrust';
 import { fetchPublicTradieReviews } from '../lib/reviews';
 import {
+  KEYS,
+  getSoundPreference,
+  getSoundEnabledPreference,
+  setSoundPreference,
+  setSoundEnabledPreference,
+  playSoundSafe
+} from '../lib/soundPreferences';
+import {
   ShieldCheck, Mail, Phone, MapPin, Lock, Save,
   Upload, Loader2, Award, Star, Briefcase, Clock,
   Bookmark, BookmarkCheck, AlertCircle, CheckCircle, Send,
@@ -52,7 +60,7 @@ interface UserReview {
 }
 
 type VerificationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'revoked' | 'recheck' | 'expired' | 'requested_more_info';
-type ProfileTab = 'account' | 'verification' | 'tradie-profile' | 'completed-work';
+type ProfileTab = 'account' | 'verification' | 'tradie-profile' | 'completed-work' | 'app-sounds';
 type CompletedWorkFilter = 'all' | 'published' | 'hidden';
 
 interface VerificationSummary {
@@ -165,6 +173,20 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [locationOptions, setLocationOptions] = useState<AustralianLocationOption[]>([]);
+
+  // App sound preferences state
+  const [soundMessage, setSoundMessage] = useState(() =>
+    getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message.mp3')
+  );
+  const [soundNotification, setSoundNotification] = useState(() =>
+    getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification.mp3')
+  );
+  const [soundMessagesEnabled, setSoundMessagesEnabled] = useState(() =>
+    getSoundEnabledPreference(KEYS.MESSAGES_ENABLED, true)
+  );
+  const [soundNotificationsEnabled, setSoundNotificationsEnabled] = useState(() =>
+    getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true)
+  );
 
   useEffect(() => {
     loadAustralianLocations()
@@ -1131,6 +1153,7 @@ export default function Profile() {
           { id: 'completed-work' as ProfileTab, label: 'Completed Work' },
         ]
       : []),
+    { id: 'app-sounds', label: 'App Sounds' },
   ];
 
   const tradieCredentialPanel = targetProfile.role !== 'customer' ? (
@@ -3070,6 +3093,127 @@ export default function Profile() {
                     })}
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeProfileTab === 'app-sounds' && (
+              <div className="bg-card border p-8 rounded-3xl space-y-6 shadow-sm">
+                <div className="border-b pb-4">
+                  <h3 className="text-xl font-bold text-foreground">App Sound Settings</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Customize your audio preferences for new chat messages and platform notifications.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Message Sounds Section */}
+                  <div className="space-y-4 p-5 border border-border/85 rounded-2xl bg-muted/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-foreground">Message Sounds</h4>
+                        <p className="text-xs text-muted-foreground">Play a sound when you receive a new chat message.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={soundMessagesEnabled}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setSoundMessagesEnabled(val);
+                            setSoundEnabledPreference(KEYS.MESSAGES_ENABLED, val);
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    {soundMessagesEnabled && (
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="flex-1">
+                          <label htmlFor="message-sound-select" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Sound</label>
+                          <select
+                            id="message-sound-select"
+                            value={soundMessage}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSoundMessage(val);
+                              setSoundPreference(KEYS.MESSAGE_SOUND, val);
+                            }}
+                            className="w-full mt-1.5 px-3 py-2.5 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 font-medium"
+                          >
+                            <option value="/audio/message.mp3">Tap Confirm (Default)</option>
+                          </select>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void playSoundSafe(soundMessage)}
+                          className="mt-6 inline-flex items-center gap-1.5 px-4 py-2.5 bg-background border border-border hover:bg-muted/50 text-foreground text-xs font-bold rounded-xl transition-all active:scale-95 shadow-sm"
+                          aria-label="Preview message sound"
+                        >
+                          Preview
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notification Sounds Section */}
+                  <div className="space-y-4 p-5 border border-border/85 rounded-2xl bg-muted/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-foreground">Notification Sounds</h4>
+                        <p className="text-xs text-muted-foreground">Play a sound when a new alert or activity occurs.</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={soundNotificationsEnabled}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setSoundNotificationsEnabled(val);
+                            setSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, val);
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    {soundNotificationsEnabled && (
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="flex-1">
+                          <label htmlFor="notification-sound-select" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Sound</label>
+                          <select
+                            id="notification-sound-select"
+                            value={soundNotification}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSoundNotification(val);
+                              setSoundPreference(KEYS.NOTIFICATION_SOUND, val);
+                            }}
+                            className="w-full mt-1.5 px-3 py-2.5 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 font-medium"
+                          >
+                            <option value="/audio/notification.mp3">Alert Ping (Default)</option>
+                          </select>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void playSoundSafe(soundNotification)}
+                          className="mt-6 inline-flex items-center gap-1.5 px-4 py-2.5 bg-background border border-border hover:bg-muted/50 text-foreground text-xs font-bold rounded-xl transition-all active:scale-95 shadow-sm"
+                          aria-label="Preview notification sound"
+                        >
+                          Preview
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t">
+                  <div className="text-xs font-semibold text-muted-foreground">
+                    Preferences are saved automatically to your browser.
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -5,6 +5,7 @@ import { useAuth } from './AuthProvider';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationCount } from '../lib/notifications';
 import type { NotificationRecord } from '../lib/notifications';
 import { supabase } from '../lib/supabase';
+import { KEYS, getSoundPreference, getSoundEnabledPreference, playSoundSafe } from '../lib/soundPreferences';
 
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
@@ -74,6 +75,13 @@ export default function Layout() {
               return [newNotification, ...current].slice(0, 15);
             });
             setUnreadCount(prev => prev + 1);
+
+            // Play notification sound if enabled
+            const enabled = getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true);
+            if (enabled) {
+              const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification.mp3');
+              void playSoundSafe(path);
+            }
           }
         }
       )

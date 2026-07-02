@@ -33,6 +33,7 @@ import {
   sendJobMessageWithAttachments,
 } from '../lib/messages';
 import { supabase } from '../lib/supabase';
+import { KEYS, getSoundPreference, getSoundEnabledPreference, playSoundSafe } from '../lib/soundPreferences';
 import { formatJobLocation } from '../lib/auLocations';
 import type { ConversationSummary, MessageAttachment, MessageAttachmentInput, MessageJobDetails, MessageRecord } from '../lib/messages';
 
@@ -542,6 +543,15 @@ export default function Messages() {
             ...incoming,
             attachments: incomingAttachmentsError ? [] : incomingAttachments,
           }, shouldScrollToBottom);
+
+          // Play message sound if enabled and not sent by current user
+          if (incoming.sender_id !== user.id) {
+            const enabled = getSoundEnabledPreference(KEYS.MESSAGES_ENABLED, true);
+            if (enabled) {
+              const path = getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message.mp3');
+              void playSoundSafe(path);
+            }
+          }
 
           if (incoming.message_type !== 'system' && incoming.sender_id !== user.id) {
             void markIncomingMessagesRead(activeConversationId, user.id)
