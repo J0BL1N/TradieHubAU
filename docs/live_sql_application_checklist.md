@@ -82,7 +82,49 @@ SELECT count(*) FROM public.public_open_jobs LIMIT 5;
 
 ### Migration 092 Checks
 ```sql
--- 1. Test contains_contact_bypass_text function
+-- 1. Verify public_profiles view exists
+SELECT table_name, table_type
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_name = 'public_profiles';
+-- Expected: public_profiles | VIEW
+
+-- 2. Verify view columns list (Check only public-safe fields are present)
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'public_profiles'
+ORDER BY ordinal_position;
+-- Expected: id, role, display_name, avatar_url, public_avatar_url, suburb, state, trades, abn, license_number, verified, identity_verified, tradie_verified, show_location, business_name, headline, bio, years_experience, service_areas, website_url, created_at, updated_at
+
+-- 3. Confirm private contact fields (email, phone, etc.) are NOT present in the view columns
+SELECT count(*)
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'public_profiles'
+  AND column_name IN ('email', 'phone', 'phone_number');
+-- Expected: 0
+
+-- 4. Verify SELECT access is granted to anon and authenticated roles
+SELECT grantee, privilege_type
+FROM information_schema.role_table_grants
+WHERE table_schema = 'public' AND table_name = 'public_profiles' AND privilege_type = 'SELECT';
+-- Expected: anon and authenticated must have SELECT privilege.
+
+-- 5. Check relevant RPCs and functions exist
+SELECT routine_name, routine_type
+FROM information_schema.routines
+WHERE routine_schema = 'public'
+  AND routine_name IN (
+    'contains_contact_bypass_text',
+    'safe_public_display_name',
+    'safe_public_profile_text',
+    'get_public_profiles',
+    'validate_user_profile_fields',
+    'validate_portfolio_item_fields',
+    'validate_completion_proof_portfolio_fields',
+    'list_public_tradie_completion_proof_gallery'
+  );
+-- Expected: All 8 routines should appear.
+
+-- 6. Test contains_contact_bypass_text function
 SELECT public.contains_contact_bypass_text('Call me on 0423 339 442') AS has_phone,
        public.contains_contact_bypass_text('Email at test@example.com') AS has_email,
        public.contains_contact_bypass_text('Safe text description') AS is_safe,
@@ -91,7 +133,7 @@ SELECT public.contains_contact_bypass_text('Call me on 0423 339 442') AS has_pho
        public.contains_contact_bypass_text('https://mywebsite.com.au', false) AS blocked_website;
 -- Expected: true, true, false, false, true.
 
--- 2. Test safe_public_display_name function
+-- 7. Test safe_public_display_name function
 SELECT public.safe_public_display_name('John Smith', 'Smith Plumbing') AS name_1,
        -- fallback to business name if display name is null or empty
        public.safe_public_display_name(NULL, 'Lingo Plumbers') AS name_2,
@@ -99,14 +141,15 @@ SELECT public.safe_public_display_name('John Smith', 'Smith Plumbing') AS name_1
        public.safe_public_display_name('[BETA] Sarah Mitchell', '') AS name_3;
 -- Expected: 'John S.', 'Lingo P.', 'Sarah M.'
 
--- 3. Verify get_public_profiles output masking for guests
--- Connect as anonymous user or authenticated caller with no payment relationship to a target user
-SELECT id, display_name, business_name, website_url, headline, bio, service_areas
+-- 8. Verify get_public_profiles output masking for guests (Simulate query as guest/anonymous)
+SELECT id, display_name, business_name, website_url, headline, bio, service_areas, abn, license_number
 FROM public.public_profiles LIMIT 5;
--- Expected:
+-- Expected for records where auth.uid() != id and no active funded contract:
 -- - display_name: formatted with first name + last initial (or 'Verified tradie')
 -- - business_name: NULL
 -- - website_url: NULL
+-- - abn: NULL
+-- - license_number: NULL
 -- - headline/bio/service_areas: visible (if clean) or NULL (if containing contact bypasses)
 ```
 

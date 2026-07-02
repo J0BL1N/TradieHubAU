@@ -16,11 +16,15 @@ Customers can post jobs, compare quotes, and keep a clear record of job scope an
 - Dispute support
 - Admin review tools
 
-## Current Status
+## Current Status & Beta Boundaries
 
 TradieHubAU is in controlled beta preparation.
 
-Core protection workflows are implementation-complete, with manual QA and polish ongoing. Real payment-provider processing is not production-live unless explicitly stated in the app.
+> [!WARNING]
+> **Beta Scope Limits:**
+> - **Simulated Payments:** The current payment flow is a simulated protected payment foundation only. Real financial transaction processing is deferred and not live.
+> - **GST & Accounting:** Simulated receipts/invoices are stubs only and require professional accountant review and legal audits before any production launch processing real money.
+> - **Escrow Terminology:** User-facing copy must **never** use the word "escrow". Instead, use "protected payment", "secure job payment", "payment funded", or "payment released".
 
 ## Tech Stack
 

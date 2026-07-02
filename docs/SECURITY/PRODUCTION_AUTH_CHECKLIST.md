@@ -17,12 +17,14 @@ ticket reference where evidence is needed.
 - [ ] Differences from local `supabase/config.toml` documented
 - [ ] Security owner explicitly accepts the final hosted configuration
 
-## Password policy
+## Password policy & Leaked Password Protection
 
-- [ ] Hosted minimum password length is set to the approved production value
-- [ ] Password complexity and compromised-password protection options are reviewed
-- [ ] Signup, password-change, and password-reset flows enforce the hosted policy
-- [ ] Local `minimum_password_length = 6` is not treated as production-ready
+- [ ] **Leaked Password Protection:** Enable "Prevent use of leaked passwords" in the Supabase Dashboard under **Authentication** > **Auth Settings** > **Password Policy**. (Note: This is a hosted dashboard setting, not a database migration).
+- [ ] **Supabase Security Advisor:** Re-run the Supabase Security Advisor in the dashboard to verify that leaked password protection is active and no password-related issues are flagged.
+- [ ] **Hosted minimum password length** is set to the approved production value (minimum 8 characters recommended).
+- [ ] **Password complexity** and compromised-password protection options are reviewed and configured.
+- [ ] Signup, password-change, and password-reset flows enforce the hosted policy.
+- [ ] Local `minimum_password_length = 6` is not treated as production-ready.
 
 ## Email confirmation and account changes
 

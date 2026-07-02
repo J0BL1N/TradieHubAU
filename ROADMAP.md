@@ -75,15 +75,18 @@ TradieHubAU is an Australian tradie marketplace focused on building a secure, lo
 
 ---
 
-## 6. Future Planned Systems
-*   **Invoice System**: Standardized billing generation for completed contracts.
+## 6. Future Planned Systems (Post-Beta / Production Launch)
+*   **Real Payment Provider Integration**: Integration with a secure payment processor (e.g. Stripe Connect) to replace the current simulated protected payment/ledger flow.
+*   **Stripe Money Movement Lifecycle**: Handling real payout, release, refund, and dispute money movements programmatically.
+*   **Platform Fee Reconciliation**: Automatic ledger tracking and reconciliation of the platform's service fee revenue.
+*   **GST & Accountant Review**: Complete legal, tax, and accounting audit of the simulated invoicing/receipt generation code before real public money launch.
+*   **Finance & Accounting Exports**: Generating standard financial export logs (CSV/XERO format) for reconciliation and accounting.
 *   **Public Unique ID System**: Public profiles using secure hashes rather than internal UUIDs.
 *   **Service Code / SKU System**: Fixed scope-of-work template options for faster quoting.
-*   **Private Admin Analytics**: Platform KPIs tracked in admin dashboard.
-*   **Real Payment Provider**: Integration with real Stripe Connect accounts.
+*   **Dispute Arbitration Queue**: Refined ticket flow for admin resolution.
 *   **Completed Job Reviews**: Double-blind post-project feedback.
 *   **Notification System**: Real-time push, in-app, and transactional email alerts.
-*   **Dispute Arbitration Queue**: Refined ticket flow for admin resolution.
+*   **My Tradies (Future UX Feature)**: A saved list for customer convenience. Customers can bookmark/save favorite tradies, view previously hired contractors, and request quotes or rehire them easily. Access is fully guarded by public-safe identity controls to prevent direct contact bypass before quote acceptance.
 
 ---
 

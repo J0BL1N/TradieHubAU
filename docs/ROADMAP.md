@@ -35,6 +35,7 @@ Later:
 * Finance/accounting dashboard
 * GST/accountant export readiness
 * Controlled beta launch
+* "My Tradies" bookmarking and saved list feature (parked future feature)
 
 ---
 

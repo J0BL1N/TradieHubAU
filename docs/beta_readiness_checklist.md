@@ -25,9 +25,14 @@ All database modifications are codified in `supabase/migrations/`:
 * [x] **085** — Dispute opening and resolution triggers
 * [x] **086** — Document verification status triggers
 * [x] **087** — Google Places and address mapping fields
+* [x] **088** — National Australian location database structures and fallback seeds
+* [x] **089** — Corrective location database permission hardening
+* [x] **090** — Messaging safety, profanity filter, and audit logs trigger
+* [x] **091** — Supabase security/lint views and search paths hardening
+* [x] **092** — Safe public identity masking view and contact-bypass filters (corrected)
 
 > [!IMPORTANT]
-> The database migration files `081_create_notifications_table.sql` through `087_add_google_places_location_fields.sql` are created and pushed to GitHub main. Live deployment to the Supabase Studio hosting environment is manual and must be executed by Jay.
+> The database migration files `081_create_notifications_table.sql` through `092_public_profile_identity_safety.sql` are created and pushed to GitHub main. Live deployment to the Supabase Studio hosting environment is manual and must be executed by Jay.
 
 ---
 
@@ -41,6 +46,7 @@ Verify that the following buckets exist in the Supabase instance and have correc
 
 ## 4. Manual QA Action Items
 Jay to manually test:
+- [ ] **Beta Scenario Setup**: Run the account seed tool `scripts/create-beta-test-accounts.mjs --dry-run` (and optionally `--apply` with connection credentials) to prepare customer, tradie, and admin scenarios in South East Melbourne, as detailed in [BETA_TESTING_RUNBOOK.md](file:///f:/TradieHubAU/docs/BETA_TESTING_RUNBOOK.md).
 - [ ] Signup a Customer and a Tradie account (verify the generated business name lacks `[BETA]` labels).
 - [ ] Customer posts a job.
 - [ ] Tradie submits a quote (verify Customer receives header bell notification).
@@ -53,3 +59,11 @@ Jay to manually test:
 - [ ] Verify background sync updates details silently without showing full-page loading indicators on Jobs and Admin views when realtime events trigger.
 - [ ] Tradie submits completion proof.
 - [ ] Customer approves completion proof (verify invoice receipt generation).
+
+---
+
+## 5. Security & Dashboard Configurations
+These items are manual setup steps in the Supabase Dashboard and do not involve code migrations:
+- [ ] **Leaked Password Protection**: Enable "Prevent use of leaked passwords" in Authentication > Auth Settings > Password Policy.
+- [ ] **Supabase Advisor Pass**: Run the Supabase Security Advisor and resolve any flagged auth/RLS config recommendations.
+- [ ] **Deployment & Rollback Checklist**: Review and verify the deployment variables, buckets, and rollback procedures in [DEPLOYMENT_READINESS_CHECKLIST.md](file:///f:/TradieHubAU/docs/DEPLOYMENT_READINESS_CHECKLIST.md).

@@ -4,6 +4,110 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Park My Tradies future feature
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Roadmap |
+| Summary | Documented the "My Tradies" feature as a parked future roadmap item in both `ROADMAP.md` and `docs/ROADMAP.md`. Scoped the feature to allow customers to bookmark/save favorite tradies, view previously hired contractors, and request quotes or rehire them easily. Specified that access to these lists is guarded by public-safe profile/identity controls to prevent contact bypasses before quote acceptance. |
+| Files changed | `ROADMAP.md`, `docs/ROADMAP.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Add deployment readiness and rollback checklist
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Deployment |
+| Summary | Created a production deployment and rollback checklist (`docs/DEPLOYMENT_READINESS_CHECKLIST.md`). The checklist details the required Render / Cloudflare Pages frontend build configurations, production environment variables, Supabase hosted dashboard configurations (AuthSite URL, additional redirects, OAuth provider setups, storage buckets), pre-deployment database check queries, post-deployment manual smoke checks for Jay, and manual database/frontend rollback instructions. Updated the beta readiness checklist to reference this deployment runbook. |
+| Files changed | `docs/DEPLOYMENT_READINESS_CHECKLIST.md`, `docs/beta_readiness_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Configure live hosting provider build settings, live environment variables, and manual verification/smoke checks. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Add beta scenario setup runbook
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Beta testing |
+| Summary | Created a detailed beta testing runbook (`docs/BETA_TESTING_RUNBOOK.md`) covering target Victoria (South East Melbourne corridor) and South Australia (Salisbury) customer, tradie, and admin scenarios. Documented the seed creation tool `create-beta-test-accounts.mjs` dry-run vs apply commands, post-beta cleanup operations with `delete-beta-test-accounts.mjs`, and card generator options. Updated the beta readiness checklist with the scenario setup task. |
+| Files changed | `docs/BETA_TESTING_RUNBOOK.md`, `docs/beta_readiness_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute dry-run and optional apply commands to seed accounts as outlined in the runbook. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Clarify payment and GST beta boundaries
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Roadmap |
+| Summary | Clarified beta boundaries in root `README.md` and `ROADMAP.md`. Explicitly documented that the current payment flow is a simulated protected payment foundation only, with real Stripe Connect integration deferred. Documented that simulated invoicing/receipt generation requires complete legal, tax, and professional accountant audit prior to production launch. Ensured no user-facing copy uses "escrow", preferring protected/secure payment wording. Updated roadmap future items for money movements, fee reconciliation, and accounting exports. |
+| Files changed | `README.md`, `ROADMAP.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Document leaked password protection dashboard step
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Security |
+| Summary | Documented security steps for enabling leaked password protection and running the Supabase Security Advisor. Strengthened the password policy section in `docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md` and added a dashboard configuration section to `docs/beta_readiness_checklist.md` detailing how to enable the setting under Authentication settings and how to re-run the dashboard advisor. |
+| Files changed | `docs/SECURITY/PRODUCTION_AUTH_CHECKLIST.md`, `docs/beta_readiness_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None (dashboard configuration only). |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Enable leaked password protection in the Supabase Authentication dashboard, re-run advisor, and record the outcome. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Document Google OAuth setup checklist
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Authentication |
+| Summary | Updated `docs/google-oauth-setup.md` to be a comprehensive setup, configuration, and testing checklist for Google Sign-In. The checklist details the Google Cloud Console credential configuration (origins, redirect URIs), Supabase Dashboard provider enabling (Client ID/Secret paste, URL configuration Site URL & Redirect URLs), frontend local environment details, and step-by-step manual test actions for Jay to perform. Updated the beta readiness checklist to reference all recent database migrations (081-092). |
+| Files changed | `docs/google-oauth-setup.md`, `docs/beta_readiness_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Configure Google Cloud Console and Supabase Dashboard OAuth settings as detailed in the runbook. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Document national location import runbook
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Location Data |
+| Summary | Created a detailed step-by-step launch runbook (`docs/LOCATION_IMPORT_RUNBOOK.md`) for the Australian national location database import. Documented the placement requirements for the source CSV (`data/location-imports/australian_postcodes.csv`), column mappings and header aliases, seed generation command using `scripts/import-australian-locations.mjs`, validation check commands using `scripts/validate-australian-locations.mjs`, instructions for manual application via `psql` to handle large batch sizes, and post-import verification SQL queries. |
+| Files changed | `docs/LOCATION_IMPORT_RUNBOOK.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
+### Clarify live SQL checklist for profile identity migrations
+
+| Item | Notes |
+| --- | --- |
+| Area | Documentation, Database, Verification |
+| Summary | Enhanced `docs/live_sql_application_checklist.md` with explicit, copy-pasteable database verification queries for migration 091 and 092. Verification checks cover view presence, columns security listing, exclusion of private fields (email/phone), role-based SELECT permissions (anon/authenticated), presence of safe identity RPCs/functions, and simulated guest retrieval checks. |
+| Files changed | `docs/live_sql_application_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | Not applicable (no frontend files modified). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Fix public_profiles view migration 092 dependency issue
 
 | Item | Notes |
