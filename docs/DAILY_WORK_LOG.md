@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Add live recovery patch for audited trade verification
+
+| Item | Notes |
+| --- | --- |
+| Area | Security, Database, Trust & Safety |
+| Summary | Created a safe live recovery patch migration `094_trade_verification_live_patch.sql` to apply the audit-hardened database-level application insert RLS policy and `check_user_has_required_licences` function without recreating existing base tables or dropping data. Updated the QA and migration manuals to clearly state that `093` should not be rerun live, and `094` should be applied instead. |
+| Files changed | `supabase/migrations/094_trade_verification_live_patch.sql`, `docs/trade_specific_verification_QA.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Migration `094` (requires manual execution by Jay in Supabase Studio). |
+| Build result | Not applicable (no frontend files changed). |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Manual migration `094` application. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Audit and harden trade specific verification gating
 
 | Item | Notes |

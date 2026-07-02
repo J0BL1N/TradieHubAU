@@ -2,6 +2,13 @@
 
 This manual provides verification protocols, security design constraints, edge cases, and manual test checklists for the Trade-Specific Licence and Experience verification subsystem of TradieHubAU.
 
+> [!WARNING]
+> **Live DB Migration Application Instructions:**
+> * Jay has already applied the original `093_trade_specific_verification.sql` live.
+> * **DO NOT rerun 093 live** on the database; doing so will fail with relations already exists errors.
+> * **Apply 094_trade_verification_live_patch.sql live instead** using Supabase SQL Studio. This patch adds the missing security check function and RLS policy updates without modifying tables or deleting existing trade credentials.
+> * If Supabase reports another already-exists error in `094`, stop and report the exact error.
+
 ---
 
 ## 1. Security Architecture & Privacy Boundaries
