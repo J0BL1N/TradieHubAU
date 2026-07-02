@@ -289,6 +289,49 @@ export default function Profile() {
   const [insuranceFile, setInsuranceFile] = useState<File | null>(null);
   const [insuranceUploadError, setInsuranceUploadError] = useState<string | null>(null);
 
+  // Layout and accordion toggle states for simplified verification
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [showLicenceForm, setShowLicenceForm] = useState(false);
+  const [showEvidenceForm, setShowEvidenceForm] = useState(false);
+  const [showRequirementDetails, setShowRequirementDetails] = useState<Record<string, boolean>>({});
+  const [dueDiligenceExpanded, setDueDiligenceExpanded] = useState(false);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  // Helper variables for auto-expansion effect (safely guarded against null targetProfile)
+  const tempEffectiveIdVerificationStatus: VerificationStatus =
+    idVerificationStatus === 'approved' && !targetProfile?.identity_verified ? 'recheck' : idVerificationStatus;
+  const tempEffectiveLivenessVerificationStatus: VerificationStatus =
+    livenessVerificationStatus === 'approved' && !targetProfile?.identity_verified ? 'recheck' : livenessVerificationStatus;
+
+  useEffect(() => {
+    if (!targetProfile) return;
+    const actionStatuses: VerificationStatus[] = ['none', 'recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'];
+    const getDocumentStatus = (docType: string) => {
+      const summary = verificationSummaries[docType];
+      return (summary?.status || 'none') as VerificationStatus;
+    };
+
+    if (actionStatuses.includes(tempEffectiveIdVerificationStatus) || actionStatuses.includes(tempEffectiveLivenessVerificationStatus)) {
+      setActiveSection('id');
+    } else if (targetProfile.role !== 'customer') {
+      const needsCredentials = actionStatuses.includes(tradieVerificationStatus) ||
+        TRADIE_DOCUMENT_CARDS.some(doc => actionStatuses.includes(getDocumentStatus(doc.type)));
+      if (needsCredentials) {
+        setActiveSection('credentials');
+      } else {
+        setActiveSection('licences');
+      }
+    } else {
+      setActiveSection('id');
+    }
+  }, [
+    tempEffectiveIdVerificationStatus,
+    tempEffectiveLivenessVerificationStatus,
+    tradieVerificationStatus,
+    targetProfile?.role,
+    verificationSummaries
+  ]);
+
   const categoryOptions = [
     { id: 'electrical', label: 'Electrical' },
     { id: 'plumbing', label: 'Plumbing' },
@@ -1300,10 +1343,8 @@ export default function Profile() {
   const roleLabel = targetProfile.role ? (targetProfile.role.charAt(0).toUpperCase() + targetProfile.role.slice(1)) : 'Customer';
   const locationParts = [targetProfile.suburb, targetProfile.state].filter(Boolean);
   const displayLocation = locationParts.length > 0 ? locationParts.join(', ') : 'No location specified';
-  const effectiveIdVerificationStatus: VerificationStatus =
-    idVerificationStatus === 'approved' && !targetProfile.identity_verified ? 'recheck' : idVerificationStatus;
-  const effectiveLivenessVerificationStatus: VerificationStatus =
-    livenessVerificationStatus === 'approved' && !targetProfile.identity_verified ? 'recheck' : livenessVerificationStatus;
+  const effectiveIdVerificationStatus = tempEffectiveIdVerificationStatus;
+  const effectiveLivenessVerificationStatus = tempEffectiveLivenessVerificationStatus;
   const currentIdentityVerified =
     targetProfile.identity_verified &&
     effectiveIdVerificationStatus === 'approved' &&
@@ -1492,35 +1533,6 @@ export default function Profile() {
   })();
 
   const isVerificationComplete = nextVerificationAction.title === 'Verification complete';
-
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [showLicenceForm, setShowLicenceForm] = useState(false);
-  const [showEvidenceForm, setShowEvidenceForm] = useState(false);
-  const [showRequirementDetails, setShowRequirementDetails] = useState<Record<string, boolean>>({});
-  const [dueDiligenceExpanded, setDueDiligenceExpanded] = useState(false);
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (actionStatuses.includes(effectiveIdVerificationStatus) || actionStatuses.includes(effectiveLivenessVerificationStatus)) {
-      setActiveSection('id');
-    } else if (targetProfile?.role !== 'customer') {
-      const needsCredentials = actionStatuses.includes(tradieVerificationStatus) ||
-        TRADIE_DOCUMENT_CARDS.some(doc => actionStatuses.includes(getDocumentStatus(doc.type)));
-      if (needsCredentials) {
-        setActiveSection('credentials');
-      } else {
-        setActiveSection('licences');
-      }
-    } else {
-      setActiveSection('id');
-    }
-  }, [
-    effectiveIdVerificationStatus,
-    effectiveLivenessVerificationStatus,
-    tradieVerificationStatus,
-    targetProfile?.role,
-    verificationSummaries
-  ]);
 
   const compactVerificationDashboard = (
     <VerificationDashboard
