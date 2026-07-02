@@ -607,6 +607,7 @@ Status: **Implementation complete / awaiting manual review.** This is an admin a
 
 # v0.5.x — Trust, Verification, and Safety
 
+* [ ] Implement trade-specific licence, experience, and credential verification system (Phases 1-8 planning complete)
 * [ ] Improve tradie verification workflow
 * [ ] Add ABN validation support
 * [ ] Add licence validation support
