@@ -6,6 +6,51 @@ import { fetchNotifications, markNotificationRead, markAllNotificationsRead, get
 import type { NotificationRecord } from '../lib/notifications';
 import { supabase } from '../lib/supabase';
 import { KEYS, getSoundPreference, getSoundEnabledPreference, playSoundSafe } from '../lib/soundPreferences';
+
+interface GroupedNotificationRecord extends NotificationRecord {
+  groupedIds?: string[];
+  count?: number;
+}
+
+const getGroupedNotifications = (list: NotificationRecord[]): GroupedNotificationRecord[] => {
+  const result: GroupedNotificationRecord[] = [];
+  const unreadGroups: Record<string, number> = {};
+
+  list.forEach(notif => {
+    const isMessage =
+      notif.event_type === 'new_message' ||
+      notif.entity_type === 'message' ||
+      notif.conversation_id !== null;
+
+    if (isMessage && !notif.read_at) {
+      const key = notif.conversation_id || `msg-${notif.title}-${notif.body}`;
+
+      if (unreadGroups[key] !== undefined) {
+        const idx = unreadGroups[key];
+        const existing = result[idx];
+
+        if (!existing.groupedIds) {
+          existing.groupedIds = [existing.id];
+        }
+        existing.groupedIds.push(notif.id);
+        existing.count = (existing.count || 1) + 1;
+      } else {
+        const newGroup: GroupedNotificationRecord = {
+          ...notif,
+          count: 1,
+          groupedIds: [notif.id]
+        };
+        result.push(newGroup);
+        unreadGroups[key] = result.length - 1;
+      }
+    } else {
+      result.push({ ...notif });
+    }
+  });
+
+  return result;
+};
+
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
@@ -132,14 +177,15 @@ export default function Layout() {
     };
   }, [user]);
 
-  const handleNotificationClick = async (notif: NotificationRecord) => {
+  const handleNotificationClick = async (notif: GroupedNotificationRecord) => {
     setBellOpen(false);
     if (!notif.read_at) {
-      await markNotificationRead(notif.id);
+      const idsToMark = notif.groupedIds && notif.groupedIds.length > 0 ? notif.groupedIds : [notif.id];
+      await Promise.all(idsToMark.map(id => markNotificationRead(id)));
       setNotifications(current =>
-        current.map(n => n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n)
+        current.map(n => idsToMark.includes(n.id) ? { ...n, read_at: new Date().toISOString() } : n)
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount(prev => Math.max(0, prev - idsToMark.length));
     }
 
     if (notif.conversation_id) {
@@ -279,12 +325,12 @@ export default function Layout() {
                     </div>
 
                     <div className="max-h-80 overflow-y-auto mt-2 divide-y divide-border/60">
-                      {notifications.length === 0 ? (
+                      {getGroupedNotifications(notifications).length === 0 ? (
                         <div className="px-4 py-8 text-center text-xs font-semibold text-muted-foreground">
                           No notifications yet
                         </div>
                       ) : (
-                        notifications.map((notif) => (
+                        getGroupedNotifications(notifications).map((notif) => (
                           <button
                             type="button"
                             key={notif.id}
@@ -296,7 +342,7 @@ export default function Layout() {
                             <div className="flex-grow min-w-0">
                               <div className="flex items-center justify-between gap-1">
                                 <span className={`text-xs ${!notif.read_at ? 'font-black text-foreground' : 'font-bold text-foreground/80'}`}>
-                                  {notif.title}
+                                  {notif.title} {notif.count && notif.count > 1 ? `(${notif.count})` : ''}
                                 </span>
                                 {!notif.read_at && (
                                   <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />

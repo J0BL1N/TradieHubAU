@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Group repeated message notifications
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, UX Polish |
+| Summary | Implemented unread message notification grouping in the layout navigation bell dropdown. Grouped repeated unread chat alerts by their `conversation_id`. Displayed an accumulated count like `(4)` next to the notification title, retaining the newest item's message snippet and timestamp. Configured clicking grouped notifications to trigger concurrent API calls to mark all child notifications in that group as read, correctly updating local states and unread badge counts. |
+| Files changed | `frontend/src/components/Layout.tsx`, `docs/UX_POLISH_BACKLOG.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Fix duplicate notification audio playback
 
 | Item | Notes |

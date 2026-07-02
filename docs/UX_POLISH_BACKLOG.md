@@ -56,3 +56,11 @@ The following items are planned for future phases to further enforce profile saf
   - Active session Ref Sets (`playedNotificationSoundIdsRef` and `playedMessageSoundIdsRef`) ensure no sound plays twice for the same unique notification or message ID, including duplicate events triggered by concurrent realtime updates and background refetches.
 - **Graceful Degradation**: Audio playback fails silently without crash if files are absent or if the browser blocks autoplay.
 - **Preferences**: Stored on-device in `localStorage`. Message and notification sound toggles operate independently.
+
+---
+
+## 5. Notification UI & Grouping Polish
+- **Status**: Grouping logic integrated in Layout.tsx.
+- **Grouping Rule**: Repeated unread message notifications from the same conversation/sender are visually collapsed into a single row in the notification dropdown.
+- **Display**: A count indicator, e.g. `(4)`, is displayed next to the title. The row retains the newest notification's timestamp and body text.
+- **Batch Marking Read**: Clicking a grouped notification row executes concurrent API calls to mark all message notifications in that group as read, updating the raw database states and reducing the unread count accordingly.
