@@ -1117,6 +1117,18 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ready for Jay manual QA. |
 
+### Profile Verification Application Layout Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Profile Verification Tab Layout & Responsiveness |
+| Summary | Fixed ABN/Licence, Trades Selection grid, upload card styling, and Apply Now button styling inside the "Apply as a Contractor" verification panel to prevent horizontal layout overflows and squeezing. |
+| Files changed | `frontend/src/pages/Profile.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Details | - **Card and Panel Responsiveness**: Added `min-w-0` and `w-full` class rules to the right main content column, settings wrapper panel, and contractor application container section to prevent child nodes from expanding the viewport size.<br> - **Truncate Document Names**: Wrapped upload document names in a `min-w-0 flex-1 truncate` container and added a native `title` attribute so long file names truncate with ellipsis and do not break parent container bounds.<br> - **Trades Selection Grid Sizing**: Reduced trade category item text to `text-[11px]` and added flex truncation and checkmark wrapping controls so long trade names wrap/shrink cleanly inside grid columns.<br> - **Accessibility Inputs**: Kept helper description texts clear and added proper `aria-label` attributes to hidden file input tags. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Remaining / Next
 
 | Item | Status |

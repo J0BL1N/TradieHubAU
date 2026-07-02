@@ -1517,16 +1517,16 @@ export default function Profile() {
         </div>
 
         {targetProfile.role === 'customer' && (
-          <section className="rounded-3xl border bg-card p-5 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
-              <div className="md:col-span-1 space-y-2">
+          <section className="rounded-3xl border bg-card p-4 sm:p-5 shadow-sm min-w-0 w-full overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start min-w-0">
+              <div className="md:col-span-1 space-y-2 min-w-0">
                 <h4 className="text-sm font-black text-foreground">Submit Application</h4>
                 <p className="text-[11px] font-semibold leading-relaxed text-muted-foreground">
                   Provide your ABN and licence number to apply for contractor status.
                 </p>
               </div>
-              <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground">
-                <form onSubmit={handleApplyAsTradie} className="space-y-3 max-w-md">
+              <div className="md:col-span-2 text-xs font-semibold leading-5 text-muted-foreground min-w-0">
+                <form onSubmit={handleApplyAsTradie} className="space-y-3 max-w-md min-w-0 w-full">
                   {tradieVerificationStatus === 'pending' && (
                     <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs font-semibold flex items-start gap-2 mb-3">
                       <Clock className="h-4.5 w-4.5 shrink-0 mt-0.5 text-amber-500" />
@@ -1567,8 +1567,8 @@ export default function Profile() {
                   {uploadError && uploadError !== 'Please select a credential document file.' && uploadError !== 'Please select at least one trade.' && (
                     <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-red-500 mb-3">{uploadError}</p>
                   )}
-                  <div className="grid gap-3">
-                    <div className="rounded-2xl border bg-muted/10 p-3 space-y-3">
+                  <div className="grid gap-3 min-w-0 w-full">
+                    <div className="rounded-2xl border bg-muted/10 p-3 space-y-3 min-w-0 w-full">
                       <div>
                         <label className="text-xs font-bold text-foreground uppercase tracking-wider">Credential document</label>
                         <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
@@ -1576,8 +1576,8 @@ export default function Profile() {
                         </p>
                       </div>
                       {tradieFile && (
-                        <div className="flex items-center justify-between gap-3 rounded-xl border bg-background p-2">
-                          <span className="truncate text-xs font-bold text-foreground">{tradieFile.name}</span>
+                        <div className="flex items-center justify-between gap-3 rounded-xl border bg-background p-2 min-w-0 w-full">
+                          <span className="truncate text-xs font-bold text-foreground flex-1 min-w-0" title={tradieFile.name}>{tradieFile.name}</span>
                           <button
                             type="button"
                             onClick={() => setTradieCardFile('contractor_license', null)}
@@ -1587,14 +1587,15 @@ export default function Profile() {
                           </button>
                         </div>
                       )}
-                      <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-bold text-secondary-foreground transition-all hover:bg-secondary/80 cursor-pointer select-none">
-                        <Upload className="h-4 w-4" /> Choose Credential File
+                      <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-3 py-2.5 text-xs font-bold text-secondary-foreground transition-all hover:bg-secondary/80 cursor-pointer select-none text-center flex-wrap">
+                        <Upload className="h-4 w-4 shrink-0" /> Choose Credential File
                         <input
                           type="file"
                           onChange={(e) => setTradieCardFile('contractor_license', e.target.files?.[0] || null)}
                           disabled={uploadingDoc || tradieVerificationStatus === 'pending'}
                           className="hidden"
                           accept="image/*,application/pdf"
+                          aria-label="Upload contractor licence credential file"
                         />
                       </label>
                       {uploadError === 'Please select a credential document file.' && (
@@ -1602,7 +1603,7 @@ export default function Profile() {
                       )}
                     </div>
 
-                    <div className="rounded-2xl border bg-muted/10 p-3 space-y-3">
+                    <div className="rounded-2xl border bg-muted/10 p-3 space-y-3 min-w-0 w-full">
                       <div>
                         <label className="text-xs font-bold text-foreground uppercase tracking-wider">Insurance proof</label>
                         <p className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
@@ -1610,8 +1611,8 @@ export default function Profile() {
                         </p>
                       </div>
                       {insuranceFile && (
-                        <div className="flex items-center justify-between gap-3 rounded-xl border bg-background p-2">
-                          <span className="truncate text-xs font-bold text-foreground">{insuranceFile.name}</span>
+                        <div className="flex items-center justify-between gap-3 rounded-xl border bg-background p-2 min-w-0 w-full">
+                          <span className="truncate text-xs font-bold text-foreground flex-1 min-w-0" title={insuranceFile.name}>{insuranceFile.name}</span>
                           <button
                             type="button"
                             onClick={() => setInsuranceFile(null)}
@@ -1621,20 +1622,21 @@ export default function Profile() {
                           </button>
                         </div>
                       )}
-                      <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-bold text-secondary-foreground transition-all hover:bg-secondary/80 cursor-pointer select-none">
-                        <Upload className="h-4 w-4" /> Choose Insurance File
+                      <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary px-3 py-2.5 text-xs font-bold text-secondary-foreground transition-all hover:bg-secondary/80 cursor-pointer select-none text-center flex-wrap">
+                        <Upload className="h-4 w-4 shrink-0" /> Choose Insurance File
                         <input
                           type="file"
                           onChange={(e) => {
                             const file = e.target.files?.[0] || null;
                             setInsuranceFile(file);
                             if (file && insuranceUploadError === 'Please select an insurance proof file.') {
-                              setInsuranceUploadError(null);
+                                setInsuranceUploadError(null);
                             }
                           }}
                           disabled={uploadingDoc || tradieVerificationStatus === 'pending'}
                           className="hidden"
                           accept="image/*,application/pdf"
+                          aria-label="Upload public liability insurance file"
                         />
                       </label>
                       {insuranceUploadError && (
@@ -1665,7 +1667,7 @@ export default function Profile() {
                       <p className="text-[11px] font-semibold text-muted-foreground leading-normal">
                         Choose at least one trade you want to offer on TradieHubAU.
                       </p>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 mt-1.5">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 mt-1.5 min-w-0">
                         {categoryOptions.map((option) => {
                           const isSelected = trades.includes(option.id);
                           return (
@@ -1682,14 +1684,15 @@ export default function Profile() {
                                 }
                               }}
                               disabled={tradieVerificationStatus === 'pending'}
-                              className={`flex items-center justify-between px-3 py-2 border rounded-xl text-xs font-bold transition-all ${
+                              aria-pressed={isSelected}
+                              className={`flex items-center justify-between px-2.5 py-2 border rounded-xl text-[11px] font-bold transition-all min-w-0 gap-1.5 ${
                                 isSelected
                                   ? 'border-primary bg-primary/5 text-primary'
                                   : 'border-border bg-background hover:bg-muted/30 text-foreground/80'
                               } ${tradieVerificationStatus === 'pending' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                             >
-                              <span>{option.label}</span>
-                              {isSelected && <span className="text-primary font-black ml-1">✓</span>}
+                              <span className="truncate text-left">{option.label}</span>
+                              {isSelected && <span className="text-primary font-black ml-auto shrink-0">✓</span>}
                             </button>
                           );
                         })}
@@ -1773,10 +1776,10 @@ export default function Profile() {
                           Action required. Please upload a clear replacement document.
                         </p>
                       )}
-                      <div className="space-y-3 max-w-md">
+                      <div className="space-y-3 max-w-md min-w-0 w-full">
                         {selectedFile && (
-                          <div className="flex items-center gap-2 p-2 bg-muted/20 border rounded-xl">
-                            <span className="truncate text-foreground font-semibold text-xs">{selectedFile.name}</span>
+                          <div className="flex items-center gap-2 p-2 bg-muted/20 border rounded-xl min-w-0 w-full">
+                            <span className="truncate text-foreground font-semibold text-xs min-w-0 flex-1" title={selectedFile.name}>{selectedFile.name}</span>
                           </div>
                         )}
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -1968,10 +1971,10 @@ export default function Profile() {
         </section>
 
         {/* Right Columns: Main content panels */}
-        <main className="lg:col-span-2 space-y-8">
+        <main className="lg:col-span-2 space-y-8 min-w-0 w-full">
           {isSelf ? (
             /* Settings View (Self) */
-            <div className="space-y-8">
+            <div className="space-y-8 min-w-0 w-full">
               <div className="bg-card border rounded-3xl p-2 shadow-sm overflow-x-auto">
                 <div className="flex min-w-max gap-1">
                   {profileTabs.map(tab => (
