@@ -216,6 +216,14 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
   expandedRow,
   setExpandedRow
 }) => {
+  const getStatusDotColor = (status: string) => {
+    if (status === 'approved') return 'bg-green-500';
+    if (status === 'pending') return 'bg-amber-500 animate-pulse';
+    if (status === 'recheck' || status === 'requested_more_info') return 'bg-amber-500 animate-pulse';
+    if (status === 'rejected' || status === 'revoked' || status === 'expired') return 'bg-red-500';
+    return 'bg-muted-foreground/30';
+  };
+
   const getRequiredActionCount = () => {
     let count = 0;
     if (actionStatuses.includes(effectiveIdVerificationStatus)) count++;
@@ -471,10 +479,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
               <div className="pt-2 first:pt-0 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-2.5 min-w-0">
-                    <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                      effectiveIdVerificationStatus === 'approved' ? 'bg-green-500' :
-                      effectiveIdVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-primary'
-                    }`} />
+                    <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${getStatusDotColor(effectiveIdVerificationStatus)}`} />
                     <div className="min-w-0">
                       <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Photo ID</h4>
                       <p className="mt-0.5 text-[11px] font-medium text-muted-foreground leading-normal">
@@ -545,10 +550,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
               <div className="pt-4 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-2.5 min-w-0">
-                    <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                      effectiveLivenessVerificationStatus === 'approved' ? 'bg-green-500' :
-                      effectiveLivenessVerificationStatus === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-primary'
-                    }`} />
+                    <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${getStatusDotColor(effectiveLivenessVerificationStatus)}`} />
                     <div className="min-w-0">
                       <h4 className="text-xs font-black text-foreground uppercase tracking-wider">Liveness Selfie</h4>
                       <p className="mt-0.5 text-[11px] font-medium text-muted-foreground leading-normal">
@@ -780,10 +782,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                       <div key={doc.type} className="pt-4 first:pt-0 space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-start gap-2.5 min-w-0">
-                            <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                              status === 'approved' ? 'bg-green-500' :
-                              status === 'pending' ? 'bg-amber-500 animate-pulse' : 'bg-primary'
-                            }`} />
+                            <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${getStatusDotColor(status)}`} />
                             <div className="min-w-0">
                               <h4 className="text-xs font-black text-foreground uppercase tracking-wider">{doc.title}</h4>
                               <p className="mt-0.5 text-[11px] font-medium text-muted-foreground leading-normal">

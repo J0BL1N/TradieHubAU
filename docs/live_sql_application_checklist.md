@@ -9,26 +9,33 @@ This checklist defines the sequence and verification steps for applying database
 
 ---
 
-## 1. Sequence of Pending Migrations
+## 1. Sequence of Migrations
 
-Apply the following migrations sequentially (lowest numbers first) in the Supabase Dashboard SQL Editor or via CLI:
+The following migrations define the sequential setup for database structures, security boundaries, and trade verification policies:
 
-| Sequence | Migration File Name | Purpose / What it Does | Dependent Features (Will Fail if Missing) |
-| :--- | :--- | :--- | :--- |
-| **1** | `081_create_notifications_table.sql` | Creates notifications schema, RLS, and read status markers. | All notification delivery and count badges. |
-| **2** | `082_new_message_notifications.sql` | Adds trigger/function generating notifications on new chat messages. | Chat inbox notification bells. |
-| **3** | `083_quote_lifecycle_notifications.sql` | Adds triggers generating notifications on quotes submitted, accepted, or rejected. | Customer quote alert badge. |
-| **4** | `084_payment_status_notifications.sql` | Adds triggers generating notifications on variation funding, completion approvals, or payment releases. | Payments status update tracking. |
-| **5** | `085_dispute_notifications.sql` | Adds triggers generating notifications on new dispute cases and resolutions. | Disputes/Admin action alerts. |
-| **6** | `086_verification_notifications.sql` | Adds triggers generating notifications on document approval/suspension status updates. | Tradie credentials approval alerts. |
-| **7** | `087_add_google_places_location_fields.sql` | Adds formatted_address, place_id, lat, lng to jobs/users, and updates client edit allowlist trigger. | Geolocation coordinates and optional address search. |
-| **8** | `088_national_location_database.sql` | Creates location_regions and location_suburbs tables, security, RPC helpers, and seeds fallback SA/VIC suburbs. | Suburb autocomplete list search and post-job region dropdowns. |
-| **9** | `089_harden_live_location_database.sql` | Safely enforces permissions, RLS policies, explicit execution grants, and fallback seeds on live servers. | Hardened access control and secure, public-safe location querying. |
-| **10** | `090_messaging_safety_moderation.sql` | Implements messaging moderation triggers, profane word filtering, and communication audits. | Safety and communication moderation filters. |
-| **11** | `091_supabase_lint_hardening.sql` | Resolves security lints by converting views to security invokers, adding search paths, and hardening triggers. | Safe database views, search path compliance, and trigger privilege control. |
-| **12** | `092_public_profile_identity_safety.sql` | Implements safe public display name middle ground and write filters to reject contact details bypasses on users/portfolio tables. | Safe public display names and data write filters. |
+| Sequence | Migration File Name | Purpose / What it Does | Dependent Features (Will Fail if Missing) | Live Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | `081_create_notifications_table.sql` | Creates notifications schema, RLS, and read status markers. | All notification delivery and count badges. | **Applied** |
+| **2** | `082_new_message_notifications.sql` | Adds trigger/function generating notifications on new chat messages. | Chat inbox notification bells. | **Applied** |
+| **3** | `083_quote_lifecycle_notifications.sql` | Adds triggers generating notifications on quotes submitted, accepted, or rejected. | Customer quote alert badge. | **Applied** |
+| **4** | `084_payment_status_notifications.sql` | Adds triggers generating notifications on variation funding, completion approvals, or payment releases. | Payments status update tracking. | **Applied** |
+| **5** | `085_dispute_notifications.sql` | Adds triggers generating notifications on new dispute cases and resolutions. | Disputes/Admin action alerts. | **Applied** |
+| **6** | `086_verification_notifications.sql` | Adds triggers generating notifications on document approval/suspension status updates. | Tradie credentials approval alerts. | **Applied** |
+| **7** | `087_add_google_places_location_fields.sql` | Adds formatted_address, place_id, lat, lng to jobs/users, and updates client edit allowlist trigger. | Geolocation coordinates and optional address search. | **Applied** |
+| **8** | `088_national_location_database.sql` | Creates location_regions and location_suburbs tables, security, RPC helpers, and seeds fallback SA/VIC suburbs. | Suburb autocomplete list search and post-job region dropdowns. | **Applied** |
+| **9** | `089_harden_live_location_database.sql` | Safely enforces permissions, RLS policies, explicit execution grants, and fallback seeds on live servers. | Hardened access control and secure, public-safe location querying. | **Applied** |
+| **10** | `090_messaging_safety_moderation.sql` | Implements messaging moderation triggers, profane word filtering, and communication audits. | Safety and communication moderation filters. | **Applied** |
+| **11** | `091_supabase_lint_hardening.sql` | Resolves security lints by converting views to security invokers, adding search paths, and hardening triggers. | Safe database views, search path compliance, and trigger privilege control. | **Applied** |
+| **12** | `092_public_profile_identity_safety.sql` | Implements safe public display name middle ground and write filters to reject contact details bypasses on users/portfolio tables. | Safe public display names and data write filters. | **Applied** |
+| **13** | `093_trade_specific_verification.sql` | Creates trade category requirement rules, user trade credentials, and experience evidence tracking tables. | Trade-specific licensing requirements. | **Applied** |
+| **14** | `094_trade_verification_live_patch.sql` | Safe recovery patch containing audit-hardening database gating functions and application RLS policies on top of original 093 tables. Also grants execution of is_admin to anon. | Database-level quote gating and anonymous guest browsing compatibility. | **PENDING JAY** |
 
 > [!IMPORTANT]
+> **Live DB Application Status**:
+> * **Migrations 081 to 093 have ALREADY been applied live** to the staging/production database by Jay.
+> * **DO NOT rerun 093 live** on the database; doing so will fail with relations already exists errors.
+> * **Migration 094 HAS NOT yet been applied live**. Jay needs to manually run `094_trade_verification_live_patch.sql` in Supabase Studio to complete the audit-hardening patch and resolve the guest browsing crash.
+>
 > **Corrective Migration Note (089)**:
 > If migration `088_national_location_database.sql` was already applied to the live database *prior* to commit `6e25ca7` (without the standard explicit EXECUTE grants), do **not** re-run 088. Instead, immediately run `089_harden_live_location_database.sql` to cleanly apply the correct permission state, secure RLS, and verify fallback seeds.
 >
@@ -154,6 +161,22 @@ FROM public.public_profiles LIMIT 5;
 -- - abn: NULL
 -- - license_number: NULL
 -- - headline/bio/service_areas: visible (if clean) or NULL (if containing contact bypasses)
+```
+
+### Migration 093 & 094 Checks
+```sql
+-- 1. Verify that trade categories and requirement rules exist
+SELECT count(*) FROM public.trade_licence_types;
+SELECT count(*) FROM public.trade_requirement_rules;
+
+-- 2. Verify check_user_has_required_licences function exists and has correct security settings
+SELECT routine_name, routine_type
+FROM information_schema.routines
+WHERE routine_schema = 'public' AND routine_name = 'check_user_has_required_licences';
+
+-- 3. Verify that the EXECUTE permission on public.is_admin has been granted to anon
+SELECT has_function_privilege('anon', 'public.is_admin(uuid)', 'execute') AS anon_has_execute;
+-- Expected: true
 ```
 
 ---

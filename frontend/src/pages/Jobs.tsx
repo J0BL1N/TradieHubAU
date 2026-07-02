@@ -2503,8 +2503,8 @@ export default function Jobs() {
                         Final document lines are sourced from accepted quote snapshots and customer-approved variation snapshots only.
                       </p>
                     </div>
-                    <div className="border border-border rounded-2xl overflow-hidden bg-muted/5">
-                      <table className="w-full text-left border-collapse text-xs">
+                    <div className="border border-border rounded-2xl bg-muted/5 overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs min-w-[500px]">
                         <thead>
                           <tr className="bg-muted/10 border-b border-border font-bold text-muted-foreground">
                             <th className="p-3">Description</th>
