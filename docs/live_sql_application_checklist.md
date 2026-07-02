@@ -31,6 +31,9 @@ Apply the following migrations sequentially (lowest numbers first) in the Supaba
 > [!IMPORTANT]
 > **Corrective Migration Note (089)**:
 > If migration `088_national_location_database.sql` was already applied to the live database *prior* to commit `6e25ca7` (without the standard explicit EXECUTE grants), do **not** re-run 088. Instead, immediately run `089_harden_live_location_database.sql` to cleanly apply the correct permission state, secure RLS, and verify fallback seeds.
+>
+> **Corrective Function Drop Note (092)**:
+> Migration `092_public_profile_identity_safety.sql` modifies the return table structure/columns of the existing `public.list_public_tradie_completion_proof_gallery(uuid)` function. To prevent PostgreSQL return-type change errors (42P13), migration 092 explicitly drops the old function signature via `DROP FUNCTION IF EXISTS public.list_public_tradie_completion_proof_gallery(uuid);` before recreating it. This is safe, targeted, and does **not** use `DROP CASCADE`.
 
 ---
 

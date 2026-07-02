@@ -504,6 +504,8 @@ CREATE TRIGGER trg_validate_completion_proof_portfolio_fields
 -- 5. SANITIZE COMPLETION PROOF GALLERY DISPLAY RPC
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS public.list_public_tradie_completion_proof_gallery(uuid);
+
 CREATE OR REPLACE FUNCTION public.list_public_tradie_completion_proof_gallery(p_tradie_id uuid)
 RETURNS TABLE (
   id uuid,

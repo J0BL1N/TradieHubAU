@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Fix profile identity migration function replacement
+
+| Item | Notes |
+| --- | --- |
+| Area | Database, Migrations |
+| Summary | Fixed a live migration failure in `092_public_profile_identity_safety.sql` where redefining `public.list_public_tradie_completion_proof_gallery(uuid)` triggered a PostgreSQL return-type change error (42P13). Added a targeted `DROP FUNCTION IF EXISTS public.list_public_tradie_completion_proof_gallery(uuid);` immediately before the recreation block. This safely drops the old function signature without using `DROP CASCADE`. Updated `docs/live_sql_application_checklist.md` with corrective function drop notes. |
+| Files changed | `supabase/migrations/092_public_profile_identity_safety.sql`, `docs/live_sql_application_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Yes (corrected `092_public_profile_identity_safety.sql`). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Execute the corrected migration 092 SQL script in Supabase Studio. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Park My Tradies future feature
 
 | Item | Notes |
