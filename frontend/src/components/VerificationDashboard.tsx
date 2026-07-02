@@ -214,37 +214,140 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
   expandedRow,
   setExpandedRow
 }) => {
-  const getActionItemsCount = () => {
+  const getRequiredActionCount = () => {
     let count = 0;
     if (actionStatuses.includes(effectiveIdVerificationStatus)) count++;
     if (actionStatuses.includes(effectiveLivenessVerificationStatus)) count++;
+
     if (targetProfile?.role !== 'customer') {
       if (actionStatuses.includes(tradieVerificationStatus)) count++;
       TRADIE_DOCUMENT_CARDS.forEach(doc => {
         const s = getDocumentStatus(doc.type);
-        if (actionStatuses.includes(s)) count++;
+        if (doc.required && actionStatuses.includes(s)) count++;
+      });
+
+      // Trade-Specific Licences
+      trades.forEach(tradeId => {
+        const userState = stateVal || targetProfile.state || 'VIC';
+        const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
+        if (rule && rule.licence_requirement_level === 'required') {
+          const hasApproved = userTradeCredentials.some(
+            cred => cred.licence_type?.trade_id === tradeId && cred.status === 'approved'
+          );
+          if (!hasApproved) {
+            count++;
+          }
+        }
       });
     }
     return count;
   };
 
-  const actionItemsCount = getActionItemsCount();
+  const getRecommendedActionCount = () => {
+    let count = 0;
+    if (targetProfile?.role !== 'customer') {
+      TRADIE_DOCUMENT_CARDS.forEach(doc => {
+        const s = getDocumentStatus(doc.type);
+        if (!doc.required && actionStatuses.includes(s)) count++;
+      });
+
+      if (userExperienceEvidence.length === 0) {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  const requiredCount = getRequiredActionCount();
+  const recommendedCount = getRecommendedActionCount();
+
+  const getTradeLicenceCollapsedHelper = () => {
+    if (targetProfile?.role === 'customer') {
+      return "Identity and general details.";
+    }
+    const userState = stateVal || targetProfile.state || 'VIC';
+    const requiredTrades = trades.filter(tradeId => {
+      const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
+      return rule && rule.licence_requirement_level === 'required';
+    });
+    if (requiredTrades.length > 0) {
+      const firstTradeName = categoryOptions.find(c => c.id === requiredTrades[0])?.label || requiredTrades[0];
+      return `${firstTradeName} — ${userState} requires an approved licence before quoting regulated work.`;
+    }
+    return "Licence verification matching your selected trades and state requirements.";
+  };
+
+  const getTradeLicenceStatusBadge = () => {
+    const userState = stateVal || targetProfile.state || 'VIC';
+    const hasRequiredLicenceRule = trades.some(tradeId => {
+      const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
+      return rule && (rule.licence_requirement_level === 'required' || rule.licence_requirement_level === 'conditional');
+    });
+
+    if (hasRequiredLicenceRule) {
+      const requiredTradesWithoutLicence = trades.filter(tradeId => {
+        const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
+        const isRequired = rule && (rule.licence_requirement_level === 'required' || rule.licence_requirement_level === 'conditional');
+        if (!isRequired) return false;
+
+        const hasApproved = userTradeCredentials.some(
+          cred => cred.licence_type?.trade_id === tradeId && cred.status === 'approved'
+        );
+        return !hasApproved;
+      });
+
+      if (requiredTradesWithoutLicence.length > 0) {
+        return (
+          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-red-500/20 bg-red-500/10 text-red-600">
+            Missing required licence
+          </span>
+        );
+      } else {
+        return (
+          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-green-500/20 bg-green-500/10 text-green-600">
+            Licence Verified
+          </span>
+        );
+      }
+    }
+
+    return (
+      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-border bg-muted/10 text-muted-foreground">
+        Optional / Recommended
+      </span>
+    );
+  };
+
+  const getExperienceEvidenceStatusBadge = () => {
+    if (userExperienceEvidence.length > 0) {
+      return (
+        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-green-500/20 bg-green-500/10 text-green-600">
+          {userExperienceEvidence.length} submitted
+        </span>
+      );
+    }
+    return (
+      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-border bg-muted/10 text-muted-foreground">
+        Recommended
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-6 text-left">
       {/* 1. Top Summary Card */}
-      <section className="w-full rounded-3xl border bg-card p-5 shadow-xs space-y-3">
+      <section className="w-full rounded-3xl border bg-card p-5 shadow-xs space-y-4">
         <div className="flex items-start gap-4">
           {isVerificationComplete ? (
             <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className={`h-6 w-6 shrink-0 mt-0.5 ${actionItemsCount > 0 ? 'text-primary' : 'text-amber-500'}`} />
+            <AlertCircle className={`h-6 w-6 shrink-0 mt-0.5 ${requiredCount > 0 ? 'text-primary' : 'text-amber-500'}`} />
           )}
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-black text-foreground">
               {isVerificationComplete
                 ? 'Verification complete'
-                : actionItemsCount > 0
+                : requiredCount > 0
                 ? 'Verification needs attention'
                 : 'Verification in progress'}
             </h3>
@@ -253,45 +356,66 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                 ? targetProfile.role === 'customer'
                   ? 'Your current customer identity checks are complete.'
                   : 'Your current identity and contractor credential checks are complete.'
-                : actionItemsCount > 0
+                : requiredCount > 0
                 ? 'Some verification items need attention before you can quote regulated work.'
                 : 'Your submitted verification material is waiting for admin review.'}
             </p>
-            {actionItemsCount > 0 && (
-              <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-primary/10 text-primary border border-primary/20">
-                {actionItemsCount} action {actionItemsCount === 1 ? 'item' : 'items'} pending
-              </span>
+
+            {!isVerificationComplete && (
+              <div className="mt-3 pt-3 border-t border-border/60 space-y-1.5 text-[11px] font-semibold text-muted-foreground">
+                {requiredCount > 0 ? (
+                  <p className="text-primary flex items-center gap-1.5 font-black uppercase tracking-wider">
+                    ● {requiredCount} required {requiredCount === 1 ? 'item needs' : 'items need'} attention
+                  </p>
+                ) : (
+                  <p className="text-green-600 flex items-center gap-1.5 font-black uppercase tracking-wider">
+                    ● All required items submitted
+                  </p>
+                )}
+                {recommendedCount > 0 && (
+                  <p className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                    ○ {recommendedCount} recommended {recommendedCount === 1 ? 'item' : 'items'} not submitted
+                  </p>
+                )}
+                {requiredCount > 0 && (
+                  <p className="text-[10px] text-muted-foreground italic font-medium pt-1">
+                    You must complete required items before quoting regulated work.
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
-      </section>
 
-      {/* 2. Collapsible Due Diligence Notice */}
-      <div className="border rounded-2xl bg-muted/10 overflow-hidden transition-all">
-        <button
-          type="button"
-          onClick={() => setDueDiligenceExpanded(!dueDiligenceExpanded)}
-          className="w-full flex items-center justify-between p-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/20 text-left transition-colors font-medium cursor-pointer"
-        >
-          <span className="flex items-center gap-1.5 font-black uppercase tracking-wider text-foreground">
-            <Info className="h-4 w-4 text-primary shrink-0" /> Your Due Diligence Responsibility
-          </span>
-          {dueDiligenceExpanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
-        </button>
-        <div className={`px-4 pb-3.5 text-xs text-muted-foreground font-semibold leading-relaxed ${dueDiligenceExpanded ? 'block' : 'hidden'}`}>
-          <p className="mb-2">
-            Tradies must confirm they are licensed, insured, qualified, and competent for each job.
-          </p>
-          <p className="text-[11px] font-medium leading-relaxed bg-background p-2.5 rounded-xl border">
-            Tradies remain responsible for checking that they hold the correct current licence, insurance, qualifications, and experience for the exact work they quote or accept. Requirements vary by state, licence class, job value, and job scope. TradieHubAU checks support platform trust but do not replace your own due diligence.
-          </p>
-        </div>
-        {!dueDiligenceExpanded && (
-          <p className="px-4 pb-3.5 text-[11px] text-muted-foreground font-semibold italic">
-            Tradies must confirm they are licensed, insured, qualified, and competent for each job.
-          </p>
+        {/* Short checklist preview of core items */}
+        {!isVerificationComplete && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-t border-border/60 pt-3 text-[10px] font-bold text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${effectiveIdVerificationStatus === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`} />
+              <span>Photo ID:</span>
+              <span className={effectiveIdVerificationStatus === 'approved' ? 'text-green-600' : 'text-primary'}>
+                {getStatusLabel(effectiveIdVerificationStatus)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${effectiveLivenessVerificationStatus === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`} />
+              <span>Liveness Selfie:</span>
+              <span className={effectiveLivenessVerificationStatus === 'approved' ? 'text-green-600' : 'text-primary'}>
+                {getStatusLabel(effectiveLivenessVerificationStatus)}
+              </span>
+            </div>
+            {targetProfile?.role !== 'customer' && (
+              <div className="flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full ${tradieVerificationStatus === 'approved' ? 'bg-green-500' : 'bg-amber-500'}`} />
+                <span>Contractor ABN/Licence:</span>
+                <span className={tradieVerificationStatus === 'approved' ? 'text-green-600' : 'text-primary'}>
+                  {tradieVerificationStatus === 'approved' ? 'Approved' : 'Action Required'}
+                </span>
+              </div>
+            )}
+          </div>
         )}
-      </div>
+      </section>
 
       {/* 3. Guided Checklist Sections */}
       <div className="space-y-4">
@@ -303,10 +427,15 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
             onClick={() => setActiveSection(activeSection === 'id' ? null : 'id')}
             className="w-full flex items-center justify-between p-4 font-bold text-sm text-foreground hover:bg-muted/10 border-b transition-colors cursor-pointer"
           >
-            <span className="flex items-center gap-2 font-black uppercase text-xs tracking-wider">
-              Identity Verification
-            </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-start text-left">
+              <span className="font-black uppercase text-xs tracking-wider">
+                Identity Verification
+              </span>
+              <span className="text-[10px] text-muted-foreground font-semibold normal-case mt-0.5 font-medium leading-none">
+                Photo ID and selfie check are required for trusted account actions.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
               <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
                 effectiveIdVerificationStatus === 'approved' && effectiveLivenessVerificationStatus === 'approved'
                   ? 'bg-green-500/10 text-green-600 border-green-500/20'
@@ -481,10 +610,15 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
             onClick={() => setActiveSection(activeSection === 'credentials' ? null : 'credentials')}
             className="w-full flex items-center justify-between p-4 font-bold text-sm text-foreground hover:bg-muted/10 border-b transition-colors cursor-pointer"
           >
-            <span className="flex items-center gap-2 font-black uppercase text-xs tracking-wider">
-              {targetProfile.role === 'customer' ? 'Apply as a Contractor' : 'Contractor Credentials'}
-            </span>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-start text-left">
+              <span className="font-black uppercase text-xs tracking-wider">
+                {targetProfile.role === 'customer' ? 'Apply as a Contractor' : 'Contractor Credentials'}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-semibold normal-case mt-0.5 font-medium leading-none">
+                Contractor licence and insurance are required before tradie approval.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
               <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
                 targetProfile.role === 'customer'
                   ? 'bg-muted text-muted-foreground border-border'
@@ -655,7 +789,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                                 onClick={() => setExpandedRow(expandedRow === doc.type ? null : doc.type)}
                                 className="bg-secondary text-secondary-foreground font-black text-[10px] uppercase px-3 py-1 rounded-lg hover:bg-secondary/80 transition-all cursor-pointer"
                               >
-                                {expandedRow === doc.type ? 'Cancel' : 'Submit'}
+                                {expandedRow === doc.type ? 'Cancel' : 'Submit document'}
                               </button>
                             )}
                           </div>
@@ -688,7 +822,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                                   className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-bold px-3 py-1.5 rounded-lg hover:bg-primary/95 text-xs disabled:opacity-50 cursor-pointer"
                                 >
                                   {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                                  Submit
+                                  Submit document
                                 </button>
                               </div>
                             </div>
@@ -711,13 +845,16 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
               onClick={() => setActiveSection(activeSection === 'licences' ? null : 'licences')}
               className="w-full flex items-center justify-between p-4 font-bold text-sm text-foreground hover:bg-muted/10 border-b transition-colors cursor-pointer"
             >
-              <span className="flex items-center gap-2 font-black uppercase text-xs tracking-wider">
-                Trade-Specific Licences
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-border bg-muted/10 text-muted-foreground">
-                  {userTradeCredentials.length} submitted
+              <div className="flex flex-col items-start text-left">
+                <span className="font-black uppercase text-xs tracking-wider">
+                  Trade-Specific Licences
                 </span>
+                <span className="text-[10px] text-muted-foreground font-semibold normal-case mt-0.5 font-medium leading-none">
+                  {getTradeLicenceCollapsedHelper()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {getTradeLicenceStatusBadge()}
                 {activeSection === 'licences' ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
               </div>
             </button>
@@ -912,13 +1049,16 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
               onClick={() => setActiveSection(activeSection === 'evidence' ? null : 'evidence')}
               className="w-full flex items-center justify-between p-4 font-bold text-sm text-foreground hover:bg-muted/10 border-b transition-colors cursor-pointer"
             >
-              <span className="flex items-center gap-2 font-black uppercase text-xs tracking-wider">
-                Experience Evidence
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-border bg-muted/10 text-muted-foreground">
-                  {userExperienceEvidence.length} submitted
+              <div className="flex flex-col items-start text-left">
+                <span className="font-black uppercase text-xs tracking-wider">
+                  Experience Evidence
                 </span>
+                <span className="text-[10px] text-muted-foreground font-semibold normal-case mt-0.5 font-medium leading-none">
+                  Add qualifications, references, or work history to strengthen your profile.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {getExperienceEvidenceStatusBadge()}
                 {activeSection === 'evidence' ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
               </div>
             </button>
@@ -932,14 +1072,14 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                     onClick={() => setShowEvidenceForm(!showEvidenceForm)}
                     className="bg-primary text-primary-foreground font-black text-[10px] uppercase px-3 py-1.5 rounded-lg hover:bg-primary/95 transition-all shadow cursor-pointer"
                   >
-                    {showEvidenceForm ? 'Cancel Add' : 'Add Experience Proof'}
+                    {showEvidenceForm ? 'Cancel Add' : 'Add Evidence'}
                   </button>
                 </div>
 
                 {/* Evidence form */}
                 {showEvidenceForm && (
                   <form onSubmit={handleAddExperienceEvidence} className="p-4 bg-muted/10 border border-dashed rounded-2xl space-y-4 max-w-lg">
-                    <h5 className="text-xs font-black text-foreground uppercase tracking-wider">Upload Experience Proof</h5>
+                    <h5 className="text-xs font-black text-foreground uppercase tracking-wider">Add Experience Evidence</h5>
                     {evidenceError && <p className="text-xs font-bold text-red-500">{evidenceError}</p>}
                     {evidenceSuccess && <p className="text-xs font-bold text-green-600">{evidenceSuccess}</p>}
 
@@ -1012,7 +1152,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                       className="w-full inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground font-black px-4 py-2 rounded-xl text-xs hover:bg-primary/95 shadow-sm cursor-pointer"
                     >
                       {submittingEvidence && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                      Upload Evidence
+                      Add Evidence
                     </button>
                   </form>
                 )}
@@ -1062,6 +1202,33 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
               </div>
             )}
           </div>
+        )}
+      </div>
+
+      {/* 2. Collapsible Due Diligence Notice */}
+      <div className="border rounded-2xl bg-muted/10 overflow-hidden transition-all mt-4">
+        <button
+          type="button"
+          onClick={() => setDueDiligenceExpanded(!dueDiligenceExpanded)}
+          className="w-full flex items-center justify-between p-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/20 text-left transition-colors font-medium cursor-pointer"
+        >
+          <span className="flex items-center gap-1.5 font-black uppercase tracking-wider text-foreground">
+            <Info className="h-4 w-4 text-primary shrink-0" /> Your Due Diligence Responsibility
+          </span>
+          {dueDiligenceExpanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+        </button>
+        <div className={`px-4 pb-3.5 text-xs text-muted-foreground font-semibold leading-relaxed ${dueDiligenceExpanded ? 'block' : 'hidden'}`}>
+          <p className="mb-2">
+            Tradies must confirm they are licensed, insured, qualified, and competent for each job.
+          </p>
+          <p className="text-[11px] font-medium leading-relaxed bg-background p-2.5 rounded-xl border">
+            Tradies remain responsible for checking that they hold the correct current licence, insurance, qualifications, and experience for the exact work they quote or accept. Requirements vary by state, licence class, job value, and job scope. TradieHubAU checks support platform trust but do not replace your own due diligence.
+          </p>
+        </div>
+        {!dueDiligenceExpanded && (
+          <p className="px-4 pb-3.5 text-[11px] text-muted-foreground font-semibold italic">
+            Tradies must confirm they are licensed, insured, qualified, and competent for each job.
+          </p>
         )}
       </div>
     </div>
