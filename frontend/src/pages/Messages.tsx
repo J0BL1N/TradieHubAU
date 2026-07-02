@@ -548,7 +548,7 @@ export default function Messages() {
           if (incoming.sender_id !== user.id) {
             const enabled = getSoundEnabledPreference(KEYS.MESSAGES_ENABLED, true);
             if (enabled) {
-              const path = getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message.mp3');
+              const path = getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message-confirm-tap.mp3');
               void playSoundSafe(path);
             }
           }

@@ -5,11 +5,17 @@ export interface SoundOption {
 }
 
 export const MESSAGE_SOUND_OPTIONS: SoundOption[] = [
-  { id: 'default-message', name: 'Tap Confirm (Default)', path: '/audio/message.mp3' },
+  { id: 'confirm-tap', name: 'Confirm Tap', path: '/audio/message-confirm-tap.mp3' },
 ];
 
 export const NOTIFICATION_SOUND_OPTIONS: SoundOption[] = [
-  { id: 'default-notification', name: 'Alert Ping (Default)', path: '/audio/notification.mp3' },
+  { id: 'soft-alert', name: 'Soft Alert (Default)', path: '/audio/notification-soft-alert.mp3' },
+  { id: 'bright-chime', name: 'Bright Chime', path: '/audio/notification-bright-chime.mp3' },
+  { id: 'gentle-ping', name: 'Gentle Ping', path: '/audio/notification-gentle-ping.mp3' },
+  { id: 'clean-pop', name: 'Clean Pop', path: '/audio/notification-clean-pop.mp3' },
+  { id: 'echo-chime', name: 'Echo Chime', path: '/audio/notification-echo-chime.mp3' },
+  { id: 'light-sweep', name: 'Light Sweep', path: '/audio/notification-light-sweep.mp3' },
+  { id: 'digital-blip', name: 'Digital Blip', path: '/audio/notification-digital-blip.mp3' },
 ];
 
 // LocalStorage Keys

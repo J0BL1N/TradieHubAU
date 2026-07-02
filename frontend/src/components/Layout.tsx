@@ -79,7 +79,7 @@ export default function Layout() {
             // Play notification sound if enabled
             const enabled = getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true);
             if (enabled) {
-              const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification.mp3');
+              const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification-soft-alert.mp3');
               void playSoundSafe(path);
             }
           }

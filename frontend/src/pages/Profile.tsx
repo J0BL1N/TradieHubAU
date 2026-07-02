@@ -24,6 +24,8 @@ import type { CompletionProofPortfolioItem } from '../lib/profileTrust';
 import { fetchPublicTradieReviews } from '../lib/reviews';
 import {
   KEYS,
+  MESSAGE_SOUND_OPTIONS,
+  NOTIFICATION_SOUND_OPTIONS,
   getSoundPreference,
   getSoundEnabledPreference,
   setSoundPreference,
@@ -176,10 +178,10 @@ export default function Profile() {
 
   // App sound preferences state
   const [soundMessage, setSoundMessage] = useState(() =>
-    getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message.mp3')
+    getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message-confirm-tap.mp3')
   );
   const [soundNotification, setSoundNotification] = useState(() =>
-    getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification.mp3')
+    getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification-soft-alert.mp3')
   );
   const [soundMessagesEnabled, setSoundMessagesEnabled] = useState(() =>
     getSoundEnabledPreference(KEYS.MESSAGES_ENABLED, true)
@@ -3142,7 +3144,9 @@ export default function Profile() {
                             }}
                             className="w-full mt-1.5 px-3 py-2.5 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 font-medium"
                           >
-                            <option value="/audio/message.mp3">Tap Confirm (Default)</option>
+                            {MESSAGE_SOUND_OPTIONS.map(opt => (
+                              <option key={opt.id} value={opt.path}>{opt.name}</option>
+                            ))}
                           </select>
                         </div>
                         <button
@@ -3193,7 +3197,9 @@ export default function Profile() {
                             }}
                             className="w-full mt-1.5 px-3 py-2.5 bg-background border border-border rounded-xl text-sm outline-none focus:border-primary/50 font-medium"
                           >
-                            <option value="/audio/notification.mp3">Alert Ping (Default)</option>
+                            {NOTIFICATION_SOUND_OPTIONS.map(opt => (
+                              <option key={opt.id} value={opt.path}>{opt.name}</option>
+                            ))}
                           </select>
                         </div>
                         <button
