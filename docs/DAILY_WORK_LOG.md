@@ -2,6 +2,22 @@
 
 Single ongoing project-history log. Entries are based on committed git history, file timestamps, and docs present in this repo.
 
+
+## 2026-07-03
+
+### Run overnight pre-beta cleanup and stability audit
+
+| Item | Notes |
+| --- | --- |
+| Area | Security, Database, Frontend Stability, QA |
+| Summary | Performed a comprehensive pre-beta code-level stability and security audit. Discovered a permission denied crash when guest/anonymous users tried to browse jobs or tradies (`permission denied for function is_admin` on views/RPCs). Hardened migration `094_trade_verification_live_patch.sql` to explicitly grant EXECUTE permission on `public.is_admin(uuid)` to `anon` callers. Upgraded `PublicTradieProfile.tsx` sub-queries (proof gallery, reviews, credentials, experience evidence) to run safely in individual try-catch blocks, providing empty fallbacks and silent warnings instead of page crashes on database fetch errors. Updated the pre-beta launch checklists. |
+| Files changed | `supabase/migrations/094_trade_verification_live_patch.sql`, `frontend/src/pages/PublicTradieProfile.tsx`, `docs/beta_readiness_checklist.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | Migration `094` (requires manual execution by Jay in Supabase Studio). |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | Manual migration `094` application. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ## 2026-07-02
 
 ### Add due diligence disclaimers and advisory messaging

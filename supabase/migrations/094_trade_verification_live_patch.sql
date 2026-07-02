@@ -107,3 +107,6 @@ CREATE POLICY "Verified tradies can create applications"
     -- Enforce the database-level trade licence gating
     AND public.check_user_has_required_licences(auth.uid(), job_id)
   );
+
+-- Fix permission denied for function is_admin error on anonymous view queries
+GRANT EXECUTE ON FUNCTION public.is_admin(uuid) TO anon;

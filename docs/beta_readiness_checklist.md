@@ -30,9 +30,11 @@ All database modifications are codified in `supabase/migrations/`:
 * [x] **090** — Messaging safety, profanity filter, and audit logs trigger
 * [x] **091** — Supabase security/lint views and search paths hardening
 * [x] **092** — Safe public identity masking view and contact-bypass filters (corrected)
+* [x] **093** — Trade-specific licence type schemas and base tables
+* [x] **094** — Safe recovery patch for audited DB-level quote/application gating (corrected)
 
 > [!IMPORTANT]
-> The database migration files `081_create_notifications_table.sql` through `092_public_profile_identity_safety.sql` are created and pushed to GitHub main. Live deployment to the Supabase Studio hosting environment is manual and must be executed by Jay.
+> The database migration files `081_create_notifications_table.sql` through `094_trade_verification_live_patch.sql` are created and pushed to GitHub main. Live deployment to the Supabase Studio hosting environment is manual and must be executed by Jay. Note that Jay already ran the original `093` live, so **do not rerun 093 live**. Apply `094` to add the missing security checks and RLS policies on top of it.
 
 ---
 

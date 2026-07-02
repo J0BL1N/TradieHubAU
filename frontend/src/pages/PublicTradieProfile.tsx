@@ -80,31 +80,52 @@ export default function PublicTradieProfile() {
       }
       setHasFundedContract(relationshipActive);
 
-      const [
-        proofResult,
-        reviewsResult,
-        credsRes,
-        evRes,
-      ] = await Promise.all([
-        fetchPublicProofGallery(userId),
-        fetchPublicTradieReviews(userId),
-        supabase
+      let proofData: any[] = [];
+      try {
+        const res = await fetchPublicProofGallery(userId);
+        if (res.error) throw res.error;
+        proofData = res.data || [];
+      } catch (err: any) {
+        console.warn('⚠️ fetchPublicProofGallery failed:', err.message || err);
+      }
+
+      let reviewsData: any[] = [];
+      try {
+        const res = await fetchPublicTradieReviews(userId);
+        if (res.error) throw res.error;
+        reviewsData = res.data || [];
+      } catch (err: any) {
+        console.warn('⚠️ fetchPublicTradieReviews failed:', err.message || err);
+      }
+
+      let credsData: any[] = [];
+      try {
+        const { data, error: credsErr } = await supabase
           .from('public_user_credentials')
           .select('*, licence_type:trade_licence_types(*)')
-          .eq('user_id', userId),
-        supabase
+          .eq('user_id', userId);
+        if (credsErr) throw credsErr;
+        credsData = data || [];
+      } catch (err: any) {
+        console.warn('⚠️ public_user_credentials query failed:', err.message || err);
+      }
+
+      let evData: any[] = [];
+      try {
+        const { data, error: evErr } = await supabase
           .from('public_user_experience_evidence')
           .select('*')
-          .eq('user_id', userId)
-      ]);
+          .eq('user_id', userId);
+        if (evErr) throw evErr;
+        evData = data || [];
+      } catch (err: any) {
+        console.warn('⚠️ public_user_experience_evidence query failed:', err.message || err);
+      }
 
-      if (proofResult.error) throw proofResult.error;
-      if (reviewsResult.error) throw reviewsResult.error;
-
-      setProofGallery(proofResult.data);
-      setReviews(reviewsResult.data);
-      if (credsRes.data) setApprovedCreds(credsRes.data);
-      if (evRes.data) setApprovedEvidence(evRes.data);
+      setProofGallery(proofData);
+      setReviews(reviewsData);
+      setApprovedCreds(credsData);
+      setApprovedEvidence(evData);
     } catch (err: any) {
       console.error('Public tradie profile load error:', err.message);
       setError(err.message || 'Public tradie profile could not be loaded.');
