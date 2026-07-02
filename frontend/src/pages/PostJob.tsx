@@ -142,7 +142,7 @@ export default function PostJob() {
         <div className="space-y-2">
           <h2 className="text-2xl font-black text-foreground">Profile Setup Required</h2>
           <p className="text-sm text-muted-foreground leading-relaxed font-semibold">
-            Your user profile row is missing from the database. Please navigate to the profile page to initialize your public account before posting jobs.
+            Your user profile could not be found. Please navigate to the profile page to initialize your public account before posting jobs.
           </p>
         </div>
         <div className="pt-2">

@@ -1796,6 +1796,7 @@ export default function Profile() {
                   className="hidden"
                   disabled={avatarUploading}
                   onChange={(event) => void handleAvatarUpload(event.target.files?.[0])}
+                  aria-label="Upload profile picture"
                 />
               </label>
             )}

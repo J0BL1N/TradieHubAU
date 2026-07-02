@@ -184,6 +184,7 @@ export default function BrowseTradies() {
                 onClick={loadTradies}
                 className="p-2 border rounded-xl hover:bg-muted text-muted-foreground"
                 title="Refresh listings"
+                aria-label="Refresh listings"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -302,7 +303,11 @@ export default function BrowseTradies() {
             <h3 className="font-extrabold text-xl text-foreground flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary" /> Filters
             </h3>
-            <button onClick={() => setMobileFiltersOpen(false)} className="p-2 text-muted-foreground hover:text-foreground rounded-lg">
+            <button
+              onClick={() => setMobileFiltersOpen(false)}
+              className="p-2 text-muted-foreground hover:text-foreground rounded-lg"
+              aria-label="Close filters"
+            >
               <X className="h-6 w-6" />
             </button>
           </div>

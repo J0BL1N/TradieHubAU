@@ -1164,6 +1164,7 @@ export default function Messages() {
                       multiple
                       className="hidden"
                       onChange={handleAttachmentSelect}
+                      aria-label="Upload message attachments"
                     />
                     <button
                       type="button"
@@ -1183,11 +1184,13 @@ export default function Messages() {
                       rows={2}
                       maxLength={4000}
                       className="min-h-[48px] flex-1 resize-none rounded-xl border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary/50"
+                      aria-label="Message text"
                     />
                     <button
                       type="submit"
                       disabled={(!reply.trim() && selectedAttachments.length === 0) || sending}
                       className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Send message"
                     >
                       {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       <span className="hidden sm:inline">Send</span>

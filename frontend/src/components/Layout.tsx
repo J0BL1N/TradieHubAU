@@ -384,6 +384,7 @@ export default function Layout() {
                 setMobileMenuOpen(!mobileMenuOpen);
               }}
               className="xl:hidden inline-flex h-12 w-12 items-center justify-center text-muted-foreground hover:text-foreground outline-none rounded-xl hover:bg-muted focus:bg-muted"
+              aria-label="Toggle main menu"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -397,6 +398,7 @@ export default function Layout() {
           <button
             onClick={() => setMobileMenuOpen(false)}
             className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground rounded-lg"
+            aria-label="Close menu"
           >
             <X className="h-6 w-6" />
           </button>

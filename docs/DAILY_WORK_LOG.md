@@ -1080,9 +1080,22 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Frontend UX & Accessibility Polish (2026-07-01 Entries)
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend UX Polish & Accessibility Hardening |
+| Files changed | `frontend/src/pages/PostJob.tsx`, `frontend/src/components/Layout.tsx`, `frontend/src/pages/BrowseCustomers.tsx`, `frontend/src/pages/BrowseTradies.tsx`, `frontend/src/pages/Profile.tsx`, `frontend/src/pages/Messages.tsx`, `docs/DAILY_WORK_LOG.md` |
+| Summary | Completed a thorough frontend UX and accessibility polish pass, fixing technical database terms in copy, adding proper aria-labels to mobile buttons and hidden inputs, and validating the production build. |
+| Details | - **Copy Polish**: Replaced database-oriented technical warning message in `PostJob.tsx` ("Your user profile row is missing from the database...") with a clean, user-friendly copy ("Your user profile could not be found...").<br> - **Mobile Nav Accessibility**: Added `aria-label="Toggle main menu"` and `aria-label="Close menu"` to the navigation toggle buttons in `Layout.tsx` for screen-reader compliance.<br> - **Directory Accessibility**: Added `aria-label="Refresh listings"` and `aria-label="Close filters"` to icon-only buttons in `BrowseCustomers.tsx` and `BrowseTradies.tsx`.<br> - **File Uploads accessibility**: Added `aria-label` tags to hidden file inputs on the profile settings page (`Profile.tsx`) and the chat composer uploader (`Messages.tsx`).<br> - **Composer accessibility**: Added explicit `aria-label` fields to the chat text composer and the send buttons in `Messages.tsx` for optimal mobile readability. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
+
 ### Remaining / Next
 
 | Item | Status |
 | --- | --- |
 | Phase 3 — Early Releases | Upcoming. |
 | Jay Manual QA Testing | In Progress. |
+
