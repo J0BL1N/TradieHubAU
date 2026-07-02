@@ -68,7 +68,7 @@ The following items are planned for future phases to further enforce profile saf
 ---
 
 ## 6. Profile-Aware Support Chatbot
-- **Status**: Floating support chatbot panel integrated in Layout.tsx, UI polished, and reply sound integrated.
+- **Status**: Floating support chatbot panel integrated in Layout.tsx, UI polished, reply sound integrated, and guided category workflow added.
 - **Privacy & Safety Constraints**:
   - The chatbot runs strictly in frontend component memory. No user question texts, chat logs, transcripts, or telemetry are saved, logged, or sent to external endpoints.
   - The chatbot uses only safe, public-facing profile fields (`role`, `verified`, `identity_verified`, `tradie_verified`) to formulate helpful directions.
@@ -78,6 +78,11 @@ The following items are planned for future phases to further enforce profile saf
   - Reduced vertical header and user status bar sizes to prevent cramping.
   - Created a 2-column prompt chip module for suggested questions.
   - Aligned input and send buttons to share matching heights.
+- **Guided Categories Menu**:
+  - Added an interactive menu of 8 help categories (Customer, Tradie, Verification, Protected Payments, Messages, Disputes, Profile, Job Details) that slides into 3–6 relevant sub-question chips with back-to-menu navigation.
+  - Added a smart page-aware banner utilizing `useLocation` paths (`/profile`, `/jobs`, `/messages`, `/protected-payments`, `/dispute-process`) to display context-specific suggestions.
+  - Formulated comprehensive answer breakdowns explaining Job Details Contract, Requests, Evidence tabs, variation limits, and payout rules.
+  - Integrated direct React Router action buttons (`Post a Job`, `Open Profile`, `Browse Jobs`) for instant in-app routing.
 - **Sound Integration**:
   - Copied `notification-clean-pop.mp3` to `bot-reply.mp3` as a reserved bot response chime.
   - Removed `notification-clean-pop.mp3` from the user-selectable lists on the My Profile "App Sounds" tab, ensuring it remains reserved for bot-only play.

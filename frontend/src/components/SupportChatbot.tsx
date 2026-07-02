@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
-import { MessageSquare, X, Send, User, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Send, User, Sparkles, ChevronLeft, HelpCircle } from 'lucide-react';
 import { playSoundSafe } from '../lib/soundPreferences';
 
 interface ChatMessage {
@@ -9,12 +9,18 @@ interface ChatMessage {
   sender: 'user' | 'bot';
   text: string;
   links?: Array<{ label: string; to: string }>;
+  suggestedCategories?: string[];
+  suggestedPrompts?: string[];
 }
 
 export default function SupportChatbot() {
   const { user, profile } = useAuth();
+  const location = useLocation();
+  const path = location.pathname;
+
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -47,7 +53,6 @@ export default function SupportChatbot() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (isOpen && chatbotRef.current && !chatbotRef.current.contains(e.target as Node)) {
-        // Only close if screen is desktop width to avoid mobile bottom sheet conflicts
         if (window.innerWidth >= 768) {
           setIsOpen(false);
         }
@@ -56,6 +61,68 @@ export default function SupportChatbot() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
+
+  const categories = [
+    { id: 'customer_help', name: 'Customer Help' },
+    { id: 'tradie_help', name: 'Tradie Help' },
+    { id: 'verification', name: 'Verification' },
+    { id: 'payments', name: 'Protected Payments' },
+    { id: 'messages', name: 'Messages & Chat' },
+    { id: 'disputes', name: 'Disputes' },
+    { id: 'profile', name: 'Profile & Settings' },
+    { id: 'job_details', name: 'Job Details Workspace' },
+  ];
+
+  const categoryQuestions: Record<string, string[]> = {
+    customer_help: [
+      'How do I post a job?',
+      'How do I review quotes?',
+      'How do I approve completed work?',
+      'How do I raise a dispute?',
+    ],
+    tradie_help: [
+      'How do I apply for jobs?',
+      'Why can’t I quote?',
+      'How do I submit completion proof?',
+      'Why are contact details locked?',
+    ],
+    verification: [
+      'What is account verification?',
+      'How do I verify my identity?',
+      'What is tradie credential check?',
+      'Why is my verification pending?',
+    ],
+    payments: [
+      'What are protected payments?',
+      'What does payment funded mean?',
+      'How do I release payment?',
+      'Why is payment release blocked?',
+    ],
+    messages: [
+      'How do messages work?',
+      'Why can’t I message someone?',
+      'Why is contact information hidden?',
+      'How do I change sound alerts?',
+    ],
+    disputes: [
+      'How do I raise a dispute?',
+      'What happens during disputes?',
+      'How do I contact dispute support?',
+    ],
+    profile: [
+      'How do I edit my profile?',
+      'How do I select app sounds?',
+      'What can I do on my account?',
+    ],
+    job_details: [
+      'Explain the Job Details card',
+      'What is the Contract tab?',
+      'What are Requests?',
+      'What is Evidence?',
+      'Why is a button disabled?',
+      'How do invoices and receipts work?',
+    ],
+  };
 
   // Helper to generate context-specific profile status text
   const getProfileStatusText = (): string => {
@@ -88,128 +155,239 @@ export default function SupportChatbot() {
     return "You are signed in. Visit your profile verification tab to check active credentials.";
   };
 
-  const getBotResponse = (query: string): { text: string; links?: Array<{ label: string; to: string }> } => {
+  const getPageAwareText = (): string | null => {
+    if (path === '/profile') {
+      return "Looks like you’re on Profile — I can help with verification, sounds, or account settings.";
+    }
+    if (path.startsWith('/jobs') || path.startsWith('/browse-jobs')) {
+      return "Looks like you're on the Jobs page — I can help with posting, applying, quoting, secure payments, variations, or disputes.";
+    }
+    if (path.startsWith('/messages')) {
+      return "Looks like you're on Messages — I can help with chat threads, locked contact info, or sound alerts.";
+    }
+    if (path.startsWith('/protected-payments')) {
+      return "Looks like you're learning about Payments — I can explain funding, contract active status, and releases.";
+    }
+    if (path.startsWith('/dispute-process')) {
+      return "Looks like you're reviewing the Dispute process — I can explain how to open a dispute or how review works.";
+    }
+    return null;
+  };
+
+  const getBotResponse = (query: string): {
+    text: string;
+    links?: Array<{ label: string; to: string }>;
+    suggestedCategories?: string[];
+    suggestedPrompts?: string[];
+  } => {
     const q = query.toLowerCase().trim();
+
+    // Account capability summary
+    if (q.includes('what can i do') || q.includes('my account') || q.includes('capability') || q.includes('capabilities')) {
+      if (!user) {
+        return {
+          text: 'Guest Account Capabilities:\n1. Browse open jobs board and listings.\n2. Browse public tradie profiles.\n\n*Note: To post jobs, message users, or quote on work, please sign in or register.*',
+          links: [
+            { label: 'Register / Sign In', to: '/login' },
+            { label: 'Browse Jobs', to: '/jobs' }
+          ]
+        };
+      }
+
+      const role = profile?.role || 'customer';
+      const isVerifiedTradie = profile?.tradie_verified || false;
+      const isIdVerified = profile?.identity_verified || false;
+
+      if (role === 'customer') {
+        return {
+          text: `Customer Account (${profile?.display_name || 'Active User'}):\n1. Post new jobs to the jobs board.\n2. Review incoming quotes from verified tradies.\n3. Message tradies regarding your postings.\n4. Fund secure payments to keep work protected.\n5. Review completion evidence and release payments.\n6. Raise disputes if issues arise.`,
+          links: [
+            { label: 'Post a Job', to: '/post-job' },
+            { label: 'My Jobs Dashboard', to: '/jobs' }
+          ]
+        };
+      }
+
+      if (!isIdVerified) {
+        return {
+          text: `Unverified Tradie Account:\n1. Browse open jobs board listings.\n2. View customer job postings.\n\n*Lock: You must upload identity verification details before you can quote or apply.*`,
+          links: [{ label: 'Verify Identity Now', to: '/profile' }]
+        };
+      }
+
+      if (!isVerifiedTradie) {
+        return {
+          text: `Pending Credentials Review:\n1. Your ID is uploaded, but licence or public liability insurance verification is pending admin approval.\n2. Once approved by staff, you can bid, quote, and apply for jobs.`,
+          links: [{ label: 'Check Verification Tab', to: '/profile' }]
+        };
+      }
+
+      return {
+        text: `Verified Tradie Account:\n1. Quote on open jobs board listings.\n2. Message customers on active threads.\n3. Send custom quotation lists.\n4. Request variation adjustments or early payment releases.\n5. Upload finished work photos/evidence and submit completion proof.`,
+        links: [
+          { label: 'Browse Jobs Board', to: '/jobs' },
+          { label: 'My Inbox', to: '/messages' }
+        ]
+      };
+    }
 
     // 1. Post a job
     if (q.includes('post') || q.includes('create job') || q.includes('new job')) {
       return {
-        text: 'To post a job, click the "Post a Job" button in the navigation header or go to the Post Job page. Fill in the title, trade categories, description, and suburb. Once posted, local tradies will be notified to quote.',
-        links: [{ label: 'Post a Job', to: '/post-job' }]
+        text: 'To post a job:\n1. Click "Post a Job" in the header or dashboard.\n2. Select relevant trade categories (e.g. Plumbing, Electrical).\n3. Provide descriptions, photo references, and the suburb.\n4. Click Post to notify local qualified tradespeople.',
+        links: [{ label: 'Post a Job →', to: '/post-job' }]
       };
     }
 
     // 2. Browse jobs
     if (q.includes('browse job') || q.includes('find job') || q.includes('search job') || q.includes('view job')) {
       return {
-        text: 'You can browse open jobs on our Jobs board. Filter by trade category, state, region, or suburb to find work in your local service area.',
-        links: [{ label: 'Browse Jobs', to: '/jobs' }]
+        text: 'To browse open jobs:\n1. Go to the Jobs board.\n2. Filter listings by trade type, region, state, or suburb.\n3. Click any listing card to view full descriptions and requirements.',
+        links: [{ label: 'Browse Jobs →', to: '/jobs' }]
       };
     }
 
-    // 3. Why can\'t apply / quote
-    if (q.includes('apply') || q.includes('quote') || q.includes('bid') || q.includes('why can\'t') || q.includes('locked')) {
+    // 3. Why can't I apply? / Why can't I quote?
+    if (q.includes('apply for jobs') || q.includes('can’t i quote') || q.includes('cant i quote') || q.includes('can\'t i quote') || q.includes('quote locked') || q.includes('apply locked') || q.includes('cannot apply') || q.includes('cant apply') || q.includes('can\'t apply') || q.includes('why are contact') || q.includes('details locked')) {
       if (!user) {
         return {
-          text: 'You must be signed in to apply or quote. Please register or log in first.',
-          links: [{ label: 'Log In', to: '/login' }]
+          text: 'Applications and quotes require an active account. Please register or sign in first.',
+          links: [{ label: 'Sign In / Join →', to: '/login' }]
         };
       }
       const role = profile?.role || 'customer';
       if (role === 'customer') {
         return {
-          text: 'Customers cannot apply or quote on jobs. If you are a tradesperson, you can change your role or register a tradie profile in your account settings.',
-          links: [{ label: 'My Profile', to: '/profile' }]
+          text: 'Quoting and applying is restricted to tradespeople. Customers post jobs and hire tradies. If you are a tradesperson, you can check your role or configure profile credentials.',
+          links: [{ label: 'My Profile →', to: '/profile' }]
+        };
+      }
+      if (!profile?.identity_verified) {
+        return {
+          text: 'To apply or quote, you must complete identity verification. Please upload photo identification documents in the verification section.',
+          links: [{ label: 'Verify Identity →', to: '/profile' }]
         };
       }
       if (!profile?.tradie_verified) {
         return {
-          text: 'To apply or quote on jobs, you must have an approved tradie profile. Complete your ID verification and submit your licence and insurance credentials in the profile page.',
-          links: [{ label: 'Verify Account', to: '/profile' }]
+          text: 'Your identity is verified, but your trade credentials (licence, liability insurance) are awaiting admin review. Once approved, bidding will be unlocked.',
+          links: [{ label: 'Credential Status →', to: '/profile' }]
         };
       }
       return {
-        text: 'Your tradie account is fully verified. If you still cannot apply to a job, verify that: 1) the job is not closed or already accepted; 2) the job does not belong to you; 3) you have not already submitted a quote.',
-        links: [{ label: 'Jobs Board', to: '/jobs' }]
+        text: 'Your tradie account is verified. If you cannot apply, check if:\n1. You are the owner of the job.\n2. You have already submitted a quote.\n3. The job status is closed or already awarded.\n4. Direct contact details are locked for safety prior to quote acceptance.',
+        links: [{ label: 'Jobs Board →', to: '/jobs' }]
       };
     }
 
     // 4. Verification
-    if (q.includes('verify') || q.includes('verification') || q.includes('selfie') || q.includes('licence') || q.includes('insurance')) {
+    if (q.includes('verification') || q.includes('verify') || q.includes('selfie') || q.includes('licence') || q.includes('insurance') || q.includes('credential')) {
       return {
-        text: 'TradieHubAU uses identity and credential verification to build trust. Customers need identity verification for secure jobs, while tradies must submit public liability insurance and trade licences. Go to My Profile -> Verification to submit your documents.',
-        links: [{ label: 'Verification Tab', to: '/profile' }]
+        text: 'Verification Details:\n1. Customer ID: Required for high-value secure jobs to protect users.\n2. Tradie ID: Selfie and photo ID to check authenticity.\n3. Credentials: Trade licence and Public Liability Insurance certificate uploads, reviewed by admin staff.',
+        links: [{ label: 'Verification Section →', to: '/profile' }]
       };
     }
 
-    // 5. Protected payments / payment released / payment funded
-    if (q.includes('payment') || q.includes('pay') || q.includes('funded') || q.includes('escrow') || q.includes('release')) {
+    // 5. Protected payments / escrow / payment release blocked / approve work disabled / release payment
+    if (q.includes('payment') || q.includes('pay') || q.includes('funded') || q.includes('escrow') || q.includes('release') || q.includes('approve work') || q.includes('receipt') || q.includes('invoice')) {
+      if (q.includes('funded')) {
+        return {
+          text: 'Payment Funded status means the customer has successfully deposited the accepted quote budget into the secure ledger system. Tradies should not start physical work until the status is officially "Funded".',
+          links: [{ label: 'Payments Explainer →', to: '/protected-payments' }]
+        };
+      }
+      if (q.includes('release blocked') || q.includes('approve work disabled') || q.includes('disabled') || q.includes('blocked')) {
+        return {
+          text: 'The "Approve Completed Work" and "Release Payment" controls are locked until:\n1. The contracted tradie submits formal completion proof and description.\n2. Any active dispute on the job is fully resolved by the administrator.',
+          links: [{ label: 'My Jobs Dashboard →', to: '/jobs' }]
+        };
+      }
+      if (q.includes('invoice') || q.includes('receipt')) {
+        return {
+          text: 'Invoicing & Receipts:\n1. Once payment is released, the system generates invoicing receipt records automatically.\n2. Customers download the "View Receipt".\n3. Tradies download the "Payout Statement" breakdown.\n*Note: Tax and GST statements conform to standard calculations.*',
+          links: [{ label: 'Jobs Dashboard →', to: '/jobs' }]
+        };
+      }
       return {
-        text: 'We secure quotes using a secure payment ledger. The customer funds the job payment to our secure system before the tradie starts work. Once work is completed and approved, the funded payment is released. This protects both customers and tradies.',
-        links: [{ label: 'Secure Payments Info', to: '/protected-payments' }]
+        text: 'Protected Payments Flow:\n1. Customer accepts a quote and funds the secure payment ledger.\n2. Tradie performs work under "Funded" status.\n3. Tradie uploads completion proof.\n4. Customer reviews and approves work to release the payment.',
+        links: [{ label: 'Learn Protected Payments →', to: '/protected-payments' }]
       };
     }
 
-    // 6. Submit proof / complete work
-    if (q.includes('proof') || q.includes('complete') || q.includes('finish') || q.includes('completion')) {
+    // 6. Submit proof / completion proof / completion proof needed
+    if (q.includes('proof') || q.includes('complete') || q.includes('finish') || q.includes('milestone')) {
       return {
-        text: 'When a job is done, the tradie uploads completion proof (description and photos of finished work) on the job details screen. This prompts the customer to review and release the secure funded payment.',
-        links: [{ label: 'My Jobs', to: '/jobs' }]
+        text: 'Completion Proof:\n1. Required before customers can release secure payments.\n2. Tradies upload finished photos and descriptions under the Job Details "Evidence" tab.\n3. Customers review these details before clicking "Approve Completed Work".',
+        links: [{ label: 'My Jobs Dashboard →', to: '/jobs' }]
       };
     }
 
-    // 7. Raise a dispute
+    // 7. Dispute / dispute process / raise dispute
     if (q.includes('dispute') || q.includes('issue') || q.includes('problem') || q.includes('refund') || q.includes('arbitration')) {
       return {
-        text: 'If a disagreement arises regarding work quality or completion, either party can raise a dispute. This locks the secure job payment and places it in our admin review queue for review and resolution.',
-        links: [{ label: 'Dispute Process Explainer', to: '/dispute-process' }]
+        text: 'Dispute Handling:\n1. Either party can raise a dispute inside the job workspace if work is unsatisfactory.\n2. This locks the funded payment in place.\n3. Admin staff review the contract breakdown, requests, and evidence timeline to arbitrate.',
+        links: [{ label: 'Dispute Process Explainer →', to: '/dispute-process' }]
       };
     }
 
-    // 8. Messages / Chat
-    if (q.includes('message') || q.includes('chat') || q.includes('talk') || q.includes('contact')) {
+    // 8. Messages / Chat / Why can't I message
+    if (q.includes('message') || q.includes('chat') || q.includes('talk') || q.includes('contact') || q.includes('inbox')) {
       return {
-        text: 'You can chat in real-time with customers or tradies on any active job page. Go to the Messages tab to view active chat threads.',
-        links: [{ label: 'Inbox', to: '/messages' }]
+        text: 'Real-time Messaging:\n1. Chat is available on any active job Details workspace page.\n2. The inbox contains active user chat threads.\n3. Direct contact phone/email details remain hidden until a quote is accepted to prevent platform bypasses.',
+        links: [
+          { label: 'My Inbox →', to: '/messages' },
+          { label: 'My Jobs Dashboard →', to: '/jobs' }
+        ]
       };
     }
 
-    // 9. Sounds / Audio
+    // 9. Sounds / Audio / change sounds
     if (q.includes('sound') || q.includes('audio') || q.includes('chime') || q.includes('volume') || q.includes('alert')) {
       return {
-        text: 'You can configure chat and notification sounds on the My Profile page under the "App Sounds" tab. Enable/disable chimes and choose your preferred alert tones.',
-        links: [{ label: 'App Sounds', to: '/profile' }]
+        text: 'Change Sound Alerts:\n1. Go to My Profile page.\n2. Open the "App Sounds" settings tab.\n3. Toggle sound alerts on/off and select your preferred tones.',
+        links: [{ label: 'Configure Sounds →', to: '/profile' }]
       };
     }
 
     // 10. Edit profile
-    if (q.includes('profile') || q.includes('edit') || q.includes('avatar') || q.includes('change name')) {
+    if (q.includes('profile') || q.includes('edit') || q.includes('avatar') || q.includes('change name') || q.includes('settings')) {
       return {
-        text: 'To edit your display name, contact phone, or trade settings, go to the My Profile settings page.',
-        links: [{ label: 'Edit Profile', to: '/profile' }]
+        text: 'To edit profile details, update names, or upload profile pictures, go to the My Profile settings section.',
+        links: [{ label: 'Edit Profile →', to: '/profile' }]
       };
     }
 
-    // 11. Invoices / Receipts
-    if (q.includes('invoice') || q.includes('receipt') || q.includes('bill')) {
+    // 11. Job Details / Contract / Requests / Evidence
+    if (q.includes('job details') || q.includes('contract') || q.includes('request') || q.includes('evidence') || q.includes('timeline') || q.includes('variation') || q.includes('early release')) {
+      if (q.includes('contract')) {
+        return {
+          text: 'Job Details - Contract Tab:\nDisplays the binding contract quote line items. These are locked once payment is funded by the customer.',
+          links: [{ label: 'Jobs Dashboard →', to: '/jobs' }]
+        };
+      }
+      if (q.includes('request') || q.includes('variation') || q.includes('early release')) {
+        return {
+          text: 'Job Details - Requests Tab:\n1. Variation Requests: Used by tradies to request changes or extra costs, subject to customer approval.\n2. Early Release: Used to request partial payouts before full completion.',
+          links: [{ label: 'Jobs Dashboard →', to: '/jobs' }]
+        };
+      }
+      if (q.includes('evidence') || q.includes('timeline')) {
+        return {
+          text: 'Job Details - Evidence Tab:\nShows the job action timeline log and completion proof photo/description uploads. Essential for verification prior to approvals.',
+          links: [{ label: 'Jobs Dashboard →', to: '/jobs' }]
+        };
+      }
       return {
-        text: 'Once a job is approved and payment is released, the platform automatically generates invoicing receipt records. You can download these records in your dashboard.',
-        links: [{ label: 'My Jobs', to: '/jobs' }]
+        text: 'Job Details Workspace Tabs:\n1. Overview: Status and main actions.\n2. Contract: Bound quote lines.\n3. Requests: Variation and early release requests.\n4. Evidence: Work proof logs and dispute attachments.',
+        links: [{ label: 'Jobs Dashboard →', to: '/jobs' }]
       };
     }
 
-    // 12. Support / Human
-    if (q.includes('support') || q.includes('contact') || q.includes('human') || q.includes('help') || q.includes('agent')) {
-      return {
-        text: 'For tax questions, payment settlements, identity validation details, or safety concerns, please contact our support staff directly or email support@tradiehub.com.au.',
-        links: [{ label: 'Contact Support', to: '/support' }]
-      };
-    }
-
-    // Default response
+    // Default Fallback
     return {
-      text: 'I can help with basic site directions, verification questions, secure payment flows, and profile settings. If you need account specific support, please contact our team.',
-      links: [{ label: 'Support Page', to: '/support' }]
+      text: 'I can help with basic site directions, verification, secure payment flows, and profile settings. For this query, please contact our support team or try one of these topics:',
+      links: [{ label: 'Contact Support →', to: '/support' }],
+      suggestedCategories: ['customer_help', 'tradie_help', 'job_details']
     };
   };
 
@@ -225,7 +403,6 @@ export default function SupportChatbot() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
-    // Simulate bot response after a brief visual delay
     setTimeout(() => {
       const response = getBotResponse(textToSend);
       const botMsg: ChatMessage = {
@@ -233,9 +410,10 @@ export default function SupportChatbot() {
         sender: 'bot',
         text: response.text,
         links: response.links,
+        suggestedCategories: response.suggestedCategories,
+        suggestedPrompts: response.suggestedPrompts,
       };
       setMessages(prev => [...prev, botMsg]);
-      // Play reserved bot-reply sound
       void playSoundSafe('/audio/bot-reply.mp3');
     }, 400);
   };
@@ -243,15 +421,6 @@ export default function SupportChatbot() {
   const handleChipClick = (text: string) => {
     handleSend(text);
   };
-
-  const quickPrompts = [
-    'How do I post a job?',
-    'Why can\'t I apply?',
-    'How do payments work?',
-    'How do I verify?',
-    'How do I raise a dispute?',
-    'How do I change sounds?',
-  ];
 
   return (
     <div className="fixed bottom-6 right-6 z-40" ref={chatbotRef}>
@@ -302,6 +471,16 @@ export default function SupportChatbot() {
             </p>
           </div>
 
+          {/* Page-Aware Context Bar */}
+          {getPageAwareText() && (
+            <div className="px-4 py-1.5 bg-primary/5 border-b border-primary/10 flex items-start gap-2 shrink-0">
+              <HelpCircle className="h-3.5 w-3.5 text-primary/75 shrink-0 mt-0.5" />
+              <p className="text-[9px] font-bold text-primary leading-normal">
+                {getPageAwareText()}
+              </p>
+            </div>
+          )}
+
           {/* Messages and Quick Prompts Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5 flex flex-col">
             {messages.map((msg) => (
@@ -310,13 +489,15 @@ export default function SupportChatbot() {
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs font-semibold leading-normal ${
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs font-semibold leading-normal whitespace-pre-wrap ${
                     msg.sender === 'user'
                       ? 'bg-primary text-primary-foreground rounded-tr-none shadow-sm'
                       : 'bg-card text-foreground/90 border border-border/40 rounded-tl-none shadow-xs'
                   }`}
                 >
                   <div>{msg.text}</div>
+
+                  {/* Inline Links/Buttons */}
                   {msg.links && msg.links.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {msg.links.map((link, i) => (
@@ -326,9 +507,54 @@ export default function SupportChatbot() {
                           onClick={() => setIsOpen(false)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-muted text-[9px] font-black uppercase text-primary border border-border/60 rounded-lg shadow-xs transition-all"
                         >
-                          {link.label} &rarr;
+                          {link.label}
                         </Link>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Fallback Suggested Categories */}
+                  {msg.suggestedCategories && msg.suggestedCategories.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-border/30 space-y-1.5">
+                      <p className="text-[8px] font-black text-muted-foreground/80 uppercase">Browse Categories:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {msg.suggestedCategories.map((catId) => {
+                          const cat = categories.find(c => c.id === catId);
+                          if (!cat) return null;
+                          return (
+                            <button
+                              key={catId}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(catId);
+                                handleChipClick(cat.name);
+                              }}
+                              className="px-2 py-1 bg-background hover:bg-muted text-[9px] font-bold text-foreground/80 border border-border/60 rounded-md transition-all shadow-2xs"
+                            >
+                              {cat.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback Suggested Prompts */}
+                  {msg.suggestedPrompts && msg.suggestedPrompts.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-border/30 space-y-1.5">
+                      <p className="text-[8px] font-black text-muted-foreground/80 uppercase">Suggested Prompts:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {msg.suggestedPrompts.map((promptText, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => handleSend(promptText)}
+                            className="px-2 py-1 bg-background hover:bg-muted text-[9px] font-bold text-foreground/80 border border-border/60 rounded-md transition-all shadow-2xs"
+                          >
+                            {promptText}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -336,23 +562,64 @@ export default function SupportChatbot() {
             ))}
             <div ref={messagesEndRef} />
 
-            {/* Quick Prompt Chips */}
+            {/* Menu-Guided System (Only displays when in initial state) */}
             {messages.length === 1 && (
-              <div className="space-y-2 pt-2 shrink-0">
-                <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-wider">Suggested Questions</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {quickPrompts.map((prompt, index) => (
+              <>
+                {selectedCategory === null ? (
+                  <div className="space-y-2 pt-2 shrink-0">
+                    <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-wider">Browse Help Categories</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className="px-3 py-2 bg-background border border-border/60 hover:bg-muted/40 hover:border-border text-left rounded-xl text-[10px] font-bold text-foreground/85 transition-all shadow-xs flex items-center justify-between"
+                        >
+                          <span>{cat.name}</span>
+                          <span className="text-muted-foreground/50 text-[10px] font-black">&rarr;</span>
+                        </button>
+                      ))}
+                    </div>
                     <button
-                      key={index}
                       type="button"
-                      onClick={() => handleChipClick(prompt)}
-                      className="px-3 py-2 bg-background border border-border/60 hover:bg-muted/40 hover:border-border text-left rounded-xl text-[10px] font-bold text-foreground/85 transition-all shadow-xs"
+                      onClick={() => handleSend('What can I do on my account?')}
+                      className="w-full px-3 py-2 bg-primary/5 hover:bg-primary/10 border border-primary/20 text-center rounded-xl text-[10px] font-bold text-primary transition-all flex items-center justify-center gap-1.5"
                     >
-                      {prompt}
+                      <User className="h-3.5 w-3.5" />
+                      <span>What can I do on my account?</span>
                     </button>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 pt-2 shrink-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-wider">
+                        {categories.find(c => c.id === selectedCategory)?.name || 'Questions'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCategory(null)}
+                        className="inline-flex items-center gap-1 text-[9px] font-black text-primary hover:underline"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                        <span>Back</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {categoryQuestions[selectedCategory]?.map((qText, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleChipClick(qText)}
+                          className="px-3 py-2 bg-background border border-border/60 hover:bg-muted/40 hover:border-border text-left rounded-xl text-[10px] font-bold text-foreground/85 transition-all shadow-xs"
+                        >
+                          {qText}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

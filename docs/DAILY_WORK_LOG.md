@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Add guided support chatbot actions
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, Chatbot, UX Polish |
+| Summary | Upgraded the profile-aware support chatbot component (`frontend/src/components/SupportChatbot.tsx`) with menu-guided help categories (Customer, Tradie, Verification, Payments, Messages, Disputes, Profile, Job Details). Clicking a category displays 3-6 relevant questions with clean back-to-menu navigation. Integrated smart route-awareness via `useLocation` to display page-aware banner suggestions. Wrote extensive explanations for the Job Details tab workspace (Contract quote bounds, Requests variations/early releases, Evidence proof uploads, dispute locks). Added compact direct action buttons using React Router links and an intelligent fallback suggestion block. |
+| Files changed | `frontend/src/components/SupportChatbot.tsx`, `docs/UX_POLISH_BACKLOG.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Polish support chatbot and add reply sound
 
 | Item | Notes |
