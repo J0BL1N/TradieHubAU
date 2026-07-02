@@ -1105,6 +1105,18 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ready for Jay manual QA. |
 
+### Messages Image Attachments Polish
+
+| Item | Notes |
+| --- | --- |
+| Area | Messages Interface / Layout Polish |
+| Summary | Resized chat image attachments/previews inside the conversation panel to clean smaller thumbnails. Prevents single large images from dominating the entire chat layout. Preserved full image lightbox and document attachment rendering. |
+| Files changed | `frontend/src/pages/Messages.tsx`, `docs/DAILY_WORK_LOG.md`, `docs/UX_POLISH_BACKLOG.md` |
+| Details | - **Constraint Image Previews**: Constrained single image previews to `max-w-[280px]` (mobile) / `md:max-w-[420px]` (desktop) and applied an `aspect-[4/3] sm:aspect-video` scale constraint to fit them cleanly inside chat bubbles.<br> - **Constrained Gallery Grid**: Grid layout for multiple attachments is constrained to `max-w-[320px]` (mobile) / `md:max-w-[500px]` (desktop) with aspect-square button cells.<br> - **Preserved Full Access**: Clicking the constrained image preview still opens the built-in fullscreen lightbox viewer.<br> - **Non-Image Safety**: Handled document/PDF files safely with clean FileText icons and readable download links. |
+| Migrations required | None. |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Remaining / Next
 
 | Item | Status |

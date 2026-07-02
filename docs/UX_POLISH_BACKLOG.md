@@ -43,3 +43,5 @@ The following items are planned for future phases to further enforce profile saf
   Allow homeowners to curate a private list of saved tradie profiles to reference again later.
 - **Full Legal/Policy Review**:
   Conduct a comprehensive legal review of public profile details, terms of use, and privacy policy safeguards before public marketing.
+- **Global Lightbox & Gallery Viewer**:
+  Extend the existing chat attachment lightbox in Messages.tsx to act as a global component, supporting zoom, download, and swipe-navigation across all completion proof galleries and work photos.

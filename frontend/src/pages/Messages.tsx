@@ -1064,32 +1064,64 @@ export default function Messages() {
                             : 'rounded-bl-none border bg-card text-foreground'
                         }`}>
                           {message.text && <p className="whitespace-pre-wrap break-words">{message.text}</p>}
-                          {message.attachments && message.attachments.length > 0 && (
-                            <div className={`mt-2 grid gap-2 ${message.attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                              {message.attachments.map((attachment, index) => (
-                                <button
-                                  key={attachment.id}
-                                  type="button"
-                                  onClick={() => setLightbox({ attachments: message.attachments || [], index })}
-                                  className="group overflow-hidden rounded-xl border bg-background/80 text-left"
-                                  aria-label={`Open ${attachment.file_name}`}
-                                >
-                                  {attachment.signed_url ? (
-                                    <img
-                                      src={attachment.signed_url}
-                                      alt={attachment.file_name}
-                                      onLoad={handleMessageImageLoad}
-                                      className="aspect-square w-full object-cover transition-transform group-hover:scale-[1.02]"
-                                    />
+                          {message.attachments && message.attachments.length > 0 && (() => {
+                            const attachments = message.attachments;
+                            const isSingle = attachments.length === 1;
+                            return (
+                              <div className={`mt-2 grid gap-2 ${
+                                isSingle
+                                  ? 'grid-cols-1 max-w-[280px] sm:max-w-[360px] md:max-w-[420px]'
+                                  : 'grid-cols-2 max-w-[320px] sm:max-w-[440px] md:max-w-[500px]'
+                              }`}>
+                                {attachments.map((attachment, index) => {
+                                  const isImage = attachment.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(attachment.file_name);
+                                  return isImage ? (
+                                    <button
+                                      key={attachment.id}
+                                      type="button"
+                                      onClick={() => setLightbox({ attachments, index })}
+                                      className={`group overflow-hidden rounded-xl border bg-background/80 text-left ${
+                                        isSingle
+                                          ? 'w-full aspect-[4/3] sm:aspect-video'
+                                          : 'w-full aspect-square'
+                                      }`}
+                                      aria-label={`Open ${attachment.file_name}`}
+                                    >
+                                      {attachment.signed_url ? (
+                                        <img
+                                          src={attachment.signed_url}
+                                          alt={attachment.file_name}
+                                          onLoad={handleMessageImageLoad}
+                                          className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
+                                        />
+                                      ) : (
+                                        <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                          <ImageIcon className="h-6 w-6" />
+                                        </span>
+                                      )}
+                                    </button>
                                   ) : (
-                                    <span className="flex aspect-square w-full items-center justify-center text-muted-foreground">
-                                      <ImageIcon className="h-6 w-6" />
-                                    </span>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                                    <a
+                                      key={attachment.id}
+                                      href={attachment.signed_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex items-center gap-2 p-3 bg-background border rounded-xl hover:bg-background/90 transition-colors w-full text-left"
+                                      aria-label={`Open document ${attachment.file_name}`}
+                                    >
+                                      <FileText className="h-5 w-5 text-primary shrink-0" />
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold truncate text-foreground">{attachment.file_name}</p>
+                                        <p className="text-[10px] text-muted-foreground font-semibold">
+                                          {attachment.file_size ? `${(attachment.file_size / 1024).toFixed(1)} KB` : 'Document'}
+                                        </p>
+                                      </div>
+                                    </a>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
                           <p className={`mt-1 text-[10px] font-semibold ${outgoing ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
                             {new Date(message.created_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
                             {outgoing && message.read ? ' · Read' : ''}
