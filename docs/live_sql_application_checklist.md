@@ -26,6 +26,7 @@ Apply the following migrations sequentially (lowest numbers first) in the Supaba
 | **9** | `089_harden_live_location_database.sql` | Safely enforces permissions, RLS policies, explicit execution grants, and fallback seeds on live servers. | Hardened access control and secure, public-safe location querying. |
 | **10** | `090_messaging_safety_moderation.sql` | Implements messaging moderation triggers, profane word filtering, and communication audits. | Safety and communication moderation filters. |
 | **11** | `091_supabase_lint_hardening.sql` | Resolves security lints by converting views to security invokers, adding search paths, and hardening triggers. | Safe database views, search path compliance, and trigger privilege control. |
+| **12** | `092_public_profile_identity_safety.sql` | Implements safe public display name middle ground and write filters to reject contact details bypasses on users/portfolio tables. | Safe public display names and data write filters. |
 
 > [!IMPORTANT]
 > **Corrective Migration Note (089)**:
@@ -77,6 +78,36 @@ SELECT count(*) FROM public.public_profiles LIMIT 5;
 
 -- 3. Verify public_open_jobs view runs successfully under standard roles
 SELECT count(*) FROM public.public_open_jobs LIMIT 5;
+```
+
+### Migration 092 Checks
+```sql
+-- 1. Test contains_contact_bypass_text function
+SELECT public.contains_contact_bypass_text('Call me on 0423 339 442') AS has_phone,
+       public.contains_contact_bypass_text('Email at test@example.com') AS has_email,
+       public.contains_contact_bypass_text('Safe text description') AS is_safe,
+       -- Website URL validation bypass test (should return false if p_allow_url is true)
+       public.contains_contact_bypass_text('https://mywebsite.com.au', true) AS allowed_website,
+       public.contains_contact_bypass_text('https://mywebsite.com.au', false) AS blocked_website;
+-- Expected: true, true, false, false, true.
+
+-- 2. Test safe_public_display_name function
+SELECT public.safe_public_display_name('John Smith', 'Smith Plumbing') AS name_1,
+       -- fallback to business name if display name is null or empty
+       public.safe_public_display_name(NULL, 'Lingo Plumbers') AS name_2,
+       -- beta string stripping
+       public.safe_public_display_name('[BETA] Sarah Mitchell', '') AS name_3;
+-- Expected: 'John S.', 'Lingo P.', 'Sarah M.'
+
+-- 3. Verify get_public_profiles output masking for guests
+-- Connect as anonymous user or authenticated caller with no payment relationship to a target user
+SELECT id, display_name, business_name, website_url, headline, bio, service_areas
+FROM public.public_profiles LIMIT 5;
+-- Expected:
+-- - display_name: formatted with first name + last initial (or 'Verified tradie')
+-- - business_name: NULL
+-- - website_url: NULL
+-- - headline/bio/service_areas: visible (if clean) or NULL (if containing contact bypasses)
 ```
 
 ---

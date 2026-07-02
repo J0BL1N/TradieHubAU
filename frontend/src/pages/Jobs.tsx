@@ -58,7 +58,7 @@ import {
   submitTradieReview,
 } from '../lib/reviews';
 import type { MyReview } from '../lib/reviews';
-import { maskName } from '../lib/masking';
+
 
 // ─── Application Modal ────────────────────────────────────────────────────────
 
@@ -3961,7 +3961,7 @@ export default function Jobs() {
                               {jobApplications.map((app) => {
                                 const isJobFunded = ['payment_held', 'completed_pending_review', 'disputed', 'completed'].includes(selectedJob.status);
                                 const showFull = isJobFunded || profile?.is_admin;
-                                const displayName = showFull ? (app.tradie?.display_name || 'Verified Tradie') : maskName(app.tradie?.display_name);
+                                const displayName = app.tradie?.display_name || 'Verified Tradie';
                                 const licenceText = showFull ? (app.tradie?.license_number || 'N/A') : 'Verified';
                                 const abnText = showFull ? (app.tradie?.abn || 'N/A') : 'Verified';
 

@@ -5,7 +5,7 @@ import type { UserProfile } from '../lib/users';
 import { fetchPublicTradieReviewSummaries } from '../lib/reviews';
 import type { ReviewSummary } from '../lib/reviews';
 import { Star, ShieldCheck, MapPin, Award, Search, SlidersHorizontal, X, Filter, RefreshCw, Loader2 } from 'lucide-react';
-import { maskName } from '../lib/masking';
+
 
 export default function BrowseTradies() {
   const [tradies, setTradies] = useState<UserProfile[]>([]);
@@ -219,9 +219,7 @@ export default function BrowseTradies() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {tradies.map((tradie) => {
-                const displayName = tradie.business_name
-                  ? maskName(tradie.business_name)
-                  : (tradie.display_name ? maskName(tradie.display_name) : 'Verified Tradie');
+                const displayName = tradie.display_name || 'Verified Tradie';
                 const tradesLine = tradie.trades && tradie.trades.length > 0
                   ? tradie.trades.map(tid => categoryOptions.find(c => c.id === tid)?.label || tid).join(', ')
                   : 'General Contractor';

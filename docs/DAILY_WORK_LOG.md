@@ -1092,6 +1092,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 | Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
 | Manual QA status | Ongoing. Awaiting final user approval and confirmation before marking complete. |
 
+### Safe Public Identity Middle Ground (Migration 092)
+
+| Item | Notes |
+| --- | --- |
+| Area | Directory Masking, Privacy, Database Safety, Frontend Validation |
+| Summary | Implemented the Browse Tradies "safe public identity" middle ground. Hides full business names, website URLs, and contact bypasses by default for public/guest users, while preserving full visibility for authenticated users with active contracts, self views, and admins. Clean bios, headlines, and service areas remain publicly visible. Added database write triggers to reject profile edits and completion proofs containing phone numbers, emails, websites, social handles, or off-platform contact instructions. |
+| Files changed | `frontend/src/pages/BrowseTradies.tsx`, `frontend/src/pages/PublicTradieProfile.tsx`, `frontend/src/pages/Home.tsx`, `frontend/src/pages/Jobs.tsx`, `frontend/src/pages/Profile.tsx` |
+| Files created | `supabase/migrations/092_public_profile_identity_safety.sql` |
+| Details | - **Database-level Masking**: Created function `public.get_public_profiles()` and invoker view `public.public_profiles` that formats `display_name` to safe name (First name + last initial, e.g. "John S."), and returns `NULL` for `business_name` and `website_url` for guest queries. Enables full raw details for self-views, administrators, or active payment relationships.<br> - **Text Fields Restored**: Adjusted safe public identity so clean headline, bio, and service area can still appear publicly, while business/contact-searchable identity remains hidden.<br> - **DB-level Write Protection Triggers**: Added triggers `trg_validate_user_profile_fields`, `trg_validate_portfolio_item_fields`, and `trg_validate_completion_proof_portfolio_fields` to automatically validate and block profile and gallery edits containing contact bypass text.<br> - **Frontend Validator**: Implemented client-side contact bypass validation on Profile settings save matching the database policies to present users with immediate warnings.<br> - **Frontend Clean Up**: Removed redundant client-side `maskName()` calls across Browse, Profiles, Home, and Jobs, as display names are now cleanly and safely formatted at the database layer. |
+| Migrations required | Yes (`092_public_profile_identity_safety.sql`). |
+| Build & diff checks | Both `npm run build` and `git diff --check` passed successfully. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Remaining / Next
 
 | Item | Status |

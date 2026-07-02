@@ -27,3 +27,19 @@ The following settings must be enabled manually in the Supabase Dashboard as the
 ### Leaked Password Protection
 - **Status**: Checked / Pending Manual Enable.
 - **Action**: Jay should log in to the Supabase Dashboard, navigate to **Auth Settings** -> **Security**, and toggle on **Leaked Password Protection** before launching the local beta or opening registration publicly.
+
+---
+
+## 3. Public Profile Safety Backlog
+The following items are planned for future phases to further enforce profile safety and prevent off-platform bypasses:
+
+- **Approved Public Alias/Admin Approval Workflow**:
+  Create an admin review step where custom public display names must be manually approved by staff before going live, preventing users from crafting clever bypasses not caught by automated regex checks.
+- **Image OCR/Logo Moderation**:
+  Integrate automated vision scanning (OCR) to detect and flag phone numbers, emails, website domains, and social media links embedded inside uploaded gallery images, logos, profile pictures, or watermarks.
+- **Advanced Profile Risk Scoring**:
+  Automatically elevate risk scores for profiles containing repeatedly flagged bypass attempts, triggering alerts in the admin console.
+- **"My Tradies" Saved List**:
+  Allow homeowners to curate a private list of saved tradie profiles to reference again later.
+- **Full Legal/Policy Review**:
+  Conduct a comprehensive legal review of public profile details, terms of use, and privacy policy safeguards before public marketing.

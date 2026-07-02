@@ -12,7 +12,7 @@ import type { UserProfile } from '../lib/users';
 import { formatJobLocation, loadAustralianLocations } from '../lib/auLocations';
 import type { AustralianLocationOption } from '../lib/auLocations';
 import { toggleSavedItem, isItemSaved } from '../lib/saved';
-import { maskName } from '../lib/masking';
+
 import LocationSuburbSelect from '../components/LocationSuburbSelect';
 import {
   fetchEligibleCompletionProofPortfolioItems,
@@ -555,6 +555,67 @@ export default function Profile() {
     setSaveSuccess(false);
     setError(null);
 
+    // Contact bypass detection matching DB policy conceptually
+    const containsContactBypass = (text: string | null | undefined, allowUrl: boolean = false): boolean => {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+
+      // Email
+      if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(lower)) return true;
+
+      // URLs / Domains (only if not allowed)
+      if (!allowUrl) {
+        if (/\b(https?:\/\/|www\.)[^\s]+/.test(lower)) return true;
+        if (/\b[a-z0-9-]+\.(com|net|org|biz|info|io|co|au|me|club|xyz|online|space|site|tech|website|work|company|app)\b/.test(lower)) return true;
+      }
+
+      // Social handles
+      if (/\b(instagram|facebook|fb|tiktok|snapchat|whatsapp|insta|viber|telegram|line app|wechat)\b/.test(lower)) return true;
+      if (/@\w{2,}/.test(lower)) return true;
+
+      // Bypass phrases
+      const bypassPhrases = [
+        'google me', 'search me', 'look me up', 'find me on', 'call me', 'text me',
+        'message me on', 'pay cash', 'outside the app', 'off platform', 'off-platform',
+        'pay outside', 'contact me at', 'call my mobile', 'my phone number'
+      ];
+      if (bypassPhrases.some(phrase => lower.includes(phrase))) return true;
+
+      // Phone numbers: look for any sequence of 9-12 digits if we strip spaces, hyphens, parentheses, etc.
+      const digitsOnly = lower.replace(/[^0-9x]/g, '');
+      const noX = digitsOnly.replace(/x/g, '');
+
+      if (/(^|[^0-9])0[0-9]{9}([^0-9]|$)/.test(noX) ||
+          /(^|[^0-9])61[0-9]{9}([^0-9]|$)/.test(noX) ||
+          /(^|[^0-9])[23478][0-9]{8}([^0-9]|$)/.test(noX)) {
+        return true;
+      }
+
+      if (/0x?4(x?[0-9]){8}/.test(digitsOnly)) {
+        return true;
+      }
+
+      if (/(^|[^0-9])(\+?61|0)[\s.()-]*[23478]([\s.()-]*[0-9]){8}([^0-9]|$)/.test(lower)) {
+        return true;
+      }
+
+      return false;
+    };
+
+    // Run client-side validation
+    const hasBypass =
+      containsContactBypass(displayName, false) ||
+      containsContactBypass(businessName, false) ||
+      containsContactBypass(bio, false) ||
+      containsContactBypass(serviceAreas, false) ||
+      containsContactBypass(websiteUrl, true);
+
+    if (hasBypass) {
+      setError("Public profile fields can't include phone numbers, emails, websites, social handles, or instructions to contact outside TradieHubAU.");
+      setSaveLoading(false);
+      return;
+    }
+
     const serviceAreaList = serviceAreas
       .split(',')
       .map(area => area.trim())
@@ -1016,9 +1077,7 @@ export default function Profile() {
     );
   }
 
-  const displayNameStr = showFullIdentity
-    ? (targetProfile.display_name || 'User')
-    : maskName(targetProfile.display_name || 'User');
+  const displayNameStr = targetProfile.display_name || 'User';
 
   const formatMaskedABN = (abnVal: string | null | undefined) => {
     if (!abnVal) return 'Not Provided';

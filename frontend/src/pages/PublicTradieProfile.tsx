@@ -9,7 +9,7 @@ import { fetchPublicTradieReviews } from '../lib/reviews';
 import type { PublicTradieReview } from '../lib/reviews';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../components/AuthProvider';
-import { maskName } from '../lib/masking';
+
 
 const tradeLabels: Record<string, string> = {
   electrical: 'Electrical',
@@ -130,8 +130,7 @@ export default function PublicTradieProfile() {
   const isAdmin = viewerProfile?.is_admin === true;
   const showFullIdentity = isOwner || isAdmin || hasFundedContract;
 
-  const rawDisplayName = profile.business_name || profile.display_name || 'TradieHubAU tradie';
-  const displayName = showFullIdentity ? rawDisplayName : maskName(rawDisplayName);
+  const displayName = profile.business_name || profile.display_name || 'Verified tradie';
   const location = [profile.suburb, profile.state].filter(Boolean).join(', ');
   const averageRating = reviews.length > 0
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
