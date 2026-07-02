@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Suppress duplicate message notification audio
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, UX Polish |
+| Summary | Fixed duplicate audio alert overlap occurring when message notifications arrive while active on the Messages page. Added logic to Layout's live notifications listener to detect message-related notifications (`new_message` event type, `message` entity type, or positive `conversation_id`) and suppress the global notification chime if the current location is `/messages`. Direct chat message sounds continue to trigger normally within the message pane. Non-message notifications (e.g. quotes, payments) still play their chimes correctly when on the Messages page. |
+| Files changed | `frontend/src/components/Layout.tsx`, `docs/UX_POLISH_BACKLOG.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Add profile sound preferences
 
 | Item | Notes |

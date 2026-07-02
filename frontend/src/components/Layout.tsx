@@ -76,11 +76,20 @@ export default function Layout() {
             });
             setUnreadCount(prev => prev + 1);
 
-            // Play notification sound if enabled
-            const enabled = getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true);
-            if (enabled) {
-              const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification-soft-alert.mp3');
-              void playSoundSafe(path);
+            // Play notification sound if enabled, suppressing duplicate message notification chimes when on Messages page.
+            const isMessageNotification =
+              newNotification.event_type === 'new_message' ||
+              newNotification.entity_type === 'message' ||
+              newNotification.conversation_id !== null;
+
+            const shouldPlay = !(isMessagesPage && isMessageNotification);
+
+            if (shouldPlay) {
+              const enabled = getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true);
+              if (enabled) {
+                const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification-soft-alert.mp3');
+                void playSoundSafe(path);
+              }
             }
           }
         }
