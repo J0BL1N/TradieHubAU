@@ -49,8 +49,10 @@ The following items are planned for future phases to further enforce profile saf
 ---
 
 ## 4. App Sounds & Audio Polish
-- **Status**: LocalStorage preference UI, live audio alerts, and duplicate sound suppression integrated.
+- **Status**: LocalStorage preference UI, live audio alerts, stale-closure immunity, and robust audio de-duplication integrated.
 - **Audio Assets**: Pre-configured paths map to clean lowercase filenames `/audio/message-confirm-tap.mp3` and 7 `/audio/notification-*.mp3` files located in the `frontend/public/audio/` directory.
-- **Duplicate Suppression**: When the user is active on the `/messages` page, message-related notification chimes are suppressed to prevent overlapping audio with the direct chat window's message sound alert.
+- **Deduplication Rules**:
+  - Message-related notification chimes are suppressed if the active route pathname starts with `/messages` (detected via a pathname Ref to avoid stale closures in realtime handlers), letting the direct message tap sound win.
+  - Active session Ref Sets (`playedNotificationSoundIdsRef` and `playedMessageSoundIdsRef`) ensure no sound plays twice for the same unique notification or message ID, including duplicate events triggered by concurrent realtime updates and background refetches.
 - **Graceful Degradation**: Audio playback fails silently without crash if files are absent or if the browser blocks autoplay.
 - **Preferences**: Stored on-device in `localStorage`. Message and notification sound toggles operate independently.

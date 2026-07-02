@@ -223,6 +223,7 @@ export default function Messages() {
 
   const messagesCacheRef = useRef<Record<string, MessageRecord[]>>({});
   const hasMoreCacheRef = useRef<Record<string, boolean>>({});
+  const playedMessageSoundIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (activeConversationId && messages.length > 0) {
@@ -544,12 +545,15 @@ export default function Messages() {
             attachments: incomingAttachmentsError ? [] : incomingAttachments,
           }, shouldScrollToBottom);
 
-          // Play message sound if enabled and not sent by current user
+          // Play message sound if enabled and not sent by current user, deduplicated by ID
           if (incoming.sender_id !== user.id) {
-            const enabled = getSoundEnabledPreference(KEYS.MESSAGES_ENABLED, true);
-            if (enabled) {
-              const path = getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message-confirm-tap.mp3');
-              void playSoundSafe(path);
+            if (!playedMessageSoundIdsRef.current.has(incoming.id)) {
+              playedMessageSoundIdsRef.current.add(incoming.id);
+              const enabled = getSoundEnabledPreference(KEYS.MESSAGES_ENABLED, true);
+              if (enabled) {
+                const path = getSoundPreference(KEYS.MESSAGE_SOUND, '/audio/message-confirm-tap.mp3');
+                void playSoundSafe(path);
+              }
             }
           }
 

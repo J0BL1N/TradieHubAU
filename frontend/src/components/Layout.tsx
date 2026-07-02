@@ -6,12 +6,16 @@ import { fetchNotifications, markNotificationRead, markAllNotificationsRead, get
 import type { NotificationRecord } from '../lib/notifications';
 import { supabase } from '../lib/supabase';
 import { KEYS, getSoundPreference, getSoundEnabledPreference, playSoundSafe } from '../lib/soundPreferences';
-
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isMessagesPage = location.pathname === '/messages';
+  const isMessagesPage = location.pathname.startsWith('/messages');
+
+  // Track pathname and played notification sound IDs in refs to avoid stale closures in realtime listeners.
+  const currentPathnameRef = useRef(location.pathname);
+  currentPathnameRef.current = location.pathname;
+  const playedNotificationSoundIdsRef = useRef<Set<string>>(new Set());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,19 +80,24 @@ export default function Layout() {
             });
             setUnreadCount(prev => prev + 1);
 
-            // Play notification sound if enabled, suppressing duplicate message notification chimes when on Messages page.
-            const isMessageNotification =
-              newNotification.event_type === 'new_message' ||
-              newNotification.entity_type === 'message' ||
-              newNotification.conversation_id !== null;
+            // Prevent playing sound multiple times for the same notification ID
+            if (!playedNotificationSoundIdsRef.current.has(newNotification.id)) {
+              playedNotificationSoundIdsRef.current.add(newNotification.id);
 
-            const shouldPlay = !(isMessagesPage && isMessageNotification);
+              const isMessageNotification =
+                newNotification.event_type === 'new_message' ||
+                newNotification.entity_type === 'message' ||
+                newNotification.conversation_id !== null;
 
-            if (shouldPlay) {
-              const enabled = getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true);
-              if (enabled) {
-                const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification-soft-alert.mp3');
-                void playSoundSafe(path);
+              const isMessagesRouteActive = currentPathnameRef.current.startsWith('/messages');
+              const shouldPlay = !(isMessagesRouteActive && isMessageNotification);
+
+              if (shouldPlay) {
+                const enabled = getSoundEnabledPreference(KEYS.NOTIFICATIONS_ENABLED, true);
+                if (enabled) {
+                  const path = getSoundPreference(KEYS.NOTIFICATION_SOUND, '/audio/notification-soft-alert.mp3');
+                  void playSoundSafe(path);
+                }
               }
             }
           }
