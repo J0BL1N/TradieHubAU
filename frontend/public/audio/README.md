@@ -20,14 +20,16 @@ The following files are present and wired in the application settings:
     *   *Description:* Clean organic digital bell drop.
 5.  `notification-clean-pop.mp3` (Path: `/audio/notification-clean-pop.mp3`)
     *   *Source:* `universfield-new-notification-040-493469.mp3`
-    *   *Description:* Short round pop alert.
-6.  `notification-echo-chime.mp3` (Path: `/audio/notification-echo-chime.mp3`)
+    *   *Description:* Short round pop alert (Source sound copied/reserved for support chatbot answers).
+6.  `bot-reply.mp3` (Path: `/audio/bot-reply.mp3`)
+    *   *Description:* Reserved support chatbot response sound (Clean pop style).
+7.  `notification-echo-chime.mp3` (Path: `/audio/notification-echo-chime.mp3`)
     *   *Source:* `universfield-new-notification-051-494246.mp3`
     *   *Description:* Multi-tone echo bell alert.
-7.  `notification-light-sweep.mp3` (Path: `/audio/notification-light-sweep.mp3`)
+8.  `notification-light-sweep.mp3` (Path: `/audio/notification-light-sweep.mp3`)
     *   *Source:* `universfield-new-notification-059-494262.mp3`
     *   *Description:* Rising synthesizer chime sweep.
-8.  `notification-digital-blip.mp3` (Path: `/audio/notification-digital-blip.mp3`)
+9.  `notification-digital-blip.mp3` (Path: `/audio/notification-digital-blip.mp3`)
     *   *Source:* `universfield-new-notification-062-494544.mp3`
     *   *Description:* Short electronic digital beep.
 

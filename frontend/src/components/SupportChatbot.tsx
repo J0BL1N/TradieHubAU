@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { MessageSquare, X, Send, User, Sparkles } from 'lucide-react';
+import { playSoundSafe } from '../lib/soundPreferences';
 
 interface ChatMessage {
   id: string;
@@ -61,35 +62,35 @@ export default function SupportChatbot() {
     if (!user) {
       return "You are currently browsing as a guest. You can view public listings, but you'll need to sign in to post jobs, message users, or apply/quote.";
     }
-    
+
     const role = profile?.role || 'customer';
     const isTradie = role === 'tradie' || role === 'dual';
-    
+
     if (role === 'customer') {
       return "You are registered as a Customer. You can post jobs, message tradies, and approve completion proofs. Quoting and applying is reserved for verified Tradies.";
     }
-    
+
     const idVerified = profile?.identity_verified || false;
     const tradieVerified = profile?.tradie_verified || false;
-    
+
     if (isTradie && !idVerified) {
       return "You are registered as a Tradie, but your identity is not verified. Please go to My Profile -> Verification to upload your photo ID.";
     }
-    
+
     if (isTradie && !tradieVerified) {
       return "Your identity is verified, but your Tradie credentials (licence, insurance) are awaiting admin review. Once approved by our team, you will be able to apply and quote.";
     }
-    
+
     if (isTradie && tradieVerified) {
       return "Your Tradie account is fully verified! You can apply for open jobs, send quotes, and submit completion proofs.";
     }
-    
+
     return "You are signed in. Visit your profile verification tab to check active credentials.";
   };
 
   const getBotResponse = (query: string): { text: string; links?: Array<{ label: string; to: string }> } => {
     const q = query.toLowerCase().trim();
-    
+
     // 1. Post a job
     if (q.includes('post') || q.includes('create job') || q.includes('new job')) {
       return {
@@ -97,7 +98,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Post a Job', to: '/post-job' }]
       };
     }
-    
+
     // 2. Browse jobs
     if (q.includes('browse job') || q.includes('find job') || q.includes('search job') || q.includes('view job')) {
       return {
@@ -105,7 +106,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Browse Jobs', to: '/jobs' }]
       };
     }
-    
+
     // 3. Why can\'t apply / quote
     if (q.includes('apply') || q.includes('quote') || q.includes('bid') || q.includes('why can\'t') || q.includes('locked')) {
       if (!user) {
@@ -132,7 +133,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Jobs Board', to: '/jobs' }]
       };
     }
-    
+
     // 4. Verification
     if (q.includes('verify') || q.includes('verification') || q.includes('selfie') || q.includes('licence') || q.includes('insurance')) {
       return {
@@ -140,7 +141,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Verification Tab', to: '/profile' }]
       };
     }
-    
+
     // 5. Protected payments / payment released / payment funded
     if (q.includes('payment') || q.includes('pay') || q.includes('funded') || q.includes('escrow') || q.includes('release')) {
       return {
@@ -148,7 +149,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Secure Payments Info', to: '/protected-payments' }]
       };
     }
-    
+
     // 6. Submit proof / complete work
     if (q.includes('proof') || q.includes('complete') || q.includes('finish') || q.includes('completion')) {
       return {
@@ -156,7 +157,7 @@ export default function SupportChatbot() {
         links: [{ label: 'My Jobs', to: '/jobs' }]
       };
     }
-    
+
     // 7. Raise a dispute
     if (q.includes('dispute') || q.includes('issue') || q.includes('problem') || q.includes('refund') || q.includes('arbitration')) {
       return {
@@ -164,7 +165,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Dispute Process Explainer', to: '/dispute-process' }]
       };
     }
-    
+
     // 8. Messages / Chat
     if (q.includes('message') || q.includes('chat') || q.includes('talk') || q.includes('contact')) {
       return {
@@ -172,7 +173,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Inbox', to: '/messages' }]
       };
     }
-    
+
     // 9. Sounds / Audio
     if (q.includes('sound') || q.includes('audio') || q.includes('chime') || q.includes('volume') || q.includes('alert')) {
       return {
@@ -180,7 +181,7 @@ export default function SupportChatbot() {
         links: [{ label: 'App Sounds', to: '/profile' }]
       };
     }
-    
+
     // 10. Edit profile
     if (q.includes('profile') || q.includes('edit') || q.includes('avatar') || q.includes('change name')) {
       return {
@@ -188,7 +189,7 @@ export default function SupportChatbot() {
         links: [{ label: 'Edit Profile', to: '/profile' }]
       };
     }
-    
+
     // 11. Invoices / Receipts
     if (q.includes('invoice') || q.includes('receipt') || q.includes('bill')) {
       return {
@@ -196,7 +197,7 @@ export default function SupportChatbot() {
         links: [{ label: 'My Jobs', to: '/jobs' }]
       };
     }
-    
+
     // 12. Support / Human
     if (q.includes('support') || q.includes('contact') || q.includes('human') || q.includes('help') || q.includes('agent')) {
       return {
@@ -234,6 +235,8 @@ export default function SupportChatbot() {
         links: response.links,
       };
       setMessages(prev => [...prev, botMsg]);
+      // Play reserved bot-reply sound
+      void playSoundSafe('/audio/bot-reply.mp3');
     }, 400);
   };
 
@@ -243,9 +246,9 @@ export default function SupportChatbot() {
 
   const quickPrompts = [
     'How do I post a job?',
-    'Why can\'t I apply for jobs?',
-    'How do protected payments work?',
-    'How do I verify my account?',
+    'Why can\'t I apply?',
+    'How do payments work?',
+    'How do I verify?',
     'How do I raise a dispute?',
     'How do I change sounds?',
   ];
@@ -257,44 +260,44 @@ export default function SupportChatbot() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-primary hover:bg-primary/95 text-primary-foreground rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 min-h-12 min-w-[120px] justify-center"
+          className="flex items-center gap-2.5 px-4.5 py-3 bg-primary hover:bg-primary/95 text-primary-foreground rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 min-h-12 min-w-[130px] justify-center"
           aria-label="Open support chat"
         >
-          <MessageSquare className="h-5 w-5 animate-pulse" />
-          <span className="text-xs font-black uppercase tracking-wider">Need help?</span>
+          <MessageSquare className="h-5 w-5 animate-pulse text-primary-foreground" />
+          <span className="text-[11px] font-black uppercase tracking-wider">Need help?</span>
         </button>
       )}
 
       {/* Open State Panel */}
       {isOpen && (
-        <div className="w-[340px] sm:w-[380px] h-[500px] max-h-[85vh] bg-card border border-border/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
-          
+        <div className="w-[340px] sm:w-[380px] h-[520px] max-h-[85vh] bg-card border border-border/70 rounded-[28px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+
           {/* Header */}
-          <div className="bg-primary px-5 py-4 text-primary-foreground flex items-center justify-between shadow-md relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-50"></div>
-            <div className="relative flex items-center gap-2">
+          <div className="bg-primary px-4 py-3.5 text-primary-foreground flex items-center justify-between shadow-sm relative overflow-hidden shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-40"></div>
+            <div className="relative flex items-center gap-2.5">
               <div className="p-1.5 bg-white/10 rounded-xl">
-                <Sparkles className="h-4.5 w-4.5" />
+                <Sparkles className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-wider">TradieHubAU Help</h3>
-                <p className="text-[10px] opacity-75 font-semibold mt-0.5">Ask questions about using the site</p>
+                <h3 className="text-xs font-black uppercase tracking-wider">TradieHubAU Help</h3>
+                <p className="text-[9px] opacity-80 font-bold mt-0.5">Ask questions about using the site</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/10 rounded-lg text-primary-foreground transition-all relative"
+              className="p-1.5 hover:bg-white/15 rounded-lg text-primary-foreground transition-all relative"
               aria-label="Close support chat"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4.5 w-4.5" />
             </button>
           </div>
 
           {/* User Status Bar (Profile-Aware) */}
-          <div className="px-5 py-2.5 bg-muted/30 border-b border-border/50 flex items-start gap-2">
-            <User className="h-4 w-4 text-primary/75 mt-0.5 shrink-0" />
-            <p className="text-[10px] font-bold text-muted-foreground leading-normal">
+          <div className="px-4 py-2 bg-muted/40 border-b border-border/40 flex items-start gap-2 shrink-0">
+            <User className="h-3.5 w-3.5 text-primary/75 mt-0.5 shrink-0" />
+            <p className="text-[9px] font-bold text-muted-foreground leading-normal">
               {getProfileStatusText()}
             </p>
           </div>
@@ -304,42 +307,46 @@ export default function SupportChatbot() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs font-semibold leading-normal ${
-                  msg.sender === 'user'
-                    ? 'bg-primary text-primary-foreground self-end rounded-br-none'
-                    : 'bg-muted border self-start rounded-bl-none text-foreground/90'
-                }`}
+                className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
-                <div>{msg.text}</div>
-                {msg.links && msg.links.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {msg.links.map((link, i) => (
-                      <Link
-                        key={i}
-                        to={link.to}
-                        onClick={() => setIsOpen(false)}
-                        className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-primary hover:underline"
-                      >
-                        {link.label} &rarr;
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs font-semibold leading-normal ${
+                    msg.sender === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-tr-none shadow-sm'
+                      : 'bg-card text-foreground/90 border border-border/40 rounded-tl-none shadow-xs'
+                  }`}
+                >
+                  <div>{msg.text}</div>
+                  {msg.links && msg.links.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {msg.links.map((link, i) => (
+                        <Link
+                          key={i}
+                          to={link.to}
+                          onClick={() => setIsOpen(false)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-background hover:bg-muted text-[9px] font-black uppercase text-primary border border-border/60 rounded-lg shadow-xs transition-all"
+                        >
+                          {link.label} &rarr;
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
 
             {/* Quick Prompt Chips */}
             {messages.length === 1 && (
-              <div className="space-y-1.5 pt-2">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Suggested Questions:</p>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2 pt-2 shrink-0">
+                <p className="text-[9px] font-black text-muted-foreground/80 uppercase tracking-wider">Suggested Questions</p>
+                <div className="grid grid-cols-2 gap-2">
                   {quickPrompts.map((prompt, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => handleChipClick(prompt)}
-                      className="px-2.5 py-1.5 bg-background border border-border/70 hover:bg-muted/50 hover:border-border text-left rounded-lg text-[10px] font-semibold text-foreground/80 transition-all"
+                      className="px-3 py-2 bg-background border border-border/60 hover:bg-muted/40 hover:border-border text-left rounded-xl text-[10px] font-bold text-foreground/85 transition-all shadow-xs"
                     >
                       {prompt}
                     </button>
@@ -355,7 +362,7 @@ export default function SupportChatbot() {
               e.preventDefault();
               handleSend(input);
             }}
-            className="p-3 border-t border-border/80 bg-background flex gap-2 items-center"
+            className="px-4 py-3 border-t border-border/60 bg-background flex gap-2 items-center shrink-0"
           >
             <label htmlFor="chatbot-input" className="sr-only">Type your question</label>
             <input
@@ -364,16 +371,16 @@ export default function SupportChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question..."
-              className="flex-1 bg-muted border border-border/75 rounded-xl px-4 py-2 text-xs font-semibold outline-none focus:border-primary/50 text-foreground"
+              className="flex-grow h-10 bg-muted/65 hover:bg-muted/90 focus:bg-background border border-border/50 focus:border-primary/60 rounded-xl px-3.5 text-xs font-semibold placeholder:text-muted-foreground/50 transition-all text-foreground outline-none"
               autoComplete="off"
             />
             <button
               type="submit"
               disabled={!input.trim()}
-              className="p-2 bg-primary hover:bg-primary/95 text-primary-foreground rounded-xl transition-all disabled:opacity-40 flex items-center justify-center h-8 w-8 shrink-0 active:scale-95"
+              className="h-10 w-10 bg-primary hover:bg-primary/95 text-primary-foreground rounded-xl transition-all disabled:opacity-40 flex items-center justify-center shrink-0 active:scale-95"
               aria-label="Send question"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4 text-primary-foreground" />
             </button>
           </form>
         </div>

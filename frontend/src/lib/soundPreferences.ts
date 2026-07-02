@@ -12,7 +12,6 @@ export const NOTIFICATION_SOUND_OPTIONS: SoundOption[] = [
   { id: 'soft-alert', name: 'Soft Alert (Default)', path: '/audio/notification-soft-alert.mp3' },
   { id: 'bright-chime', name: 'Bright Chime', path: '/audio/notification-bright-chime.mp3' },
   { id: 'gentle-ping', name: 'Gentle Ping', path: '/audio/notification-gentle-ping.mp3' },
-  { id: 'clean-pop', name: 'Clean Pop', path: '/audio/notification-clean-pop.mp3' },
   { id: 'echo-chime', name: 'Echo Chime', path: '/audio/notification-echo-chime.mp3' },
   { id: 'light-sweep', name: 'Light Sweep', path: '/audio/notification-light-sweep.mp3' },
   { id: 'digital-blip', name: 'Digital Blip', path: '/audio/notification-digital-blip.mp3' },

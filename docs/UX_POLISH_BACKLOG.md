@@ -68,10 +68,18 @@ The following items are planned for future phases to further enforce profile saf
 ---
 
 ## 6. Profile-Aware Support Chatbot
-- **Status**: Floating support chatbot panel integrated in Layout.tsx.
+- **Status**: Floating support chatbot panel integrated in Layout.tsx, UI polished, and reply sound integrated.
 - **Privacy & Safety Constraints**:
   - The chatbot runs strictly in frontend component memory. No user question texts, chat logs, transcripts, or telemetry are saved, logged, or sent to external endpoints.
   - The chatbot uses only safe, public-facing profile fields (`role`, `verified`, `identity_verified`, `tradie_verified`) to formulate helpful directions.
   - The chatbot explicitly *does not* read, query, or expose uploaded identity documents, trade licence files, liability insurance certificates, private chat messages, payment details, dispute files, or admin notes.
-- **Rule Engine**: Matches queries locally against 18 core topics (e.g. posting jobs, applying, verification check-lists, secure payment explanation, sound preferences, disputes) and suggests prompt chips and clickable routing links.
+- **UI Spacing & Spacing Polish**:
+  - Polished message bubbles with distinct styles (orange brand fill for user, light off-white card for bot) and offset right/left alignments.
+  - Reduced vertical header and user status bar sizes to prevent cramping.
+  - Created a 2-column prompt chip module for suggested questions.
+  - Aligned input and send buttons to share matching heights.
+- **Sound Integration**:
+  - Copied `notification-clean-pop.mp3` to `bot-reply.mp3` as a reserved bot response chime.
+  - Removed `notification-clean-pop.mp3` from the user-selectable lists on the My Profile "App Sounds" tab, ensuring it remains reserved for bot-only play.
+  - Wired `playSoundSafe('/audio/bot-reply.mp3')` to trigger whenever the bot generates a response.
 - **Future Roadmap**: AI-powered support assistant later via secure backend route, with strict privacy controls.

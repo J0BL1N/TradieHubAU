@@ -4,6 +4,19 @@ Single ongoing project-history log. Entries are based on committed git history, 
 
 ## 2026-07-02
 
+### Polish support chatbot and add reply sound
+
+| Item | Notes |
+| --- | --- |
+| Area | Frontend, Chatbot, UX Polish |
+| Summary | Polished the profile-aware support chatbot UI layout: refined bubble styling with brand accent colors, aligned message bubbles left and right, adjusted heights, and integrated a 2-column grid layout for suggested questions. Copied `notification-clean-pop.mp3` to `bot-reply.mp3` as a reserved bot response chime, removing it from user-selectable Profile settings. Configured `playSoundSafe('/audio/bot-reply.mp3')` to trigger when the bot generates a response. |
+| Files changed | `frontend/src/components/SupportChatbot.tsx`, `frontend/src/lib/soundPreferences.ts`, `frontend/public/audio/README.md`, `docs/UX_POLISH_BACKLOG.md`, `docs/DAILY_WORK_LOG.md` |
+| Migrations required | None. |
+| Build result | `npm run build` passed. |
+| `git diff --check` result | Passed. |
+| Live Supabase action required | None. |
+| Manual QA status | Ready for Jay manual QA. |
+
 ### Add profile aware support chatbot
 
 | Item | Notes |
