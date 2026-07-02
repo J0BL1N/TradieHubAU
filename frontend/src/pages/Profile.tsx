@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { supabase } from '../lib/supabase';
@@ -190,6 +190,8 @@ export default function Profile() {
   const [userExperienceEvidence, setUserExperienceEvidence] = useState<any[]>([]);
   const [licenceTypes, setLicenceTypes] = useState<any[]>([]);
   const [requirementRules, setRequirementRules] = useState<any[]>([]);
+  const [rulesLoadError, setRulesLoadError] = useState(false);
+  const hasInteractedRef = useRef(false);
 
   // Submitting credential form state
   const [selectedLicenceTypeId, setSelectedLicenceTypeId] = useState('');
@@ -297,6 +299,11 @@ export default function Profile() {
   const [dueDiligenceExpanded, setDueDiligenceExpanded] = useState(false);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
+  const handleSetActiveSection = (section: string | null) => {
+    hasInteractedRef.current = true;
+    setActiveSection(section);
+  };
+
   // Helper variables for auto-expansion effect (safely guarded against null targetProfile)
   const tempEffectiveIdVerificationStatus: VerificationStatus =
     idVerificationStatus === 'approved' && !targetProfile?.identity_verified ? 'recheck' : idVerificationStatus;
@@ -304,7 +311,9 @@ export default function Profile() {
     livenessVerificationStatus === 'approved' && !targetProfile?.identity_verified ? 'recheck' : livenessVerificationStatus;
 
   useEffect(() => {
-    if (!targetProfile) return;
+    // auto-expand runs once after initial data readiness
+    // it must not override manual user accordion choices
+    if (profileLoading || !targetProfile || hasInteractedRef.current) return;
     const actionStatuses: VerificationStatus[] = ['none', 'recheck', 'requested_more_info', 'revoked', 'expired', 'rejected'];
     const getDocumentStatus = (docType: string) => {
       const summary = verificationSummaries[docType];
@@ -325,10 +334,11 @@ export default function Profile() {
       setActiveSection('id');
     }
   }, [
+    profileLoading,
+    targetProfile,
     tempEffectiveIdVerificationStatus,
     tempEffectiveLivenessVerificationStatus,
     tradieVerificationStatus,
-    targetProfile?.role,
     verificationSummaries
   ]);
 
@@ -451,22 +461,34 @@ export default function Profile() {
     if (!isSelf || !targetProfile || targetProfile.role === 'customer') return;
     setCompletionProofLoading(true);
     setCompletionProofError(null);
-    const { data, error: completionProofErr } = await fetchEligibleCompletionProofPortfolioItems();
-    if (completionProofErr) {
-      setCompletionProofError(completionProofErr.message || 'Failed to load completed work proof images.');
-    } else {
-      setCompletionProofItems(data);
-      setCompletionProofDrafts(Object.fromEntries(data.map(item => [
-        item.id,
-        {
-          isPublic: item.is_public_portfolio,
-          title: item.portfolio_title || '',
-          caption: item.portfolio_caption || '',
-          trade: item.portfolio_trade_category || '',
-        },
-      ])));
+    try {
+      const { data, error: completionProofErr } = await fetchEligibleCompletionProofPortfolioItems().catch(err => {
+        console.warn('⚠️ fetchEligibleCompletionProofPortfolioItems failed quietly:', err);
+        return { data: [], error: err };
+      });
+      if (completionProofErr) {
+        setCompletionProofError('Completed work proof images could not be loaded.');
+        setCompletionProofItems([]);
+      } else {
+        const safeData = data || [];
+        setCompletionProofItems(safeData);
+        setCompletionProofDrafts(Object.fromEntries(safeData.map(item => [
+          item.id,
+          {
+            isPublic: item.is_public_portfolio,
+            title: item.portfolio_title || '',
+            caption: item.portfolio_caption || '',
+            trade: item.portfolio_trade_category || '',
+          },
+        ])));
+      }
+    } catch (err) {
+      console.warn('⚠️ loadCompletionProofPortfolioItems exception:', err);
+      setCompletionProofError('Completed work proof images could not be loaded.');
+      setCompletionProofItems([]);
+    } finally {
+      setCompletionProofLoading(false);
     }
-    setCompletionProofLoading(false);
   }, [isSelf, targetProfile]);
 
   // Load bookmark state for this profile
@@ -632,15 +654,28 @@ export default function Profile() {
       // Fetch new trade-specific verification details if targetProfile is a tradie
       if (targetProfile && targetProfile.role !== 'customer') {
         const [credRes, evRes, typeRes, ruleRes] = await Promise.all([
-          fetchUserTradeCredentials(targetId),
-          fetchUserExperienceEvidence(targetId),
-          fetchTradeLicenceTypes(),
-          fetchTradeRequirementRules()
+          fetchUserTradeCredentials(targetId).catch(err => {
+            console.warn('⚠️ fetchUserTradeCredentials failed quietly:', err);
+            return { data: [], error: err };
+          }),
+          fetchUserExperienceEvidence(targetId).catch(err => {
+            console.warn('⚠️ fetchUserExperienceEvidence failed quietly:', err);
+            return { data: [], error: err };
+          }),
+          fetchTradeLicenceTypes().catch(err => {
+            console.warn('⚠️ fetchTradeLicenceTypes failed quietly:', err);
+            return { data: [], error: err };
+          }),
+          fetchTradeRequirementRules().catch(err => {
+            console.warn('⚠️ fetchTradeRequirementRules failed quietly:', err);
+            return { data: [], error: err };
+          })
         ]);
-        if (!credRes.error) setUserTradeCredentials(credRes.data);
-        if (!evRes.error) setUserExperienceEvidence(evRes.data);
-        if (!typeRes.error) setLicenceTypes(typeRes.data);
-        if (!ruleRes.error) setRequirementRules(ruleRes.data);
+        setUserTradeCredentials(credRes.data || []);
+        setUserExperienceEvidence(evRes.data || []);
+        setLicenceTypes(typeRes.data || []);
+        setRequirementRules(ruleRes.data || []);
+        setRulesLoadError(!!ruleRes.error);
       }
     } catch (err) {
       console.error('Error loading verification statuses:', err);
@@ -1589,6 +1624,7 @@ export default function Profile() {
 
       stateVal={stateVal}
       requirementRules={requirementRules}
+      rulesLoadError={rulesLoadError}
       licenceTypes={licenceTypes}
       userTradeCredentials={userTradeCredentials}
       selectedLicenceTypeId={selectedLicenceTypeId}
@@ -1621,7 +1657,7 @@ export default function Profile() {
       handleDeleteExperienceEvidence={handleDeleteExperienceEvidence}
 
       activeSection={activeSection}
-      setActiveSection={setActiveSection}
+      setActiveSection={handleSetActiveSection}
       showLicenceForm={showLicenceForm}
       setShowLicenceForm={setShowLicenceForm}
       showEvidenceForm={showEvidenceForm}

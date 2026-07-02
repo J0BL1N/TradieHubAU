@@ -69,6 +69,7 @@ export interface VerificationDashboardProps {
   // Trade-specific licences
   stateVal: string;
   requirementRules: any[];
+  rulesLoadError: boolean;
   licenceTypes: any[];
   userTradeCredentials: any[];
   selectedLicenceTypeId: string;
@@ -170,6 +171,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
 
   stateVal,
   requirementRules,
+  rulesLoadError,
   licenceTypes,
   userTradeCredentials,
   selectedLicenceTypeId,
@@ -265,6 +267,9 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
     if (targetProfile?.role === 'customer') {
       return "Identity and general details.";
     }
+    if (rulesLoadError) {
+      return "Trade requirement rules could not be loaded. Please refresh.";
+    }
     const userState = stateVal || targetProfile.state || 'VIC';
     const requiredTrades = trades.filter(tradeId => {
       const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
@@ -278,6 +283,13 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
   };
 
   const getTradeLicenceStatusBadge = () => {
+    if (rulesLoadError) {
+      return (
+        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-border bg-muted/10 text-muted-foreground">
+          Rules unavailable
+        </span>
+      );
+    }
     const userState = stateVal || targetProfile.state || 'VIC';
     const hasRequiredLicenceRule = trades.some(tradeId => {
       const rule = requirementRules.find(r => r.trade_id === tradeId && r.state_code === userState);
@@ -861,6 +873,11 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
 
             {activeSection === 'licences' && (
               <div className="p-4 space-y-5 text-left">
+                {rulesLoadError && (
+                  <p className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-600 font-semibold leading-relaxed">
+                    Trade requirement guidance could not be loaded. Try refreshing or contact support.
+                  </p>
+                )}
                 {/* List of select trade state summaries */}
                 <div className="space-y-3">
                   {trades.map(tradeId => {
@@ -878,7 +895,7 @@ export const VerificationDashboard: React.FC<VerificationDashboardProps> = ({
                               {tradeName} — {userState}
                             </h4>
                             <span className="text-[10px] font-semibold text-muted-foreground">
-                              {rule?.licence_requirement_level === 'required' ? 'Licence Required' : rule?.licence_requirement_level === 'conditional' ? 'Conditional Licence' : 'General Work'}
+                              {rulesLoadError ? 'Status Unknown' : rule?.licence_requirement_level === 'required' ? 'Licence Required' : rule?.licence_requirement_level === 'conditional' ? 'Conditional Licence' : 'General Work'}
                             </span>
                           </div>
                           <button
